@@ -1,5 +1,12 @@
-import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform, MotionValue } from "framer-motion";
-import { useEffect, useRef, useState, type WheelEvent } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  MotionValue,
+} from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { HexFrame } from "./Logo";
 import { SectionLabel } from "./Journey";
@@ -32,7 +39,11 @@ const projects: Project[] = [
     ],
     stack: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Redux Toolkit", "Supabase"],
     href: "/work/snapgo",
-    hue: { from: "oklch(0.58 0.22 265 / 0.55)", via: "oklch(0.68 0.18 230 / 0.35)", to: "oklch(0.78 0.16 200 / 0.2)" },
+    hue: {
+      from: "oklch(0.58 0.22 265 / 0.55)",
+      via: "oklch(0.68 0.18 230 / 0.35)",
+      to: "oklch(0.78 0.16 200 / 0.2)",
+    },
     Mockup: SnapGoMockup,
   },
   {
@@ -49,7 +60,11 @@ const projects: Project[] = [
     ],
     stack: ["React", "TypeScript", "Vite", "Tailwind CSS", "REST APIs", "Electron"],
     href: "/work/data-insights",
-    hue: { from: "oklch(0.58 0.16 185 / 0.5)", via: "oklch(0.62 0.15 215 / 0.32)", to: "oklch(0.78 0.13 165 / 0.2)" },
+    hue: {
+      from: "oklch(0.58 0.16 185 / 0.5)",
+      via: "oklch(0.62 0.15 215 / 0.32)",
+      to: "oklch(0.78 0.13 165 / 0.2)",
+    },
     Mockup: DataInsightsMockup,
   },
   {
@@ -66,7 +81,11 @@ const projects: Project[] = [
     ],
     stack: ["Flutter", "Dart", "Firebase", "Firestore", "Cloud Functions", "In-App Purchase"],
     href: "/work/tijarati-pro",
-    hue: { from: "oklch(0.66 0.18 240 / 0.52)", via: "oklch(0.72 0.16 210 / 0.34)", to: "oklch(0.82 0.16 70 / 0.2)" },
+    hue: {
+      from: "oklch(0.66 0.18 240 / 0.52)",
+      via: "oklch(0.72 0.16 210 / 0.34)",
+      to: "oklch(0.82 0.16 70 / 0.2)",
+    },
     Mockup: TijaratiMockup,
   },
   {
@@ -83,7 +102,11 @@ const projects: Project[] = [
     ],
     stack: ["Swift", "SwiftUI", "Firebase", "MVVM", "Combine", "XCTest"],
     href: "/work/uno400",
-    hue: { from: "oklch(0.66 0.18 150 / 0.5)", via: "oklch(0.64 0.14 205 / 0.32)", to: "oklch(0.82 0.16 92 / 0.18)" },
+    hue: {
+      from: "oklch(0.66 0.18 150 / 0.5)",
+      via: "oklch(0.64 0.14 205 / 0.32)",
+      to: "oklch(0.82 0.16 92 / 0.18)",
+    },
     Mockup: Uno400Mockup,
   },
   {
@@ -100,30 +123,41 @@ const projects: Project[] = [
     ],
     stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Web3Forms", "Vercel"],
     href: "/work/detailing-lab",
-    hue: { from: "oklch(0.76 0.2 135 / 0.42)", via: "oklch(0.58 0.12 155 / 0.28)", to: "oklch(0.92 0.12 135 / 0.14)" },
+    hue: {
+      from: "oklch(0.76 0.2 135 / 0.42)",
+      via: "oklch(0.58 0.12 155 / 0.28)",
+      to: "oklch(0.92 0.12 135 / 0.14)",
+    },
     Mockup: DetailingLabMockup,
   },
 ];
 
+function clampProjectIndex(index: number, total: number) {
+  if (total <= 0) return 0;
+  return Math.min(total - 1, Math.max(0, index));
+}
+
+function getProjectIndexFromProgress(progress: number, total: number) {
+  return clampProjectIndex(Math.round(progress * (total - 1)), total);
+}
+
+function getProgressForProjectIndex(index: number, total: number) {
+  return total <= 1 ? 0 : clampProjectIndex(index, total) / (total - 1);
+}
+
 export function Projects() {
   const ref = useRef<HTMLDivElement>(null);
-  const wheelLockRef = useRef(false);
+  const activeRef = useRef(0);
+  const shouldAnchorAfterViewChange = useRef(false);
+  const isAnchoringAfterViewChange = useRef(false);
+  const pendingAnimatedIndexRef = useRef(0);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
   });
 
   const total = projects.length;
-
-  // Derive a single active index from scroll. Only ONE slide is mounted at a time.
-  const activeMV = useTransform(scrollYProgress, (v) =>
-    Math.min(total - 1, Math.max(0, Math.floor(v * total * 0.999))),
-  );
-  const [active, setActive] = useState(0);
-  useMotionValueEvent(activeMV, "change", (v) => setActive(v as number));
-
-  const current = projects[active];
-
+  const animatedHeightVh = 300;
   const [mode, setMode] = useState<"animated" | "list">(() => {
     if (typeof window === "undefined") return "list";
     if (window.matchMedia("(max-width: 767px)").matches) return "list";
@@ -131,73 +165,119 @@ export function Projects() {
     if (saved) return saved;
     return "animated";
   });
+  const modeRef = useRef(mode);
+
+  const activeMV = useTransform(scrollYProgress, (v) => getProjectIndexFromProgress(v, total));
+  const [active, setActive] = useState(0);
+  const setActiveProject = useCallback(
+    (index: number) => {
+      const clamped = clampProjectIndex(index, total);
+      activeRef.current = clamped;
+      setActive(clamped);
+    },
+    [total],
+  );
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useMotionValueEvent(activeMV, "change", (v) => {
+    if (modeRef.current !== "animated" || isAnchoringAfterViewChange.current) return;
+
+    setActiveProject(v as number);
+  });
   const setView = (m: "animated" | "list") => {
+    if (m === mode) return;
+    const pendingIndex = clampProjectIndex(activeRef.current, total);
+    pendingAnimatedIndexRef.current = pendingIndex;
+    shouldAnchorAfterViewChange.current = true;
+    modeRef.current = m;
+    if (m === "animated") {
+      isAnchoringAfterViewChange.current = true;
+      setActiveProject(pendingIndex);
+    }
     setMode(m);
-    try { window.sessionStorage.setItem("aa-work-view", m); } catch {}
+    try {
+      window.sessionStorage.setItem("aa-work-view", m);
+    } catch {
+      // Session storage can be unavailable in private or restricted browsing modes.
+    }
   };
+
+  useEffect(() => {
+    if (!shouldAnchorAfterViewChange.current) return;
+
+    shouldAnchorAfterViewChange.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      const section = document.getElementById("work");
+      if (!section) return;
+
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      if (mode === "animated") {
+        const maxScroll = Math.max(0, section.offsetHeight - window.innerHeight);
+        const progress = getProgressForProjectIndex(pendingAnimatedIndexRef.current, total);
+        window.scrollTo({ top: top + maxScroll * progress, behavior: "auto" });
+        window.requestAnimationFrame(() => {
+          setActiveProject(pendingAnimatedIndexRef.current);
+          isAnchoringAfterViewChange.current = false;
+        });
+        return;
+      }
+
+      window.scrollTo({ top, behavior: "auto" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [mode, setActiveProject, total]);
 
   if (mode === "list") {
-    return <ProjectsCardCarousel mode={mode} setView={setView} />;
+    return (
+      <ProjectsCardCarousel
+        mode={mode}
+        setView={setView}
+        initialIndex={active}
+        onIndexChange={(index) => {
+          setActiveProject(index);
+        }}
+      />
+    );
   }
 
-  const scrollToAnimatedProject = (nextIndex: number) => {
-    const section = ref.current;
-    if (!section || total <= 1) return;
-
-    const clamped = Math.min(total - 1, Math.max(0, nextIndex));
-    const scrollable = section.offsetHeight - window.innerHeight;
-    const targetProgress = clamped === 0 ? 0 : (clamped + 0.5) / total;
-    const targetTop = section.offsetTop + scrollable * targetProgress;
-
-    window.scrollTo({ top: targetTop, behavior: "smooth" });
-  };
-
-  const handleAnimatedWheel = (event: WheelEvent<HTMLDivElement>) => {
-    const direction = Math.sign(event.deltaY);
-    if (direction === 0) return;
-
-    const nextIndex = active + direction;
-    const canStep = nextIndex >= 0 && nextIndex < total;
-    if (!canStep) return;
-
-    event.preventDefault();
-    if (wheelLockRef.current) return;
-
-    wheelLockRef.current = true;
-    scrollToAnimatedProject(nextIndex);
-    window.setTimeout(() => {
-      wheelLockRef.current = false;
-    }, 700);
-  };
-
   return (
-    <section
-      id="work"
-      ref={ref}
-      className="relative"
-      style={{ height: `${total * 100}vh` }}
-    >
-      <div className="sticky top-0 h-screen w-full overflow-hidden" onWheel={handleAnimatedWheel}>
+    <section id="work" ref={ref} className="relative" style={{ height: `${animatedHeightVh}vh` }}>
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
         {/* Section frame */}
         <div className="pointer-events-none absolute left-6 top-8 z-40 md:left-10">
           <SectionLabel>03 / Selected Work</SectionLabel>
         </div>
         <div className="pointer-events-auto absolute right-6 top-8 z-[120] flex items-center gap-3 font-mono text-xs text-muted-foreground md:right-10">
           <ViewToggle mode={mode} onChange={setView} />
-          <ProgressIndicator progress={scrollYProgress} total={total} />
+          <ProgressIndicator activeIndex={active} total={total} />
         </div>
 
-        {/* Single active slide — AnimatePresence guarantees the previous
-            slide fully exits before the next mounts. */}
-        <AnimatePresence mode="wait" initial={false}>
-          <ProjectSlide key={current.id} project={current} index={active} total={total} />
-        </AnimatePresence>
+        {projects.map((project, index) => (
+          <ProjectSlide
+            key={project.id}
+            project={project}
+            index={index}
+            total={total}
+            progress={scrollYProgress}
+            activeIndex={active}
+          />
+        ))}
       </div>
     </section>
   );
 }
 
-function ViewToggle({ mode, onChange }: { mode: "animated" | "list"; onChange: (m: "animated" | "list") => void }) {
+function ViewToggle({
+  mode,
+  onChange,
+}: {
+  mode: "animated" | "list";
+  onChange: (m: "animated" | "list") => void;
+}) {
   const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   const modes = isMobile ? (["list"] as const) : (["animated", "list"] as const);
 
@@ -213,10 +293,11 @@ function ViewToggle({ mode, onChange }: { mode: "animated" | "list"; onChange: (
           type="button"
           key={m}
           aria-pressed={mode === m}
-          onPointerDown={() => onChange(m)}
           onClick={() => onChange(m)}
           className={`pointer-events-auto rounded-full px-3 py-1 transition-colors ${
-            mode === m ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+            mode === m
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {m === "animated" ? "Animated" : "List"}
@@ -229,11 +310,15 @@ function ViewToggle({ mode, onChange }: { mode: "animated" | "list"; onChange: (
 function ProjectsCardCarousel({
   mode,
   setView,
+  initialIndex,
+  onIndexChange,
 }: {
   mode: "animated" | "list";
   setView: (m: "animated" | "list") => void;
+  initialIndex: number;
+  onIndexChange: (index: number) => void;
 }) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(initialIndex);
   const [dir, setDir] = useState<1 | -1>(1);
   const total = projects.length;
   const project = projects[index];
@@ -247,6 +332,7 @@ function ProjectsCardCarousel({
     const wrapped = (next + total) % total;
     setDir(next > index ? 1 : -1);
     setIndex(wrapped);
+    onIndexChange(wrapped);
   };
 
   return (
@@ -375,6 +461,7 @@ function ProjectsCardCarousel({
                 onClick={() => {
                   setDir(i > index ? 1 : -1);
                   setIndex(i);
+                  onIndexChange(i);
                 }}
                 aria-label={`Go to ${p.name}`}
                 className={`h-1.5 rounded-full transition-all ${
@@ -447,54 +534,51 @@ function ProjectsMobileList() {
                 </div>
 
                 <div className="p-4">
-                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  <span className="text-gradient-brand">{project.id}</span>
-                  <span className="h-px w-6 bg-border" />
-                  <span>{project.category}</span>
-                </div>
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    <span className="text-gradient-brand">{project.id}</span>
+                    <span className="h-px w-6 bg-border" />
+                    <span>{project.category}</span>
+                  </div>
 
-                <h3 className="mt-3 font-display text-xl font-bold leading-tight">
-                  {project.name}
-                </h3>
-                <p className="mt-1.5 font-display text-sm leading-snug text-gradient-brand">
-                  {project.tagline}
-                </p>
+                  <h3 className="mt-3 font-display text-xl font-bold leading-tight">
+                    {project.name}
+                  </h3>
+                  <p className="mt-1.5 font-display text-sm leading-snug text-gradient-brand">
+                    {project.tagline}
+                  </p>
 
-                <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/60">
-                  {project.metrics.map((metric) => (
-                    <div
-                      key={metric.label}
-                      className="bg-background/70 px-2.5 py-2"
-                    >
-                      <div className="font-display text-[13px] font-bold leading-tight text-gradient-brand">
-                        {metric.value}
+                  <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/60">
+                    {project.metrics.map((metric) => (
+                      <div key={metric.label} className="bg-background/70 px-2.5 py-2">
+                        <div className="font-display text-[13px] font-bold leading-tight text-gradient-brand">
+                          {metric.value}
+                        </div>
+                        <div className="mt-1 text-[7px] uppercase tracking-widest text-muted-foreground">
+                          {metric.label}
+                        </div>
                       </div>
-                      <div className="mt-1 text-[7px] uppercase tracking-widest text-muted-foreground">
-                        {metric.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {project.stack.slice(0, 5).map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-border bg-background/70 px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {project.stack.slice(0, 5).map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full border border-border bg-background/70 px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
 
-                <a
-                  href={project.href || "#contact"}
-                  className="mt-5 inline-flex w-full items-center justify-between rounded-full px-5 py-3 text-sm font-medium text-background"
-                  style={{ background: "var(--gradient-brand)" }}
-                >
-                  <span>View project</span>
-                  <ArrowUpRight className="h-4 w-4" />
-                </a>
+                  <a
+                    href={project.href || "#contact"}
+                    className="mt-5 inline-flex w-full items-center justify-between rounded-full px-5 py-3 text-sm font-medium text-background"
+                    style={{ background: "var(--gradient-brand)" }}
+                  >
+                    <span>View project</span>
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
                 </div>
               </div>
             </article>
@@ -536,15 +620,12 @@ function MobileProjectMockup({ project, priority }: { project: Project; priority
   );
 }
 
-
-function ProgressIndicator({ progress, total }: { progress: MotionValue<number>; total: number }) {
-  const idx = useTransform(progress, (v) => {
-    const i = Math.min(total - 1, Math.max(0, Math.floor(v * total * 0.999)));
-    return String(i + 1).padStart(2, "0");
-  });
+function ProgressIndicator({ activeIndex, total }: { activeIndex: number; total: number }) {
   return (
     <div className="flex items-center gap-3">
-      <motion.span className="text-gradient-brand text-sm font-semibold">{idx}</motion.span>
+      <span className="text-gradient-brand text-sm font-semibold">
+        {String(activeIndex + 1).padStart(2, "0")}
+      </span>
       <span className="h-px w-10 bg-border" />
       <span>{String(total).padStart(2, "0")}</span>
     </div>
@@ -555,52 +636,75 @@ function ProjectSlide({
   project,
   index,
   total,
+  progress,
+  activeIndex,
 }: {
   project: Project;
   index: number;
   total: number;
+  progress: MotionValue<number>;
+  activeIndex: number;
 }) {
+  const active = index === activeIndex;
+  const isNearby = Math.abs(index - activeIndex) <= 1;
+  const step = total <= 1 ? 1 : 1 / (total - 1);
+  const center = step * index;
+  const leftBoundary = center - step / 2;
+  const rightBoundary = center + step / 2;
+  const crossfadeDistance = step * 0.18;
+  const input =
+    index === 0
+      ? [0, rightBoundary - crossfadeDistance, rightBoundary + crossfadeDistance]
+      : index === total - 1
+        ? [leftBoundary - crossfadeDistance, leftBoundary + crossfadeDistance, 1]
+        : [
+            leftBoundary - crossfadeDistance,
+            leftBoundary + crossfadeDistance,
+            rightBoundary - crossfadeDistance,
+            rightBoundary + crossfadeDistance,
+          ];
+  const opacityOutput = index === 0 ? [1, 1, 0] : index === total - 1 ? [0, 1, 1] : [0, 1, 1, 0];
+  const yOutput = index === 0 ? [0, 0, -34] : index === total - 1 ? [34, 0, 0] : [34, 0, 0, -34];
+  const scaleOutput =
+    index === 0 ? [1, 1, 0.97] : index === total - 1 ? [0.97, 1, 1] : [0.97, 1, 1, 0.97];
+  const mockupRotateOutput =
+    index === 0 ? [0, 0, -2] : index === total - 1 ? [2, 0, 0] : [2, 0, 0, -2];
+  const opacity = useTransform(progress, input, opacityOutput);
+  const y = useTransform(progress, input, yOutput);
+  const scale = useTransform(progress, input, scaleOutput);
+  const mockupRotate = useTransform(progress, input, mockupRotateOutput);
+
+  if (!isNearby) {
+    return null;
+  }
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-0 flex items-center justify-center px-6 md:px-12"
+      style={{ opacity, y, scale, zIndex: active ? 2 : 1 }}
+      className={`absolute inset-0 isolate flex will-change-transform items-center justify-center px-6 md:px-12 ${
+        active ? "pointer-events-auto" : "pointer-events-none"
+      }`}
     >
       {/* Per-project background wash */}
       <motion.div
-        initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background: `radial-gradient(ellipse at 30% 40%, ${project.hue.from}, transparent 55%), radial-gradient(ellipse at 80% 70%, ${project.hue.via}, transparent 60%), radial-gradient(ellipse at 50% 100%, ${project.hue.to}, transparent 70%)`,
         }}
       />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-hex opacity-30" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-hex opacity-30" />
 
       {/* Decorative hex */}
       <motion.div
-        initial={{ opacity: 0, rotate: -20 }}
-        animate={{ opacity: 0.12, rotate: 0 }}
-        exit={{ opacity: 0, rotate: 20 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute -right-40 top-1/2 hidden h-[680px] w-[680px] -translate-y-1/2 md:block"
+        className="pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block"
+        style={{ rotate: mockupRotate }}
       >
         <HexFrame strokeWidth={0.4} />
       </motion.div>
 
       <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
         {/* Left: copy */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -30 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-          className="lg:col-span-5"
-        >
+        <div className="lg:col-span-5">
           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             <span className="text-gradient-brand">{project.id}</span>
             <span className="h-px w-8 bg-border" />
@@ -618,7 +722,9 @@ function ProjectSlide({
             {project.metrics.map((m) => (
               <div key={m.label} className="bg-background/80 p-4 backdrop-blur">
                 <div className="font-display text-2xl font-bold text-gradient-brand">{m.value}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">{m.label}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {m.label}
+                </div>
               </div>
             ))}
           </div>
@@ -646,24 +752,19 @@ function ProjectSlide({
               <ArrowUpRight className="h-4 w-4" />
             </a>
           )}
-        </motion.div>
+        </div>
 
         {/* Right: mockup */}
-        <motion.div
-          initial={{ opacity: 0, y: 60, rotate: 3 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          exit={{ opacity: 0, y: -40, rotate: -3 }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
-          className="relative lg:col-span-7"
-        >
+        <motion.div className="relative lg:col-span-7" style={{ rotate: mockupRotate }}>
           <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
-            <div className="absolute inset-0 rounded-3xl border border-border bg-surface/40 backdrop-blur-xl" />
-            <div className="absolute inset-0 overflow-hidden rounded-3xl">
+            <div className="absolute inset-0">
               <project.Mockup />
             </div>
             <div
-              className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl opacity-60"
-              style={{ background: `radial-gradient(ellipse, ${project.hue.from}, transparent 65%)` }}
+              className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl opacity-55"
+              style={{
+                background: `radial-gradient(ellipse, ${project.hue.from}, transparent 65%)`,
+              }}
             />
           </div>
         </motion.div>
@@ -681,7 +782,9 @@ function ProjectSlide({
 
 function Browser({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a10] shadow-2xl ${className}`}>
+    <div
+      className={`w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a10] shadow-2xl ${className}`}
+    >
       <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-2">
         <span className="h-2 w-2 rounded-full bg-white/15" />
         <span className="h-2 w-2 rounded-full bg-white/15" />
@@ -694,13 +797,21 @@ function Browser({ children, className = "" }: { children: React.ReactNode; clas
 }
 function Phone({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-[2rem] border border-white/10 bg-[#0a0a10] p-3 shadow-2xl ${className}`}>
+    <div
+      className={`rounded-[2rem] border border-white/10 bg-[#0a0a10] p-3 shadow-2xl ${className}`}
+    >
       <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/10" />
       {children}
     </div>
   );
 }
-function FloatPill({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function FloatPill({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`glass animate-float absolute rounded-xl px-3 py-2 text-[10px] ${className}`}>
       {children}
@@ -725,6 +836,7 @@ function SnapGoMockup() {
           alt="snapGo tech storefront homepage"
           className="block h-auto w-full"
           loading="lazy"
+          decoding="async"
         />
       </div>
 
@@ -742,6 +854,7 @@ function SnapGoMockup() {
           alt="snapGo tech admin categories"
           className="block h-auto w-full"
           loading="lazy"
+          decoding="async"
         />
       </div>
 
@@ -770,6 +883,7 @@ function DataInsightsMockup() {
           alt="AI analytics workspace overview"
           className="block h-auto w-full"
           loading="lazy"
+          decoding="async"
         />
       </div>
 
@@ -787,6 +901,7 @@ function DataInsightsMockup() {
           alt="AI analytics results view"
           className="block h-auto w-full"
           loading="lazy"
+          decoding="async"
         />
       </div>
 
@@ -800,7 +915,7 @@ function DataInsightsMockup() {
 
 function TijaratiMockup() {
   return (
-    <div className="relative h-full w-full overflow-hidden p-5 md:p-8">
+    <div className="relative h-full w-full overflow-visible p-5 md:p-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(56,189,248,0.22),transparent_45%)]" />
 
       <div className="absolute left-4 top-8 w-[34%] rotate-[-9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-2xl">
@@ -812,6 +927,7 @@ function TijaratiMockup() {
             alt="Tijarati Pro reports"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -825,6 +941,7 @@ function TijaratiMockup() {
             alt="Tijarati Pro home dashboard"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -838,6 +955,7 @@ function TijaratiMockup() {
             alt="Tijarati Pro invoices"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -856,7 +974,7 @@ function TijaratiMockup() {
 
 function Uno400Mockup() {
   return (
-    <div className="relative h-full w-full overflow-hidden p-5 md:p-8">
+    <div className="relative h-full w-full overflow-visible p-5 md:p-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_34%,rgba(16,185,129,0.22),transparent_44%),radial-gradient(circle_at_70%_72%,rgba(14,165,233,0.16),transparent_38%)]" />
 
       <div className="absolute left-5 top-8 w-[34%] rotate-[-8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-2xl">
@@ -868,6 +986,7 @@ function Uno400Mockup() {
             alt="Uno400 room lobby"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -881,6 +1000,7 @@ function Uno400Mockup() {
             alt="Uno400 real-time card table"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -894,6 +1014,7 @@ function Uno400Mockup() {
             alt="Uno400 card play screen"
             className="block h-auto w-full"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -929,6 +1050,7 @@ function DetailingLabMockup() {
             alt="The Detailing Lab homepage"
             className="h-full w-full object-cover object-top"
             loading="lazy"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-black/10" />
         </div>
@@ -940,6 +1062,7 @@ function DetailingLabMockup() {
           alt="The Detailing Lab ceramic packages"
           className="block aspect-[4/3] w-full object-cover object-top"
           loading="lazy"
+          decoding="async"
         />
         <div className="border-t border-white/10 bg-zinc-950 p-3">
           <div className="font-mono text-[8px] uppercase tracking-[0.22em] text-lime-300">
@@ -955,6 +1078,7 @@ function DetailingLabMockup() {
           alt="The Detailing Lab inquiry form"
           className="block aspect-[16/9] w-full object-cover object-top"
           loading="lazy"
+          decoding="async"
         />
       </div>
 
@@ -971,17 +1095,32 @@ function CommerceMockup() {
     <div className="relative h-full w-full p-8">
       <Browser className="absolute left-6 top-6 w-[70%]">
         <div className="grid grid-cols-3 gap-2">
-          <div className="col-span-2 row-span-2 aspect-square rounded-lg" style={{ background: "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.6), oklch(0.78 0.18 55 / 0.4))" }} />
+          <div
+            className="col-span-2 row-span-2 aspect-square rounded-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.6), oklch(0.78 0.18 55 / 0.4))",
+            }}
+          />
           <div className="aspect-square rounded-lg bg-white/5" />
           <div className="aspect-square rounded-lg bg-white/5" />
           <div className="col-span-3 mt-1 h-2 w-2/3 rounded bg-white/20" />
           <div className="col-span-3 h-2 w-1/2 rounded bg-white/10" />
-          <div className="col-span-3 mt-2 h-8 rounded-md" style={{ background: "var(--gradient-brand)" }} />
+          <div
+            className="col-span-3 mt-2 h-8 rounded-md"
+            style={{ background: "var(--gradient-brand)" }}
+          />
         </div>
       </Browser>
       <Phone className="absolute bottom-4 right-6 h-[78%] w-[28%]">
         <div className="space-y-2">
-          <div className="h-20 rounded-lg" style={{ background: "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.6), oklch(0.78 0.18 55 / 0.4))" }} />
+          <div
+            className="h-20 rounded-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.6), oklch(0.78 0.18 55 / 0.4))",
+            }}
+          />
           <div className="h-2 w-3/4 rounded bg-white/20" />
           <div className="h-2 w-1/2 rounded bg-white/10" />
           <div className="mt-3 h-7 rounded" style={{ background: "var(--gradient-brand)" }} />
@@ -1010,18 +1149,26 @@ function DashboardMockup() {
           </div>
           <div className="flex-1 space-y-3">
             <div className="grid grid-cols-3 gap-2">
-              {[0,1,2].map(i => (
+              {[0, 1, 2].map((i) => (
                 <div key={i} className="rounded-lg border border-white/5 bg-white/[0.03] p-3">
                   <div className="h-2 w-1/2 rounded bg-white/15" />
                   <div className="mt-2 font-display text-lg font-semibold text-gradient-brand">
-                    {["24.8k","98%","$2.1M"][i]}
+                    {["24.8k", "98%", "$2.1M"][i]}
                   </div>
                 </div>
               ))}
             </div>
             <div className="flex h-32 items-end gap-1.5 rounded-lg border border-white/5 bg-white/[0.02] p-3">
-              {[40,65,30,80,55,90,70,60,85,45,75,95].map((h, i) => (
-                <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: "var(--gradient-brand)", opacity: 0.4 + (h/200) }} />
+              {[40, 65, 30, 80, 55, 90, 70, 60, 85, 45, 75, 95].map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-sm"
+                  style={{
+                    height: `${h}%`,
+                    background: "var(--gradient-brand)",
+                    opacity: 0.4 + h / 200,
+                  }}
+                />
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -1050,14 +1197,25 @@ function PayMockup() {
             <div className="mt-1 text-[8px] text-white/70">•••• 4209</div>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {["Send","Receive","Top up"].map(l => (
-              <div key={l} className="rounded-lg border border-white/10 p-2 text-center text-[8px] text-white/70">{l}</div>
+            {["Send", "Receive", "Top up"].map((l) => (
+              <div
+                key={l}
+                className="rounded-lg border border-white/10 p-2 text-center text-[8px] text-white/70"
+              >
+                {l}
+              </div>
             ))}
           </div>
           <div className="space-y-2">
-            {[1,2,3].map(i => (
-              <div key={i} className="flex items-center gap-2 rounded-md border border-white/5 bg-white/[0.02] p-2">
-                <div className="h-6 w-6 rounded-full" style={{ background: "var(--gradient-brand)", opacity: 0.6 }} />
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-md border border-white/5 bg-white/[0.02] p-2"
+              >
+                <div
+                  className="h-6 w-6 rounded-full"
+                  style={{ background: "var(--gradient-brand)", opacity: 0.6 }}
+                />
                 <div className="flex-1 space-y-1">
                   <div className="h-1.5 w-3/4 rounded bg-white/20" />
                   <div className="h-1 w-1/2 rounded bg-white/10" />
@@ -1069,16 +1227,35 @@ function PayMockup() {
       </Phone>
       <Browser className="absolute right-4 top-6 w-[55%]">
         <div className="space-y-3">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">FX Volume · 24h</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            FX Volume · 24h
+          </div>
           <div className="flex h-24 items-end gap-0.5">
             {Array.from({ length: 32 }).map((_, i) => (
-              <div key={i} className="flex-1 rounded-sm" style={{ height: `${30 + Math.sin(i*0.7) * 30 + i * 1.5}%`, background: "var(--gradient-brand)", opacity: 0.7 }} />
+              <div
+                key={i}
+                className="flex-1 rounded-sm"
+                style={{
+                  height: `${30 + Math.sin(i * 0.7) * 30 + i * 1.5}%`,
+                  background: "var(--gradient-brand)",
+                  opacity: 0.7,
+                }}
+              />
             ))}
           </div>
           <div className="grid grid-cols-3 gap-2 text-[10px]">
-            <div className="rounded bg-white/[0.03] p-2"><div className="text-muted-foreground">TPS</div><div className="font-display font-bold text-gradient-brand">8.4k</div></div>
-            <div className="rounded bg-white/[0.03] p-2"><div className="text-muted-foreground">Latency</div><div className="font-display font-bold text-gradient-brand">84ms</div></div>
-            <div className="rounded bg-white/[0.03] p-2"><div className="text-muted-foreground">Markets</div><div className="font-display font-bold text-gradient-brand">11</div></div>
+            <div className="rounded bg-white/[0.03] p-2">
+              <div className="text-muted-foreground">TPS</div>
+              <div className="font-display font-bold text-gradient-brand">8.4k</div>
+            </div>
+            <div className="rounded bg-white/[0.03] p-2">
+              <div className="text-muted-foreground">Latency</div>
+              <div className="font-display font-bold text-gradient-brand">84ms</div>
+            </div>
+            <div className="rounded bg-white/[0.03] p-2">
+              <div className="text-muted-foreground">Markets</div>
+              <div className="font-display font-bold text-gradient-brand">11</div>
+            </div>
           </div>
         </div>
       </Browser>
@@ -1093,13 +1270,16 @@ function MediMockup() {
         <div className="grid h-full grid-cols-3 gap-3">
           <div className="space-y-2">
             <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] p-2">
-              <div className="h-8 w-8 rounded-full" style={{ background: "var(--gradient-brand)" }} />
+              <div
+                className="h-8 w-8 rounded-full"
+                style={{ background: "var(--gradient-brand)" }}
+              />
               <div className="flex-1 space-y-1">
                 <div className="h-1.5 w-3/4 rounded bg-white/20" />
                 <div className="h-1 w-1/2 rounded bg-white/10" />
               </div>
             </div>
-            {Array.from({length:4}).map((_,i)=>(
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="rounded-md border border-white/5 bg-white/[0.02] p-2">
                 <div className="h-1.5 w-2/3 rounded bg-white/15" />
                 <div className="mt-1 h-1 w-1/3 rounded bg-white/10" />
@@ -1107,22 +1287,48 @@ function MediMockup() {
             ))}
           </div>
           <div className="col-span-2 space-y-3">
-            <div className="rounded-lg border border-white/5 p-3" style={{ background: "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.25), transparent)" }}>
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Today · Vitals</div>
+            <div
+              className="rounded-lg border border-white/5 p-3"
+              style={{
+                background: "linear-gradient(135deg, oklch(0.55 0.24 305 / 0.25), transparent)",
+              }}
+            >
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                Today · Vitals
+              </div>
               <div className="mt-2 grid grid-cols-4 gap-2">
-                {[["HR","72"],["BP","118/76"],["SpO₂","98%"],["Temp","36.8"]].map(([l,v])=>(
-                  <div key={l}><div className="text-[8px] text-muted-foreground">{l}</div><div className="font-display text-sm font-bold text-gradient-brand">{v}</div></div>
+                {[
+                  ["HR", "72"],
+                  ["BP", "118/76"],
+                  ["SpO₂", "98%"],
+                  ["Temp", "36.8"],
+                ].map(([l, v]) => (
+                  <div key={l}>
+                    <div className="text-[8px] text-muted-foreground">{l}</div>
+                    <div className="font-display text-sm font-bold text-gradient-brand">{v}</div>
+                  </div>
                 ))}
               </div>
               <div className="mt-3 flex h-16 items-end gap-0.5">
-                {Array.from({length:40}).map((_,i)=>(
-                  <div key={i} className="flex-1 rounded-sm" style={{ height: `${40 + Math.sin(i*0.6)*40}%`, background: "var(--gradient-brand)", opacity: 0.6 }} />
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      height: `${40 + Math.sin(i * 0.6) * 40}%`,
+                      background: "var(--gradient-brand)",
+                      opacity: 0.6,
+                    }}
+                  />
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="h-16 rounded-lg border border-white/5 bg-white/[0.02]" />
-              <div className="h-16 rounded-lg border border-white/5" style={{ background: "var(--gradient-brand)", opacity: 0.4 }} />
+              <div
+                className="h-16 rounded-lg border border-white/5"
+                style={{ background: "var(--gradient-brand)", opacity: 0.4 }}
+              />
             </div>
           </div>
         </div>
@@ -1136,7 +1342,13 @@ function EstateMockup() {
     <div className="relative h-full w-full p-8">
       <Browser className="h-full">
         <div className="grid h-full grid-cols-2 gap-3">
-          <div className="relative overflow-hidden rounded-lg" style={{ background: "linear-gradient(135deg, oklch(0.78 0.18 55 / 0.5), oklch(0.6 0.25 5 / 0.3))" }}>
+          <div
+            className="relative overflow-hidden rounded-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.78 0.18 55 / 0.5), oklch(0.6 0.25 5 / 0.3))",
+            }}
+          >
             <div className="absolute inset-0 bg-hex opacity-30" />
             <div className="absolute bottom-3 left-3 right-3">
               <div className="text-[9px] uppercase tracking-widest text-white/70">Featured</div>
@@ -1145,16 +1357,26 @@ function EstateMockup() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {[0,1,2,3].map(i=>(
-              <div key={i} className="relative aspect-square overflow-hidden rounded-md" style={{ background: `linear-gradient(${135 + i*30}deg, oklch(0.7 0.18 ${20+i*20} / 0.5), oklch(0.55 0.24 305 / 0.2))` }}>
-                <div className="absolute bottom-1 left-1 text-[7px] text-white/80">$1.{i+2}M</div>
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="relative aspect-square overflow-hidden rounded-md"
+                style={{
+                  background: `linear-gradient(${135 + i * 30}deg, oklch(0.7 0.18 ${20 + i * 20} / 0.5), oklch(0.55 0.24 305 / 0.2))`,
+                }}
+              >
+                <div className="absolute bottom-1 left-1 text-[7px] text-white/80">$1.{i + 2}M</div>
               </div>
             ))}
             <div className="col-span-2 rounded-md border border-white/5 bg-white/[0.02] p-2">
               <div className="h-1.5 w-2/3 rounded bg-white/15" />
               <div className="mt-1 flex h-8 items-end gap-0.5">
-                {[40,60,30,80,55,70,90,50].map((h,i)=>(
-                  <div key={i} className="flex-1 rounded-sm" style={{ height:`${h}%`, background:"var(--gradient-brand)", opacity:0.6 }} />
+                {[40, 60, 30, 80, 55, 70, 90, 50].map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{ height: `${h}%`, background: "var(--gradient-brand)", opacity: 0.6 }}
+                  />
                 ))}
               </div>
             </div>
@@ -1174,7 +1396,13 @@ function EduMockup() {
     <div className="relative h-full w-full p-8">
       <Browser className="absolute left-6 top-6 w-[65%]">
         <div className="space-y-3">
-          <div className="relative h-20 overflow-hidden rounded-lg" style={{ background: "linear-gradient(135deg, oklch(0.65 0.27 5 / 0.5), oklch(0.55 0.24 305 / 0.3))" }}>
+          <div
+            className="relative h-20 overflow-hidden rounded-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.65 0.27 5 / 0.5), oklch(0.55 0.24 305 / 0.3))",
+            }}
+          >
             <div className="absolute inset-0 bg-hex opacity-30" />
             <div className="absolute bottom-2 left-3 text-white">
               <div className="text-[9px] uppercase tracking-widest opacity-70">Course</div>
@@ -1182,10 +1410,18 @@ function EduMockup() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {["Lesson","Practice","Review"].map((l,i)=>(
-              <div key={l} className="rounded-md border border-white/5 p-2" style={i===1 ? { background: "var(--gradient-brand)", opacity: 0.5 } : { background: "rgba(255,255,255,0.02)" }}>
+            {["Lesson", "Practice", "Review"].map((l, i) => (
+              <div
+                key={l}
+                className="rounded-md border border-white/5 p-2"
+                style={
+                  i === 1
+                    ? { background: "var(--gradient-brand)", opacity: 0.5 }
+                    : { background: "rgba(255,255,255,0.02)" }
+                }
+              >
                 <div className="text-[9px] text-white/80">{l}</div>
-                <div className="mt-1 font-display text-sm font-bold">{[12,4,8][i]}</div>
+                <div className="mt-1 font-display text-sm font-bold">{[12, 4, 8][i]}</div>
               </div>
             ))}
           </div>
@@ -1197,11 +1433,16 @@ function EduMockup() {
       <Phone className="absolute bottom-4 right-6 h-[78%] w-[28%]">
         <div className="space-y-2">
           <div className="h-2 w-2/3 rounded bg-white/20" />
-          <div className="h-16 rounded-lg" style={{ background: "var(--gradient-brand)", opacity: 0.6 }} />
+          <div
+            className="h-16 rounded-lg"
+            style={{ background: "var(--gradient-brand)", opacity: 0.6 }}
+          />
           <div className="h-1.5 w-full rounded bg-white/10" />
           <div className="h-1.5 w-3/4 rounded bg-white/10" />
           <div className="grid grid-cols-3 gap-1 pt-2">
-            {[0,1,2].map(i=>(<div key={i} className="aspect-square rounded bg-white/5" />))}
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="aspect-square rounded bg-white/5" />
+            ))}
           </div>
         </div>
       </Phone>
