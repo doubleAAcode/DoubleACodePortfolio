@@ -1,11 +1,6 @@
-import {
-  AnimatePresence,
-  motion,
-  useMotionValueEvent,
-  useScroll,
-  useTransform,
-  MotionValue,
-} from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { HexFrame } from "./Logo";
@@ -137,10 +132,6 @@ function clampProjectIndex(index: number, total: number) {
   return Math.min(total - 1, Math.max(0, index));
 }
 
-function getProjectIndexFromProgress(progress: number, total: number) {
-  return clampProjectIndex(Math.round(progress * (total - 1)), total);
-}
-
 function getProgressForProjectIndex(index: number, total: number) {
   return total <= 1 ? 0 : clampProjectIndex(index, total) / (total - 1);
 }
@@ -149,15 +140,9 @@ export function Projects() {
   const ref = useRef<HTMLDivElement>(null);
   const activeRef = useRef(0);
   const shouldAnchorAfterViewChange = useRef(false);
-  const isAnchoringAfterViewChange = useRef(false);
   const pendingAnimatedIndexRef = useRef(0);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end end"],
-  });
 
   const total = projects.length;
-  const animatedHeightVh = 300;
   const [mode, setMode] = useState<"animated" | "list">(() => {
     if (typeof window === "undefined") return "list";
     if (window.matchMedia("(max-width: 767px)").matches) return "list";
@@ -167,7 +152,6 @@ export function Projects() {
   });
   const modeRef = useRef(mode);
 
-  const activeMV = useTransform(scrollYProgress, (v) => getProjectIndexFromProgress(v, total));
   const [active, setActive] = useState(0);
   const setActiveProject = useCallback(
     (index: number) => {
@@ -182,11 +166,132 @@ export function Projects() {
     modeRef.current = mode;
   }, [mode]);
 
-  useMotionValueEvent(activeMV, "change", (v) => {
-    if (modeRef.current !== "animated" || isAnchoringAfterViewChange.current) return;
+  useEffect(() => {
+    if (mode !== "animated" || typeof window === "undefined") return;
 
-    setActiveProject(v as number);
-  });
+    const section = ref.current;
+    if (!section) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    let restoreFrame = 0;
+    let timeline: gsap.core.Timeline | undefined;
+    const ctx = gsap.context(() => {
+      const slides = gsap.utils.toArray<HTMLElement>(".work-slide");
+      const mockups = gsap.utils.toArray<HTMLElement>(".work-slide-mockup");
+      const contentBlocks = gsap.utils.toArray<HTMLElement>(".work-slide-copy");
+      const hexFrames = gsap.utils.toArray<HTMLElement>(".work-slide-hex");
+
+      gsap.set(slides, {
+        autoAlpha: 0,
+        pointerEvents: "none",
+        scale: 0.98,
+        y: 44,
+        zIndex: 1,
+      });
+      gsap.set(slides[0], {
+        autoAlpha: 1,
+        pointerEvents: "auto",
+        scale: 1,
+        y: 0,
+        zIndex: 2,
+      });
+      gsap.set(mockups, { rotate: 2, y: 18 });
+      gsap.set(mockups[0], { rotate: 0, y: 0 });
+      gsap.set(contentBlocks, { y: 18 });
+      gsap.set(contentBlocks[0], { y: 0 });
+      gsap.set(hexFrames, { rotate: 2 });
+      gsap.set(hexFrames[0], { rotate: 0 });
+
+      const hold = 0.42;
+      const transition = 0.58;
+
+      timeline = gsap.timeline({
+        defaults: { ease: "none" },
+        scrollTrigger: {
+          trigger: section,
+          pin: true,
+          start: "top top",
+          end: () => `+=${window.innerHeight * Math.max(1, total - 1) * 0.82}`,
+          scrub: 0.55,
+          snap: {
+            snapTo: "labelsDirectional",
+            duration: { min: 0.18, max: 0.42 },
+            delay: 0.03,
+            ease: "power2.out",
+          },
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: () => {
+            if (!timeline || modeRef.current !== "animated") return;
+
+            setActiveProject(clampProjectIndex(Math.round(timeline.time()), total));
+          },
+        },
+      });
+
+      timeline.addLabel("case-0", 0);
+
+      for (let index = 0; index < total - 1; index += 1) {
+        const nextIndex = index + 1;
+        const transitionStart = index + hold;
+
+        timeline
+          .set(slides[nextIndex], { zIndex: 3 }, transitionStart)
+          .set(slides[index], { zIndex: 2 }, transitionStart)
+          .to(
+            slides[index],
+            {
+              autoAlpha: 0,
+              duration: transition,
+              pointerEvents: "none",
+              scale: 0.975,
+              y: -36,
+            },
+            transitionStart,
+          )
+          .to(
+            slides[nextIndex],
+            {
+              autoAlpha: 1,
+              duration: transition,
+              pointerEvents: "auto",
+              scale: 1,
+              y: 0,
+            },
+            transitionStart,
+          )
+          .to(mockups[index], { duration: transition, rotate: -2, y: -12 }, transitionStart)
+          .to(mockups[nextIndex], { duration: transition, rotate: 0, y: 0 }, transitionStart)
+          .to(contentBlocks[index], { duration: transition, y: -16 }, transitionStart)
+          .to(contentBlocks[nextIndex], { duration: transition, y: 0 }, transitionStart)
+          .to(hexFrames[index], { duration: transition, rotate: -2 }, transitionStart)
+          .to(hexFrames[nextIndex], { duration: transition, rotate: 0 }, transitionStart)
+          .set(slides[index], { zIndex: 1 }, index + 1)
+          .addLabel(`case-${nextIndex}`, index + 1);
+      }
+
+      restoreFrame = window.requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+
+        if (!timeline?.scrollTrigger || !shouldAnchorAfterViewChange.current) return;
+
+        shouldAnchorAfterViewChange.current = false;
+        const progress = getProgressForProjectIndex(pendingAnimatedIndexRef.current, total);
+        const { start, end } = timeline.scrollTrigger;
+        window.scrollTo({ top: start + (end - start) * progress, behavior: "auto" });
+        timeline.progress(progress);
+        setActiveProject(pendingAnimatedIndexRef.current);
+        ScrollTrigger.update();
+      });
+    }, section);
+
+    return () => {
+      window.cancelAnimationFrame(restoreFrame);
+      ctx.revert();
+    };
+  }, [mode, setActiveProject, total]);
+
   const setView = (m: "animated" | "list") => {
     if (m === mode) return;
     const pendingIndex = clampProjectIndex(activeRef.current, total);
@@ -194,7 +299,6 @@ export function Projects() {
     shouldAnchorAfterViewChange.current = true;
     modeRef.current = m;
     if (m === "animated") {
-      isAnchoringAfterViewChange.current = true;
       setActiveProject(pendingIndex);
     }
     setMode(m);
@@ -206,7 +310,7 @@ export function Projects() {
   };
 
   useEffect(() => {
-    if (!shouldAnchorAfterViewChange.current) return;
+    if (mode !== "list" || !shouldAnchorAfterViewChange.current) return;
 
     shouldAnchorAfterViewChange.current = false;
     const frame = window.requestAnimationFrame(() => {
@@ -214,22 +318,11 @@ export function Projects() {
       if (!section) return;
 
       const top = section.getBoundingClientRect().top + window.scrollY;
-      if (mode === "animated") {
-        const maxScroll = Math.max(0, section.offsetHeight - window.innerHeight);
-        const progress = getProgressForProjectIndex(pendingAnimatedIndexRef.current, total);
-        window.scrollTo({ top: top + maxScroll * progress, behavior: "auto" });
-        window.requestAnimationFrame(() => {
-          setActiveProject(pendingAnimatedIndexRef.current);
-          isAnchoringAfterViewChange.current = false;
-        });
-        return;
-      }
-
       window.scrollTo({ top, behavior: "auto" });
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [mode, setActiveProject, total]);
+  }, [mode]);
 
   if (mode === "list") {
     return (
@@ -245,8 +338,8 @@ export function Projects() {
   }
 
   return (
-    <section id="work" ref={ref} className="relative" style={{ height: `${animatedHeightVh}vh` }}>
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+    <section id="work" ref={ref} className="relative z-20 h-screen overflow-hidden bg-background">
+      <div className="work-pin h-screen w-full overflow-hidden">
         {/* Section frame */}
         <div className="pointer-events-none absolute left-6 top-8 z-40 md:left-10">
           <SectionLabel>03 / Selected Work</SectionLabel>
@@ -262,7 +355,6 @@ export function Projects() {
             project={project}
             index={index}
             total={total}
-            progress={scrollYProgress}
             activeIndex={active}
           />
         ))}
@@ -636,57 +728,24 @@ function ProjectSlide({
   project,
   index,
   total,
-  progress,
   activeIndex,
 }: {
   project: Project;
   index: number;
   total: number;
-  progress: MotionValue<number>;
   activeIndex: number;
 }) {
   const active = index === activeIndex;
-  const isNearby = Math.abs(index - activeIndex) <= 1;
-  const step = total <= 1 ? 1 : 1 / (total - 1);
-  const center = step * index;
-  const leftBoundary = center - step / 2;
-  const rightBoundary = center + step / 2;
-  const crossfadeDistance = step * 0.18;
-  const input =
-    index === 0
-      ? [0, rightBoundary - crossfadeDistance, rightBoundary + crossfadeDistance]
-      : index === total - 1
-        ? [leftBoundary - crossfadeDistance, leftBoundary + crossfadeDistance, 1]
-        : [
-            leftBoundary - crossfadeDistance,
-            leftBoundary + crossfadeDistance,
-            rightBoundary - crossfadeDistance,
-            rightBoundary + crossfadeDistance,
-          ];
-  const opacityOutput = index === 0 ? [1, 1, 0] : index === total - 1 ? [0, 1, 1] : [0, 1, 1, 0];
-  const yOutput = index === 0 ? [0, 0, -34] : index === total - 1 ? [34, 0, 0] : [34, 0, 0, -34];
-  const scaleOutput =
-    index === 0 ? [1, 1, 0.97] : index === total - 1 ? [0.97, 1, 1] : [0.97, 1, 1, 0.97];
-  const mockupRotateOutput =
-    index === 0 ? [0, 0, -2] : index === total - 1 ? [2, 0, 0] : [2, 0, 0, -2];
-  const opacity = useTransform(progress, input, opacityOutput);
-  const y = useTransform(progress, input, yOutput);
-  const scale = useTransform(progress, input, scaleOutput);
-  const mockupRotate = useTransform(progress, input, mockupRotateOutput);
-
-  if (!isNearby) {
-    return null;
-  }
 
   return (
-    <motion.div
-      style={{ opacity, y, scale, zIndex: active ? 2 : 1 }}
-      className={`absolute inset-0 isolate flex will-change-transform items-center justify-center px-6 md:px-12 ${
-        active ? "pointer-events-auto" : "pointer-events-none"
+    <div
+      data-work-slide={index}
+      className={`work-slide absolute inset-0 isolate flex will-change-transform items-center justify-center px-6 md:px-12 ${
+        active ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
       {/* Per-project background wash */}
-      <motion.div
+      <div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           background: `radial-gradient(ellipse at 30% 40%, ${project.hue.from}, transparent 55%), radial-gradient(ellipse at 80% 70%, ${project.hue.via}, transparent 60%), radial-gradient(ellipse at 50% 100%, ${project.hue.to}, transparent 70%)`,
@@ -695,16 +754,13 @@ function ProjectSlide({
       <div className="pointer-events-none absolute inset-0 z-0 bg-hex opacity-30" />
 
       {/* Decorative hex */}
-      <motion.div
-        className="pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block"
-        style={{ rotate: mockupRotate }}
-      >
+      <div className="work-slide-hex pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block">
         <HexFrame strokeWidth={0.4} />
-      </motion.div>
+      </div>
 
       <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
         {/* Left: copy */}
-        <div className="lg:col-span-5">
+        <div className="work-slide-copy lg:col-span-5">
           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             <span className="text-gradient-brand">{project.id}</span>
             <span className="h-px w-8 bg-border" />
@@ -755,26 +811,20 @@ function ProjectSlide({
         </div>
 
         {/* Right: mockup */}
-        <motion.div className="relative lg:col-span-7" style={{ rotate: mockupRotate }}>
+        <div className="work-slide-mockup relative will-change-transform lg:col-span-7">
           <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
             <div className="absolute inset-0">
               <project.Mockup />
             </div>
-            <div
-              className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl opacity-55"
-              style={{
-                background: `radial-gradient(ellipse, ${project.hue.from}, transparent 65%)`,
-              }}
-            />
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Slide footer */}
       <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
-        {index < total - 1 ? "Scroll · Next case" : "End of selected work"}
+        {index < total - 1 ? "Scroll - Next case" : "End of selected work"}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -916,9 +966,7 @@ function DataInsightsMockup() {
 function TijaratiMockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(56,189,248,0.22),transparent_45%)]" />
-
-      <div className="absolute left-4 top-8 w-[34%] rotate-[-9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute left-4 top-8 w-[34%] rotate-[-9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-slate-800" />
         <div className="relative overflow-hidden rounded-[1.35rem] bg-white">
@@ -932,7 +980,7 @@ function TijaratiMockup() {
         </div>
       </div>
 
-      <div className="absolute left-1/2 top-4 z-10 w-[38%] -translate-x-1/2 rounded-[1.9rem] border border-white/20 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute left-1/2 top-4 z-10 w-[38%] -translate-x-1/2 rounded-[1.9rem] border border-white/20 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.9rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-3.5 w-14 -translate-x-1/2 rounded-full bg-slate-950" />
         <div className="relative overflow-hidden rounded-[1.45rem] bg-white">
@@ -946,7 +994,7 @@ function TijaratiMockup() {
         </div>
       </div>
 
-      <div className="absolute right-4 top-10 w-[34%] rotate-[9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute right-4 top-10 w-[34%] rotate-[9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-slate-800" />
         <div className="relative overflow-hidden rounded-[1.35rem] bg-white">
@@ -975,9 +1023,7 @@ function TijaratiMockup() {
 function Uno400Mockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_34%,rgba(16,185,129,0.22),transparent_44%),radial-gradient(circle_at_70%_72%,rgba(14,165,233,0.16),transparent_38%)]" />
-
-      <div className="absolute left-5 top-8 w-[34%] rotate-[-8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute left-5 top-8 w-[34%] rotate-[-8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-emerald-900" />
         <div className="relative overflow-hidden rounded-[1.35rem] bg-emerald-950">
@@ -991,7 +1037,7 @@ function Uno400Mockup() {
         </div>
       </div>
 
-      <div className="absolute left-1/2 top-4 z-10 w-[38%] -translate-x-1/2 rounded-[1.9rem] border border-emerald-200/25 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute left-1/2 top-4 z-10 w-[38%] -translate-x-1/2 rounded-[1.9rem] border border-emerald-200/25 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.9rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-3.5 w-14 -translate-x-1/2 rounded-full bg-slate-950" />
         <div className="relative overflow-hidden rounded-[1.45rem] bg-emerald-950">
@@ -1005,7 +1051,7 @@ function Uno400Mockup() {
         </div>
       </div>
 
-      <div className="absolute right-5 top-10 w-[34%] rotate-[8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-2xl">
+      <div className="absolute right-5 top-10 w-[34%] rotate-[8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-[0_28px_36px_-22px_rgba(0,0,0,0.72)]">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-emerald-900" />
         <div className="relative overflow-hidden rounded-[1.35rem] bg-emerald-950">
