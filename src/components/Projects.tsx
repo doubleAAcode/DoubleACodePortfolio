@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { HexFrame } from "./Logo";
 import { SectionLabel } from "./Journey";
@@ -16,7 +15,7 @@ type Project = {
   stack: string[];
   href?: string;
   hue: { from: string; via: string; to: string };
-  Mockup: React.ComponentType;
+  Mockup: ComponentType;
 };
 
 const projects: Project[] = [
@@ -132,17 +131,13 @@ function clampProjectIndex(index: number, total: number) {
   return Math.min(total - 1, Math.max(0, index));
 }
 
-function getProgressForProjectIndex(index: number, total: number) {
-  return total <= 1 ? 0 : clampProjectIndex(index, total) / (total - 1);
-}
-
 export function Projects() {
   const ref = useRef<HTMLDivElement>(null);
   const activeRef = useRef(0);
-  const shouldAnchorAfterViewChange = useRef(false);
-  const pendingAnimatedIndexRef = useRef(0);
+  const pendingScrollIndexRef = useRef<number | null>(null);
 
   const total = projects.length;
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [mode, setMode] = useState<"animated" | "list">(() => {
     if (typeof window === "undefined") return "list";
     if (window.matchMedia("(max-width: 767px)").matches) return "list";
@@ -150,12 +145,14 @@ export function Projects() {
     if (saved) return saved;
     return "animated";
   });
-  const modeRef = useRef(mode);
 
   const [active, setActive] = useState(0);
   const setActiveProject = useCallback(
     (index: number) => {
       const clamped = clampProjectIndex(index, total);
+      if (clamped !== activeRef.current) {
+        setDirection(clamped > activeRef.current ? 1 : -1);
+      }
       activeRef.current = clamped;
       setActive(clamped);
     },
@@ -163,144 +160,43 @@ export function Projects() {
   );
 
   useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
+    if (mode !== "animated" || typeof window === "undefined" || !ref.current) return;
 
-  useEffect(() => {
-    if (mode !== "animated" || typeof window === "undefined") return;
+    let frame = 0;
+    const updateFromScroll = () => {
+      frame = 0;
+      const section = ref.current;
+      if (!section) return;
 
-    const section = ref.current;
-    if (!section) return;
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const scrollRange = Math.max(1, section.offsetHeight - window.innerHeight);
+      const rawProgress = (window.scrollY - sectionTop) / scrollRange;
+      const progress = Math.min(1, Math.max(0, rawProgress));
+      const nextIndex = clampProjectIndex(Math.round(progress * (total - 1)), total);
+      setActiveProject(nextIndex);
+    };
 
-    gsap.registerPlugin(ScrollTrigger);
+    const scheduleUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateFromScroll);
+    };
 
-    let restoreFrame = 0;
-    let timeline: gsap.core.Timeline | undefined;
-    const ctx = gsap.context(() => {
-      const slides = gsap.utils.toArray<HTMLElement>(".work-slide");
-      const mockups = gsap.utils.toArray<HTMLElement>(".work-slide-mockup");
-      const contentBlocks = gsap.utils.toArray<HTMLElement>(".work-slide-copy");
-      const hexFrames = gsap.utils.toArray<HTMLElement>(".work-slide-hex");
-
-      gsap.set(slides, {
-        autoAlpha: 0,
-        pointerEvents: "none",
-        scale: 0.98,
-        y: 44,
-        zIndex: 1,
-      });
-      gsap.set(slides[0], {
-        autoAlpha: 1,
-        pointerEvents: "auto",
-        scale: 1,
-        y: 0,
-        zIndex: 2,
-      });
-      gsap.set(mockups, { rotate: 2, y: 18 });
-      gsap.set(mockups[0], { rotate: 0, y: 0 });
-      gsap.set(contentBlocks, { y: 18 });
-      gsap.set(contentBlocks[0], { y: 0 });
-      gsap.set(hexFrames, { rotate: 2 });
-      gsap.set(hexFrames[0], { rotate: 0 });
-
-      const hold = 0.42;
-      const transition = 0.58;
-
-      timeline = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: section,
-          pin: true,
-          start: "top top",
-          end: () => `+=${window.innerHeight * Math.max(1, total - 1) * 0.82}`,
-          scrub: 0.55,
-          snap: {
-            snapTo: "labelsDirectional",
-            duration: { min: 0.18, max: 0.42 },
-            delay: 0.03,
-            ease: "power2.out",
-          },
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          onUpdate: () => {
-            if (!timeline || modeRef.current !== "animated") return;
-
-            setActiveProject(clampProjectIndex(Math.round(timeline.time()), total));
-          },
-        },
-      });
-
-      timeline.addLabel("case-0", 0);
-
-      for (let index = 0; index < total - 1; index += 1) {
-        const nextIndex = index + 1;
-        const transitionStart = index + hold;
-
-        timeline
-          .set(slides[nextIndex], { zIndex: 3 }, transitionStart)
-          .set(slides[index], { zIndex: 2 }, transitionStart)
-          .to(
-            slides[index],
-            {
-              autoAlpha: 0,
-              duration: transition,
-              pointerEvents: "none",
-              scale: 0.975,
-              y: -36,
-            },
-            transitionStart,
-          )
-          .to(
-            slides[nextIndex],
-            {
-              autoAlpha: 1,
-              duration: transition,
-              pointerEvents: "auto",
-              scale: 1,
-              y: 0,
-            },
-            transitionStart,
-          )
-          .to(mockups[index], { duration: transition, rotate: -2, y: -12 }, transitionStart)
-          .to(mockups[nextIndex], { duration: transition, rotate: 0, y: 0 }, transitionStart)
-          .to(contentBlocks[index], { duration: transition, y: -16 }, transitionStart)
-          .to(contentBlocks[nextIndex], { duration: transition, y: 0 }, transitionStart)
-          .to(hexFrames[index], { duration: transition, rotate: -2 }, transitionStart)
-          .to(hexFrames[nextIndex], { duration: transition, rotate: 0 }, transitionStart)
-          .set(slides[index], { zIndex: 1 }, index + 1)
-          .addLabel(`case-${nextIndex}`, index + 1);
-      }
-
-      restoreFrame = window.requestAnimationFrame(() => {
-        ScrollTrigger.refresh();
-
-        if (!timeline?.scrollTrigger || !shouldAnchorAfterViewChange.current) return;
-
-        shouldAnchorAfterViewChange.current = false;
-        const progress = getProgressForProjectIndex(pendingAnimatedIndexRef.current, total);
-        const { start, end } = timeline.scrollTrigger;
-        window.scrollTo({ top: start + (end - start) * progress, behavior: "auto" });
-        timeline.progress(progress);
-        setActiveProject(pendingAnimatedIndexRef.current);
-        ScrollTrigger.update();
-      });
-    }, section);
+    updateFromScroll();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
 
     return () => {
-      window.cancelAnimationFrame(restoreFrame);
-      ctx.revert();
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
     };
   }, [mode, setActiveProject, total]);
 
   const setView = (m: "animated" | "list") => {
     if (m === mode) return;
     const pendingIndex = clampProjectIndex(activeRef.current, total);
-    pendingAnimatedIndexRef.current = pendingIndex;
-    shouldAnchorAfterViewChange.current = true;
-    modeRef.current = m;
-    if (m === "animated") {
-      setActiveProject(pendingIndex);
-    }
+    pendingScrollIndexRef.current = pendingIndex;
+    setActiveProject(pendingIndex);
     setMode(m);
     try {
       window.sessionStorage.setItem("aa-work-view", m);
@@ -310,15 +206,23 @@ export function Projects() {
   };
 
   useEffect(() => {
-    if (mode !== "list" || !shouldAnchorAfterViewChange.current) return;
+    if (pendingScrollIndexRef.current === null || typeof window === "undefined") return;
 
-    shouldAnchorAfterViewChange.current = false;
+    const pendingIndex = pendingScrollIndexRef.current;
+    pendingScrollIndexRef.current = null;
     const frame = window.requestAnimationFrame(() => {
-      const section = document.getElementById("work");
-      if (!section) return;
+      if (mode === "animated") {
+        const section = ref.current;
+        if (!section) return;
 
-      const top = section.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top, behavior: "auto" });
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+        const scrollRange = Math.max(1, section.offsetHeight - window.innerHeight);
+        const progress = total <= 1 ? 0 : pendingIndex / (total - 1);
+        window.scrollTo({ top: sectionTop + scrollRange * progress, behavior: "auto" });
+        return;
+      }
+
+      ref.current?.scrollIntoView({ block: "start", behavior: "auto" });
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -338,26 +242,31 @@ export function Projects() {
   }
 
   return (
-    <section id="work" ref={ref} className="relative z-20 h-screen overflow-hidden bg-background">
-      <div className="work-pin h-screen w-full overflow-hidden">
-        {/* Section frame */}
-        <div className="pointer-events-none absolute left-6 top-8 z-40 md:left-10">
+    <section
+      id="work"
+      ref={ref}
+      className="relative z-20 bg-background"
+      style={{ height: `${Math.max(total, 2) * 100}svh` }}
+    >
+      <div className="sticky top-0 h-screen overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-hex opacity-25" />
+        <div className="pointer-events-none absolute left-6 top-24 z-30 md:left-10">
           <SectionLabel>03 / Selected Work</SectionLabel>
         </div>
-        <div className="pointer-events-auto absolute right-6 top-8 z-[120] flex items-center gap-3 font-mono text-xs text-muted-foreground md:right-10">
+        <div className="pointer-events-auto absolute right-6 top-24 z-30 flex items-center gap-3 font-mono text-xs text-muted-foreground md:right-10">
           <ViewToggle mode={mode} onChange={setView} />
           <ProgressIndicator activeIndex={active} total={total} />
         </div>
 
-        {projects.map((project, index) => (
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
           <ProjectSlide
-            key={project.id}
-            project={project}
-            index={index}
+            key={projects[active].id}
+            project={projects[active]}
+            index={active}
             total={total}
-            activeIndex={active}
+            direction={direction}
           />
-        ))}
+        </AnimatePresence>
       </div>
     </section>
   );
@@ -728,21 +637,22 @@ function ProjectSlide({
   project,
   index,
   total,
-  activeIndex,
+  direction,
 }: {
   project: Project;
   index: number;
   total: number;
-  activeIndex: number;
+  direction: 1 | -1;
 }) {
-  const active = index === activeIndex;
-
   return (
-    <div
+    <motion.article
       data-work-slide={index}
-      className={`work-slide absolute inset-0 isolate flex will-change-transform items-center justify-center px-6 md:px-12 ${
-        active ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-      }`}
+      custom={direction}
+      initial={{ opacity: 0, y: direction * 34, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: direction * -28, scale: 0.985 }}
+      transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      className="work-slide absolute inset-0 isolate flex items-center overflow-hidden px-6 pb-12 pt-36 md:px-10 lg:pb-14 lg:pt-32"
     >
       {/* Per-project background wash */}
       <div
@@ -754,30 +664,36 @@ function ProjectSlide({
       <div className="pointer-events-none absolute inset-0 z-0 bg-hex opacity-30" />
 
       {/* Decorative hex */}
-      <div className="work-slide-hex pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block">
+      <div
+        className="work-slide-hex pointer-events-none absolute -right-36 top-1/2 z-0 hidden h-[640px] w-[640px] -translate-y-1/2 md:block"
+      >
         <HexFrame strokeWidth={0.4} />
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12 xl:gap-16">
         {/* Left: copy */}
-        <div className="work-slide-copy lg:col-span-5">
-          <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+        <div className="work-slide-copy max-w-xl lg:col-span-5">
+          <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             <span className="text-gradient-brand">{project.id}</span>
             <span className="h-px w-8 bg-border" />
             <span>{project.category}</span>
           </div>
-          <h3 className="mt-5 font-display text-5xl font-bold leading-[1.02] md:text-7xl">
+          <h3 className="mt-5 font-display text-4xl font-bold leading-[1.04] sm:text-5xl xl:text-6xl">
             {project.name}
           </h3>
-          <p className="mt-4 font-display text-xl text-gradient-brand">{project.tagline}</p>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
+          <p className="mt-4 font-display text-lg leading-snug text-gradient-brand md:text-xl">
+            {project.tagline}
+          </p>
+          <p className="mt-5 max-w-lg text-sm leading-relaxed text-muted-foreground md:text-base">
             {project.description}
           </p>
 
-          <div className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/80">
+          <div className="mt-7 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border/80 sm:grid-cols-3">
             {project.metrics.map((m) => (
-              <div key={m.label} className="bg-background/80 p-4 backdrop-blur">
-                <div className="font-display text-2xl font-bold text-gradient-brand">{m.value}</div>
+              <div key={m.label} className="bg-background/80 p-3 backdrop-blur md:p-4">
+                <div className="font-display text-xl font-bold leading-tight text-gradient-brand">
+                  {m.value}
+                </div>
                 <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
                   {m.label}
                 </div>
@@ -785,11 +701,11 @@ function ProjectSlide({
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-5 flex max-h-[2.1rem] max-w-lg flex-wrap gap-1.5 overflow-hidden">
             {project.stack.map((s) => (
               <span
                 key={s}
-                className="rounded-full border border-border bg-surface/60 px-3 py-1 text-[11px] font-mono text-muted-foreground backdrop-blur"
+                className="rounded-full border border-border bg-surface/60 px-2.5 py-1 text-[10px] font-mono text-muted-foreground backdrop-blur"
               >
                 {s}
               </span>
@@ -811,8 +727,8 @@ function ProjectSlide({
         </div>
 
         {/* Right: mockup */}
-        <div className="work-slide-mockup relative will-change-transform lg:col-span-7">
-          <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
+        <div className="work-slide-mockup relative lg:col-span-7">
+          <div className="relative mx-auto aspect-[5/4] w-full max-w-[42rem] lg:max-w-[46rem]">
             <div className="absolute inset-0">
               <project.Mockup />
             </div>
@@ -824,13 +740,13 @@ function ProjectSlide({
       <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
         {index < total - 1 ? "Scroll - Next case" : "End of selected work"}
       </div>
-    </div>
+    </motion.article>
   );
 }
 
 /* ---------- Mockups ---------- */
 
-function Browser({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Browser({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={`w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a10] shadow-2xl ${className}`}
@@ -845,7 +761,7 @@ function Browser({ children, className = "" }: { children: React.ReactNode; clas
     </div>
   );
 }
-function Phone({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Phone({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={`rounded-[2rem] border border-white/10 bg-[#0a0a10] p-3 shadow-2xl ${className}`}
@@ -859,7 +775,7 @@ function FloatPill({
   children,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
