@@ -2,7 +2,7 @@
   "rows": [
     {
       "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
-      "client": "",
+      "client": "ali ma",
       "project": "",
       "status": "Lead",
       "finder": "None",
@@ -23,5 +23,5 @@
       "notes": ""
     }
   ],
-  "updatedAt": "2026-06-25T00:08:01.950Z"
+  "updatedAt": "2026-06-25T00:10:43.018Z"
 }
