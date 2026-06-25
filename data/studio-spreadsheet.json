@@ -114,7 +114,16 @@
         "notes": ""
       }
     ],
-    "payouts": []
+    "payouts": [
+      {
+        "id": "de5baebf-6741-40f6-89b1-6b5931800043",
+        "date": "2026-06-25",
+        "paidTo": "Hussein",
+        "amount": 0,
+        "payoutType": "Mixed",
+        "notes": ""
+      }
+    ]
   },
-  "updatedAt": "2026-06-25T00:51:27.388Z"
+  "updatedAt": "2026-06-25T00:56:34.739Z"
 }
