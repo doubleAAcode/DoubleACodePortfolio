@@ -18,10 +18,21 @@
       "status": "Lead",
       "finder": "None",
       "amountPaid": 500,
+      "expenses": 50,
+      "expensesPaidBy": "Studio",
+      "notes": ""
+    },
+    {
+      "id": "62f6eb65-dbb6-4e9b-8dc0-00188aa56252",
+      "client": "mhamad koubar",
+      "project": "koubar group",
+      "status": "Lead",
+      "finder": "None",
+      "amountPaid": 0,
       "expenses": 0,
       "expensesPaidBy": "Studio",
       "notes": ""
     }
   ],
-  "updatedAt": "2026-06-25T00:12:09.268Z"
+  "updatedAt": "2026-06-25T00:13:10.767Z"
 }
