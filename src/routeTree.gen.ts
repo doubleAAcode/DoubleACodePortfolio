@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
+import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
@@ -37,6 +38,11 @@ import { Route as StoresPavoneAdminCategoriesRouteImport } from './routes/stores
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpreadsheetRoute = SpreadsheetRouteImport.update({
+  id: '/spreadsheet',
+  path: '/spreadsheet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -163,6 +169,7 @@ const StoresPavoneAdminCategoriesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/spreadsheet': typeof SpreadsheetRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/spreadsheet'
     | '/stores'
     | '/menus/marleys'
     | '/stores/pavone'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/spreadsheet'
     | '/menus/marleys'
     | '/work/data-insights'
     | '/work/detailing-lab'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/spreadsheet'
     | '/stores'
     | '/menus/marleys'
     | '/stores/pavone'
@@ -317,6 +329,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
   MenusMarleysRoute: typeof MenusMarleysRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/stores'
       fullPath: '/stores'
       preLoaderRoute: typeof StoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spreadsheet': {
+      id: '/spreadsheet'
+      path: '/spreadsheet'
+      fullPath: '/spreadsheet'
+      preLoaderRoute: typeof SpreadsheetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -560,6 +580,7 @@ const StoresRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
   MenusMarleysRoute: MenusMarleysRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
