@@ -82,9 +82,18 @@
         "paidBy": "Studio",
         "amount": 50,
         "notes": ""
+      },
+      {
+        "id": "7ea4caea-f915-4443-adce-4a24b20ccdcb",
+        "date": "2026-06-25",
+        "projectId": "P001",
+        "expenseType": "",
+        "paidBy": "Studio",
+        "amount": 0,
+        "notes": ""
       }
     ],
     "payouts": []
   },
-  "updatedAt": "2026-06-25T00:32:00.572Z"
+  "updatedAt": "2026-06-25T00:50:27.988Z"
 }
