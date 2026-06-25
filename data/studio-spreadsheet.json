@@ -110,7 +110,7 @@
         "projectId": "P004",
         "expenseType": "email",
         "paidBy": "Studio",
-        "amount": 0,
+        "amount": 10,
         "notes": ""
       }
     ],
@@ -133,5 +133,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-25T00:57:39.856Z"
+  "updatedAt": "2026-06-25T01:03:50.863Z"
 }
