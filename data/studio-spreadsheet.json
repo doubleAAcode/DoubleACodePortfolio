@@ -2,8 +2,8 @@
   "rows": [
     {
       "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
-      "client": "ali ma",
-      "project": "",
+      "client": "ali mahmoud",
+      "project": "tijarati pro ",
       "status": "Lead",
       "finder": "None",
       "amountPaid": 0,
@@ -23,5 +23,5 @@
       "notes": ""
     }
   ],
-  "updatedAt": "2026-06-25T00:10:43.018Z"
+  "updatedAt": "2026-06-25T00:11:11.271Z"
 }
