@@ -62,7 +62,7 @@
         "date": "2026-06-25",
         "projectId": "P001",
         "amount": 250,
-        "collectedBy": "",
+        "collectedBy": "Hussein",
         "paymentMethod": "",
         "notes": ""
       },
@@ -119,11 +119,19 @@
         "id": "de5baebf-6741-40f6-89b1-6b5931800043",
         "date": "2026-06-25",
         "paidTo": "Hussein",
-        "amount": 0,
+        "amount": 70,
+        "payoutType": "Mixed",
+        "notes": ""
+      },
+      {
+        "id": "c473afa4-e532-4d4d-bd3a-3b76ce5872d5",
+        "date": "2026-06-25",
+        "paidTo": "Saeed",
+        "amount": 70,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-06-25T00:56:34.739Z"
+  "updatedAt": "2026-06-25T00:57:39.856Z"
 }
