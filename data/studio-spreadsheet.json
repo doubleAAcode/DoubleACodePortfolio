@@ -1,0 +1,16 @@
+{
+  "rows": [
+    {
+      "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
+      "client": "",
+      "project": "",
+      "status": "Lead",
+      "finder": "None",
+      "amountPaid": 0,
+      "expenses": 0,
+      "expensesPaidBy": "Studio",
+      "notes": ""
+    }
+  ],
+  "updatedAt": "2026-06-25T00:07:55.598Z"
+}
