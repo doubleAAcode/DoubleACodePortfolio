@@ -1,41 +1,90 @@
 {
-  "rows": [
-    {
-      "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
-      "client": "ali mahmoud",
-      "project": "tijarati pro ",
-      "status": "Closed",
-      "finder": "None",
-      "projectPrice": 250,
-      "amountPaid": 250,
-      "expenses": 50,
-      "expensesPaidBy": "Studio",
-      "notes": ""
+  "data": {
+    "version": 2,
+    "settings": {
+      "finderFeeRate": 0.15,
+      "husseinDefaultWorkPercent": 0.5,
+      "saeedDefaultWorkPercent": 0.5
     },
-    {
-      "id": "a2324045-4e96-4add-b5f0-0b629d5f301f",
-      "client": "ali mahmoud",
-      "project": "am group",
-      "status": "Lead",
-      "finder": "None",
-      "projectPrice": 500,
-      "amountPaid": 50,
-      "expenses": 50,
-      "expensesPaidBy": "Studio",
-      "notes": ""
-    },
-    {
-      "id": "62f6eb65-dbb6-4e9b-8dc0-00188aa56252",
-      "client": "mhamad koubar",
-      "project": "koubar group",
-      "status": "Lead",
-      "finder": "Partner",
-      "projectPrice": 285,
-      "amountPaid": 0,
-      "expenses": 0,
-      "expensesPaidBy": "Studio",
-      "notes": ""
-    }
-  ],
-  "updatedAt": "2026-06-25T00:19:37.541Z"
+    "projects": [
+      {
+        "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
+        "projectId": "P001",
+        "name": "tijarati pro ",
+        "client": "ali mahmoud",
+        "totalPrice": 250,
+        "status": "Completed",
+        "finder": "Nobody",
+        "husseinWorkPercent": 0.5,
+        "saeedWorkPercent": 0.5,
+        "notes": ""
+      },
+      {
+        "id": "a2324045-4e96-4add-b5f0-0b629d5f301f",
+        "projectId": "P002",
+        "name": "am group",
+        "client": "ali mahmoud",
+        "totalPrice": 500,
+        "status": "In Progress",
+        "finder": "Nobody",
+        "husseinWorkPercent": 0.5,
+        "saeedWorkPercent": 0.5,
+        "notes": ""
+      },
+      {
+        "id": "62f6eb65-dbb6-4e9b-8dc0-00188aa56252",
+        "projectId": "P003",
+        "name": "koubar group",
+        "client": "mhamad koubar",
+        "totalPrice": 285,
+        "status": "Lead",
+        "finder": "Saeed",
+        "husseinWorkPercent": 0.5,
+        "saeedWorkPercent": 0.5,
+        "notes": ""
+      }
+    ],
+    "clientPayments": [
+      {
+        "id": "a7ddd28b-7941-4752-8ee4-bd193dbb307f",
+        "date": "2026-06-25",
+        "projectId": "P001",
+        "amount": 250,
+        "collectedBy": "",
+        "paymentMethod": "",
+        "notes": ""
+      },
+      {
+        "id": "6a8f4f71-f269-4cfa-9e2b-35668f468c21",
+        "date": "2026-06-25",
+        "projectId": "P002",
+        "amount": 50,
+        "collectedBy": "",
+        "paymentMethod": "",
+        "notes": ""
+      }
+    ],
+    "expenses": [
+      {
+        "id": "86910fac-70f2-44c0-b903-9bd70bf38dc3",
+        "date": "2026-06-25",
+        "projectId": "P001",
+        "expenseType": "General",
+        "paidBy": "Studio",
+        "amount": 50,
+        "notes": ""
+      },
+      {
+        "id": "982c1bbe-fe8e-4a7d-a85c-1ae4bc467555",
+        "date": "2026-06-25",
+        "projectId": "P002",
+        "expenseType": "General",
+        "paidBy": "Studio",
+        "amount": 50,
+        "notes": ""
+      }
+    ],
+    "payouts": []
+  },
+  "updatedAt": "2026-06-25T00:32:00.572Z"
 }
