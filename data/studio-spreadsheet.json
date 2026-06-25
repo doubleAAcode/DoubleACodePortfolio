@@ -1,39 +1,17 @@
 {
   "rows": [
     {
-      "id": "c1a13be6-a51f-41fa-9552-d516bc6b0e60",
-      "client": "ali mahmoud",
-      "project": "tijarati pro ",
-      "status": "Closed",
-      "finder": "None",
-      "amountPaid": 250,
-      "expenses": 50,
-      "expensesPaidBy": "Studio",
-      "notes": "",
-      "projectPrice": 250
-    },
-    {
-      "id": "a2324045-4e96-4add-b5f0-0b629d5f301f",
-      "client": "ali mahmoud",
-      "project": "am group",
+      "id": "0ce3c9c1-5dac-4b7d-9d32-8580915ec160",
+      "client": "",
+      "project": "",
       "status": "Lead",
       "finder": "None",
-      "amountPaid": 500,
-      "expenses": 50,
-      "expensesPaidBy": "Studio",
-      "notes": ""
-    },
-    {
-      "id": "62f6eb65-dbb6-4e9b-8dc0-00188aa56252",
-      "client": "mhamad koubar",
-      "project": "koubar group",
-      "status": "Lead",
-      "finder": "None",
+      "projectPrice": 0,
       "amountPaid": 0,
       "expenses": 0,
       "expensesPaidBy": "Studio",
       "notes": ""
     }
   ],
-  "updatedAt": "2026-06-25T00:17:10.369Z"
+  "updatedAt": "2026-06-25T00:18:28.789Z"
 }
