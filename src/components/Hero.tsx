@@ -156,6 +156,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
 
     let isPointerInsideHero = false;
     let lastPointerEvent: PointerEvent | null = null;
+    const defaultGaze = { xRatio: 0.24, yRatio: 0.26 };
 
     const getTarget = () => {
       const viewer = viewerRef.current;
@@ -189,6 +190,37 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
         clientY: viewerBox.top + viewerBox.height * yRatio,
         isInside,
       };
+    };
+
+    const createPointerAtHeroRatio = (xRatio: number, yRatio: number) => {
+      const heroBox = hero.getBoundingClientRect();
+      const clientX = heroBox.left + heroBox.width * xRatio;
+      const clientY = heroBox.top + heroBox.height * yRatio;
+
+      return new PointerEvent("pointermove", {
+        bubbles: true,
+        cancelable: true,
+        pointerId: 1,
+        pointerType: "mouse",
+        isPrimary: true,
+        clientX,
+        clientY,
+        screenX: clientX,
+        screenY: clientY,
+      });
+    };
+
+    const resetToDefaultGaze = () => {
+      const event = createPointerAtHeroRatio(defaultGaze.xRatio, defaultGaze.yRatio);
+
+      if (!isPointerInsideHero) {
+        dispatchPointer(event, "pointerover");
+        dispatchPointer(event, "pointerenter");
+        isPointerInsideHero = true;
+      }
+
+      dispatchPointer(event, "pointermove");
+      lastPointerEvent = event;
     };
 
     const dispatchPointer = (event: PointerEvent, type = event.type) => {
@@ -238,6 +270,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
           dispatchPointer(event, "pointerleave");
           isPointerInsideHero = false;
         }
+        resetToDefaultGaze();
         return;
       }
 
@@ -254,14 +287,24 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
 
     const refreshPointerAfterLayoutChange = () => {
       if (lastPointerEvent) forwardPointer(lastPointerEvent);
+      else resetToDefaultGaze();
     };
 
+    const initialGazeFrame = window.requestAnimationFrame(resetToDefaultGaze);
+    const initialGazeTimeout = window.setTimeout(resetToDefaultGaze, 900);
+
     window.addEventListener("pointermove", forwardPointer);
+    window.addEventListener("pointerleave", resetToDefaultGaze);
+    window.addEventListener("blur", resetToDefaultGaze);
     window.addEventListener("scroll", refreshPointerAfterLayoutChange, { passive: true });
     window.addEventListener("resize", refreshPointerAfterLayoutChange);
 
     return () => {
+      window.cancelAnimationFrame(initialGazeFrame);
+      window.clearTimeout(initialGazeTimeout);
       window.removeEventListener("pointermove", forwardPointer);
+      window.removeEventListener("pointerleave", resetToDefaultGaze);
+      window.removeEventListener("blur", resetToDefaultGaze);
       window.removeEventListener("scroll", refreshPointerAfterLayoutChange);
       window.removeEventListener("resize", refreshPointerAfterLayoutChange);
     };
@@ -275,7 +318,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
       initial={{ opacity: 0, scale: 0.92, x: 40 }}
       animate={{ opacity: 0.74, scale: 1, x: 0 }}
       transition={{ delay: 1.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-auto absolute bottom-[-7vh] right-[-5vw] z-[2] hidden h-[78vh] w-[50vw] min-w-[560px] max-w-[760px] overflow-hidden opacity-75 lg:block"
+      className="pointer-events-none absolute bottom-[-7vh] right-[-5vw] z-[2] hidden h-[78vh] w-[50vw] min-w-[560px] max-w-[760px] overflow-hidden opacity-75 lg:block"
       style={{
         WebkitMaskImage:
           "radial-gradient(ellipse at 58% 50%, black 44%, rgba(0,0,0,0.82) 60%, transparent 78%)",

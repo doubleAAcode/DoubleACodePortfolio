@@ -169,7 +169,7 @@ export function Projects() {
   });
 
   const total = projects.length;
-  const animatedHeightVh = Math.max(520, 100 + total * 92);
+  const animatedHeightVh = Math.max(360, 100 + total * 56);
   const [mode, setMode] = useState<"animated" | "list">(() => {
     if (typeof window === "undefined") return "list";
     if (window.matchMedia("(max-width: 767px)").matches) return "list";
@@ -392,12 +392,6 @@ function ProjectsCardCarousel({
               {/* Visual */}
               <div className="relative lg:col-span-7">
                 <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-border md:aspect-[5/4] lg:aspect-auto lg:h-full lg:border-b-0 lg:border-r">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 50%, ${project.hue.from}, transparent 70%)`,
-                    }}
-                  />
                   <div className="absolute inset-0">
                     <project.Mockup />
                   </div>
@@ -543,12 +537,6 @@ function ProjectsMobileList() {
 
               <div className="relative">
                 <div className="relative h-[22rem] overflow-hidden border-b border-border sm:h-[26rem]">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 34%, ${project.hue.from}, transparent 66%)`,
-                    }}
-                  />
                   <MobileProjectMockup project={project} priority={index < 2} />
                 </div>
 
@@ -869,12 +857,6 @@ function ProjectSlide({
             <div className="absolute inset-0">
               <project.Mockup />
             </div>
-            <div
-              className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl opacity-55"
-              style={{
-                background: `radial-gradient(ellipse, ${project.hue.from}, transparent 65%)`,
-              }}
-            />
           </div>
         </motion.div>
       </div>
@@ -1028,8 +1010,6 @@ function DataInsightsMockup() {
 function TijaratiMockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(56,189,248,0.22),transparent_45%)]" />
-
       <div className="absolute left-4 top-8 w-[34%] rotate-[-9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-2xl">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-slate-800" />
@@ -1087,8 +1067,6 @@ function TijaratiMockup() {
 function Uno400Mockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_34%,rgba(16,185,129,0.22),transparent_44%),radial-gradient(circle_at_70%_72%,rgba(14,165,233,0.16),transparent_38%)]" />
-
       <div className="absolute left-5 top-8 w-[34%] rotate-[-8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-2xl">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-emerald-900" />
@@ -1146,7 +1124,6 @@ function Uno400Mockup() {
 function DetailingLabMockup() {
   return (
     <div className="relative h-full w-full p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_32%,rgba(132,204,22,0.22),transparent_44%)]" />
       <div className="absolute left-4 top-9 w-[82%] overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
         <div className="flex items-center gap-1.5 border-b border-white/10 bg-zinc-900 px-3 py-2">
           <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />

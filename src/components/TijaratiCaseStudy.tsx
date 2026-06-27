@@ -254,14 +254,6 @@ export function TijaratiCaseStudy() {
           </motion.div>
 
           <div className="relative lg:col-span-6">
-            <motion.div
-              aria-hidden
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200/40 blur-3xl"
-            />
             <div className="relative mx-auto flex max-w-[300px] items-center justify-center sm:grid sm:max-w-none sm:grid-cols-3 sm:gap-3">
               <PhoneFrame src={images.reports} alt="Tijarati Pro reports screen" variant="android" className="hidden translate-y-8 rotate-[-8deg] sm:block" delay={0.1} />
               <PhoneFrame src={images.home} alt="Tijarati Pro home dashboard" variant="iphone" className="z-10 sm:scale-110" delay={0.2} />
