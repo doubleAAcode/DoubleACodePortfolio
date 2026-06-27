@@ -17,7 +17,7 @@ export function Metrics() {
           Small studio. <span className="text-gradient-accent">Compounding output.</span>
         </h2>
 
-        <div className="mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
+        <div className="mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
           {metrics.map((m, i) => (
             <Counter key={i} {...m} />
           ))}
