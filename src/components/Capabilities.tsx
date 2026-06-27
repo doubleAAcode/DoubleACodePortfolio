@@ -59,6 +59,7 @@ export function Capabilities() {
               <button
                 key={g.key}
                 onMouseEnter={() => setActive(g.key)}
+                onClick={() => setActive((current) => (current === g.key ? null : g.key))}
                 onFocus={() => setActive(g.key)}
                 className={`group relative overflow-hidden bg-background p-8 text-left transition-colors ${isActive ? "bg-surface" : ""}`}
               >
