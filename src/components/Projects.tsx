@@ -132,6 +132,27 @@ const projects: Project[] = [
     },
     Mockup: DetailingLabMockup,
   },
+  {
+    id: "06",
+    name: "Koubar Group",
+    category: "Interior Portfolio Website",
+    tagline: "A luxury digital showroom for home interiors.",
+    description:
+      "A premium website for an interiors and custom furniture company, with service presentation, immersive project galleries, WhatsApp quote paths, and an admin panel for portfolio content.",
+    metrics: [
+      { label: "Interior showcase", value: "Website" },
+      { label: "Project browsing", value: "Gallery" },
+      { label: "Content control", value: "Admin" },
+    ],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Admin Panel", "Vercel"],
+    href: "/work/koubar-group",
+    hue: {
+      from: "oklch(0.72 0.16 72 / 0.42)",
+      via: "oklch(0.52 0.1 55 / 0.28)",
+      to: "oklch(0.82 0.12 82 / 0.16)",
+    },
+    Mockup: KoubarGroupMockup,
+  },
 ];
 
 function clampProjectIndex(index: number, total: number) {
@@ -1174,6 +1195,61 @@ function DetailingLabMockup() {
       <FloatPill className="left-2 bottom-8">
         <div className="text-muted-foreground">Lead flow</div>
         <div className="font-display text-sm font-semibold">Package inquiry</div>
+      </FloatPill>
+    </div>
+  );
+}
+
+function KoubarGroupMockup() {
+  return (
+    <div className="relative h-full w-full p-5 md:p-8">
+      <div className="absolute left-3 top-7 w-[78%] overflow-hidden rounded-2xl border border-amber-200/15 bg-[#0b0806] shadow-2xl md:left-4">
+        <div className="flex items-center gap-1.5 border-b border-amber-200/10 bg-[#120d09] px-3 py-2">
+          <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+          <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+          <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+          <span className="ml-auto rounded bg-black/40 px-2 py-0.5 text-[7px] text-amber-100/45 ring-1 ring-amber-200/10">
+            koubargroup.com
+          </span>
+        </div>
+        <img
+          src="/images/case-studies/koubar-group/hero.png"
+          alt="Koubar Group website hero"
+          className="block aspect-[16/9] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div className="absolute bottom-12 right-4 w-[45%] overflow-hidden rounded-xl border border-amber-200/15 bg-[#0b0806] shadow-2xl">
+        <img
+          src="/images/case-studies/koubar-group/admin.png"
+          alt="Koubar Group admin panel"
+          className="block aspect-[4/3] w-full object-cover object-left-top"
+          loading="lazy"
+          decoding="async"
+        />
+        <div className="border-t border-amber-200/10 bg-[#120d09] p-3">
+          <div className="font-mono text-[8px] uppercase tracking-[0.22em] text-amber-300">
+            Admin
+          </div>
+          <div className="mt-1 text-xs font-semibold text-amber-50">Portfolio control</div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-14 w-[38%] overflow-hidden rounded-xl border border-amber-200/15 bg-[#0b0806] shadow-2xl">
+        <img
+          src="/images/case-studies/koubar-group/services.png"
+          alt="Koubar Group services grid"
+          className="block aspect-[16/10] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <FloatPill className="left-2 bottom-8">
+        <div className="text-muted-foreground">Showroom</div>
+        <div className="font-display text-sm font-semibold">Interiors + admin</div>
       </FloatPill>
     </div>
   );
