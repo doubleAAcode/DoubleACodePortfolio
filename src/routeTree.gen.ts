@@ -16,6 +16,7 @@ import { Route as StoresIndexRouteImport } from './routes/stores.index'
 import { Route as WorkUno400RouteImport } from './routes/work/uno400'
 import { Route as WorkTijaratiProRouteImport } from './routes/work/tijarati-pro'
 import { Route as WorkSnapgoRouteImport } from './routes/work/snapgo'
+import { Route as WorkKoubarGroupRouteImport } from './routes/work/koubar-group'
 import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-lab'
 import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
@@ -67,6 +68,11 @@ const WorkTijaratiProRoute = WorkTijaratiProRouteImport.update({
 const WorkSnapgoRoute = WorkSnapgoRouteImport.update({
   id: '/work/snapgo',
   path: '/work/snapgo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkKoubarGroupRoute = WorkKoubarGroupRouteImport.update({
+  id: '/work/koubar-group',
+  path: '/work/koubar-group',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkDetailingLabRoute = WorkDetailingLabRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
+  '/work/koubar-group': typeof WorkKoubarGroupRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/menus/marleys': typeof MenusMarleysRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
+  '/work/koubar-group': typeof WorkKoubarGroupRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
+  '/work/koubar-group': typeof WorkKoubarGroupRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/stores/pavone'
     | '/work/data-insights'
     | '/work/detailing-lab'
+    | '/work/koubar-group'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/menus/marleys'
     | '/work/data-insights'
     | '/work/detailing-lab'
+    | '/work/koubar-group'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/stores/pavone'
     | '/work/data-insights'
     | '/work/detailing-lab'
+    | '/work/koubar-group'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   MenusMarleysRoute: typeof MenusMarleysRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
   WorkDetailingLabRoute: typeof WorkDetailingLabRoute
+  WorkKoubarGroupRoute: typeof WorkKoubarGroupRoute
   WorkSnapgoRoute: typeof WorkSnapgoRoute
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/work/snapgo'
       fullPath: '/work/snapgo'
       preLoaderRoute: typeof WorkSnapgoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/koubar-group': {
+      id: '/work/koubar-group'
+      path: '/work/koubar-group'
+      fullPath: '/work/koubar-group'
+      preLoaderRoute: typeof WorkKoubarGroupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/work/detailing-lab': {
@@ -564,6 +584,7 @@ const rootRouteChildren: RootRouteChildren = {
   MenusMarleysRoute: MenusMarleysRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
   WorkDetailingLabRoute: WorkDetailingLabRoute,
+  WorkKoubarGroupRoute: WorkKoubarGroupRoute,
   WorkSnapgoRoute: WorkSnapgoRoute,
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
