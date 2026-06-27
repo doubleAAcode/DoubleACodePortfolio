@@ -3,10 +3,9 @@ import { useEffect, useRef } from "react";
 import { SectionLabel } from "./Journey";
 
 const metrics = [
-  { value: 10, suffix: "+", label: "Projects Delivered" },
+  { value: 25, suffix: "+", label: "Projects Delivered" },
   { value: 7, suffix: "+", label: "Years Combined Experience" },
-  { value: 100, suffix: "%", label: "Custom Solutions" },
-  { value: 2, suffix: "", label: "Founders" },
+  { value: 100, suffix: "%", label: "Custom Solutions" }, 
 ];
 
 export function Metrics() {
