@@ -2,7 +2,9 @@ import {
   AnimatePresence,
   motion,
   useMotionValueEvent,
+  useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
   MotionValue,
 } from "framer-motion";
@@ -138,15 +140,19 @@ function clampProjectIndex(index: number, total: number) {
 }
 
 function getProjectIndexFromProgress(progress: number, total: number) {
-  return clampProjectIndex(Math.round(progress * (total - 1)), total);
+  if (total <= 1) return 0;
+  const scaled = Math.min(total - 0.001, Math.max(0, progress * total));
+  return clampProjectIndex(Math.floor(scaled), total);
 }
 
 function getProgressForProjectIndex(index: number, total: number) {
-  return total <= 1 ? 0 : clampProjectIndex(index, total) / (total - 1);
+  if (total <= 1) return 0;
+  return Math.min(1, (clampProjectIndex(index, total) + 0.5) / total);
 }
 
 export function Projects() {
   const ref = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
   const activeRef = useRef(0);
   const shouldAnchorAfterViewChange = useRef(false);
   const isAnchoringAfterViewChange = useRef(false);
@@ -155,9 +161,15 @@ export function Projects() {
     target: ref,
     offset: ["start start", "end end"],
   });
+  const visualProgress = useSpring(scrollYProgress, {
+    stiffness: 260,
+    damping: 38,
+    mass: 0.18,
+    restDelta: 0.0004,
+  });
 
   const total = projects.length;
-  const animatedHeightVh = 300;
+  const animatedHeightVh = Math.max(360, 100 + total * 56);
   const [mode, setMode] = useState<"animated" | "list">(() => {
     if (typeof window === "undefined") return "list";
     if (window.matchMedia("(max-width: 767px)").matches) return "list";
@@ -173,10 +185,17 @@ export function Projects() {
     (index: number) => {
       const clamped = clampProjectIndex(index, total);
       activeRef.current = clamped;
-      setActive(clamped);
+      setActive((current) => (current === clamped ? current : clamped));
     },
     [total],
   );
+
+  useEffect(() => {
+    if (prefersReducedMotion && modeRef.current === "animated") {
+      modeRef.current = "list";
+      setMode("list");
+    }
+  }, [prefersReducedMotion]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -262,7 +281,7 @@ export function Projects() {
             project={project}
             index={index}
             total={total}
-            progress={scrollYProgress}
+            progress={visualProgress}
             activeIndex={active}
           />
         ))}
@@ -373,12 +392,6 @@ function ProjectsCardCarousel({
               {/* Visual */}
               <div className="relative lg:col-span-7">
                 <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-border md:aspect-[5/4] lg:aspect-auto lg:h-full lg:border-b-0 lg:border-r">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 50%, ${project.hue.from}, transparent 70%)`,
-                    }}
-                  />
                   <div className="absolute inset-0">
                     <project.Mockup />
                   </div>
@@ -524,12 +537,6 @@ function ProjectsMobileList() {
 
               <div className="relative">
                 <div className="relative h-[22rem] overflow-hidden border-b border-border sm:h-[26rem]">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 34%, ${project.hue.from}, transparent 66%)`,
-                    }}
-                  />
                   <MobileProjectMockup project={project} priority={index < 2} />
                 </div>
 
@@ -646,42 +653,101 @@ function ProjectSlide({
   activeIndex: number;
 }) {
   const active = index === activeIndex;
-  const isNearby = Math.abs(index - activeIndex) <= 1;
-  const step = total <= 1 ? 1 : 1 / (total - 1);
-  const center = step * index;
-  const leftBoundary = center - step / 2;
-  const rightBoundary = center + step / 2;
-  const crossfadeDistance = step * 0.18;
-  const input =
-    index === 0
-      ? [0, rightBoundary - crossfadeDistance, rightBoundary + crossfadeDistance]
-      : index === total - 1
-        ? [leftBoundary - crossfadeDistance, leftBoundary + crossfadeDistance, 1]
-        : [
-            leftBoundary - crossfadeDistance,
-            leftBoundary + crossfadeDistance,
-            rightBoundary - crossfadeDistance,
-            rightBoundary + crossfadeDistance,
-          ];
-  const opacityOutput = index === 0 ? [1, 1, 0] : index === total - 1 ? [0, 1, 1] : [0, 1, 1, 0];
-  const yOutput = index === 0 ? [0, 0, -34] : index === total - 1 ? [34, 0, 0] : [34, 0, 0, -34];
-  const scaleOutput =
-    index === 0 ? [1, 1, 0.97] : index === total - 1 ? [0.97, 1, 1] : [0.97, 1, 1, 0.97];
-  const mockupRotateOutput =
-    index === 0 ? [0, 0, -2] : index === total - 1 ? [2, 0, 0] : [2, 0, 0, -2];
-  const opacity = useTransform(progress, input, opacityOutput);
-  const y = useTransform(progress, input, yOutput);
-  const scale = useTransform(progress, input, scaleOutput);
-  const mockupRotate = useTransform(progress, input, mockupRotateOutput);
+  const nearby = Math.abs(index - activeIndex) <= 1;
+  const step = total <= 1 ? 1 : 1 / total;
+  const start = step * index;
+  const end = index === total - 1 ? 1 : step * (index + 1);
+  const transitionDistance = step * 0.105;
+  const backgroundLead = step * 0.055;
+  const mockupDelay = step * 0.018;
+  const headlineDelay = step * 0.04;
+  const descriptionDelay = step * 0.058;
+  const detailDelay = step * 0.074;
+  const ctaDelay = step * 0.09;
+  const enterStart = Math.max(0, start - transitionDistance);
+  const enterEnd = Math.min(1, start + transitionDistance);
+  const exitStart = Math.max(0, end - transitionDistance);
+  const exitEnd = Math.min(1, end + transitionDistance);
+  const clampProgress = (value: number) => Math.min(1, Math.max(0, value));
+  const ordered = (values: number[]) =>
+    values.map(clampProgress).reduce<number[]>((acc, value) => {
+      const previous = acc[acc.length - 1];
+      if (previous === undefined) return [value];
+      return [...acc, Math.min(1, Math.max(value, previous + 0.0001))];
+    }, []);
+  const createInput = (enterOffset = 0, exitOffset = 0) => {
+    if (index === 0) {
+      return ordered([0, exitStart + exitOffset, exitEnd + exitOffset]);
+    }
 
-  if (!isNearby) {
-    return null;
-  }
+    if (index === total - 1) {
+      return ordered([enterStart + enterOffset, enterEnd + enterOffset, 1]);
+    }
+
+    return ordered([
+      enterStart + enterOffset,
+      enterEnd + enterOffset,
+      exitStart + exitOffset,
+      exitEnd + exitOffset,
+    ]);
+  };
+  const phaseOutput = <T,>(before: T, visible: T, after: T) =>
+    index === 0
+      ? [visible, visible, after]
+      : index === total - 1
+        ? [before, visible, visible]
+        : [before, visible, visible, after];
+
+  const presenceInput = createInput(-backgroundLead, backgroundLead);
+  const backgroundInput = createInput(-backgroundLead, backgroundLead);
+  const mockupInput = createInput(mockupDelay, -mockupDelay);
+  const headlineInput = createInput(headlineDelay, -headlineDelay);
+  const descriptionInput = createInput(descriptionDelay, -descriptionDelay);
+  const detailInput = createInput(detailDelay, -detailDelay);
+  const ctaInput = createInput(ctaDelay, -ctaDelay);
+
+  const presenceOpacity = useTransform(progress, presenceInput, phaseOutput(0, 1, 0));
+  const slideFilter = useTransform(
+    progress,
+    presenceInput,
+    phaseOutput(
+      "blur(8px) brightness(0.74)",
+      "blur(0px) brightness(1)",
+      "blur(6px) brightness(0.78)",
+    ),
+  );
+  const backgroundOpacity = useTransform(progress, backgroundInput, phaseOutput(0, 1, 0));
+  const mockupOpacity = useTransform(progress, mockupInput, phaseOutput(0, 1, 0));
+  const mockupY = useTransform(progress, mockupInput, phaseOutput(16, 0, -12));
+  const mockupScale = useTransform(progress, mockupInput, phaseOutput(0.982, 1, 0.988));
+  const mockupFilter = useTransform(
+    progress,
+    mockupInput,
+    phaseOutput(
+      "blur(8px) brightness(0.78)",
+      "blur(0px) brightness(1)",
+      "blur(5px) brightness(0.82)",
+    ),
+  );
+  const headlineOpacity = useTransform(progress, headlineInput, phaseOutput(0, 1, 0));
+  const headlineY = useTransform(progress, headlineInput, phaseOutput(10, 0, -8));
+  const descriptionOpacity = useTransform(progress, descriptionInput, phaseOutput(0, 1, 0));
+  const descriptionY = useTransform(progress, descriptionInput, phaseOutput(12, 0, -7));
+  const detailOpacity = useTransform(progress, detailInput, phaseOutput(0, 1, 0));
+  const detailY = useTransform(progress, detailInput, phaseOutput(14, 0, -6));
+  const ctaOpacity = useTransform(progress, ctaInput, phaseOutput(0, 1, 0));
+  const ctaY = useTransform(progress, ctaInput, phaseOutput(12, 0, -4));
+  const ctaScale = useTransform(progress, ctaInput, phaseOutput(0.985, 1, 0.99));
 
   return (
     <motion.div
-      style={{ opacity, y, scale, zIndex: active ? 2 : 1 }}
-      className={`absolute inset-0 isolate flex will-change-transform items-center justify-center px-6 md:px-12 ${
+      aria-hidden={!active}
+      style={{
+        opacity: presenceOpacity,
+        filter: slideFilter,
+        zIndex: active ? 3 : nearby ? 2 : 0,
+      }}
+      className={`absolute inset-0 isolate flex transform-gpu will-change-[opacity,transform,filter] items-center justify-center px-6 md:px-12 ${
         active ? "pointer-events-auto" : "pointer-events-none"
       }`}
     >
@@ -689,36 +755,56 @@ function ProjectSlide({
       <motion.div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
+          opacity: backgroundOpacity,
           background: `radial-gradient(ellipse at 30% 40%, ${project.hue.from}, transparent 55%), radial-gradient(ellipse at 80% 70%, ${project.hue.via}, transparent 60%), radial-gradient(ellipse at 50% 100%, ${project.hue.to}, transparent 70%)`,
         }}
       />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-hex opacity-30" />
+      <motion.div
+        className="pointer-events-none absolute inset-0 z-0 bg-hex"
+        style={{ opacity: backgroundOpacity }}
+      />
 
       {/* Decorative hex */}
-      <motion.div
+      <div
         className="pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block"
-        style={{ rotate: mockupRotate }}
       >
         <HexFrame strokeWidth={0.4} />
-      </motion.div>
+      </div>
 
       <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
         {/* Left: copy */}
         <div className="lg:col-span-5">
-          <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          <motion.div
+            className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground"
+            style={{ opacity: headlineOpacity, y: headlineY }}
+          >
             <span className="text-gradient-brand">{project.id}</span>
             <span className="h-px w-8 bg-border" />
             <span>{project.category}</span>
-          </div>
-          <h3 className="mt-5 font-display text-5xl font-bold leading-[1.02] md:text-7xl">
+          </motion.div>
+          <motion.h3
+            className="mt-5 font-display text-5xl font-bold leading-[1.02] md:text-7xl"
+            style={{ opacity: headlineOpacity, y: headlineY }}
+          >
             {project.name}
-          </h3>
-          <p className="mt-4 font-display text-xl text-gradient-brand">{project.tagline}</p>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
+          </motion.h3>
+          <motion.p
+            className="mt-4 font-display text-xl text-gradient-brand"
+            style={{ opacity: descriptionOpacity, y: descriptionY }}
+          >
+            {project.tagline}
+          </motion.p>
+          <motion.p
+            className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base"
+            style={{ opacity: descriptionOpacity, y: descriptionY }}
+          >
             {project.description}
-          </p>
+          </motion.p>
 
-          <div className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/80">
+          <motion.div
+            className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/80"
+            style={{ opacity: detailOpacity, y: detailY }}
+          >
             {project.metrics.map((m) => (
               <div key={m.label} className="bg-background/80 p-4 backdrop-blur">
                 <div className="font-display text-2xl font-bold text-gradient-brand">{m.value}</div>
@@ -727,9 +813,12 @@ function ProjectSlide({
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <motion.div
+            className="mt-6 flex flex-wrap gap-2"
+            style={{ opacity: detailOpacity, y: detailY }}
+          >
             {project.stack.map((s) => (
               <span
                 key={s}
@@ -738,42 +827,47 @@ function ProjectSlide({
                 {s}
               </span>
             ))}
-          </div>
+          </motion.div>
 
           {project.href && (
-            <a
+            <motion.a
               href={project.href}
               target="_blank"
               rel="noreferrer"
               className="mt-8 inline-flex items-center gap-3 rounded-full px-5 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02]"
-              style={{ background: "var(--gradient-brand)" }}
+              style={{
+                opacity: ctaOpacity,
+                y: ctaY,
+                scale: ctaScale,
+                background: "var(--gradient-brand)",
+              }}
             >
               <span>View project</span>
               <ArrowUpRight className="h-4 w-4" />
-            </a>
+            </motion.a>
           )}
         </div>
 
         {/* Right: mockup */}
-        <motion.div className="relative lg:col-span-7" style={{ rotate: mockupRotate }}>
+        <motion.div
+          className="relative transform-gpu will-change-[opacity,transform,filter] lg:col-span-7"
+          style={{ opacity: mockupOpacity, y: mockupY, scale: mockupScale, filter: mockupFilter }}
+        >
           <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
             <div className="absolute inset-0">
               <project.Mockup />
             </div>
-            <div
-              className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl opacity-55"
-              style={{
-                background: `radial-gradient(ellipse, ${project.hue.from}, transparent 65%)`,
-              }}
-            />
           </div>
         </motion.div>
       </div>
 
       {/* Slide footer */}
-      <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
+      <motion.div
+        className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-muted-foreground"
+        style={{ opacity: detailOpacity }}
+      >
         {index < total - 1 ? "Scroll · Next case" : "End of selected work"}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -916,8 +1010,6 @@ function DataInsightsMockup() {
 function TijaratiMockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(56,189,248,0.22),transparent_45%)]" />
-
       <div className="absolute left-4 top-8 w-[34%] rotate-[-9deg] rounded-[1.7rem] border border-white/15 bg-slate-950 p-1.5 shadow-2xl">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-slate-800" />
@@ -975,8 +1067,6 @@ function TijaratiMockup() {
 function Uno400Mockup() {
   return (
     <div className="relative h-full w-full overflow-visible p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_34%,rgba(16,185,129,0.22),transparent_44%),radial-gradient(circle_at_70%_72%,rgba(14,165,233,0.16),transparent_38%)]" />
-
       <div className="absolute left-5 top-8 w-[34%] rotate-[-8deg] rounded-[1.7rem] border border-emerald-200/20 bg-slate-950 p-1.5 shadow-2xl">
         <div className="pointer-events-none absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_35%,rgba(255,255,255,0.06)_70%,transparent)]" />
         <div className="absolute left-1/2 top-3 z-10 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-950 ring-1 ring-emerald-900" />
@@ -1034,7 +1124,6 @@ function Uno400Mockup() {
 function DetailingLabMockup() {
   return (
     <div className="relative h-full w-full p-5 md:p-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_32%,rgba(132,204,22,0.22),transparent_44%)]" />
       <div className="absolute left-4 top-9 w-[82%] overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
         <div className="flex items-center gap-1.5 border-b border-white/10 bg-zinc-900 px-3 py-2">
           <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />

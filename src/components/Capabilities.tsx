@@ -30,7 +30,7 @@ const groups = [
 ];
 
 export function Capabilities() {
-  const [active, setActive] = useState<string>("web");
+  const [active, setActive] = useState<string | null>(null);
 
   return (
     <section id="capabilities" className="relative py-32 px-6">
@@ -43,7 +43,16 @@ export function Capabilities() {
           We are technology-agnostic and pick the right tools for the problem. Hover any discipline to expand its surface area.
         </p>
 
-        <div className="mt-16 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2">
+        <div
+          className="mt-16 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2"
+          onMouseLeave={() => setActive(null)}
+          onBlur={(event) => {
+            const nextTarget = event.relatedTarget as Node | null;
+            if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+              setActive(null);
+            }
+          }}
+        >
           {groups.map((g) => {
             const isActive = active === g.key;
             return (
