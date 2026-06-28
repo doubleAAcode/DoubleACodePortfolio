@@ -38,7 +38,7 @@
         "client": "mhamad koubar",
         "totalPrice": 600,
         "status": "Lead",
-        "finder": "Nobody",
+        "finder": "Saeed",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:23:43.787Z"
+  "updatedAt": "2026-06-28T13:23:47.104Z"
 }
