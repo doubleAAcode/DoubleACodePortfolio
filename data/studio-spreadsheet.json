@@ -79,7 +79,7 @@
         "id": "4ad3c80f-404a-4c0b-b5e5-a2809bad6d72",
         "date": "2026-06-28",
         "projectId": "P001",
-        "amount": 0,
+        "amount": 150,
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
@@ -151,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T12:39:20.334Z"
+  "updatedAt": "2026-06-28T12:39:25.632Z"
 }
