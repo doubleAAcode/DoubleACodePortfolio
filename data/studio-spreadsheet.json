@@ -127,7 +127,7 @@
         "date": "2026-06-27",
         "projectId": "P003",
         "expenseType": "domain",
-        "paidBy": "Third Party",
+        "paidBy": "Studio",
         "amount": 50,
         "notes": ""
       }
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:16:31.830Z"
+  "updatedAt": "2026-06-28T13:16:51.644Z"
 }
