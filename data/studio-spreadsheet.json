@@ -83,15 +83,6 @@
         "collectedBy": "Hussein",
         "paymentMethod": "whish",
         "notes": ""
-      },
-      {
-        "id": "5ed76a3c-ef98-48bc-a665-4fa1286a6dcb",
-        "date": "2026-06-28",
-        "projectId": "P001",
-        "amount": 0,
-        "collectedBy": "",
-        "paymentMethod": "",
-        "notes": ""
       }
     ],
     "expenses": [
@@ -160,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T12:39:46.556Z"
+  "updatedAt": "2026-06-28T12:39:49.877Z"
 }
