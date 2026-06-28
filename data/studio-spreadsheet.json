@@ -102,7 +102,7 @@
         "expenseType": "General",
         "paidBy": "Studio",
         "amount": 50,
-        "notes": ""
+        "notes": "no"
       },
       {
         "id": "7ea4caea-f915-4443-adce-4a24b20ccdcb",
@@ -151,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T12:39:52.114Z"
+  "updatedAt": "2026-06-28T13:04:52.479Z"
 }
