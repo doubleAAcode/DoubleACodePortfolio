@@ -78,7 +78,7 @@
       {
         "id": "4ad3c80f-404a-4c0b-b5e5-a2809bad6d72",
         "date": "2026-06-28",
-        "projectId": "P001",
+        "projectId": "P002",
         "amount": 150,
         "collectedBy": "Hussein",
         "paymentMethod": "whish",
@@ -151,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T12:39:49.877Z"
+  "updatedAt": "2026-06-28T12:39:52.114Z"
 }
