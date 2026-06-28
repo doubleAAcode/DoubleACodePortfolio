@@ -38,7 +38,7 @@
         "client": "mhamad koubar",
         "totalPrice": 285,
         "status": "Lead",
-        "finder": "Saeed",
+        "finder": "Nobody",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -127,7 +127,7 @@
         "date": "2026-06-27",
         "projectId": "P003",
         "expenseType": "domain",
-        "paidBy": "Studio",
+        "paidBy": "Third Party",
         "amount": 50,
         "notes": ""
       }
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:16:51.644Z"
+  "updatedAt": "2026-06-28T13:18:01.117Z"
 }
