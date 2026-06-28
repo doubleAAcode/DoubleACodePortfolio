@@ -155,7 +155,7 @@
         "paidTo": "Hussein",
         "amount": 75,
         "payoutType": "Mixed",
-        "notes": ""
+        "notes": "now"
       },
       {
         "id": "6d22fa04-b592-40d3-aa83-f9fe4cbca7f6",
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:12:29.707Z"
+  "updatedAt": "2026-06-28T13:13:26.255Z"
 }
