@@ -36,7 +36,7 @@
         "projectId": "P003",
         "name": "koubar group",
         "client": "mhamad koubar",
-        "totalPrice": 285,
+        "totalPrice": 270,
         "status": "Lead",
         "finder": "Nobody",
         "husseinWorkPercent": 0.5,
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:18:01.117Z"
+  "updatedAt": "2026-06-28T13:18:20.274Z"
 }
