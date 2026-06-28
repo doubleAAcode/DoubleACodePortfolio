@@ -183,10 +183,10 @@ export function Projects() {
     offset: ["start start", "end end"],
   });
   const visualProgress = useSpring(scrollYProgress, {
-    stiffness: 260,
-    damping: 38,
-    mass: 0.18,
-    restDelta: 0.0004,
+    stiffness: 120,
+    damping: 32,
+    mass: 0.45,
+    restDelta: 0.001,
   });
 
   const total = projects.length;
@@ -200,7 +200,7 @@ export function Projects() {
   });
   const modeRef = useRef(mode);
 
-  const activeMV = useTransform(scrollYProgress, (v) => getProjectIndexFromProgress(v, total));
+  const activeMV = useTransform(visualProgress, (v) => getProjectIndexFromProgress(v, total));
   const [active, setActive] = useState(0);
   const setActiveProject = useCallback(
     (index: number) => {

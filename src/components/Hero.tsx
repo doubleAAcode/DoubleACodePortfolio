@@ -6,8 +6,8 @@ export function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroTextY = useTransform(scrollYProgress, (progress) => -90 * Math.min(1, Math.max(0, progress / 0.75)));
+  const heroTextOpacity = useTransform(scrollYProgress, (progress) => Math.max(0, Math.min(1, 1 - progress / 0.75)));
   const logoScale = useTransform(scrollYProgress, [0, 1], [1, 1.4]);
   const logoRotate = useTransform(scrollYProgress, [0, 1], [0, 25]);
 
@@ -44,7 +44,7 @@ export function Hero() {
         <div className="mt-1 font-mono text-xs">react · node · flutter</div>
       </FloatingCard>
 
-      <FloatingCard className="right-[8%] top-[34%] z-[8] hidden max-w-[15rem] lg:flex" delay={1.1}>
+      <FloatingCard className="right-[8%] top-[34%] z-[8] hidden max-w-[15rem] min-[1180px]:flex" delay={1.1}>
         <div className="font-mono text-[10px] uppercase tracking-widest text-accent">Spirit</div>
         <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
           Don't mind Spirit, he is just looking.
@@ -52,7 +52,7 @@ export function Hero() {
       </FloatingCard>
 
       {/* Main */}
-      <motion.div style={{ y, opacity }} className="relative z-10 mx-auto max-w-5xl text-center">
+      <motion.div style={{ y: heroTextY, opacity: heroTextOpacity }} className="relative z-10 mx-auto max-w-5xl text-center">
         <motion.div
           initial={{ opacity: 0, scale: isMobile ? 0.9 : 0.6, rotate: isMobile ? 0 : -20 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -129,7 +129,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const query = window.matchMedia("(min-width: 1024px)");
+    const query = window.matchMedia("(min-width: 1180px)");
     const syncReady = () => setReady(query.matches);
 
     syncReady();
@@ -156,7 +156,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
 
     let isPointerInsideHero = false;
     let lastPointerEvent: PointerEvent | null = null;
-    const defaultGaze = { xRatio: 0.24, yRatio: 0.26 };
+    const defaultGaze = { xRatio: 0.18, yRatio: 0.12 };
 
     const getTarget = () => {
       const viewer = viewerRef.current;
@@ -318,7 +318,7 @@ function SplineBot({ heroRef }: { heroRef: React.RefObject<HTMLDivElement | null
       initial={{ opacity: 0, scale: 0.92, x: 40 }}
       animate={{ opacity: 0.74, scale: 1, x: 0 }}
       transition={{ delay: 1.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-none absolute bottom-[-7vh] right-[-5vw] z-[2] hidden h-[78vh] w-[50vw] min-w-[560px] max-w-[760px] overflow-hidden opacity-75 lg:block"
+      className="pointer-events-none absolute bottom-[-11vh] right-[-13vw] z-[2] hidden h-[50vh] w-[34vw] min-w-[430px] max-w-[540px] overflow-hidden opacity-75 min-[1180px]:block 2xl:bottom-[-7vh] 2xl:right-[-5vw] 2xl:h-[70vh] 2xl:w-[45vw] 2xl:min-w-[504px] 2xl:max-w-[684px]"
       style={{
         WebkitMaskImage:
           "radial-gradient(ellipse at 58% 50%, black 44%, rgba(0,0,0,0.82) 60%, transparent 78%)",
