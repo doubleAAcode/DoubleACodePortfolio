@@ -128,7 +128,7 @@
         "projectId": "P003",
         "expenseType": "domain",
         "paidBy": "Hussein",
-        "amount": 50,
+        "amount": 0,
         "notes": ""
       }
     ],
@@ -167,5 +167,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T13:20:43.797Z"
+  "updatedAt": "2026-06-28T13:22:16.880Z"
 }
