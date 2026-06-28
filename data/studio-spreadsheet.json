@@ -36,7 +36,7 @@
         "projectId": "P003",
         "name": "koubar group",
         "client": "mhamad koubar",
-        "totalPrice": 285,
+        "totalPrice": 600,
         "status": "Lead",
         "finder": "Saeed",
         "husseinWorkPercent": 0.5,
@@ -63,7 +63,7 @@
         "projectId": "P001",
         "amount": 250,
         "collectedBy": "Hussein",
-        "paymentMethod": "",
+        "paymentMethod": "whish",
         "notes": ""
       },
       {
@@ -71,8 +71,17 @@
         "date": "2026-06-25",
         "projectId": "P002",
         "amount": 50,
-        "collectedBy": "",
-        "paymentMethod": "",
+        "collectedBy": "Hussein",
+        "paymentMethod": "whish",
+        "notes": ""
+      },
+      {
+        "id": "4ad3c80f-404a-4c0b-b5e5-a2809bad6d72",
+        "date": "2026-06-28",
+        "projectId": "P002",
+        "amount": 150,
+        "collectedBy": "Hussein",
+        "paymentMethod": "whish",
         "notes": ""
       }
     ],
@@ -119,7 +128,7 @@
         "projectId": "P003",
         "expenseType": "domain",
         "paidBy": "Studio",
-        "amount": 50,
+        "amount": 0,
         "notes": ""
       }
     ],
@@ -139,8 +148,24 @@
         "amount": 70,
         "payoutType": "Mixed",
         "notes": ""
+      },
+      {
+        "id": "bcc43550-35e0-40c0-80c0-9253a5abaa78",
+        "date": "2026-06-28",
+        "paidTo": "Hussein",
+        "amount": 75,
+        "payoutType": "Mixed",
+        "notes": "now"
+      },
+      {
+        "id": "6d22fa04-b592-40d3-aa83-f9fe4cbca7f6",
+        "date": "2026-06-28",
+        "paidTo": "Saeed",
+        "amount": 75,
+        "payoutType": "Mixed",
+        "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-06-27T12:07:43.267Z"
+  "updatedAt": "2026-06-28T13:23:47.104Z"
 }
