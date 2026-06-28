@@ -74,6 +74,15 @@
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
+      },
+      {
+        "id": "4ad3c80f-404a-4c0b-b5e5-a2809bad6d72",
+        "date": "2026-06-28",
+        "projectId": "P001",
+        "amount": 0,
+        "collectedBy": "",
+        "paymentMethod": "",
+        "notes": ""
       }
     ],
     "expenses": [
@@ -142,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-27T12:07:43.267Z"
+  "updatedAt": "2026-06-28T12:39:20.334Z"
 }
