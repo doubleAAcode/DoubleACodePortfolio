@@ -72,7 +72,7 @@
         "projectId": "P002",
         "amount": 50,
         "collectedBy": "Hussein",
-        "paymentMethod": "",
+        "paymentMethod": "whish",
         "notes": ""
       },
       {
@@ -151,5 +151,5 @@
       }
     ]
   },
-  "updatedAt": "2026-06-28T12:39:38.556Z"
+  "updatedAt": "2026-06-28T12:39:40.672Z"
 }
