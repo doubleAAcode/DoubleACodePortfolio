@@ -13,6 +13,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { HexFrame } from "./Logo";
 import { SectionLabel } from "./Journey";
 
+
 type Project = {
   id: string;
   name: string;
