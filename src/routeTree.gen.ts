@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as WorkUno400RouteImport } from './routes/work/uno400'
 import { Route as WorkTijaratiProRouteImport } from './routes/work/tijarati-pro'
 import { Route as WorkSnapgoRouteImport } from './routes/work/snapgo'
@@ -22,6 +24,10 @@ import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-la
 import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
 import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
+import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
+import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
 import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
 import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
@@ -46,6 +52,11 @@ const SpreadsheetRoute = SpreadsheetRouteImport.update({
   path: '/spreadsheet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -60,6 +71,11 @@ const StoresIndexRoute = StoresIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => StoresRoute,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const WorkUno400Route = WorkUno400RouteImport.update({
   id: '/work/uno400',
@@ -100,6 +116,26 @@ const MenusMarleysRoute = MenusMarleysRouteImport.update({
   id: '/menus/marleys',
   path: '/menus/marleys',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardSimulatorRoute = DashboardSimulatorRouteImport.update({
+  id: '/simulator',
+  path: '/simulator',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProductsRoute = DashboardProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const StoresPavoneIndexRoute = StoresPavoneIndexRouteImport.update({
   id: '/',
@@ -175,8 +211,13 @@ const StoresPavoneAdminCategoriesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
@@ -185,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
+  '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
@@ -204,6 +246,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/spreadsheet': typeof SpreadsheetRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
@@ -211,6 +257,7 @@ export interface FileRoutesByTo {
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
+  '/dashboard': typeof DashboardIndexRoute
   '/stores': typeof StoresIndexRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
@@ -229,8 +276,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
@@ -239,6 +291,7 @@ export interface FileRoutesById {
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
+  '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
@@ -259,8 +312,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/dashboard'
     | '/spreadsheet'
     | '/stores'
+    | '/dashboard/categories'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/simulator'
     | '/menus/marleys'
     | '/stores/pavone'
     | '/work/data-insights'
@@ -269,6 +327,7 @@ export interface FileRouteTypes {
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
+    | '/dashboard/'
     | '/stores/'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
@@ -288,6 +347,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/spreadsheet'
+    | '/dashboard/categories'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/simulator'
     | '/menus/marleys'
     | '/work/data-insights'
     | '/work/detailing-lab'
@@ -295,6 +358,7 @@ export interface FileRouteTypes {
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
+    | '/dashboard'
     | '/stores'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
@@ -312,8 +376,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/dashboard'
     | '/spreadsheet'
     | '/stores'
+    | '/dashboard/categories'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/simulator'
     | '/menus/marleys'
     | '/stores/pavone'
     | '/work/data-insights'
@@ -322,6 +391,7 @@ export interface FileRouteTypes {
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
+    | '/dashboard/'
     | '/stores/'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
@@ -341,6 +411,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
   MenusMarleysRoute: typeof MenusMarleysRoute
@@ -368,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpreadsheetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -388,6 +466,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/stores/'
       preLoaderRoute: typeof StoresIndexRouteImport
       parentRoute: typeof StoresRoute
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/work/uno400': {
       id: '/work/uno400'
@@ -444,6 +529,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/menus/marleys'
       preLoaderRoute: typeof MenusMarleysRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/simulator': {
+      id: '/dashboard/simulator'
+      path: '/simulator'
+      fullPath: '/dashboard/simulator'
+      preLoaderRoute: typeof DashboardSimulatorRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/products': {
+      id: '/dashboard/products'
+      path: '/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardProductsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/categories': {
+      id: '/dashboard/categories'
+      path: '/categories'
+      fullPath: '/dashboard/categories'
+      preLoaderRoute: typeof DashboardCategoriesRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/stores/pavone/': {
       id: '/stores/pavone/'
@@ -539,6 +652,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardCategoriesRoute: typeof DashboardCategoriesRoute
+  DashboardOrdersRoute: typeof DashboardOrdersRoute
+  DashboardProductsRoute: typeof DashboardProductsRoute
+  DashboardSimulatorRoute: typeof DashboardSimulatorRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCategoriesRoute: DashboardCategoriesRoute,
+  DashboardOrdersRoute: DashboardOrdersRoute,
+  DashboardProductsRoute: DashboardProductsRoute,
+  DashboardSimulatorRoute: DashboardSimulatorRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 interface StoresPavoneAdminRouteChildren {
   StoresPavoneAdminCategoriesRoute: typeof StoresPavoneAdminCategoriesRoute
   StoresPavoneAdminInspirationsRoute: typeof StoresPavoneAdminInspirationsRoute
@@ -600,6 +733,7 @@ const StoresRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
   MenusMarleysRoute: MenusMarleysRoute,
