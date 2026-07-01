@@ -11,7 +11,15 @@ export const getWhatsAppWebhookLogs = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const requiredKey = process.env.WA_BOT_LOGS_KEY;
 
-    if (requiredKey && data.key !== requiredKey) {
+    if (!requiredKey) {
+      return {
+        ok: false as const,
+        error: "WA_BOT_LOGS_KEY is not configured.",
+        logs: [],
+      };
+    }
+
+    if (data.key !== requiredKey) {
       return {
         ok: false as const,
         error: "Unauthorized. Add ?key=YOUR_WA_BOT_LOGS_KEY to the URL.",

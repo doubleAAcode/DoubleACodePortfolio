@@ -1,5 +1,7 @@
 import "@tanstack/react-start/server-only";
 
+import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
+
 import type { ConversationLanguage } from "./conversation-store.server";
 
 export const DOUBLE_A_TEST_BUSINESS_ID = "double-a-test-business";
@@ -79,6 +81,79 @@ export type StoreProductCustomField = {
     labelArabic: string;
   }>;
   sortOrder: number;
+};
+
+type CategoryRow = {
+  id: string;
+  business_id: string;
+  name_english: string;
+  name_arabic: string;
+  is_active: boolean;
+  sort_order: number;
+};
+
+type ProductRow = {
+  id: string;
+  business_id: string;
+  category_id: string;
+  code: string;
+  name_english: string;
+  name_arabic: string;
+  description_english: string;
+  description_arabic: string;
+  price: number | string;
+  image_url: string | null;
+  is_active: boolean;
+  is_available: boolean;
+  stock_quantity: number;
+  sort_order: number;
+};
+
+type ProductOptionRow = {
+  id: string;
+  business_id: string;
+  product_id: string;
+  name_english: string;
+  name_arabic: string;
+  sort_order: number;
+  is_required: boolean;
+};
+
+type ProductOptionValueRow = {
+  id: string;
+  option_id: string;
+  value_english: string;
+  value_arabic: string;
+  sort_order: number;
+};
+
+type ProductVariantRow = {
+  id: string;
+  business_id: string;
+  product_id: string;
+  sku: string;
+  selected_option_value_ids: string[];
+  price: number | string;
+  stock_quantity: number;
+  is_available: boolean;
+};
+
+type ProductCustomFieldRow = {
+  id: string;
+  business_id: string;
+  product_id: string;
+  type: StoreProductCustomField["type"];
+  label_english: string;
+  label_arabic: string;
+  placeholder_english: string | null;
+  placeholder_arabic: string | null;
+  is_required: boolean;
+  minimum_length: number | null;
+  maximum_length: number | null;
+  minimum_value: number | string | null;
+  maximum_value: number | string | null;
+  choices: StoreProductCustomField["choices"] | null;
+  sort_order: number;
 };
 
 const categories: StoreCategory[] = [
@@ -425,12 +500,30 @@ const customFields: StoreProductCustomField[] = [
 ];
 
 export async function listActiveCategories(businessId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<CategoryRow[]>(
+      `/wa_categories?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&is_active=eq.true&order=sort_order.asc`,
+    );
+    return rows.map(toCategory);
+  }
+
   return categories
     .filter((category) => category.businessId === businessId && category.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function listVisibleProductsByCategory(businessId: string, categoryId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductRow[]>(
+      `/wa_products?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&category_id=eq.${encodeURIComponent(categoryId)}&is_active=eq.true&order=sort_order.asc`,
+    );
+    return rows.map(toProduct);
+  }
+
   return products
     .filter(
       (product) =>
@@ -440,6 +533,15 @@ export async function listVisibleProductsByCategory(businessId: string, category
 }
 
 export async function findActiveCategoryById(businessId: string, categoryId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<CategoryRow[]>(
+      `/wa_categories?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&id=eq.${encodeURIComponent(categoryId)}&is_active=eq.true&limit=1`,
+    );
+    return rows[0] ? toCategory(rows[0]) : undefined;
+  }
+
   return categories.find(
     (category) =>
       category.businessId === businessId && category.id === categoryId && category.isActive,
@@ -447,6 +549,15 @@ export async function findActiveCategoryById(businessId: string, categoryId: str
 }
 
 export async function findVisibleProductById(businessId: string, productId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductRow[]>(
+      `/wa_products?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&id=eq.${encodeURIComponent(productId)}&is_active=eq.true&limit=1`,
+    );
+    return rows[0] ? toProduct(rows[0]) : undefined;
+  }
+
   return products.find(
     (product) => product.businessId === businessId && product.id === productId && product.isActive,
   );
@@ -454,6 +565,15 @@ export async function findVisibleProductById(businessId: string, productId: stri
 
 export async function findVisibleProductByCode(businessId: string, code: string) {
   const normalizedCode = code.trim().toLowerCase();
+
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductRow[]>(
+      `/wa_products?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&code=ilike.${encodeURIComponent(code.trim())}&is_active=eq.true&limit=1`,
+    );
+    return rows[0] ? toProduct(rows[0]) : undefined;
+  }
 
   return products.find(
     (product) =>
@@ -464,18 +584,43 @@ export async function findVisibleProductByCode(businessId: string, code: string)
 }
 
 export async function listProductOptions(businessId: string, productId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductOptionRow[]>(
+      `/wa_product_options?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_id=eq.${encodeURIComponent(productId)}&order=sort_order.asc`,
+    );
+    return rows.map(toProductOption);
+  }
+
   return productOptions
     .filter((option) => option.businessId === businessId && option.productId === productId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function listProductOptionValues(optionId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductOptionValueRow[]>(
+      `/wa_product_option_values?select=*&option_id=eq.${encodeURIComponent(
+        optionId,
+      )}&order=sort_order.asc`,
+    );
+    return rows.map(toProductOptionValue);
+  }
+
   return productOptionValues
     .filter((value) => value.optionId === optionId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function findProductOptionValue(valueId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductOptionValueRow[]>(
+      `/wa_product_option_values?select=*&id=eq.${encodeURIComponent(valueId)}&limit=1`,
+    );
+    return rows[0] ? toProductOptionValue(rows[0]) : undefined;
+  }
+
   return productOptionValues.find((value) => value.id === valueId);
 }
 
@@ -490,6 +635,17 @@ export async function resolveProductVariant({
 }) {
   const selected = [...selectedOptionValueIds].sort().join("|");
 
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductVariantRow[]>(
+      `/wa_product_variants?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_id=eq.${encodeURIComponent(productId)}`,
+    );
+    return rows.map(toProductVariant).find((variant) => {
+      return [...variant.selectedOptionValueIds].sort().join("|") === selected;
+    });
+  }
+
   return productVariants.find(
     (variant) =>
       variant.businessId === businessId &&
@@ -499,10 +655,26 @@ export async function resolveProductVariant({
 }
 
 export async function findProductVariant(variantId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductVariantRow[]>(
+      `/wa_product_variants?select=*&id=eq.${encodeURIComponent(variantId)}&limit=1`,
+    );
+    return rows[0] ? toProductVariant(rows[0]) : undefined;
+  }
+
   return productVariants.find((variant) => variant.id === variantId);
 }
 
 export async function listProductCustomFields(businessId: string, productId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductCustomFieldRow[]>(
+      `/wa_product_custom_fields?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_id=eq.${encodeURIComponent(productId)}&order=sort_order.asc`,
+    );
+    return rows.map(toProductCustomField);
+  }
+
   return customFields
     .filter((field) => field.businessId === businessId && field.productId === productId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -540,4 +712,93 @@ export function getCustomFieldPlaceholder(
   language: ConversationLanguage,
 ) {
   return language === "ar" ? field.placeholderArabic : field.placeholderEnglish;
+}
+
+function toCategory(row: CategoryRow): StoreCategory {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toProduct(row: ProductRow): StoreProduct {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    categoryId: row.category_id,
+    code: row.code,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    descriptionEnglish: row.description_english,
+    descriptionArabic: row.description_arabic,
+    price: toNumber(row.price),
+    imageUrl: row.image_url ?? undefined,
+    isActive: row.is_active,
+    isAvailable: row.is_available,
+    stockQuantity: row.stock_quantity,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toProductOption(row: ProductOptionRow): StoreProductOption {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    productId: row.product_id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    sortOrder: row.sort_order,
+    isRequired: row.is_required,
+  };
+}
+
+function toProductOptionValue(row: ProductOptionValueRow): StoreProductOptionValue {
+  return {
+    id: row.id,
+    optionId: row.option_id,
+    valueEnglish: row.value_english,
+    valueArabic: row.value_arabic,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toProductVariant(row: ProductVariantRow): StoreProductVariant {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    productId: row.product_id,
+    sku: row.sku,
+    selectedOptionValueIds: row.selected_option_value_ids,
+    price: toNumber(row.price),
+    stockQuantity: row.stock_quantity,
+    isAvailable: row.is_available,
+  };
+}
+
+function toProductCustomField(row: ProductCustomFieldRow): StoreProductCustomField {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    productId: row.product_id,
+    type: row.type,
+    labelEnglish: row.label_english,
+    labelArabic: row.label_arabic,
+    placeholderEnglish: row.placeholder_english ?? undefined,
+    placeholderArabic: row.placeholder_arabic ?? undefined,
+    isRequired: row.is_required,
+    minimumLength: row.minimum_length ?? undefined,
+    maximumLength: row.maximum_length ?? undefined,
+    minimumValue: row.minimum_value == null ? undefined : toNumber(row.minimum_value),
+    maximumValue: row.maximum_value == null ? undefined : toNumber(row.maximum_value),
+    choices: row.choices ?? undefined,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toNumber(value: number | string) {
+  return typeof value === "number" ? value : Number(value);
 }

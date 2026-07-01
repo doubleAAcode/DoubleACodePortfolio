@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import {
   getMissingWhatsAppConfigKeys,
   getWhatsAppServerConfig,
@@ -59,9 +60,22 @@ function verifyWebhook(request: Request) {
 }
 
 async function handleWebhookEvent(request: Request) {
-  const payload = await request.json().catch(() => null);
-  const messages = parseIncomingWhatsAppMessages(payload);
+  const rawBody = await request.text();
   const config = getWhatsAppServerConfig();
+
+  if (!isValidMetaSignature(request, rawBody, config.appSecret)) {
+    void recordWhatsAppWebhookLog({
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      status: 403,
+      result: "invalid_signature",
+    });
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  const payload = safeJsonParse(rawBody);
+  const messages = parseIncomingWhatsAppMessages(payload);
   const missingKeys = getMissingWhatsAppConfigKeys(config);
 
   if (!messages.length) {
@@ -84,7 +98,11 @@ async function handleWebhookEvent(request: Request) {
   const phoneNumberIds: string[] = [];
 
   for (const message of messages) {
-    const isDuplicate = hasProcessedWhatsAppMessage(message.messageId);
+    const isDuplicate = await hasProcessedWhatsAppMessage({
+      messageId: message.messageId,
+      businessId: DOUBLE_A_TEST_BUSINESS_ID,
+      customerPhone: message.sender,
+    });
     messageIds.push(message.messageId);
     inputTypes.push(message.input.type);
     senderMasks.push(maskPhoneNumber(message.sender));
@@ -176,4 +194,29 @@ async function handleWebhookEvent(request: Request) {
 function maskPhoneNumber(phone: string) {
   if (phone.length <= 4) return "****";
   return `${"*".repeat(Math.max(0, phone.length - 4))}${phone.slice(-4)}`;
+}
+
+function safeJsonParse(rawBody: string) {
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    return null;
+  }
+}
+
+function isValidMetaSignature(request: Request, rawBody: string, appSecret: string) {
+  if (!appSecret) return true;
+
+  const signature = request.headers.get("x-hub-signature-256");
+  if (!signature?.startsWith("sha256=")) return false;
+
+  const expected = createHmac("sha256", appSecret).update(rawBody).digest("hex");
+  const received = signature.slice("sha256=".length);
+  const expectedBuffer = Buffer.from(expected, "hex");
+  const receivedBuffer = Buffer.from(received, "hex");
+
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
 }

@@ -1564,3 +1564,36 @@ After implementation, report:
 * Known limitations
 
 Stop after the customer can create a pending order. Do not build the owner dashboard, notifications, or order acceptance yet.
+
+
+
+
+# Milestone 7 — Supabase Catalog and Business Settings
+
+Move all hardcoded data into Supabase:
+
+Categories
+Products
+Product options
+Option values
+Variants and stock
+Custom product fields
+Delivery areas and fees
+Pickup locations
+Payment methods
+Business language/currency/settings
+
+Then update the bot engine so it reads everything dynamically from Supabase.
+
+After that, the next milestones are:
+
+Owner dashboard CRUD
+Orders dashboard
+Accept/reject orders
+Commit or release stock reservations
+Customer order-status messages
+Owner notifications
+Multi-business isolation
+Client onboarding
+WhatsApp Catalog integration later
+AI only in Phase 2

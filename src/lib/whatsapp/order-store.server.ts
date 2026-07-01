@@ -1,5 +1,7 @@
 import "@tanstack/react-start/server-only";
 
+import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
+
 import { findProductVariant, findVisibleProductById } from "./catalog-repository.server";
 import { calculateCart, getStockLimit, type CartItem } from "./cart-service.server";
 import type {
@@ -91,13 +93,21 @@ const ordersByIdempotencyKey = new Map<string, string>();
 const stockReservations: StockReservation[] = [];
 let orderCounter = 0;
 
+type CreateOrderRpcRow = {
+  id: string;
+  order_number: string;
+  duplicate: boolean;
+};
+
 export async function createPendingOrder(
   input: CreateOrderInput,
 ): Promise<
   | { ok: true; order: WhatsAppOrder; duplicate: boolean }
   | { ok: false; error: string; itemName?: string }
 > {
-  const existingOrderId = ordersByIdempotencyKey.get(input.idempotencyKey);
+  const existingOrderId = !isServerSupabaseConfigured()
+    ? ordersByIdempotencyKey.get(input.idempotencyKey)
+    : undefined;
   if (existingOrderId) {
     const order = orders.get(existingOrderId);
     if (order) return { ok: true, order, duplicate: true };
@@ -121,10 +131,110 @@ export async function createPendingOrder(
   );
   const deliveryFee =
     input.checkout.fulfillmentMethod === "delivery" ? (deliveryArea?.deliveryFee ?? 0) : 0;
-  const order: WhatsAppOrder = {
+  const order = buildPendingOrder({
+    input,
+    id,
+    orderNumber: isServerSupabaseConfigured() ? "PENDING" : nextOrderNumber(),
+    timestamp,
+    cart: validation.cart,
+    subtotal,
+    deliveryFee,
+  });
+
+  const reservations = validation.cart.map((item) => ({
+    id: `reservation-${item.id}-${Math.random().toString(36).slice(2, 8)}`,
+    businessId: input.businessId,
+    orderId: id,
+    productVariantId: getReservationStockId(item),
+    quantity: item.quantity,
+    status: "ACTIVE" as const,
+    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: timestamp,
+  }));
+
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<CreateOrderRpcRow[]>("/rpc/wa_create_pending_order", {
+      method: "POST",
+      body: JSON.stringify({
+        p_business_id: input.businessId,
+        p_idempotency_key: input.idempotencyKey,
+        p_order: {
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          alternatePhone: order.alternatePhone ?? "",
+          language: order.language,
+          fulfillmentMethod: order.fulfillmentMethod,
+          deliveryAreaId: order.deliveryAreaId ?? "",
+          deliveryAddress: order.deliveryAddress ?? "",
+          deliveryLatitude: order.deliveryLatitude ?? "",
+          deliveryLongitude: order.deliveryLongitude ?? "",
+          pickupLocationId: order.pickupLocationId ?? "",
+          paymentMethod: order.paymentMethod,
+          notes: order.notes ?? "",
+          subtotal: order.subtotal,
+          deliveryFee: order.deliveryFee,
+          total: order.total,
+        },
+        p_items: order.items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId ?? "",
+          productCode: item.productCode,
+          productName: item.productName,
+          selectedOptions: item.selectedOptions,
+          customFieldAnswers: item.customFieldAnswers,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.lineTotal,
+        })),
+        p_reservations: reservations.map((reservation) => ({
+          productVariantId: reservation.productVariantId,
+          quantity: reservation.quantity,
+          expiresAt: reservation.expiresAt,
+        })),
+      }),
+    });
+    const row = rows[0];
+    if (!row) return { ok: false, error: "Order creation did not return an order." };
+    return {
+      ok: true,
+      duplicate: row.duplicate,
+      order: {
+        ...order,
+        id: row.id,
+        orderNumber: row.order_number,
+        items: order.items.map((item) => ({ ...item, orderId: row.id })),
+      },
+    };
+  }
+
+  orders.set(id, order);
+  ordersByIdempotencyKey.set(input.idempotencyKey, id);
+  stockReservations.push(...reservations);
+
+  return { ok: true, order, duplicate: false };
+}
+
+function buildPendingOrder({
+  input,
+  id,
+  orderNumber,
+  timestamp,
+  cart,
+  subtotal,
+  deliveryFee,
+}: {
+  input: CreateOrderInput;
+  id: string;
+  orderNumber: string;
+  timestamp: string;
+  cart: CartItem[];
+  subtotal: number;
+  deliveryFee: number;
+}): WhatsAppOrder {
+  return {
     id,
     businessId: input.businessId,
-    orderNumber: nextOrderNumber(),
+    orderNumber,
     customerName: input.checkout.customerName ?? "",
     customerPhone: input.customerPhone,
     alternatePhone: input.checkout.alternatePhone,
@@ -143,7 +253,7 @@ export async function createPendingOrder(
     total: subtotal + deliveryFee,
     createdAt: timestamp,
     updatedAt: timestamp,
-    items: validation.cart.map((item) => ({
+    items: cart.map((item) => ({
       id: `order-item-${item.id}`,
       orderId: id,
       productId: item.productId,
@@ -157,23 +267,6 @@ export async function createPendingOrder(
       lineTotal: item.lineTotal,
     })),
   };
-
-  const reservations = validation.cart.map((item) => ({
-    id: `reservation-${item.id}-${Math.random().toString(36).slice(2, 8)}`,
-    businessId: input.businessId,
-    orderId: id,
-    productVariantId: getReservationStockId(item),
-    quantity: item.quantity,
-    status: "ACTIVE" as const,
-    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: timestamp,
-  }));
-
-  orders.set(id, order);
-  ordersByIdempotencyKey.set(input.idempotencyKey, id);
-  stockReservations.push(...reservations);
-
-  return { ok: true, order, duplicate: false };
 }
 
 export async function validateCartForOrder({
@@ -195,7 +288,10 @@ export async function validateCartForOrder({
       productId: item.productId,
       variantId: item.variantId,
     });
-    const activeReserved = getActiveReservedQuantity(getReservationStockId(item));
+    const reservationStockId = getReservationStockId(item);
+    const activeReserved = isServerSupabaseConfigured()
+      ? await getActiveReservedQuantityFromSupabase(reservationStockId)
+      : getActiveReservedQuantity(reservationStockId);
     const available = Math.max(0, stockLimit - activeReserved);
 
     if (
@@ -260,6 +356,16 @@ function getActiveReservedQuantity(productVariantId: string) {
         new Date(reservation.expiresAt).getTime() > now,
     )
     .reduce((sum, reservation) => sum + reservation.quantity, 0);
+}
+
+async function getActiveReservedQuantityFromSupabase(productVariantId: string) {
+  const rows = await supabaseServerRest<Array<{ quantity: number }>>(
+    `/wa_stock_reservations?select=quantity&product_variant_id=eq.${encodeURIComponent(
+      productVariantId,
+    )}&status=eq.ACTIVE&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`,
+  );
+
+  return rows.reduce((sum, row) => sum + Number(row.quantity), 0);
 }
 
 function getReservationStockId(item: CartItem) {

@@ -6,6 +6,7 @@ export type WhatsAppServerConfig = {
   phoneNumberId: string;
   businessAccountId: string;
   verifyToken: string;
+  appSecret: string;
   graphApiVersion: string;
 };
 
@@ -17,6 +18,7 @@ export function getWhatsAppServerConfig(): WhatsAppServerConfig {
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
     businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ?? "",
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "",
+    appSecret: process.env.WHATSAPP_APP_SECRET ?? "",
     graphApiVersion: process.env.WHATSAPP_GRAPH_API_VERSION ?? DEFAULT_GRAPH_API_VERSION,
   };
 }
@@ -27,6 +29,7 @@ export function getMissingWhatsAppConfigKeys(config = getWhatsAppServerConfig())
     ["WHATSAPP_PHONE_NUMBER_ID", config.phoneNumberId],
     ["WHATSAPP_BUSINESS_ACCOUNT_ID", config.businessAccountId],
     ["WHATSAPP_VERIFY_TOKEN", config.verifyToken],
+    ["WHATSAPP_APP_SECRET", config.appSecret],
   ]
     .filter(([, value]) => !value)
     .map(([key]) => key);

@@ -1,5 +1,7 @@
 import "@tanstack/react-start/server-only";
 
+import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
+
 import { DOUBLE_A_TEST_BUSINESS_ID } from "./catalog-repository.server";
 import type { ConversationLanguage } from "./conversation-store.server";
 
@@ -40,6 +42,39 @@ export type BusinessCheckoutSettings = {
   orderConfirmationMessageEnglish: string;
   orderConfirmationMessageArabic: string;
   requireOwnerApproval: boolean;
+};
+
+type BusinessRow = {
+  id: string;
+  currency: "USD";
+  allow_delivery: boolean;
+  allow_pickup: boolean;
+  minimum_order_amount: number | string;
+  order_confirmation_message_english: string;
+  order_confirmation_message_arabic: string;
+  require_owner_approval: boolean;
+};
+
+type PickupLocationRow = {
+  id: string;
+  name_english: string;
+  name_arabic: string;
+  address_english: string;
+  address_arabic: string;
+};
+
+type DeliveryAreaRow = {
+  id: string;
+  name_english: string;
+  name_arabic: string;
+  delivery_fee: number | string;
+};
+
+type PaymentMethodRow = {
+  id: PaymentMethod;
+  label_english: string;
+  label_arabic: string;
+  fulfillment_methods: FulfillmentMethod[];
 };
 
 const checkoutSettings: BusinessCheckoutSettings[] = [
@@ -105,6 +140,46 @@ const checkoutSettings: BusinessCheckoutSettings[] = [
 ];
 
 export async function getBusinessCheckoutSettings(businessId: string) {
+  if (isServerSupabaseConfigured()) {
+    const [businessRows, pickupRows, deliveryRows, paymentRows] = await Promise.all([
+      supabaseServerRest<BusinessRow[]>(
+        `/wa_businesses?select=*&id=eq.${encodeURIComponent(businessId)}&is_active=eq.true&limit=1`,
+      ),
+      supabaseServerRest<PickupLocationRow[]>(
+        `/wa_pickup_locations?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&is_active=eq.true&order=sort_order.asc`,
+      ),
+      supabaseServerRest<DeliveryAreaRow[]>(
+        `/wa_delivery_areas?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&is_active=eq.true&order=sort_order.asc`,
+      ),
+      supabaseServerRest<PaymentMethodRow[]>(
+        `/wa_payment_methods?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&is_active=eq.true&order=sort_order.asc`,
+      ),
+    ]);
+
+    const business = businessRows[0];
+    if (!business) return undefined;
+
+    return {
+      businessId: business.id,
+      currency: business.currency,
+      allowDelivery: business.allow_delivery,
+      allowPickup: business.allow_pickup,
+      pickupLocations: pickupRows.map(toPickupLocation),
+      deliveryAreas: deliveryRows.map(toDeliveryArea),
+      minimumOrderAmount: toNumber(business.minimum_order_amount),
+      paymentMethods: paymentRows.map(toPaymentMethod),
+      orderConfirmationMessageEnglish: business.order_confirmation_message_english,
+      orderConfirmationMessageArabic: business.order_confirmation_message_arabic,
+      requireOwnerApproval: business.require_owner_approval,
+    };
+  }
+
   return checkoutSettings.find((settings) => settings.businessId === businessId);
 }
 
@@ -125,4 +200,36 @@ export function getPaymentMethodLabel(
   language: ConversationLanguage,
 ) {
   return language === "ar" ? paymentMethod.labelArabic : paymentMethod.labelEnglish;
+}
+
+function toPickupLocation(row: PickupLocationRow): PickupLocation {
+  return {
+    id: row.id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    addressEnglish: row.address_english,
+    addressArabic: row.address_arabic,
+  };
+}
+
+function toDeliveryArea(row: DeliveryAreaRow): DeliveryArea {
+  return {
+    id: row.id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    deliveryFee: toNumber(row.delivery_fee),
+  };
+}
+
+function toPaymentMethod(row: PaymentMethodRow): CheckoutPaymentMethod {
+  return {
+    id: row.id,
+    labelEnglish: row.label_english,
+    labelArabic: row.label_arabic,
+    fulfillmentMethods: row.fulfillment_methods,
+  };
+}
+
+function toNumber(value: number | string) {
+  return typeof value === "number" ? value : Number(value);
 }

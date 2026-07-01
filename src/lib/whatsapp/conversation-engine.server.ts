@@ -96,20 +96,20 @@ export async function processIncomingMessage({
 }): Promise<BotResponse[]> {
   const now = new Date();
   let session =
-    getActiveConversationSession({ businessId, customerPhone, now }) ??
-    createConversationSession({ businessId, customerPhone, now });
+    (await getActiveConversationSession({ businessId, customerPhone, now })) ??
+    (await createConversationSession({ businessId, customerPhone, now }));
 
   const command = getGlobalCommand(input.value);
 
   if (command === "restart") {
-    deleteConversationSession({ businessId, customerPhone });
-    session = createConversationSession({ businessId, customerPhone, now });
+    await deleteConversationSession({ businessId, customerPhone });
+    session = await createConversationSession({ businessId, customerPhone, now });
     return [languageSelectionResponse()];
   }
 
   if (command === "menu") {
     if (!session.language) return [languageSelectionResponse()];
-    saveConversationSession(
+    await saveConversationSession(
       {
         ...session,
         currentStep: "MAIN_MENU",
@@ -128,14 +128,17 @@ export async function processIncomingMessage({
 
   if (command === "cart") {
     if (!session.language) return [languageSelectionResponse()];
-    const nextSession = saveConversationSession({ ...session, currentStep: "CART_MENU" }, now);
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "CART_MENU" },
+      now,
+    );
     return cartMenuResponse(nextSession);
   }
 
   if (command === "cancel") {
     if (!session.language) return [languageSelectionResponse()];
     if (session.currentStep === "ORDER_CREATED") {
-      saveConversationSession(session, now);
+      await saveConversationSession(session, now);
       return [
         {
           type: "text",
@@ -147,7 +150,7 @@ export async function processIncomingMessage({
         },
       ];
     }
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CART_MENU",
@@ -217,18 +220,18 @@ export async function processIncomingMessage({
   return handleMainMenu(session, input, now);
 }
 
-function handleLanguageSelection(
+async function handleLanguageSelection(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
-): BotResponse[] {
+): Promise<BotResponse[]> {
   const language = parseLanguage(input.value);
   if (!language) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [languageSelectionResponse()];
   }
 
-  saveConversationSession({ ...session, language, currentStep: "MAIN_MENU" }, now);
+  await saveConversationSession({ ...session, language, currentStep: "MAIN_MENU" }, now);
   return [mainMenuResponse(language)];
 }
 
@@ -241,7 +244,7 @@ async function handleMainMenu(
   const option = parseMainMenuOption(input.value);
 
   if (option === "order") {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         language,
@@ -258,7 +261,7 @@ async function handleMainMenu(
     return categorySelectionResponse(nextSession);
   }
 
-  saveConversationSession(
+  await saveConversationSession(
     {
       ...session,
       language,
@@ -279,14 +282,14 @@ async function handleCategorySelection(
   const navigation = parseNavigation(input.value);
 
   if (navigation === "back") {
-    saveConversationSession({ ...session, currentStep: "MAIN_MENU" }, now);
+    await saveConversationSession({ ...session, currentStep: "MAIN_MENU" }, now);
     return [mainMenuResponse(language)];
   }
 
   if (navigation === "next" || navigation === "previous") {
     const page = getPageNumber(session.context.categoryPage);
     const nextPage = Math.max(0, page + (navigation === "next" ? 1 : -1));
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       { ...session, context: { ...session.context, categoryPage: nextPage } },
       now,
     );
@@ -299,11 +302,11 @@ async function handleCategorySelection(
   const categories = await listActiveCategories(session.businessId);
   const selectedCategory = pickCategory(categories, input.value, language);
   if (!selectedCategory) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return categorySelectionResponse(session);
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "SELECT_PRODUCT",
@@ -327,7 +330,7 @@ async function handleProductSelection(
   const navigation = parseNavigation(input.value);
 
   if (navigation === "back") {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "SELECT_CATEGORY",
@@ -341,7 +344,7 @@ async function handleProductSelection(
   if (navigation === "next" || navigation === "previous") {
     const page = getPageNumber(session.context.productPage);
     const nextPage = Math.max(0, page + (navigation === "next" ? 1 : -1));
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       { ...session, context: { ...session.context, productPage: nextPage } },
       now,
     );
@@ -360,7 +363,7 @@ async function handleProductSelection(
       : pickProduct(products, input.value, language);
 
   if (!selectedProduct) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return productSelectionResponse(session);
   }
 
@@ -377,7 +380,7 @@ async function handleProductDetails(
   const action = parseProductDetailsAction(input.value);
 
   if (navigation === "back" || action === "back_to_products") {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "SELECT_PRODUCT",
@@ -397,7 +400,7 @@ async function handleProductDetails(
     return startPendingItem(session, product, now);
 
   if (!product) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "SELECT_CATEGORY",
@@ -408,7 +411,7 @@ async function handleProductDetails(
     return categorySelectionResponse(nextSession);
   }
 
-  saveConversationSession(session, now);
+  await saveConversationSession(session, now);
   return [productDetailsResponse(product, language)];
 }
 
@@ -422,7 +425,7 @@ async function startPendingItem(
     selectedOptionValueIds: [],
     customFieldAnswers: {},
   };
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "SELECT_PRODUCT_OPTION",
@@ -448,7 +451,7 @@ async function continuePendingItem(
   const options = await listProductOptions(session.businessId, pendingItem.productId);
   const optionIndex = getPageNumber(session.context.optionIndex);
   if (optionIndex < options.length) {
-    saveConversationSession({ ...session, currentStep: "SELECT_PRODUCT_OPTION" }, now);
+    await saveConversationSession({ ...session, currentStep: "SELECT_PRODUCT_OPTION" }, now);
     return optionQuestionResponse(session, options[optionIndex]);
   }
 
@@ -464,7 +467,7 @@ async function continuePendingItem(
     : undefined;
   if (options.length && (!variant || !variant.isAvailable || variant.stockQuantity <= 0)) {
     const language = session.language ?? "en";
-    saveConversationSession(
+    await saveConversationSession(
       {
         ...session,
         currentStep: "PRODUCT_DETAILS",
@@ -480,7 +483,7 @@ async function continuePendingItem(
     return [unavailableCombinationResponse(language)];
   }
 
-  const withVariant = saveConversationSession(
+  const withVariant = await saveConversationSession(
     {
       ...session,
       context: {
@@ -497,11 +500,11 @@ async function continuePendingItem(
   const fields = await listProductCustomFields(session.businessId, pendingItem.productId);
   const fieldIndex = getPageNumber(withVariant.context.customFieldIndex);
   if (fieldIndex < fields.length) {
-    saveConversationSession({ ...withVariant, currentStep: "COLLECT_CUSTOM_FIELD" }, now);
+    await saveConversationSession({ ...withVariant, currentStep: "COLLECT_CUSTOM_FIELD" }, now);
     return [customFieldQuestionResponse(withVariant, fields[fieldIndex])];
   }
 
-  const quantitySession = saveConversationSession(
+  const quantitySession = await saveConversationSession(
     { ...withVariant, currentStep: "SELECT_QUANTITY" },
     now,
   );
@@ -535,7 +538,7 @@ async function handleProductOptionSelection(
 
   if (!selectedValue) return optionQuestionResponse(session, option);
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       context: {
@@ -560,7 +563,7 @@ async function backFromOption(session: ConversationSession, now: Date): Promise<
       session.businessId,
       pendingItem?.productId ?? getContextString(session.context.selectedProductId) ?? "",
     );
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "PRODUCT_DETAILS",
@@ -573,7 +576,7 @@ async function backFromOption(session: ConversationSession, now: Date): Promise<
       : [mainMenuResponse(session.language ?? "en")];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       context: {
@@ -611,7 +614,7 @@ async function handleCustomFieldInput(
     return [{ type: "text", text: validation.error }, customFieldQuestionResponse(session, field)];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       context: {
@@ -641,7 +644,7 @@ async function backFromCustomField(
       session.businessId,
       getPendingItemFromContext(session.context)?.productId ?? "",
     );
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       { ...session, currentStep: options.length ? "SELECT_PRODUCT_OPTION" : "PRODUCT_DETAILS" },
       now,
     );
@@ -650,7 +653,7 @@ async function backFromCustomField(
       : [mainMenuResponse(session.language ?? "en")];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     { ...session, context: { ...session.context, customFieldIndex: fieldIndex - 1 } },
     now,
   );
@@ -664,7 +667,7 @@ async function handleQuantitySelection(
 ): Promise<BotResponse[]> {
   const navigation = parseNavigation(input.value);
   if (navigation === "back") {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "COLLECT_CUSTOM_FIELD",
@@ -715,7 +718,7 @@ async function handleQuantitySelection(
     pendingItem: { ...pendingItem, quantity },
   });
   const cart = [...getCartFromContext(session.context), item];
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "CART_MENU",
@@ -745,7 +748,7 @@ async function handleCartMenu(
   const normalized = normalize(input.value);
 
   if (["cart_add_another", "add another item"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "SELECT_CATEGORY",
@@ -761,7 +764,7 @@ async function handleCartMenu(
     return startCheckout(session, now);
   }
   if (["cart_clear", "clear cart"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       { ...session, context: { ...session.context, cart: [] } },
       now,
     );
@@ -771,21 +774,24 @@ async function handleCartMenu(
     ];
   }
   if (["cart_remove", "remove item"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       { ...session, currentStep: "REMOVE_CART_ITEM" },
       now,
     );
     return removeCartItemResponse(nextSession);
   }
   if (["cart_edit", "change quantity"].includes(normalized)) {
-    const nextSession = saveConversationSession({ ...session, currentStep: "EDIT_CART_ITEM" }, now);
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "EDIT_CART_ITEM" },
+      now,
+    );
     return editCartItemResponse(nextSession);
   }
   if (input.value.startsWith("remove_cart_item:"))
     return removeCartItemById(session, input.value.split(":")[1], now);
   if (input.value.startsWith("edit_cart_item:")) {
     const itemId = input.value.split(":")[1];
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CHANGE_CART_ITEM_QUANTITY",
@@ -806,7 +812,7 @@ async function handleEditCartItem(
 ): Promise<BotResponse[]> {
   if (input.value.startsWith("edit_cart_item:")) {
     const itemId = input.value.split(":")[1];
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CHANGE_CART_ITEM_QUANTITY",
@@ -856,7 +862,7 @@ async function handleCartItemQuantityChange(
   const nextCart = cart.map((entry) =>
     entry.id === item.id ? { ...entry, quantity, lineTotal: entry.unitPrice * quantity } : entry,
   );
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "CART_MENU",
@@ -877,7 +883,7 @@ async function removeCartItemById(
 ): Promise<BotResponse[]> {
   const cart = getCartFromContext(session.context);
   const nextCart = cart.filter((item) => item.id !== itemId);
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     { ...session, currentStep: "CART_MENU", context: { ...session.context, cart: nextCart } },
     now,
   );
@@ -892,7 +898,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
   const cart = getCartFromContext(session.context);
   const settings = await getBusinessCheckoutSettings(session.businessId);
   if (!settings) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       {
         type: "text",
@@ -907,7 +913,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
 
   const validation = await validateCartForOrder({ businessId: session.businessId, cart });
   if (!validation.ok) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       stockChangedResponse(language, validation.itemName),
       ...(await cartMenuResponse(session)),
@@ -916,7 +922,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
 
   const subtotal = calculateCart(validation.cart).subtotal;
   if (subtotal < settings.minimumOrderAmount) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       {
         type: "text",
@@ -929,7 +935,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
     ];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "COLLECT_CUSTOMER_NAME",
@@ -945,15 +951,15 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
   return [customerNameQuestion(nextSession)];
 }
 
-function handleCustomerName(
+async function handleCustomerName(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
-): BotResponse[] {
+): Promise<BotResponse[]> {
   const language = session.language ?? "en";
   const customerName = input.value.trim();
   if (customerName.length < 2) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       {
         type: "text",
@@ -966,7 +972,7 @@ function handleCustomerName(
     ];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "SELECT_FULFILLMENT_METHOD",
@@ -1001,7 +1007,7 @@ async function handleFulfillmentMethod(
   if (!fulfillmentMethod) return [fulfillmentMethodQuestion(session)];
 
   const checkout = { ...getCheckoutFromContext(session.context), fulfillmentMethod };
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep:
@@ -1027,7 +1033,7 @@ async function handleDeliveryArea(
   const area = settings.deliveryAreas.find((entry) => entry.id === input.value);
   if (!area) return [deliveryAreaQuestion(session, settings)];
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "COLLECT_DELIVERY_ADDRESS",
@@ -1053,7 +1059,7 @@ async function handlePickupLocation(
   const pickupLocation = settings.pickupLocations.find((entry) => entry.id === input.value);
   if (!pickupLocation) return [pickupLocationQuestion(session, settings)];
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "SELECT_PAYMENT_METHOD",
@@ -1083,7 +1089,7 @@ async function handleDeliveryAddress(
   const address =
     input.type === "location" ? input.value || "WhatsApp location" : input.value.trim();
   if (input.type !== "text" && input.type !== "location") {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       {
         type: "text",
@@ -1097,7 +1103,7 @@ async function handleDeliveryAddress(
     ];
   }
   if (address.length < 4) {
-    saveConversationSession(session, now);
+    await saveConversationSession(session, now);
     return [
       {
         type: "text",
@@ -1110,7 +1116,7 @@ async function handleDeliveryAddress(
     ];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "SELECT_PAYMENT_METHOD",
@@ -1147,7 +1153,7 @@ async function handlePaymentMethod(
   );
   if (!paymentMethod) return [paymentMethodQuestion(session, settings)];
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "COLLECT_ORDER_NOTES",
@@ -1171,7 +1177,7 @@ async function handleOrderNotes(
   const notes = ["no_notes", "no notes", "none", "skip"].includes(normalized)
     ? undefined
     : input.value.trim();
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "REVIEW_ORDER",
@@ -1195,12 +1201,15 @@ async function handleReviewOrder(
   const normalized = normalize(input.value);
 
   if (["confirm_order", "confirm order", "confirm"].includes(normalized)) {
-    const nextSession = saveConversationSession({ ...session, currentStep: "CONFIRM_ORDER" }, now);
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "CONFIRM_ORDER" },
+      now,
+    );
     return confirmOrder(nextSession, now, messageId);
   }
 
   if (["edit_cart", "cart_edit", "edit cart"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CART_MENU",
@@ -1212,7 +1221,7 @@ async function handleReviewOrder(
   }
 
   if (["cancel_checkout", "cancel checkout", "cancel"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CART_MENU",
@@ -1244,7 +1253,7 @@ async function confirmOrder(
   const language = session.language ?? "en";
   const createdOrder = getContextString(session.context.createdOrderNumber);
   if (createdOrder) {
-    saveConversationSession({ ...session, currentStep: "ORDER_CREATED" }, now);
+    await saveConversationSession({ ...session, currentStep: "ORDER_CREATED" }, now);
     return [
       {
         type: "text",
@@ -1272,7 +1281,7 @@ async function confirmOrder(
   });
 
   if (!result.ok) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "CART_MENU",
@@ -1286,7 +1295,7 @@ async function confirmOrder(
     ];
   }
 
-  const nextSession = saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "ORDER_CREATED",
@@ -1312,7 +1321,7 @@ async function handleCompletedOrder(
 ): Promise<BotResponse[]> {
   const normalized = normalize(input.value);
   if (["cart_add_another", "new order", "place an order"].includes(normalized)) {
-    const nextSession = saveConversationSession(
+    const nextSession = await saveConversationSession(
       {
         ...session,
         currentStep: "SELECT_CATEGORY",
@@ -1331,7 +1340,7 @@ async function handleCompletedOrder(
     return categorySelectionResponse(nextSession);
   }
 
-  saveConversationSession(session, now);
+  await saveConversationSession(session, now);
   return [
     {
       type: "buttons",
@@ -1354,7 +1363,7 @@ async function moveToProductDetails(
   now: Date,
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
-  saveConversationSession(
+  await saveConversationSession(
     {
       ...session,
       currentStep: "PRODUCT_DETAILS",
