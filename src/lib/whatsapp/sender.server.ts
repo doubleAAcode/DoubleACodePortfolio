@@ -17,6 +17,21 @@ export type SendWhatsAppButtonsInput = {
   }>;
 };
 
+export type SendWhatsAppListInput = {
+  phoneNumberId: string;
+  recipient: string;
+  body: string;
+  buttonText: string;
+  sections: Array<{
+    title: string;
+    rows: Array<{
+      id: string;
+      title: string;
+      description?: string;
+    }>;
+  }>;
+};
+
 export type SendResult =
   | {
       ok: true;
@@ -130,6 +145,41 @@ export async function sendWhatsAppButtons({
               id: button.id,
               title: button.title,
             },
+          })),
+        },
+      },
+    },
+  });
+}
+
+export async function sendWhatsAppList({
+  phoneNumberId,
+  recipient,
+  body,
+  buttonText,
+  sections,
+}: SendWhatsAppListInput): Promise<SendResult> {
+  return sendWhatsAppPayload({
+    phoneNumberId,
+    payload: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient,
+      type: "interactive",
+      interactive: {
+        type: "list",
+        body: {
+          text: body,
+        },
+        action: {
+          button: buttonText,
+          sections: sections.map((section) => ({
+            title: section.title,
+            rows: section.rows.map((row) => ({
+              id: row.id,
+              title: row.title,
+              ...(row.description ? { description: row.description } : {}),
+            })),
           })),
         },
       },

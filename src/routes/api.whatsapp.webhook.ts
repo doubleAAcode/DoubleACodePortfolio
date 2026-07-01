@@ -9,7 +9,11 @@ import {
 } from "@/lib/whatsapp/conversation-engine.server";
 import { hasProcessedWhatsAppMessage } from "@/lib/whatsapp/duplicates.server";
 import { parseIncomingWhatsAppMessages } from "@/lib/whatsapp/parser.server";
-import { sendWhatsAppButtons, sendWhatsAppText } from "@/lib/whatsapp/sender.server";
+import {
+  sendWhatsAppButtons,
+  sendWhatsAppList,
+  sendWhatsAppText,
+} from "@/lib/whatsapp/sender.server";
 
 export const Route = createFileRoute("/api/whatsapp/webhook")({
   server: {
@@ -51,7 +55,7 @@ async function handleWebhookEvent(request: Request) {
   for (const message of messages) {
     const isDuplicate = hasProcessedWhatsAppMessage(message.messageId);
 
-    console.info("[whatsapp:webhook] text message", {
+    console.info("[whatsapp:webhook] incoming message", {
       messageId: message.messageId,
       sender: maskPhoneNumber(message.sender),
       phoneNumberId: message.phoneNumberId,
@@ -84,11 +88,19 @@ async function handleWebhookEvent(request: Request) {
               body: response.body,
               buttons: response.buttons,
             })
-          : await sendWhatsAppText({
-              phoneNumberId: message.phoneNumberId,
-              recipient: message.sender,
-              message: response.text,
-            });
+          : response.type === "list"
+            ? await sendWhatsAppList({
+                phoneNumberId: message.phoneNumberId,
+                recipient: message.sender,
+                body: response.body,
+                buttonText: response.buttonText,
+                sections: response.sections,
+              })
+            : await sendWhatsAppText({
+                phoneNumberId: message.phoneNumberId,
+                recipient: message.sender,
+                message: response.text,
+              });
 
       if (!result.ok) {
         console.error("[whatsapp:webhook] message send failed", {

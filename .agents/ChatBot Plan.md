@@ -536,3 +536,200 @@ After implementation, report:
 * Known limitations
 
 Stop after the main menu works. Do not begin the product ordering flow.
+
+
+# Milestone 4 — Categories and Product Selection
+
+The WhatsApp language selection, persistent session, and main menu are working.
+
+Implement the first part of the ordering flow using seeded store data.
+
+## Goal
+
+Implement:
+
+```text
+MAIN_MENU
+→ SELECT_CATEGORY
+→ SELECT_PRODUCT
+→ PRODUCT_DETAILS
+```
+
+Do not implement variants, quantity, cart, checkout, or dashboard management yet.
+
+## Requirements
+
+### 1. Seeded store data
+
+Create one test business with at least:
+
+* 3 categories
+* 6 products
+* English and Arabic names
+* Product codes
+* Prices
+* Descriptions
+* Active/inactive status
+* Product images if supported
+* One unavailable product
+
+Example categories:
+
+* Accessories
+* Clothing
+* Gifts
+
+### 2. Main menu routing
+
+When the customer selects:
+
+```text
+Place an order
+```
+
+or:
+
+```text
+تقديم طلب
+```
+
+move the session to `SELECT_CATEGORY`.
+
+### 3. Category selection
+
+Load active categories for the current business.
+
+Send them using a WhatsApp list message when possible.
+
+Include:
+
+* Category name
+* Category ID as the internal reply value
+* Back to main menu option
+
+Do not identify categories only by visible text.
+
+### 4. Product selection
+
+After category selection:
+
+* Load active products in that category
+* Show product name
+* Show price
+* Show product code
+* Hide inactive products
+
+Use a WhatsApp list message if the category contains multiple products.
+
+### 5. Product details
+
+After selecting a product, show:
+
+* Product name
+* Product code
+* Description
+* Price
+* Availability
+
+Example:
+
+```text
+Gold Necklace
+
+Code: NCK-001
+Price: $25
+Available
+
+A simple gold-plated necklace.
+
+[Order this item]
+[Back to products]
+[Main menu]
+```
+
+Arabic content must use the Arabic product fields.
+
+### 6. Unavailable products
+
+If a product is unavailable:
+
+* Clearly show that it is unavailable
+* Do not show the order button
+* Allow returning to products or the main menu
+
+### 7. Session context
+
+Store:
+
+```ts
+selectedCategoryId
+selectedProductId
+```
+
+inside the session context.
+
+Do not store only product or category names.
+
+### 8. Input handling
+
+Support:
+
+* Interactive list replies
+* Interactive button replies
+* Product codes typed manually
+* Category names typed manually
+* `back`
+* `menu`
+* `restart`
+* Arabic equivalents
+
+Manual product-code matching must be case-insensitive.
+
+### 9. WhatsApp limits
+
+Handle categories or products exceeding WhatsApp list limits.
+
+For now, implement simple pagination:
+
+```text
+Next page
+Previous page
+```
+
+Do not silently hide products.
+
+### 10. Separation of concerns
+
+Keep separate:
+
+* WhatsApp payload parsing
+* Conversation state machine
+* Product/category repository
+* WhatsApp response formatting
+
+The conversation engine must load products dynamically from the repository. Do not hard-code product names inside conversation logic.
+
+### Completion criteria
+
+This milestone is complete when:
+
+1. “Place an order” shows categories.
+2. Selecting a category shows its products.
+3. Selecting a product shows its details.
+4. Arabic mode shows Arabic category and product data.
+5. Product codes can be typed manually.
+6. Inactive products are hidden.
+7. Unavailable products cannot proceed to ordering.
+8. Back, menu, and restart work correctly.
+9. Selected IDs persist in the session.
+10. Duplicate webhook events do not cause duplicate replies.
+
+After implementation, report:
+
+* Files changed
+* Database or seed changes
+* Conversation states added
+* Manual testing instructions
+* Known limitations
+
+Stop after product details work. Do not implement variants, quantity, cart, checkout, or dashboard CRUD.

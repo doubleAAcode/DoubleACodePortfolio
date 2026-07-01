@@ -6,7 +6,7 @@ export type IncomingWhatsAppMessage = {
   phoneNumberId: string;
   timestamp: string;
   input: {
-    type: "text" | "button" | "unknown";
+    type: "text" | "button" | "list" | "unknown";
     value: string;
   };
 };
@@ -32,6 +32,11 @@ type WhatsAppWebhookPayload = {
               id?: string;
               title?: string;
             };
+            list_reply?: {
+              id?: string;
+              title?: string;
+              description?: string;
+            };
           };
           button?: {
             text?: string;
@@ -43,9 +48,7 @@ type WhatsAppWebhookPayload = {
   }>;
 };
 
-export function parseIncomingWhatsAppMessages(
-  payload: unknown,
-): IncomingWhatsAppMessage[] {
+export function parseIncomingWhatsAppMessages(payload: unknown): IncomingWhatsAppMessage[] {
   if (!isWebhookPayload(payload)) return [];
 
   const messages: IncomingWhatsAppMessage[] = [];
@@ -85,6 +88,11 @@ function parseMessageInput(message: {
       id?: string;
       title?: string;
     };
+    list_reply?: {
+      id?: string;
+      title?: string;
+      description?: string;
+    };
   };
   button?: {
     text?: string;
@@ -104,6 +112,16 @@ function parseMessageInput(message: {
       value:
         message.interactive.button_reply?.id?.trim() ||
         message.interactive.button_reply?.title?.trim() ||
+        "",
+    };
+  }
+
+  if (message.type === "interactive" && message.interactive?.type === "list_reply") {
+    return {
+      type: "list",
+      value:
+        message.interactive.list_reply?.id?.trim() ||
+        message.interactive.list_reply?.title?.trim() ||
         "",
     };
   }

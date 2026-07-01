@@ -1,6 +1,11 @@
 import "@tanstack/react-start/server-only";
 
-export type ConversationStep = "SELECT_LANGUAGE" | "MAIN_MENU";
+export type ConversationStep =
+  | "SELECT_LANGUAGE"
+  | "MAIN_MENU"
+  | "SELECT_CATEGORY"
+  | "SELECT_PRODUCT"
+  | "PRODUCT_DETAILS";
 export type ConversationLanguage = "en" | "ar";
 
 export type ConversationSession = {
