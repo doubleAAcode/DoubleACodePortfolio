@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -51,6 +53,16 @@ const StoresRoute = StoresRouteImport.update({
 const SpreadsheetRoute = SpreadsheetRouteImport.update({
   id: '/spreadsheet',
   path: '/spreadsheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataDeletionRoute = DataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -218,6 +230,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -252,6 +266,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
@@ -285,6 +301,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -322,6 +340,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/dashboard'
+    | '/data-deletion'
+    | '/privacy'
     | '/spreadsheet'
     | '/stores'
     | '/dashboard/categories'
@@ -356,6 +376,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/data-deletion'
+    | '/privacy'
     | '/spreadsheet'
     | '/dashboard/categories'
     | '/dashboard/orders'
@@ -388,6 +410,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/dashboard'
+    | '/data-deletion'
+    | '/privacy'
     | '/spreadsheet'
     | '/stores'
     | '/dashboard/categories'
@@ -424,6 +448,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DataDeletionRoute: typeof DataDeletionRoute
+  PrivacyRoute: typeof PrivacyRoute
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
   MenusMarleysRoute: typeof MenusMarleysRoute
@@ -450,6 +476,20 @@ declare module '@tanstack/react-router' {
       path: '/spreadsheet'
       fullPath: '/spreadsheet'
       preLoaderRoute: typeof SpreadsheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-deletion': {
+      id: '/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof DataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -754,6 +794,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DataDeletionRoute: DataDeletionRoute,
+  PrivacyRoute: PrivacyRoute,
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
   MenusMarleysRoute: MenusMarleysRoute,
