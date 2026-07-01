@@ -37,7 +37,7 @@
         "name": "koubar group",
         "client": "mhamad koubar",
         "totalPrice": 600,
-        "status": "Lead",
+        "status": "Completed",
         "finder": "Saeed",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
@@ -192,5 +192,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:10:34.858Z"
+  "updatedAt": "2026-07-01T09:10:59.954Z"
 }
