@@ -10,7 +10,7 @@ export function Hero() {
   const heroTextOpacity = useTransform(scrollYProgress, (progress) => Math.max(0, Math.min(1, 1 - progress / 0.75)));
   const logoScale = useTransform(scrollYProgress, [0, 1], [1, 1.4]);
   const logoRotate = useTransform(scrollYProgress, [0, 1], [0, 25]);
-
+    
   return (
     <section ref={ref} id="top" className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-32">
       {/* Backgrounds — hexagonal field */}
