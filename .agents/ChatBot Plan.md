@@ -733,3 +733,413 @@ After implementation, report:
 * Known limitations
 
 Stop after product details work. Do not implement variants, quantity, cart, checkout, or dashboard CRUD.
+
+
+# Milestone 5 — Product Options, Custom Fields, Quantity and Cart
+
+Milestones 1–4 are working:
+
+* Live WhatsApp webhook
+* Persistent sessions
+* English and Arabic
+* Main menu
+* Categories
+* Products
+* Product details
+
+Implement the next ordering stage.
+
+## Goal
+
+Build this flow:
+
+```text
+PRODUCT_DETAILS
+→ SELECT_PRODUCT_OPTIONS
+→ COLLECT_CUSTOM_FIELDS
+→ SELECT_QUANTITY
+→ ADD_TO_CART
+→ CART_MENU
+```
+
+Do not implement customer details, delivery, payment, final order creation, owner notifications, or stock deduction yet.
+
+---
+
+## 1. Product options
+
+Products may have selectable options such as:
+
+* Size
+* Color
+* Material
+* Length
+
+Options must be configured from data, not hard-coded in the conversation engine.
+
+Suggested models:
+
+### ProductOption
+
+* id
+* businessId
+* productId
+* nameEnglish
+* nameArabic
+* sortOrder
+* isRequired
+
+### ProductOptionValue
+
+* id
+* optionId
+* valueEnglish
+* valueArabic
+* sortOrder
+
+### ProductVariant
+
+Represents the actual purchasable SKU combination.
+
+* id
+* businessId
+* productId
+* sku
+* selectedOptionValueIds
+* price
+* stockQuantity
+* isAvailable
+
+Example:
+
+```text
+Product: T-Shirt
+
+Options:
+- Size: Small, Medium, Large
+- Color: Black, White
+
+Variant:
+- Medium + Black
+- SKU: SHIRT-M-BLK
+- Price: $20
+- Stock: 3
+```
+
+The engine must ask options in their configured order and resolve the final matching variant.
+
+---
+
+## 2. Custom product fields
+
+Custom fields do not define stock.
+
+Examples:
+
+* Engraving text
+* Gift message
+* Special instructions
+* Custom number
+
+Suggested model:
+
+### ProductCustomField
+
+* id
+* businessId
+* productId
+* type
+* labelEnglish
+* labelArabic
+* placeholderEnglish
+* placeholderArabic
+* isRequired
+* minimumLength
+* maximumLength
+* minimumValue
+* maximumValue
+* sortOrder
+
+Initially support:
+
+* `short_text`
+* `long_text`
+* `number`
+* `yes_no`
+* `single_choice`
+
+Example:
+
+```text
+What name would you like engraved?
+
+Customer:
+Sarah
+```
+
+Save the answer against the cart item, not against the product.
+
+---
+
+## 3. Conversation states
+
+Add states similar to:
+
+```text
+SELECT_PRODUCT_OPTION
+COLLECT_CUSTOM_FIELD
+SELECT_QUANTITY
+CART_MENU
+EDIT_CART_ITEM
+REMOVE_CART_ITEM
+```
+
+Store temporary configuration inside the session context:
+
+```ts
+pendingItem: {
+  productId,
+  selectedOptionValueIds,
+  resolvedVariantId,
+  customFieldAnswers,
+  quantity
+}
+```
+
+Clear `pendingItem` after successfully adding it to the cart.
+
+---
+
+## 4. Dynamic question order
+
+After the customer selects “Order this item”:
+
+1. Load the product’s required options.
+2. Ask each option in configured order.
+3. Resolve the matching variant.
+4. Check availability.
+5. Ask configured custom fields.
+6. Ask quantity.
+7. Add the completed item to the cart.
+
+Skip sections that do not apply.
+
+Examples:
+
+```text
+Phone charger
+→ Cable type
+→ Quantity
+```
+
+```text
+Custom necklace
+→ Material
+→ Chain length
+→ Engraving text
+→ Quantity
+```
+
+```text
+Simple product
+→ Quantity
+```
+
+---
+
+## 5. Variant validation
+
+After all options are selected:
+
+* Resolve the exact variant.
+* Confirm it exists.
+* Confirm it is active.
+* Confirm it is available.
+* Confirm stock is greater than zero.
+* Use the variant price when provided.
+* Never trust prices supplied by WhatsApp input or session state.
+
+If the selected combination is unavailable:
+
+```text
+That combination is currently unavailable.
+
+[Choose different options]
+[Back to product]
+[Main menu]
+```
+
+---
+
+## 6. Quantity handling
+
+Allow quantity through buttons where practical and manual numeric input.
+
+Validate:
+
+* Integer only
+* Minimum 1
+* Cannot exceed current stock
+* Cannot exceed a configurable per-order limit
+
+If available stock is 3, quantity 4 must be rejected.
+
+Do not permanently reduce stock during this milestone.
+
+---
+
+## 7. Cart structure
+
+Each cart item must include:
+
+```ts
+{
+  id,
+  productId,
+  variantId,
+  productCode,
+  productName,
+  selectedOptions,
+  customFieldAnswers,
+  quantity,
+  unitPrice,
+  lineTotal
+}
+```
+
+All totals must be calculated server-side.
+
+Support multiple cart items.
+
+---
+
+## 8. Cart menu
+
+After adding an item:
+
+```text
+Added to cart ✅
+
+Gold Necklace
+Material: Gold
+Length: 45 cm
+Engraving: Sarah
+Quantity: 1
+Total: $25
+
+[Add another item]
+[View cart]
+[Checkout]
+```
+
+For this milestone, `Checkout` may move to a placeholder state and reply:
+
+```text
+Checkout will be implemented in the next milestone.
+```
+
+Do not collect delivery information yet.
+
+---
+
+## 9. View and manage cart
+
+The customer must be able to:
+
+* View all cart items
+* See quantities and line totals
+* See cart subtotal
+* Remove an item
+* Change an item’s quantity
+* Clear the cart
+* Continue shopping
+
+When changing quantity, validate stock again.
+
+Cart item actions must use internal IDs, not product names.
+
+---
+
+## 10. Navigation
+
+Support:
+
+* `back`
+* `menu`
+* `restart`
+* `cart`
+* `cancel`
+* Arabic equivalents
+
+Expected behavior:
+
+* `back` returns to the previous option or question where possible.
+* `cart` opens the cart.
+* `restart` clears session and cart.
+* `menu` returns to the main menu but preserves the cart.
+* `cancel` cancels the current unfinished item but preserves existing cart items.
+
+---
+
+## 11. Arabic and English
+
+All option names, values, custom-field labels, validation errors, cart summaries, and buttons must use the session language.
+
+Customer-entered custom text must be preserved exactly as entered.
+
+---
+
+## 12. Separation of concerns
+
+Keep separate:
+
+* Conversation state machine
+* Product option repository
+* Variant resolver
+* Custom-field validation
+* Cart service
+* WhatsApp response formatting
+
+The engine must remain independent from WhatsApp-specific payload structures.
+
+Suggested services:
+
+```ts
+resolveVariant(productId, selectedOptionValueIds)
+validateCustomField(field, value)
+addItemToCart(sessionId, pendingItem)
+calculateCart(cart)
+```
+
+---
+
+## Completion criteria
+
+Milestone 5 is complete when:
+
+1. A product with no options can be added to the cart.
+2. A product with multiple options resolves the correct SKU.
+3. Unavailable combinations are rejected.
+4. Required custom text such as engraving is collected.
+5. Invalid custom-field input is rejected.
+6. Quantity cannot exceed available stock.
+7. Multiple products can be added.
+8. Cart totals are calculated correctly.
+9. Items can be edited and removed.
+10. Arabic and English flows both work.
+11. Restart clears the cart.
+12. Menu preserves the cart.
+13. Duplicate webhook events do not add an item twice.
+14. Stock is not permanently reduced yet.
+
+After implementation, report:
+
+* Files changed
+* Database changes
+* New conversation states
+* How variants are resolved
+* How custom fields are validated
+* Manual test cases
+* Known limitations
+
+Stop after cart management works. Do not implement checkout or final order creation.

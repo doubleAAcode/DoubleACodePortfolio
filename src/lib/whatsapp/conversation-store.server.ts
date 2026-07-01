@@ -5,7 +5,14 @@ export type ConversationStep =
   | "MAIN_MENU"
   | "SELECT_CATEGORY"
   | "SELECT_PRODUCT"
-  | "PRODUCT_DETAILS";
+  | "PRODUCT_DETAILS"
+  | "SELECT_PRODUCT_OPTION"
+  | "COLLECT_CUSTOM_FIELD"
+  | "SELECT_QUANTITY"
+  | "CART_MENU"
+  | "EDIT_CART_ITEM"
+  | "REMOVE_CART_ITEM"
+  | "CHANGE_CART_ITEM_QUANTITY";
 export type ConversationLanguage = "en" | "ar";
 
 export type ConversationSession = {

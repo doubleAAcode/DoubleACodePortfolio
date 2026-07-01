@@ -26,6 +26,58 @@ export type StoreProduct = {
   imageUrl?: string;
   isActive: boolean;
   isAvailable: boolean;
+  stockQuantity: number;
+  sortOrder: number;
+};
+
+export type StoreProductOption = {
+  id: string;
+  businessId: string;
+  productId: string;
+  nameEnglish: string;
+  nameArabic: string;
+  sortOrder: number;
+  isRequired: boolean;
+};
+
+export type StoreProductOptionValue = {
+  id: string;
+  optionId: string;
+  valueEnglish: string;
+  valueArabic: string;
+  sortOrder: number;
+};
+
+export type StoreProductVariant = {
+  id: string;
+  businessId: string;
+  productId: string;
+  sku: string;
+  selectedOptionValueIds: string[];
+  price: number;
+  stockQuantity: number;
+  isAvailable: boolean;
+};
+
+export type StoreProductCustomField = {
+  id: string;
+  businessId: string;
+  productId: string;
+  type: "short_text" | "long_text" | "number" | "yes_no" | "single_choice";
+  labelEnglish: string;
+  labelArabic: string;
+  placeholderEnglish?: string;
+  placeholderArabic?: string;
+  isRequired: boolean;
+  minimumLength?: number;
+  maximumLength?: number;
+  minimumValue?: number;
+  maximumValue?: number;
+  choices?: Array<{
+    id: string;
+    labelEnglish: string;
+    labelArabic: string;
+  }>;
   sortOrder: number;
 };
 
@@ -69,6 +121,7 @@ const products: StoreProduct[] = [
     price: 25,
     isActive: true,
     isAvailable: true,
+    stockQuantity: 6,
     sortOrder: 1,
   },
   {
@@ -83,6 +136,7 @@ const products: StoreProduct[] = [
     price: 18,
     isActive: true,
     isAvailable: false,
+    stockQuantity: 0,
     sortOrder: 2,
   },
   {
@@ -97,6 +151,7 @@ const products: StoreProduct[] = [
     price: 32,
     isActive: true,
     isAvailable: true,
+    stockQuantity: 8,
     sortOrder: 1,
   },
   {
@@ -111,6 +166,7 @@ const products: StoreProduct[] = [
     price: 48,
     isActive: true,
     isAvailable: true,
+    stockQuantity: 3,
     sortOrder: 2,
   },
   {
@@ -125,6 +181,7 @@ const products: StoreProduct[] = [
     price: 65,
     isActive: false,
     isAvailable: true,
+    stockQuantity: 2,
     sortOrder: 3,
   },
   {
@@ -139,6 +196,7 @@ const products: StoreProduct[] = [
     price: 22,
     isActive: true,
     isAvailable: true,
+    stockQuantity: 10,
     sortOrder: 1,
   },
   {
@@ -153,7 +211,216 @@ const products: StoreProduct[] = [
     price: 55,
     isActive: true,
     isAvailable: true,
+    stockQuantity: 4,
     sortOrder: 2,
+  },
+];
+
+const productOptions: StoreProductOption[] = [
+  {
+    id: "opt-necklace-material",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    nameEnglish: "Material",
+    nameArabic: "الخامة",
+    sortOrder: 1,
+    isRequired: true,
+  },
+  {
+    id: "opt-necklace-length",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    nameEnglish: "Length",
+    nameArabic: "الطول",
+    sortOrder: 2,
+    isRequired: true,
+  },
+  {
+    id: "opt-shirt-size",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-cotton-shirt",
+    nameEnglish: "Size",
+    nameArabic: "المقاس",
+    sortOrder: 1,
+    isRequired: true,
+  },
+  {
+    id: "opt-shirt-color",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-cotton-shirt",
+    nameEnglish: "Color",
+    nameArabic: "اللون",
+    sortOrder: 2,
+    isRequired: true,
+  },
+];
+
+const productOptionValues: StoreProductOptionValue[] = [
+  {
+    id: "val-necklace-gold",
+    optionId: "opt-necklace-material",
+    valueEnglish: "Gold",
+    valueArabic: "ذهبي",
+    sortOrder: 1,
+  },
+  {
+    id: "val-necklace-silver",
+    optionId: "opt-necklace-material",
+    valueEnglish: "Silver",
+    valueArabic: "فضي",
+    sortOrder: 2,
+  },
+  {
+    id: "val-necklace-45",
+    optionId: "opt-necklace-length",
+    valueEnglish: "45 cm",
+    valueArabic: "٤٥ سم",
+    sortOrder: 1,
+  },
+  {
+    id: "val-necklace-50",
+    optionId: "opt-necklace-length",
+    valueEnglish: "50 cm",
+    valueArabic: "٥٠ سم",
+    sortOrder: 2,
+  },
+  {
+    id: "val-shirt-small",
+    optionId: "opt-shirt-size",
+    valueEnglish: "Small",
+    valueArabic: "صغير",
+    sortOrder: 1,
+  },
+  {
+    id: "val-shirt-medium",
+    optionId: "opt-shirt-size",
+    valueEnglish: "Medium",
+    valueArabic: "وسط",
+    sortOrder: 2,
+  },
+  {
+    id: "val-shirt-large",
+    optionId: "opt-shirt-size",
+    valueEnglish: "Large",
+    valueArabic: "كبير",
+    sortOrder: 3,
+  },
+  {
+    id: "val-shirt-black",
+    optionId: "opt-shirt-color",
+    valueEnglish: "Black",
+    valueArabic: "أسود",
+    sortOrder: 1,
+  },
+  {
+    id: "val-shirt-white",
+    optionId: "opt-shirt-color",
+    valueEnglish: "White",
+    valueArabic: "أبيض",
+    sortOrder: 2,
+  },
+];
+
+const productVariants: StoreProductVariant[] = [
+  {
+    id: "var-necklace-gold-45",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    sku: "NCK-001-G45",
+    selectedOptionValueIds: ["val-necklace-gold", "val-necklace-45"],
+    price: 25,
+    stockQuantity: 4,
+    isAvailable: true,
+  },
+  {
+    id: "var-necklace-gold-50",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    sku: "NCK-001-G50",
+    selectedOptionValueIds: ["val-necklace-gold", "val-necklace-50"],
+    price: 28,
+    stockQuantity: 2,
+    isAvailable: true,
+  },
+  {
+    id: "var-necklace-silver-45",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    sku: "NCK-001-S45",
+    selectedOptionValueIds: ["val-necklace-silver", "val-necklace-45"],
+    price: 23,
+    stockQuantity: 0,
+    isAvailable: false,
+  },
+  {
+    id: "var-necklace-silver-50",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    sku: "NCK-001-S50",
+    selectedOptionValueIds: ["val-necklace-silver", "val-necklace-50"],
+    price: 26,
+    stockQuantity: 3,
+    isAvailable: true,
+  },
+  {
+    id: "var-shirt-medium-black",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-cotton-shirt",
+    sku: "SHT-101-M-BLK",
+    selectedOptionValueIds: ["val-shirt-medium", "val-shirt-black"],
+    price: 32,
+    stockQuantity: 3,
+    isAvailable: true,
+  },
+  {
+    id: "var-shirt-large-white",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-cotton-shirt",
+    sku: "SHT-101-L-WHT",
+    selectedOptionValueIds: ["val-shirt-large", "val-shirt-white"],
+    price: 34,
+    stockQuantity: 1,
+    isAvailable: true,
+  },
+];
+
+const customFields: StoreProductCustomField[] = [
+  {
+    id: "field-necklace-engraving",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gold-necklace",
+    type: "short_text",
+    labelEnglish: "Engraving text",
+    labelArabic: "نص الحفر",
+    placeholderEnglish: "Example: Sarah",
+    placeholderArabic: "مثال: سارة",
+    isRequired: true,
+    minimumLength: 2,
+    maximumLength: 20,
+    sortOrder: 1,
+  },
+  {
+    id: "field-gift-message",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-gift-box",
+    type: "long_text",
+    labelEnglish: "Gift message",
+    labelArabic: "رسالة الهدية",
+    placeholderEnglish: "Write a short message or type skip.",
+    placeholderArabic: "اكتب رسالة قصيرة أو اكتب تخطي.",
+    isRequired: false,
+    maximumLength: 120,
+    sortOrder: 1,
+  },
+  {
+    id: "field-candle-wrap",
+    businessId: DOUBLE_A_TEST_BUSINESS_ID,
+    productId: "prod-candle-set",
+    type: "yes_no",
+    labelEnglish: "Gift wrapping",
+    labelArabic: "تغليف هدية",
+    isRequired: true,
+    sortOrder: 1,
   },
 ];
 
@@ -196,6 +463,51 @@ export async function findVisibleProductByCode(businessId: string, code: string)
   );
 }
 
+export async function listProductOptions(businessId: string, productId: string) {
+  return productOptions
+    .filter((option) => option.businessId === businessId && option.productId === productId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export async function listProductOptionValues(optionId: string) {
+  return productOptionValues
+    .filter((value) => value.optionId === optionId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export async function findProductOptionValue(valueId: string) {
+  return productOptionValues.find((value) => value.id === valueId);
+}
+
+export async function resolveProductVariant({
+  businessId,
+  productId,
+  selectedOptionValueIds,
+}: {
+  businessId: string;
+  productId: string;
+  selectedOptionValueIds: string[];
+}) {
+  const selected = [...selectedOptionValueIds].sort().join("|");
+
+  return productVariants.find(
+    (variant) =>
+      variant.businessId === businessId &&
+      variant.productId === productId &&
+      [...variant.selectedOptionValueIds].sort().join("|") === selected,
+  );
+}
+
+export async function findProductVariant(variantId: string) {
+  return productVariants.find((variant) => variant.id === variantId);
+}
+
+export async function listProductCustomFields(businessId: string, productId: string) {
+  return customFields
+    .filter((field) => field.businessId === businessId && field.productId === productId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
 export function getCategoryName(category: StoreCategory, language: ConversationLanguage) {
   return language === "ar" ? category.nameArabic : category.nameEnglish;
 }
@@ -206,4 +518,26 @@ export function getProductName(product: StoreProduct, language: ConversationLang
 
 export function getProductDescription(product: StoreProduct, language: ConversationLanguage) {
   return language === "ar" ? product.descriptionArabic : product.descriptionEnglish;
+}
+
+export function getOptionName(option: StoreProductOption, language: ConversationLanguage) {
+  return language === "ar" ? option.nameArabic : option.nameEnglish;
+}
+
+export function getOptionValueName(value: StoreProductOptionValue, language: ConversationLanguage) {
+  return language === "ar" ? value.valueArabic : value.valueEnglish;
+}
+
+export function getCustomFieldLabel(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  return language === "ar" ? field.labelArabic : field.labelEnglish;
+}
+
+export function getCustomFieldPlaceholder(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  return language === "ar" ? field.placeholderArabic : field.placeholderEnglish;
 }
