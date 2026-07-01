@@ -6,8 +6,10 @@ export type IncomingWhatsAppMessage = {
   phoneNumberId: string;
   timestamp: string;
   input: {
-    type: "text" | "button" | "list" | "unknown";
+    type: "text" | "button" | "list" | "location" | "unknown";
     value: string;
+    latitude?: number;
+    longitude?: number;
   };
 };
 
@@ -41,6 +43,12 @@ type WhatsAppWebhookPayload = {
           button?: {
             text?: string;
             payload?: string;
+          };
+          location?: {
+            latitude?: number;
+            longitude?: number;
+            name?: string;
+            address?: string;
           };
         }>;
       };
@@ -98,6 +106,12 @@ function parseMessageInput(message: {
     text?: string;
     payload?: string;
   };
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    name?: string;
+    address?: string;
+  };
 }): IncomingWhatsAppMessage["input"] {
   if (message.type === "text") {
     return {
@@ -130,6 +144,15 @@ function parseMessageInput(message: {
     return {
       type: "button",
       value: message.button?.payload?.trim() || message.button?.text?.trim() || "",
+    };
+  }
+
+  if (message.type === "location") {
+    return {
+      type: "location",
+      value: [message.location?.name, message.location?.address].filter(Boolean).join(" - "),
+      latitude: message.location?.latitude,
+      longitude: message.location?.longitude,
     };
   }
 

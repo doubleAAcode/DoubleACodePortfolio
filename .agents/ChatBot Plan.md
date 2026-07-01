@@ -1143,3 +1143,424 @@ After implementation, report:
 * Known limitations
 
 Stop after cart management works. Do not implement checkout or final order creation.
+
+
+
+# Milestone 6 — Checkout and Order Creation
+
+Milestones 1–5 are working:
+
+* WhatsApp webhook
+* Persistent sessions
+* English and Arabic
+* Categories and products
+* Product options and custom fields
+* Quantity and cart management
+
+Implement checkout and final order creation.
+
+## Goal
+
+Implement:
+
+```text
+CART_MENU
+→ CHECKOUT
+→ COLLECT_CUSTOMER_NAME
+→ SELECT_FULFILLMENT_METHOD
+→ SELECT_DELIVERY_AREA
+→ COLLECT_DELIVERY_ADDRESS
+→ SELECT_PAYMENT_METHOD
+→ COLLECT_ORDER_NOTES
+→ REVIEW_ORDER
+→ CONFIRM_ORDER
+→ ORDER_CREATED
+```
+
+Do not build the owner dashboard or owner notifications yet.
+
+---
+
+## 1. Business checkout settings
+
+Create configurable business settings for:
+
+* Currency
+* Allow delivery
+* Allow pickup
+* Pickup locations
+* Delivery areas
+* Delivery fee per area
+* Minimum order amount
+* Supported payment methods
+* Order confirmation message
+* Require owner approval
+
+Do not hard-code these rules inside the conversation engine.
+
+For the test business, support:
+
+* Delivery
+* Pickup
+* Cash on delivery
+* Cash on pickup
+
+---
+
+## 2. Customer details
+
+Collect:
+
+* Customer name
+* WhatsApp phone number from the sender
+* Optional alternate phone number
+* Preferred language
+
+Validate required fields before continuing.
+
+Do not ask for the WhatsApp number again unless an alternate contact number is needed.
+
+---
+
+## 3. Fulfillment method
+
+Ask:
+
+```text
+How would you like to receive your order?
+
+[Delivery]
+[Pickup]
+```
+
+Arabic:
+
+```text
+كيف تريد استلام طلبك؟
+
+[توصيل]
+[استلام من المتجر]
+```
+
+If pickup is selected:
+
+* Show configured pickup locations
+* Skip delivery area and address questions
+
+If delivery is selected:
+
+* Ask for delivery area
+* Calculate the configured delivery fee
+* Ask for the full address
+
+---
+
+## 4. Delivery address
+
+Initially support:
+
+* Manual text address
+* WhatsApp location message when received
+
+Store both when available:
+
+```ts
+deliveryAddress
+deliveryLatitude
+deliveryLongitude
+```
+
+If the message type is unsupported, repeat the address request without crashing.
+
+---
+
+## 5. Payment method
+
+Load payment methods from business settings.
+
+Initially support:
+
+* Cash on delivery
+* Cash on pickup
+
+Only show payment methods valid for the selected fulfillment method.
+
+Do not implement online payments yet.
+
+---
+
+## 6. Order notes
+
+Ask for optional order notes:
+
+```text
+Would you like to add any notes?
+
+[No notes]
+```
+
+Also accept free text.
+
+Examples:
+
+* Call before delivery
+* Gift packaging
+* Deliver after 5 PM
+
+Product-specific custom fields such as engraving must remain attached to their cart items, not placed only in general order notes.
+
+---
+
+## 7. Final order review
+
+Before confirmation, reload and validate all cart data from the database.
+
+Display:
+
+* Each item
+* Selected options
+* Custom-field answers
+* Quantity
+* Unit price
+* Line total
+* Subtotal
+* Delivery fee
+* Final total
+* Customer name
+* Fulfillment method
+* Address or pickup location
+* Payment method
+* Notes
+
+Provide:
+
+```text
+[Confirm order]
+[Edit cart]
+[Cancel checkout]
+```
+
+Never trust prices or totals stored only in session state.
+
+---
+
+## 8. Stock reservation
+
+Do not permanently reduce stock when checkout starts.
+
+When the customer confirms:
+
+1. Recheck every variant’s current stock.
+2. Create the order and stock reservations in one database transaction.
+3. Reserve the ordered quantities.
+4. Prevent other customers from ordering reserved stock.
+5. Do not permanently deduct stock yet.
+6. Final deduction will happen when the owner accepts the order in a later milestone.
+
+Suggested model:
+
+### StockReservation
+
+* id
+* businessId
+* orderId
+* productVariantId
+* quantity
+* status
+* expiresAt
+* createdAt
+
+Statuses:
+
+```text
+ACTIVE
+COMMITTED
+RELEASED
+EXPIRED
+```
+
+If stock changed before confirmation, explain which item is unavailable and return the customer to the cart.
+
+---
+
+## 9. Order model
+
+Create or complete these models:
+
+### Order
+
+* id
+* businessId
+* orderNumber
+* customerName
+* customerPhone
+* alternatePhone
+* language
+* status
+* fulfillmentMethod
+* deliveryAreaId
+* deliveryAddress
+* deliveryLatitude
+* deliveryLongitude
+* pickupLocationId
+* paymentMethod
+* notes
+* subtotal
+* deliveryFee
+* total
+* createdAt
+* updatedAt
+
+### OrderItem
+
+* id
+* orderId
+* productId
+* variantId
+* productCode
+* productName
+* selectedOptions
+* customFieldAnswers
+* quantity
+* unitPrice
+* lineTotal
+
+Initial order status:
+
+```text
+PENDING_OWNER_CONFIRMATION
+```
+
+Generate a human-readable order number such as:
+
+```text
+DA-000001
+```
+
+The database ID and public order number must be separate.
+
+---
+
+## 10. Idempotency
+
+The same WhatsApp webhook or confirmation action must never create two orders.
+
+Use:
+
+* Incoming Meta message ID
+* Session checkout state
+* Database uniqueness or idempotency key
+
+Order creation, order items, and stock reservations must happen atomically.
+
+---
+
+## 11. Confirmation response
+
+After successful creation:
+
+```text
+Order received ✅
+
+Order: DA-000001
+Total: $42
+
+The store will review and confirm your order shortly.
+```
+
+Arabic content must be localized.
+
+After order creation:
+
+* Clear the cart
+* Clear pending checkout data
+* Preserve language
+* Return the session to a completed-order state
+* Allow starting another order
+
+Do not say that the order is accepted yet.
+
+---
+
+## 12. Cancellation behavior
+
+Before confirmation:
+
+* `cancel` exits checkout
+* Cart remains available
+
+After confirmation:
+
+* Do not delete the order through normal restart/menu commands
+* Tell the customer that cancellation support will be added later
+* Preserve the created order
+
+---
+
+## 13. Conversation states
+
+Add states similar to:
+
+```text
+COLLECT_CUSTOMER_NAME
+SELECT_FULFILLMENT_METHOD
+SELECT_DELIVERY_AREA
+SELECT_PICKUP_LOCATION
+COLLECT_DELIVERY_ADDRESS
+SELECT_PAYMENT_METHOD
+COLLECT_ORDER_NOTES
+REVIEW_ORDER
+CONFIRM_ORDER
+ORDER_CREATED
+```
+
+Store temporary checkout information under:
+
+```ts
+checkout: {
+  customerName,
+  alternatePhone,
+  fulfillmentMethod,
+  deliveryAreaId,
+  deliveryAddress,
+  deliveryLatitude,
+  deliveryLongitude,
+  pickupLocationId,
+  paymentMethod,
+  notes
+}
+```
+
+---
+
+## 14. Completion criteria
+
+Milestone 6 is complete when:
+
+1. A cart can proceed to checkout.
+2. Delivery and pickup follow different routes.
+3. Delivery fees are loaded from business settings.
+4. Customer details are stored correctly.
+5. Cash payment options work.
+6. Final totals are recalculated server-side.
+7. Out-of-stock changes are caught before confirmation.
+8. One confirmation creates exactly one order.
+9. Stock is reserved but not permanently deducted.
+10. The customer receives an order number.
+11. The cart is cleared only after successful order creation.
+12. Arabic and English checkout both work.
+13. Cancel checkout preserves the cart.
+14. Duplicate webhook delivery cannot duplicate the order.
+
+After implementation, report:
+
+* Files changed
+* Database migrations
+* Conversation states added
+* Checkout validation approach
+* Stock reservation approach
+* Order idempotency approach
+* Manual test cases
+* Known limitations
+
+Stop after the customer can create a pending order. Do not build the owner dashboard, notifications, or order acceptance yet.

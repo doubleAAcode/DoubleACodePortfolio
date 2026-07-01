@@ -12,7 +12,17 @@ export type ConversationStep =
   | "CART_MENU"
   | "EDIT_CART_ITEM"
   | "REMOVE_CART_ITEM"
-  | "CHANGE_CART_ITEM_QUANTITY";
+  | "CHANGE_CART_ITEM_QUANTITY"
+  | "COLLECT_CUSTOMER_NAME"
+  | "SELECT_FULFILLMENT_METHOD"
+  | "SELECT_DELIVERY_AREA"
+  | "SELECT_PICKUP_LOCATION"
+  | "COLLECT_DELIVERY_ADDRESS"
+  | "SELECT_PAYMENT_METHOD"
+  | "COLLECT_ORDER_NOTES"
+  | "REVIEW_ORDER"
+  | "CONFIRM_ORDER"
+  | "ORDER_CREATED";
 export type ConversationLanguage = "en" | "ar";
 
 export type ConversationSession = {

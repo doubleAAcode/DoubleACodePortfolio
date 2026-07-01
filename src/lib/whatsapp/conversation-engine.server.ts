@@ -32,6 +32,14 @@ import {
   type PendingItem,
 } from "./cart-service.server";
 import {
+  getBusinessCheckoutSettings,
+  getDeliveryAreaName,
+  getPaymentMethodLabel,
+  getPickupLocationAddress,
+  getPickupLocationName,
+  type BusinessCheckoutSettings,
+} from "./checkout-settings.server";
+import {
   createConversationSession,
   deleteConversationSession,
   getActiveConversationSession,
@@ -39,12 +47,20 @@ import {
   type ConversationLanguage,
   type ConversationSession,
 } from "./conversation-store.server";
+import {
+  createPendingOrder,
+  validateCartForOrder,
+  type CheckoutDraft,
+  type WhatsAppOrder,
+} from "./order-store.server";
 
 export { DOUBLE_A_TEST_BUSINESS_ID };
 
 export type ConversationInput = {
-  type: "text" | "button" | "list" | "unknown";
+  type: "text" | "button" | "list" | "location" | "unknown";
   value: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type BotResponse =
@@ -70,6 +86,7 @@ const MAX_QUANTITY_PER_ITEM = 10;
 export async function processIncomingMessage({
   businessId,
   customerPhone,
+  messageId,
   input,
 }: {
   businessId: string;
@@ -117,11 +134,24 @@ export async function processIncomingMessage({
 
   if (command === "cancel") {
     if (!session.language) return [languageSelectionResponse()];
+    if (session.currentStep === "ORDER_CREATED") {
+      saveConversationSession(session, now);
+      return [
+        {
+          type: "text",
+          text: t(
+            session.language,
+            "This order was already received. Cancellation support will be added later.",
+            "\u062a\u0645 \u0627\u0633\u062a\u0644\u0627\u0645 \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628. \u0633\u064a\u062a\u0645 \u0625\u0636\u0627\u0641\u0629 \u062f\u0639\u0645 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0644\u0627\u062d\u0642\u0627.",
+          ),
+        },
+      ];
+    }
     const nextSession = saveConversationSession(
       {
         ...session,
         currentStep: "CART_MENU",
-        context: { ...session.context, pendingItem: undefined },
+        context: { ...session.context, pendingItem: undefined, checkout: undefined },
       },
       now,
     );
@@ -152,6 +182,36 @@ export async function processIncomingMessage({
   if (session.currentStep === "REMOVE_CART_ITEM") return handleRemoveCartItem(session, input, now);
   if (session.currentStep === "CHANGE_CART_ITEM_QUANTITY") {
     return handleCartItemQuantityChange(session, input, now);
+  }
+  if (session.currentStep === "COLLECT_CUSTOMER_NAME") {
+    return handleCustomerName(session, input, now);
+  }
+  if (session.currentStep === "SELECT_FULFILLMENT_METHOD") {
+    return handleFulfillmentMethod(session, input, now);
+  }
+  if (session.currentStep === "SELECT_DELIVERY_AREA") {
+    return handleDeliveryArea(session, input, now);
+  }
+  if (session.currentStep === "SELECT_PICKUP_LOCATION") {
+    return handlePickupLocation(session, input, now);
+  }
+  if (session.currentStep === "COLLECT_DELIVERY_ADDRESS") {
+    return handleDeliveryAddress(session, input, now);
+  }
+  if (session.currentStep === "SELECT_PAYMENT_METHOD") {
+    return handlePaymentMethod(session, input, now);
+  }
+  if (session.currentStep === "COLLECT_ORDER_NOTES") {
+    return handleOrderNotes(session, input, now);
+  }
+  if (session.currentStep === "REVIEW_ORDER") {
+    return handleReviewOrder(session, input, now, messageId);
+  }
+  if (session.currentStep === "CONFIRM_ORDER") {
+    return confirmOrder(session, now, messageId);
+  }
+  if (session.currentStep === "ORDER_CREATED") {
+    return handleCompletedOrder(session, input, now);
   }
 
   return handleMainMenu(session, input, now);
@@ -698,16 +758,7 @@ async function handleCartMenu(
 
   if (["cart_view", "view cart"].includes(normalized)) return cartMenuResponse(session);
   if (["cart_checkout", "checkout"].includes(normalized)) {
-    return [
-      {
-        type: "text",
-        text: t(
-          language,
-          "Checkout will be implemented in the next milestone.",
-          "سيتم تنفيذ الدفع في المرحلة التالية.",
-        ),
-      },
-    ];
+    return startCheckout(session, now);
   }
   if (["cart_clear", "clear cart"].includes(normalized)) {
     const nextSession = saveConversationSession(
@@ -833,6 +884,467 @@ async function removeCartItemById(
   return [
     { type: "text", text: t(session.language ?? "en", "Item removed.", "تم حذف المنتج.") },
     ...(await cartMenuResponse(nextSession)),
+  ];
+}
+
+async function startCheckout(session: ConversationSession, now: Date): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const cart = getCartFromContext(session.context);
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) {
+    saveConversationSession(session, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          "Checkout is not configured for this store yet.",
+          "\u0627\u0644\u062f\u0641\u0639 \u063a\u064a\u0631 \u0645\u0639\u062f \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 \u0628\u0639\u062f.",
+        ),
+      },
+    ];
+  }
+
+  const validation = await validateCartForOrder({ businessId: session.businessId, cart });
+  if (!validation.ok) {
+    saveConversationSession(session, now);
+    return [
+      stockChangedResponse(language, validation.itemName),
+      ...(await cartMenuResponse(session)),
+    ];
+  }
+
+  const subtotal = calculateCart(validation.cart).subtotal;
+  if (subtotal < settings.minimumOrderAmount) {
+    saveConversationSession(session, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          `Minimum order amount is ${formatPrice(settings.minimumOrderAmount)}.`,
+          `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 \u0644\u0644\u0637\u0644\u0628 ${formatPrice(settings.minimumOrderAmount)}.`,
+        ),
+      },
+    ];
+  }
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "COLLECT_CUSTOMER_NAME",
+      context: {
+        ...session.context,
+        cart: validation.cart,
+        checkout: {},
+      },
+    },
+    now,
+  );
+
+  return [customerNameQuestion(nextSession)];
+}
+
+function handleCustomerName(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): BotResponse[] {
+  const language = session.language ?? "en";
+  const customerName = input.value.trim();
+  if (customerName.length < 2) {
+    saveConversationSession(session, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          "Please send the customer name for this order.",
+          "\u0623\u0631\u0633\u0644 \u0627\u0633\u0645 \u0627\u0644\u0639\u0645\u064a\u0644 \u0644\u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628.",
+        ),
+      },
+    ];
+  }
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "SELECT_FULFILLMENT_METHOD",
+      context: {
+        ...session.context,
+        checkout: { ...getCheckoutFromContext(session.context), customerName },
+      },
+    },
+    now,
+  );
+
+  return [fulfillmentMethodQuestion(nextSession)];
+}
+
+async function handleFulfillmentMethod(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const normalized = normalize(input.value);
+  const fulfillmentMethod =
+    ["checkout_delivery", "delivery"].includes(normalized) && settings.allowDelivery
+      ? "delivery"
+      : ["checkout_pickup", "pickup"].includes(normalized) && settings.allowPickup
+        ? "pickup"
+        : undefined;
+
+  if (!fulfillmentMethod) return [fulfillmentMethodQuestion(session)];
+
+  const checkout = { ...getCheckoutFromContext(session.context), fulfillmentMethod };
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep:
+        fulfillmentMethod === "delivery" ? "SELECT_DELIVERY_AREA" : "SELECT_PICKUP_LOCATION",
+      context: { ...session.context, checkout },
+    },
+    now,
+  );
+
+  return fulfillmentMethod === "delivery"
+    ? [deliveryAreaQuestion(nextSession, settings)]
+    : [pickupLocationQuestion(nextSession, settings)];
+}
+
+async function handleDeliveryArea(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const area = settings.deliveryAreas.find((entry) => entry.id === input.value);
+  if (!area) return [deliveryAreaQuestion(session, settings)];
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "COLLECT_DELIVERY_ADDRESS",
+      context: {
+        ...session.context,
+        checkout: { ...getCheckoutFromContext(session.context), deliveryAreaId: area.id },
+      },
+    },
+    now,
+  );
+
+  return [deliveryAddressQuestion(nextSession)];
+}
+
+async function handlePickupLocation(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const pickupLocation = settings.pickupLocations.find((entry) => entry.id === input.value);
+  if (!pickupLocation) return [pickupLocationQuestion(session, settings)];
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "SELECT_PAYMENT_METHOD",
+      context: {
+        ...session.context,
+        checkout: {
+          ...getCheckoutFromContext(session.context),
+          pickupLocationId: pickupLocation.id,
+        },
+      },
+    },
+    now,
+  );
+
+  return [paymentMethodQuestion(nextSession, settings)];
+}
+
+async function handleDeliveryAddress(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const address =
+    input.type === "location" ? input.value || "WhatsApp location" : input.value.trim();
+  if (input.type !== "text" && input.type !== "location") {
+    saveConversationSession(session, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          "Please send the delivery address as text or a WhatsApp location.",
+          "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0643\u0646\u0635 \u0623\u0648 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+        ),
+      },
+      deliveryAddressQuestion(session),
+    ];
+  }
+  if (address.length < 4) {
+    saveConversationSession(session, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          "Please send a more complete delivery address.",
+          "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646\u0627 \u0623\u0648\u0636\u062d \u0644\u0644\u062a\u0648\u0635\u064a\u0644.",
+        ),
+      },
+    ];
+  }
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "SELECT_PAYMENT_METHOD",
+      context: {
+        ...session.context,
+        checkout: {
+          ...getCheckoutFromContext(session.context),
+          deliveryAddress: address,
+          deliveryLatitude: input.latitude,
+          deliveryLongitude: input.longitude,
+        },
+      },
+    },
+    now,
+  );
+
+  return [paymentMethodQuestion(nextSession, settings)];
+}
+
+async function handlePaymentMethod(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const checkout = getCheckoutFromContext(session.context);
+  const paymentMethod = settings.paymentMethods.find(
+    (method) =>
+      method.id === input.value &&
+      checkout.fulfillmentMethod &&
+      method.fulfillmentMethods.includes(checkout.fulfillmentMethod),
+  );
+  if (!paymentMethod) return [paymentMethodQuestion(session, settings)];
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "COLLECT_ORDER_NOTES",
+      context: {
+        ...session.context,
+        checkout: { ...checkout, paymentMethod: paymentMethod.id },
+      },
+    },
+    now,
+  );
+
+  return [orderNotesQuestion(nextSession)];
+}
+
+async function handleOrderNotes(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const normalized = normalize(input.value);
+  const notes = ["no_notes", "no notes", "none", "skip"].includes(normalized)
+    ? undefined
+    : input.value.trim();
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "REVIEW_ORDER",
+      context: {
+        ...session.context,
+        checkout: { ...getCheckoutFromContext(session.context), notes },
+      },
+    },
+    now,
+  );
+
+  return reviewOrderResponse(nextSession);
+}
+
+async function handleReviewOrder(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+  messageId: string,
+): Promise<BotResponse[]> {
+  const normalized = normalize(input.value);
+
+  if (["confirm_order", "confirm order", "confirm"].includes(normalized)) {
+    const nextSession = saveConversationSession({ ...session, currentStep: "CONFIRM_ORDER" }, now);
+    return confirmOrder(nextSession, now, messageId);
+  }
+
+  if (["edit_cart", "cart_edit", "edit cart"].includes(normalized)) {
+    const nextSession = saveConversationSession(
+      {
+        ...session,
+        currentStep: "CART_MENU",
+        context: { ...session.context, checkout: undefined },
+      },
+      now,
+    );
+    return cartMenuResponse(nextSession);
+  }
+
+  if (["cancel_checkout", "cancel checkout", "cancel"].includes(normalized)) {
+    const nextSession = saveConversationSession(
+      {
+        ...session,
+        currentStep: "CART_MENU",
+        context: { ...session.context, checkout: undefined },
+      },
+      now,
+    );
+    return [
+      {
+        type: "text",
+        text: t(
+          session.language ?? "en",
+          "Checkout canceled. Your cart is still available.",
+          "\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u062f\u0641\u0639. \u0633\u0644\u062a\u0643 \u0645\u0627 \u0632\u0627\u0644\u062a \u0645\u062a\u0627\u062d\u0629.",
+        ),
+      },
+      ...(await cartMenuResponse(nextSession)),
+    ];
+  }
+
+  return reviewOrderResponse(session);
+}
+
+async function confirmOrder(
+  session: ConversationSession,
+  now: Date,
+  messageId: string,
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const createdOrder = getContextString(session.context.createdOrderNumber);
+  if (createdOrder) {
+    saveConversationSession({ ...session, currentStep: "ORDER_CREATED" }, now);
+    return [
+      {
+        type: "text",
+        text: t(
+          language,
+          `This order was already received.\n\nOrder: ${createdOrder}`,
+          `\u062a\u0645 \u0627\u0633\u062a\u0644\u0627\u0645 \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628 \u0645\u0633\u0628\u0642\u0627.\n\n\u0627\u0644\u0637\u0644\u0628: ${createdOrder}`,
+        ),
+      },
+    ];
+  }
+
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  const result = await createPendingOrder({
+    businessId: session.businessId,
+    customerPhone: session.customerPhone,
+    language,
+    cart: getCartFromContext(session.context),
+    checkout: getCheckoutFromContext(session.context),
+    settings,
+    idempotencyKey: `${session.businessId}:${session.customerPhone}:${messageId}`,
+    now,
+  });
+
+  if (!result.ok) {
+    const nextSession = saveConversationSession(
+      {
+        ...session,
+        currentStep: "CART_MENU",
+        context: { ...session.context, checkout: undefined },
+      },
+      now,
+    );
+    return [
+      stockChangedResponse(language, result.itemName),
+      ...(await cartMenuResponse(nextSession)),
+    ];
+  }
+
+  const nextSession = saveConversationSession(
+    {
+      ...session,
+      currentStep: "ORDER_CREATED",
+      context: {
+        ...session.context,
+        cart: [],
+        checkout: undefined,
+        pendingItem: undefined,
+        createdOrderId: result.order.id,
+        createdOrderNumber: result.order.orderNumber,
+      },
+    },
+    now,
+  );
+
+  return [orderCreatedResponse(result.order, settings, nextSession)];
+}
+
+async function handleCompletedOrder(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const normalized = normalize(input.value);
+  if (["cart_add_another", "new order", "place an order"].includes(normalized)) {
+    const nextSession = saveConversationSession(
+      {
+        ...session,
+        currentStep: "SELECT_CATEGORY",
+        context: {
+          ...session.context,
+          cart: [],
+          checkout: undefined,
+          pendingItem: undefined,
+          categoryPage: 0,
+          selectedCategoryId: undefined,
+          selectedProductId: undefined,
+        },
+      },
+      now,
+    );
+    return categorySelectionResponse(nextSession);
+  }
+
+  saveConversationSession(session, now);
+  return [
+    {
+      type: "buttons",
+      body: t(
+        session.language ?? "en",
+        "Your order was received. You can start another order from the menu.",
+        "\u062a\u0645 \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643. \u064a\u0645\u0643\u0646\u0643 \u0628\u062f\u0621 \u0637\u0644\u0628 \u0622\u062e\u0631 \u0645\u0646 \u0627\u0644\u0642\u0627\u0626\u0645\u0629.",
+      ),
+      buttons: [
+        { id: "main_menu", title: t(session.language ?? "en", "Main menu", "القائمة") },
+        { id: "cart_add_another", title: t(session.language ?? "en", "New order", "طلب جديد") },
+      ],
+    },
   ];
 }
 
@@ -1160,6 +1672,196 @@ async function cartMenuResponse(session: ConversationSession): Promise<BotRespon
   ];
 }
 
+function customerNameQuestion(session: ConversationSession): BotResponse {
+  return {
+    type: "text",
+    text: t(
+      session.language ?? "en",
+      "What name should we put on the order?",
+      "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
+    ),
+  };
+}
+
+function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
+  const language = session.language ?? "en";
+  return {
+    type: "buttons",
+    body: t(
+      language,
+      "How would you like to receive your order?",
+      "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
+    ),
+    buttons: [
+      { id: "checkout_delivery", title: t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644") },
+      {
+        id: "checkout_pickup",
+        title: t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645"),
+      },
+    ],
+  };
+}
+
+function deliveryAreaQuestion(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+): BotResponse {
+  const language = session.language ?? "en";
+  return {
+    type: "list",
+    body: t(
+      language,
+      "Choose your delivery area:",
+      "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
+    ),
+    buttonText: t(language, "Areas", "\u0627\u0644\u0645\u0646\u0627\u0637\u0642"),
+    sections: [
+      {
+        title: t(
+          language,
+          "Delivery areas",
+          "\u0645\u0646\u0627\u0637\u0642 \u0627\u0644\u062a\u0648\u0635\u064a\u0644",
+        ),
+        rows: settings.deliveryAreas.map((area) => ({
+          id: area.id,
+          title: getDeliveryAreaName(area, language),
+          description: `${t(language, "Delivery fee", "\u0631\u0633\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644")}: ${formatPrice(area.deliveryFee)}`,
+        })),
+      },
+    ],
+  };
+}
+
+function pickupLocationQuestion(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+): BotResponse {
+  const language = session.language ?? "en";
+  return {
+    type: "list",
+    body: t(
+      language,
+      "Choose a pickup location:",
+      "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
+    ),
+    buttonText: t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645"),
+    sections: [
+      {
+        title: t(
+          language,
+          "Pickup locations",
+          "\u0623\u0645\u0627\u0643\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645",
+        ),
+        rows: settings.pickupLocations.map((location) => ({
+          id: location.id,
+          title: getPickupLocationName(location, language),
+          description: getPickupLocationAddress(location, language),
+        })),
+      },
+    ],
+  };
+}
+
+function deliveryAddressQuestion(session: ConversationSession): BotResponse {
+  return {
+    type: "text",
+    text: t(
+      session.language ?? "en",
+      "Send the full delivery address. You can also send a WhatsApp location.",
+      "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+    ),
+  };
+}
+
+function paymentMethodQuestion(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+): BotResponse {
+  const language = session.language ?? "en";
+  const checkout = getCheckoutFromContext(session.context);
+  const paymentMethods = settings.paymentMethods.filter(
+    (method) =>
+      checkout.fulfillmentMethod && method.fulfillmentMethods.includes(checkout.fulfillmentMethod),
+  );
+
+  return {
+    type: "list",
+    body: t(
+      language,
+      "Choose a payment method:",
+      "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
+    ),
+    buttonText: t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639"),
+    sections: [
+      {
+        title: t(language, "Payment methods", "\u0637\u0631\u0642 \u0627\u0644\u062f\u0641\u0639"),
+        rows: paymentMethods.map((method) => ({
+          id: method.id,
+          title: getPaymentMethodLabel(method, language),
+        })),
+      },
+    ],
+  };
+}
+
+function orderNotesQuestion(session: ConversationSession): BotResponse {
+  const language = session.language ?? "en";
+  return {
+    type: "buttons",
+    body: t(
+      language,
+      "Would you like to add any notes?",
+      "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
+    ),
+    buttons: [
+      {
+        id: "no_notes",
+        title: t(
+          language,
+          "No notes",
+          "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+        ),
+      },
+    ],
+  };
+}
+
+async function reviewOrderResponse(session: ConversationSession): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  const validation = await validateCartForOrder({
+    businessId: session.businessId,
+    cart: getCartFromContext(session.context),
+  });
+
+  if (!settings || !validation.ok) {
+    return [
+      stockChangedResponse(language, validation.ok ? undefined : validation.itemName),
+      ...(await cartMenuResponse(session)),
+    ];
+  }
+
+  return [
+    { type: "text", text: buildOrderReviewText(session, settings, validation.cart) },
+    {
+      type: "buttons",
+      body: t(
+        language,
+        "Confirm this order?",
+        "\u0647\u0644 \u062a\u0624\u0643\u062f \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628\u061f",
+      ),
+      buttons: [
+        {
+          id: "confirm_order",
+          title: t(language, "Confirm order", "\u062a\u0623\u0643\u064a\u062f"),
+        },
+        { id: "edit_cart", title: t(language, "Edit cart", "\u062a\u0639\u062f\u064a\u0644") },
+        { id: "cancel_checkout", title: t(language, "Cancel", "\u0625\u0644\u063a\u0627\u0621") },
+      ],
+    },
+  ];
+}
+
 function editCartItemResponse(session: ConversationSession): BotResponse[] {
   const language = session.language ?? "en";
   const cart = getCartFromContext(session.context);
@@ -1214,6 +1916,124 @@ function cartItemSummary(item: CartItem, language: ConversationLanguage) {
     `${t(language, "Total", "المجموع")}: ${formatPrice(item.lineTotal)}`,
   ];
   return details.join("\n");
+}
+
+function buildOrderReviewText(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  cart: CartItem[],
+) {
+  const language = session.language ?? "en";
+  const checkout = getCheckoutFromContext(session.context);
+  const subtotal = calculateCart(cart).subtotal;
+  const deliveryArea = settings.deliveryAreas.find((area) => area.id === checkout.deliveryAreaId);
+  const pickupLocation = settings.pickupLocations.find(
+    (location) => location.id === checkout.pickupLocationId,
+  );
+  const paymentMethod = settings.paymentMethods.find(
+    (method) => method.id === checkout.paymentMethod,
+  );
+  const deliveryFee =
+    checkout.fulfillmentMethod === "delivery" ? (deliveryArea?.deliveryFee ?? 0) : 0;
+  const total = subtotal + deliveryFee;
+
+  return [
+    t(
+      language,
+      "Order review",
+      "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0637\u0644\u0628",
+    ),
+    "",
+    ...cart.map((item, index) => `${index + 1}. ${cartItemSummary(item, language)}`),
+    "",
+    `${t(language, "Subtotal", "\u0627\u0644\u0645\u062c\u0645\u0648\u0639")}: ${formatPrice(subtotal)}`,
+    `${t(language, "Delivery fee", "\u0631\u0633\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644")}: ${formatPrice(deliveryFee)}`,
+    `${t(language, "Final total", "\u0627\u0644\u0645\u062c\u0645\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064a")}: ${formatPrice(total)}`,
+    "",
+    `${t(language, "Customer", "\u0627\u0644\u0639\u0645\u064a\u0644")}: ${checkout.customerName ?? ""}`,
+    `${t(language, "WhatsApp", "\u0648\u0627\u062a\u0633\u0627\u0628")}: ${session.customerPhone}`,
+    checkout.alternatePhone
+      ? `${t(language, "Alternate phone", "\u0647\u0627\u062a\u0641 \u0628\u062f\u064a\u0644")}: ${checkout.alternatePhone}`
+      : undefined,
+    `${t(language, "Fulfillment", "\u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645")}: ${
+      checkout.fulfillmentMethod === "pickup"
+        ? t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645")
+        : t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644")
+    }`,
+    checkout.fulfillmentMethod === "delivery" && deliveryArea
+      ? `${t(language, "Area", "\u0627\u0644\u0645\u0646\u0637\u0642\u0629")}: ${getDeliveryAreaName(deliveryArea, language)}`
+      : undefined,
+    checkout.fulfillmentMethod === "delivery"
+      ? `${t(language, "Address", "\u0627\u0644\u0639\u0646\u0648\u0627\u0646")}: ${checkout.deliveryAddress ?? ""}`
+      : undefined,
+    checkout.deliveryLatitude != null && checkout.deliveryLongitude != null
+      ? `${t(language, "Location", "\u0627\u0644\u0645\u0648\u0642\u0639")}: ${checkout.deliveryLatitude}, ${checkout.deliveryLongitude}`
+      : undefined,
+    checkout.fulfillmentMethod === "pickup" && pickupLocation
+      ? `${t(language, "Pickup location", "\u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645")}: ${getPickupLocationName(
+          pickupLocation,
+          language,
+        )}`
+      : undefined,
+    paymentMethod
+      ? `${t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639")}: ${getPaymentMethodLabel(paymentMethod, language)}`
+      : undefined,
+    `${t(language, "Notes", "\u0645\u0644\u0627\u062d\u0638\u0627\u062a")}: ${
+      checkout.notes || t(language, "None", "\u0644\u0627 \u064a\u0648\u062c\u062f")
+    }`,
+  ]
+    .filter((line): line is string => typeof line === "string")
+    .join("\n");
+}
+
+function orderCreatedResponse(
+  order: WhatsAppOrder,
+  settings: BusinessCheckoutSettings,
+  session: ConversationSession,
+): BotResponse {
+  const language = session.language ?? "en";
+  const confirmationMessage =
+    language === "ar"
+      ? settings.orderConfirmationMessageArabic
+      : settings.orderConfirmationMessageEnglish;
+
+  return {
+    type: "text",
+    text: [
+      t(
+        language,
+        "Order received.",
+        "\u062a\u0645 \u0627\u0633\u062a\u0644\u0627\u0645 \u0627\u0644\u0637\u0644\u0628.",
+      ),
+      "",
+      `${t(language, "Order", "\u0627\u0644\u0637\u0644\u0628")}: ${order.orderNumber}`,
+      `${t(language, "Total", "\u0627\u0644\u0645\u062c\u0645\u0648\u0639")}: ${formatPrice(order.total)}`,
+      "",
+      confirmationMessage,
+    ].join("\n"),
+  };
+}
+
+function stockChangedResponse(language: ConversationLanguage, itemName?: string): BotResponse {
+  return {
+    type: "text",
+    text: itemName
+      ? t(
+          language,
+          `${itemName} is no longer available in the requested quantity. Please update your cart.`,
+          `${itemName} \u0644\u0645 \u064a\u0639\u062f \u0645\u062a\u0648\u0641\u0631\u0627 \u0628\u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629. \u064a\u0631\u062c\u0649 \u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0633\u0644\u0629.`,
+        )
+      : t(
+          language,
+          "Some cart items changed before checkout. Please review your cart.",
+          "\u062a\u063a\u064a\u0631\u062a \u0628\u0639\u0636 \u0645\u0646\u062a\u062c\u0627\u062a \u0627\u0644\u0633\u0644\u0629 \u0642\u0628\u0644 \u0627\u0644\u062f\u0641\u0639. \u064a\u0631\u062c\u0649 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0633\u0644\u0629.",
+        ),
+  };
+}
+
+function getCheckoutFromContext(context: Record<string, unknown>): CheckoutDraft {
+  if (!context.checkout || typeof context.checkout !== "object") return {};
+  return context.checkout as CheckoutDraft;
 }
 
 async function labelsForSelectedOptions(
