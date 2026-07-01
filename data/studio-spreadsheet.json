@@ -89,7 +89,7 @@
         "date": "2026-07-01",
         "projectId": "P003",
         "amount": 600,
-        "collectedBy": "",
+        "collectedBy": "Saeed",
         "paymentMethod": "cash",
         "notes": ""
       }
@@ -176,5 +176,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:09:27.257Z"
+  "updatedAt": "2026-07-01T09:09:36.421Z"
 }
