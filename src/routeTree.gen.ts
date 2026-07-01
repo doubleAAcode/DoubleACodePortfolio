@@ -32,6 +32,7 @@ import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.in
 import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
 import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
+import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
 import { Route as StoresPavoneAdminIndexRouteImport } from './routes/stores/pavone.admin.index'
 import { Route as StoresPavoneProductSlugRouteImport } from './routes/stores/pavone.product.$slug'
 import { Route as StoresPavoneCategorySlugRouteImport } from './routes/stores/pavone.category.$slug'
@@ -157,6 +158,11 @@ const StoresPavoneAdminRoute = StoresPavoneAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => StoresPavoneRoute,
 } as any)
+const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
+  id: '/api/whatsapp/webhook',
+  path: '/api/whatsapp/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoresPavoneAdminIndexRoute = StoresPavoneAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard': typeof DashboardIndexRoute
   '/stores': typeof StoresIndexRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone': typeof StoresPavoneIndexRoute
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard/'
     | '/stores/'
+    | '/api/whatsapp/webhook'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard'
     | '/stores'
+    | '/api/whatsapp/webhook'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard/'
     | '/stores/'
+    | '/api/whatsapp/webhook'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
@@ -421,6 +433,7 @@ export interface RootRouteChildren {
   WorkSnapgoRoute: typeof WorkSnapgoRoute
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
+  ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -586,6 +599,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresPavoneAdminRouteImport
       parentRoute: typeof StoresPavoneRoute
     }
+    '/api/whatsapp/webhook': {
+      id: '/api/whatsapp/webhook'
+      path: '/api/whatsapp/webhook'
+      fullPath: '/api/whatsapp/webhook'
+      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stores/pavone/admin/': {
       id: '/stores/pavone/admin/'
       path: '/'
@@ -743,6 +763,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkSnapgoRoute: WorkSnapgoRoute,
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
+  ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

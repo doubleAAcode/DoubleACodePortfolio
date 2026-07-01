@@ -228,3 +228,143 @@ After completing the work, provide:
 * Known limitations
 
 Stop after Milestone 1. Do not begin Meta integration or multi-tenant onboarding.
+
+
+
+# Milestone 2 — WhatsApp Webhook Echo Test
+
+We have an existing, deployed Double A Code website.
+
+The goal of this milestone is only to connect Meta’s WhatsApp Cloud API test number to the existing website and prove that incoming messages can be received and answered.
+
+## Important rules
+
+* Inspect the existing project and framework first.
+* Reuse the existing API/server structure.
+* Do not redesign or modify public website pages.
+* Do not hard-code secrets.
+* Do not expose access tokens to the frontend.
+* Do not push or merge to `main`.
+* Do not begin the ordering engine yet.
+* Do not add unnecessary dependencies.
+
+## Environment variables
+
+Use:
+
+```env
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_BUSINESS_ACCOUNT_ID=
+WHATSAPP_VERIFY_TOKEN=
+```
+
+These will be added manually to local and hosting environment settings.
+
+## Webhook route
+
+Create a public route such as:
+
+```text
+/api/whatsapp/webhook
+```
+
+It must support:
+
+### GET — Meta verification
+
+Read:
+
+* `hub.mode`
+* `hub.verify_token`
+* `hub.challenge`
+
+When:
+
+* `hub.mode === "subscribe"`
+* `hub.verify_token` matches `WHATSAPP_VERIFY_TOKEN`
+
+Return `hub.challenge` with HTTP 200.
+
+Otherwise return HTTP 403.
+
+### POST — Incoming events
+
+* Accept WhatsApp webhook payloads.
+* Immediately return HTTP 200.
+* Safely handle payloads containing no message.
+* Extract incoming text messages.
+* Extract:
+
+  * Meta message ID
+  * sender WhatsApp number
+  * phone number ID
+  * message text
+  * timestamp
+* Log a sanitized development representation.
+* Prevent duplicate processing using the Meta message ID.
+
+## Echo response
+
+When a customer sends a text message, send this reply through Meta’s Messages API:
+
+```text
+Received: {customer message}
+```
+
+Use:
+
+```text
+POST https://graph.facebook.com/{GRAPH_API_VERSION}/{WHATSAPP_PHONE_NUMBER_ID}/messages
+```
+
+Authorization:
+
+```text
+Bearer WHATSAPP_ACCESS_TOKEN
+```
+
+Do not expose the token in logs or error messages.
+
+## Structure
+
+Keep these responsibilities separate:
+
+* Webhook verification
+* Webhook payload parsing
+* Duplicate-message protection
+* WhatsApp message sending
+* Future conversation engine integration
+
+Create a reusable sending service similar to:
+
+```ts
+sendWhatsAppText({
+  phoneNumberId,
+  recipient,
+  message,
+}): Promise<SendResult>
+```
+
+## Completion checklist
+
+The milestone is complete when:
+
+1. Meta successfully verifies the callback URL.
+2. The app is subscribed to the WhatsApp `messages` webhook field.
+3. I send `Hello` to Meta’s test number.
+4. The deployed website receives the webhook.
+5. WhatsApp replies with `Received: Hello`.
+6. Duplicate webhook delivery does not send duplicate replies.
+7. No access token appears in source code, browser code, or logs.
+
+After implementation, report:
+
+* Files created
+* Files modified
+* Environment variables required
+* Exact deployment steps
+* Exact Meta dashboard configuration steps
+* Manual test procedure
+
+Stop after completing the echo test. Do not start the product ordering flow.
