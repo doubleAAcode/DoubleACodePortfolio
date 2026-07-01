@@ -441,5 +441,17 @@ alter table public.wa_delivery_areas enable row level security;
 alter table public.wa_pickup_locations enable row level security;
 alter table public.wa_payment_methods enable row level security;
 
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.wa_businesses to service_role;
+grant select, insert, update, delete on public.wa_categories to service_role;
+grant select, insert, update, delete on public.wa_products to service_role;
+grant select, insert, update, delete on public.wa_product_options to service_role;
+grant select, insert, update, delete on public.wa_product_option_values to service_role;
+grant select, insert, update, delete on public.wa_product_variants to service_role;
+grant select, insert, update, delete on public.wa_product_custom_fields to service_role;
+grant select, insert, update, delete on public.wa_delivery_areas to service_role;
+grant select, insert, update, delete on public.wa_pickup_locations to service_role;
+grant select, insert, update, delete on public.wa_payment_methods to service_role;
+
 -- No anon/auth policies are created on purpose.
 -- The bot reads these tables only from server code using SUPABASE_SERVICE_ROLE_KEY.

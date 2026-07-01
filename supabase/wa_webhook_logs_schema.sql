@@ -25,5 +25,8 @@ create index if not exists wa_webhook_logs_created_at_idx
 
 alter table public.wa_webhook_logs enable row level security;
 
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.wa_webhook_logs to service_role;
+
 -- No anon/auth policies are created on purpose.
 -- The app reads/writes this table only from server code using SUPABASE_SERVICE_ROLE_KEY.

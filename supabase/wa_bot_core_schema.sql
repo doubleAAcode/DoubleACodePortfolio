@@ -242,5 +242,14 @@ alter table public.wa_orders enable row level security;
 alter table public.wa_order_items enable row level security;
 alter table public.wa_stock_reservations enable row level security;
 
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.wa_conversation_sessions to service_role;
+grant select, insert, update, delete on public.wa_processed_messages to service_role;
+grant select, insert, update, delete on public.wa_orders to service_role;
+grant select, insert, update, delete on public.wa_order_items to service_role;
+grant select, insert, update, delete on public.wa_stock_reservations to service_role;
+grant usage, select on sequence public.wa_order_number_seq to service_role;
+grant execute on function public.wa_create_pending_order(text, text, jsonb, jsonb, jsonb) to service_role;
+
 -- No anon/auth policies are created on purpose.
 -- The app reads/writes these tables only from server code using SUPABASE_SERVICE_ROLE_KEY.
