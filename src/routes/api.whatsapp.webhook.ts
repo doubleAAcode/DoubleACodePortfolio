@@ -14,6 +14,7 @@ import {
   sendWhatsAppList,
   sendWhatsAppText,
 } from "@/lib/whatsapp/sender.server";
+import { recordWhatsAppWebhookLog } from "@/lib/whatsapp/webhook-log-store.server";
 
 export const Route = createFileRoute("/api/whatsapp/webhook")({
   server: {
@@ -32,11 +33,27 @@ function verifyWebhook(request: Request) {
   const config = getWhatsAppServerConfig();
 
   if (mode === "subscribe" && verifyToken === config.verifyToken && challenge) {
+    void recordWhatsAppWebhookLog({
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      status: 200,
+      result: "verification_ok",
+    });
+
     return new Response(challenge, {
       status: 200,
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
   }
+
+  void recordWhatsAppWebhookLog({
+    method: request.method,
+    url: request.url,
+    headers: request.headers,
+    status: 403,
+    result: "verification_forbidden",
+  });
 
   return new Response("Forbidden", { status: 403 });
 }
@@ -49,11 +66,29 @@ async function handleWebhookEvent(request: Request) {
 
   if (!messages.length) {
     console.info("[whatsapp:webhook] no supported messages in payload");
+    void recordWhatsAppWebhookLog({
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      status: 200,
+      result: "no_supported_messages",
+    });
     return Response.json({ ok: true, processed: 0 });
   }
 
+  let duplicateCount = 0;
+  let sendFailureCount = 0;
+  const messageIds: string[] = [];
+  const inputTypes: string[] = [];
+  const senderMasks: string[] = [];
+  const phoneNumberIds: string[] = [];
+
   for (const message of messages) {
     const isDuplicate = hasProcessedWhatsAppMessage(message.messageId);
+    messageIds.push(message.messageId);
+    inputTypes.push(message.input.type);
+    senderMasks.push(maskPhoneNumber(message.sender));
+    phoneNumberIds.push(message.phoneNumberId);
 
     console.info("[whatsapp:webhook] incoming message", {
       messageId: message.messageId,
@@ -65,7 +100,10 @@ async function handleWebhookEvent(request: Request) {
       inputLength: message.input.value.length,
     });
 
-    if (isDuplicate) continue;
+    if (isDuplicate) {
+      duplicateCount += 1;
+      continue;
+    }
 
     if (missingKeys.length) {
       console.error("[whatsapp:webhook] missing required env", { keys: missingKeys });
@@ -103,6 +141,7 @@ async function handleWebhookEvent(request: Request) {
               });
 
       if (!result.ok) {
+        sendFailureCount += 1;
         console.error("[whatsapp:webhook] message send failed", {
           status: result.status,
           errorCode: result.errorCode,
@@ -111,6 +150,25 @@ async function handleWebhookEvent(request: Request) {
       }
     }
   }
+
+  void recordWhatsAppWebhookLog({
+    method: request.method,
+    url: request.url,
+    headers: request.headers,
+    status: 200,
+    messageCount: messages.length,
+    duplicateCount,
+    messageIds,
+    senderMask: senderMasks[0],
+    phoneNumberId: phoneNumberIds[0],
+    inputTypes,
+    result: sendFailureCount ? "processed_with_send_failures" : "processed",
+    errorSummary: missingKeys.length
+      ? `Missing env: ${missingKeys.join(", ")}`
+      : sendFailureCount
+        ? `${sendFailureCount} send failure(s)`
+        : undefined,
+  });
 
   return Response.json({ ok: true, processed: messages.length });
 }

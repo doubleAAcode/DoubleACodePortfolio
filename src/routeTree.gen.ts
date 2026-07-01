@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as LogsWABotRouteImport } from './routes/logsWABot'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -58,6 +59,11 @@ const SpreadsheetRoute = SpreadsheetRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsWABotRoute = LogsWABotRouteImport.update({
+  id: '/logsWABot',
+  path: '/logsWABot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataDeletionRoute = DataDeletionRouteImport.update({
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/data-deletion'
+    | '/logsWABot'
     | '/privacy'
     | '/spreadsheet'
     | '/stores'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/data-deletion'
+    | '/logsWABot'
     | '/privacy'
     | '/spreadsheet'
     | '/dashboard/categories'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/data-deletion'
+    | '/logsWABot'
     | '/privacy'
     | '/spreadsheet'
     | '/stores'
@@ -449,6 +461,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DataDeletionRoute: typeof DataDeletionRoute
+  LogsWABotRoute: typeof LogsWABotRoute
   PrivacyRoute: typeof PrivacyRoute
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logsWABot': {
+      id: '/logsWABot'
+      path: '/logsWABot'
+      fullPath: '/logsWABot'
+      preLoaderRoute: typeof LogsWABotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-deletion': {
@@ -795,6 +815,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DataDeletionRoute: DataDeletionRoute,
+  LogsWABotRoute: LogsWABotRoute,
   PrivacyRoute: PrivacyRoute,
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
