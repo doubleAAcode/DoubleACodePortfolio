@@ -137,7 +137,7 @@
         "projectId": "P003",
         "expenseType": "domain",
         "paidBy": "Studio",
-        "amount": 0,
+        "amount": 50,
         "notes": ""
       }
     ],
@@ -176,5 +176,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:09:36.421Z"
+  "updatedAt": "2026-07-01T09:09:53.894Z"
 }
