@@ -1,11 +1,14 @@
 import "@tanstack/react-start/server-only";
 
-export type IncomingWhatsAppTextMessage = {
+export type IncomingWhatsAppMessage = {
   messageId: string;
   sender: string;
   phoneNumberId: string;
-  text: string;
   timestamp: string;
+  input: {
+    type: "text" | "button" | "unknown";
+    value: string;
+  };
 };
 
 type WhatsAppWebhookPayload = {
@@ -23,18 +26,29 @@ type WhatsAppWebhookPayload = {
           text?: {
             body?: string;
           };
+          interactive?: {
+            type?: string;
+            button_reply?: {
+              id?: string;
+              title?: string;
+            };
+          };
+          button?: {
+            text?: string;
+            payload?: string;
+          };
         }>;
       };
     }>;
   }>;
 };
 
-export function parseIncomingWhatsAppTextMessages(
+export function parseIncomingWhatsAppMessages(
   payload: unknown,
-): IncomingWhatsAppTextMessage[] {
+): IncomingWhatsAppMessage[] {
   if (!isWebhookPayload(payload)) return [];
 
-  const messages: IncomingWhatsAppTextMessage[] = [];
+  const messages: IncomingWhatsAppMessage[] = [];
 
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -42,30 +56,69 @@ export function parseIncomingWhatsAppTextMessages(
       if (!phoneNumberId) continue;
 
       for (const message of change.value?.messages ?? []) {
-        const text = message.text?.body?.trim();
-
-        if (
-          message.type !== "text" ||
-          !message.id ||
-          !message.from ||
-          !message.timestamp ||
-          !text
-        ) {
+        if (!message.id || !message.from || !message.timestamp) {
           continue;
         }
+
+        const input = parseMessageInput(message);
 
         messages.push({
           messageId: message.id,
           sender: message.from,
           phoneNumberId,
-          text,
           timestamp: message.timestamp,
+          input,
         });
       }
     }
   }
 
   return messages;
+}
+
+function parseMessageInput(message: {
+  type?: string;
+  text?: { body?: string };
+  interactive?: {
+    type?: string;
+    button_reply?: {
+      id?: string;
+      title?: string;
+    };
+  };
+  button?: {
+    text?: string;
+    payload?: string;
+  };
+}): IncomingWhatsAppMessage["input"] {
+  if (message.type === "text") {
+    return {
+      type: "text",
+      value: message.text?.body?.trim() ?? "",
+    };
+  }
+
+  if (message.type === "interactive" && message.interactive?.type === "button_reply") {
+    return {
+      type: "button",
+      value:
+        message.interactive.button_reply?.id?.trim() ||
+        message.interactive.button_reply?.title?.trim() ||
+        "",
+    };
+  }
+
+  if (message.type === "button") {
+    return {
+      type: "button",
+      value: message.button?.payload?.trim() || message.button?.text?.trim() || "",
+    };
+  }
+
+  return {
+    type: "unknown",
+    value: message.type ?? "unknown",
+  };
 }
 
 function isWebhookPayload(payload: unknown): payload is WhatsAppWebhookPayload {

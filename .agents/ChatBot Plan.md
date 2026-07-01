@@ -368,3 +368,171 @@ After implementation, report:
 * Manual test procedure
 
 Stop after completing the echo test. Do not start the product ordering flow.
+
+
+# Milestone 3 — Conversation Session, Language and Main Menu
+
+The live WhatsApp echo test is working.
+
+Replace the echo response with the first deterministic conversation flow.
+
+## Goal
+
+Implement:
+
+```text
+START
+→ SELECT_LANGUAGE
+→ MAIN_MENU
+```
+
+Do not build products, categories, cart, or ordering yet.
+
+## Requirements
+
+### 1. Conversation sessions
+
+Create persistent conversation sessions containing:
+
+* businessId
+* customerPhone
+* currentStep
+* language
+* context
+* lastCustomerMessageAt
+* expiresAt
+* createdAt
+* updatedAt
+
+For now, use one seeded Double A test business.
+
+Identify the customer using their WhatsApp sender number.
+
+### 2. Session expiration
+
+Set:
+
+```text
+expiresAt = lastCustomerMessageAt + 24 hours
+```
+
+Every customer message refreshes the expiration time.
+
+When no active session exists, begin at `SELECT_LANGUAGE`.
+
+### 3. Language selection
+
+Send WhatsApp interactive buttons:
+
+```text
+Choose your language:
+
+[English]
+[العربية]
+```
+
+Accept:
+
+* Button selections
+* `English`
+* `Arabic`
+* `العربية`
+* `1`
+* `2`
+
+Save the selected language in the session.
+
+### 4. Main menu
+
+After language selection, send:
+
+English:
+
+```text
+How can we help?
+
+[Place an order]
+[Ask a question]
+[Store information]
+```
+
+Arabic:
+
+```text
+كيف يمكننا مساعدتك؟
+
+[تقديم طلب]
+[طرح سؤال]
+[معلومات المتجر]
+```
+
+Use WhatsApp interactive buttons where supported.
+
+### 5. Global commands
+
+Support at every step:
+
+* `restart`
+* `start`
+* `menu`
+* `إعادة`
+* `القائمة`
+
+`restart` clears the session and returns to language selection.
+
+`menu` returns to the main menu while keeping the selected language.
+
+### 6. Message handling
+
+The engine must support:
+
+* Text messages
+* Interactive button replies
+* Unknown message types without crashing
+* Duplicate webhook events without duplicate replies
+
+Keep WhatsApp parsing separate from the conversation engine.
+
+Use an interface similar to:
+
+```ts
+processIncomingMessage({
+  businessId,
+  customerPhone,
+  messageId,
+  input: {
+    type: "text" | "button",
+    value: string,
+  },
+}): Promise<BotResponse[]>
+```
+
+### 7. Unknown input
+
+If the response is invalid, repeat the current options.
+
+Do not move the session to the next step until the input is valid.
+
+### 8. Completion criteria
+
+This milestone is complete when:
+
+1. Sending `Hello` starts language selection.
+2. Selecting English shows the English menu.
+3. Selecting Arabic shows the Arabic menu.
+4. The selected language survives later messages.
+5. `restart` returns to language selection.
+6. `menu` returns to the main menu.
+7. Invalid text repeats the correct current question.
+8. Duplicate webhook delivery does not create duplicate responses.
+9. The public Double A website remains unchanged.
+
+After implementation, report:
+
+* Files changed
+* Database changes
+* Session storage approach
+* Manual testing instructions
+* Known limitations
+
+Stop after the main menu works. Do not begin the product ordering flow.

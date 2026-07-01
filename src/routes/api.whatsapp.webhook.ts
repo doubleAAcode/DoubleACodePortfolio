@@ -3,9 +3,13 @@ import {
   getMissingWhatsAppConfigKeys,
   getWhatsAppServerConfig,
 } from "@/lib/whatsapp/config.server";
+import {
+  DOUBLE_A_TEST_BUSINESS_ID,
+  processIncomingMessage,
+} from "@/lib/whatsapp/conversation-engine.server";
 import { hasProcessedWhatsAppMessage } from "@/lib/whatsapp/duplicates.server";
-import { parseIncomingWhatsAppTextMessages } from "@/lib/whatsapp/parser.server";
-import { sendWhatsAppText } from "@/lib/whatsapp/sender.server";
+import { parseIncomingWhatsAppMessages } from "@/lib/whatsapp/parser.server";
+import { sendWhatsAppButtons, sendWhatsAppText } from "@/lib/whatsapp/sender.server";
 
 export const Route = createFileRoute("/api/whatsapp/webhook")({
   server: {
@@ -35,12 +39,12 @@ function verifyWebhook(request: Request) {
 
 async function handleWebhookEvent(request: Request) {
   const payload = await request.json().catch(() => null);
-  const messages = parseIncomingWhatsAppTextMessages(payload);
+  const messages = parseIncomingWhatsAppMessages(payload);
   const config = getWhatsAppServerConfig();
   const missingKeys = getMissingWhatsAppConfigKeys(config);
 
   if (!messages.length) {
-    console.info("[whatsapp:webhook] no text messages in payload");
+    console.info("[whatsapp:webhook] no supported messages in payload");
     return Response.json({ ok: true, processed: 0 });
   }
 
@@ -53,7 +57,8 @@ async function handleWebhookEvent(request: Request) {
       phoneNumberId: message.phoneNumberId,
       timestamp: message.timestamp,
       duplicate: isDuplicate,
-      textLength: message.text.length,
+      inputType: message.input.type,
+      inputLength: message.input.value.length,
     });
 
     if (isDuplicate) continue;
@@ -63,18 +68,35 @@ async function handleWebhookEvent(request: Request) {
       continue;
     }
 
-    const result = await sendWhatsAppText({
-      phoneNumberId: message.phoneNumberId,
-      recipient: message.sender,
-      message: `Received: ${message.text}`,
+    const responses = await processIncomingMessage({
+      businessId: DOUBLE_A_TEST_BUSINESS_ID,
+      customerPhone: message.sender,
+      messageId: message.messageId,
+      input: message.input,
     });
 
-    if (!result.ok) {
-      console.error("[whatsapp:webhook] echo send failed", {
-        status: result.status,
-        errorCode: result.errorCode,
-        errorMessage: result.errorMessage,
-      });
+    for (const response of responses) {
+      const result =
+        response.type === "buttons"
+          ? await sendWhatsAppButtons({
+              phoneNumberId: message.phoneNumberId,
+              recipient: message.sender,
+              body: response.body,
+              buttons: response.buttons,
+            })
+          : await sendWhatsAppText({
+              phoneNumberId: message.phoneNumberId,
+              recipient: message.sender,
+              message: response.text,
+            });
+
+      if (!result.ok) {
+        console.error("[whatsapp:webhook] message send failed", {
+          status: result.status,
+          errorCode: result.errorCode,
+          errorMessage: result.errorMessage,
+        });
+      }
     }
   }
 
