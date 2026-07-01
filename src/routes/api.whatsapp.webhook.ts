@@ -64,7 +64,7 @@ async function handleWebhookEvent(request: Request) {
     }
 
     const result = await sendWhatsAppText({
-      phoneNumberId: config.phoneNumberId || message.phoneNumberId,
+      phoneNumberId: message.phoneNumberId,
       recipient: message.sender,
       message: `Received: ${message.text}`,
     });
