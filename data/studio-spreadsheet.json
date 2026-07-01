@@ -88,7 +88,7 @@
         "id": "e7ebe8cb-6346-4179-a417-d8d2bef07c29",
         "date": "2026-07-01",
         "projectId": "P003",
-        "amount": 0,
+        "amount": 600,
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
@@ -176,5 +176,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:09:17.284Z"
+  "updatedAt": "2026-07-01T09:09:21.710Z"
 }
