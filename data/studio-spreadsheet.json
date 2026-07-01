@@ -90,7 +90,7 @@
         "projectId": "P003",
         "amount": 600,
         "collectedBy": "",
-        "paymentMethod": "",
+        "paymentMethod": "cash",
         "notes": ""
       }
     ],
@@ -176,5 +176,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:09:21.710Z"
+  "updatedAt": "2026-07-01T09:09:27.257Z"
 }
