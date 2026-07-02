@@ -1,14 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, Check, Clock, PackageCheck, RefreshCw, Truck, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { decideWaDashboardOrder, getWaDashboardOrder } from "@/lib/whatsapp/dashboard-client";
 import { getWaDashboardBasePath } from "@/lib/whatsapp/dashboard-paths";
-import type { DashboardOrderDetails } from "@/lib/whatsapp/order-dashboard-store.server";
+import type {
+  DashboardLifecycleAction,
+  DashboardOrderDetails,
+  DashboardOrderStatus,
+} from "@/lib/whatsapp/order-dashboard-store.server";
 
 export const Route = createFileRoute("/dashboard/orders/$orderId")({
   component: DashboardOrderDetailsRoute,
 });
+
+type OrderAction = {
+  action: DashboardLifecycleAction;
+  label: string;
+  confirm: string;
+  tone?: "primary" | "danger";
+};
 
 function DashboardOrderDetailsRoute() {
   const { orderId } = Route.useParams();
@@ -19,6 +30,7 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
   const basePath = getWaDashboardBasePath();
   const [order, setOrder] = useState<DashboardOrderDetails>();
   const [reason, setReason] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -40,6 +52,8 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
     void loadOrder();
   }, [loadOrder]);
 
+  const lifecycleActions = useMemo(() => (order ? getLifecycleActions(order) : []), [order]);
+
   async function decide(action: "accept" | "reject") {
     if (!order) return;
     const message =
@@ -54,11 +68,37 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
     try {
       const result = await decideWaDashboardOrder(order.id, action, reason);
       setOrder(result.order);
+      setReason("");
       setNotice(
-        action === "accept"
-          ? `Order accepted. Customer notification ${result.notification.ok ? "sent" : "failed"}.`
-          : `Order rejected. Customer notification ${result.notification.ok ? "sent" : "failed"}.`,
+        getNotificationNotice(
+          action === "accept" ? "Order accepted" : "Order rejected",
+          result.notification,
+        ),
       );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update order.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function transition(action: OrderAction) {
+    if (!order) return;
+    const cleanReason = cancellationReason.trim();
+    if (action.action === "cancel" && !cleanReason) {
+      setError("Cancellation reason is required.");
+      return;
+    }
+    if (!window.confirm(action.confirm)) return;
+
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await decideWaDashboardOrder(order.id, action.action, cleanReason);
+      setOrder(result.order);
+      if (action.action === "cancel") setCancellationReason("");
+      setNotice(getNotificationNotice(`${action.label} saved`, result.notification));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update order.");
     } finally {
@@ -75,6 +115,7 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
   }
 
   const pending = order.status === "PENDING_OWNER_CONFIRMATION";
+  const terminal = ["COMPLETED", "REJECTED", "CANCELLED"].includes(order.status);
 
   return (
     <div className="space-y-6">
@@ -99,6 +140,12 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
 
       {error ? <Status tone="error" text={error} /> : null}
       {notice ? <Status tone="success" text={notice} /> : null}
+      {order.restock_required ? (
+        <Status
+          tone="warning"
+          text="This cancellation happened after stock was committed. Stock was not restored automatically."
+        />
+      ) : null}
 
       {pending ? (
         <section className="rounded-lg border border-border bg-surface/60 p-5">
@@ -131,6 +178,51 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
               <X className="h-4 w-4" />
               Reject order
             </button>
+          </div>
+        </section>
+      ) : null}
+
+      {!terminal ? (
+        <section className="rounded-lg border border-border bg-surface/60 p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="font-display text-xl font-semibold">Lifecycle</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Current status: {formatStatus(order.status)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 lg:min-w-[24rem]">
+              {lifecycleActions.some((item) => item.action === "cancel") ? (
+                <label className="text-sm">
+                  <span className="mb-2 block text-muted-foreground">Cancellation reason</span>
+                  <input
+                    value={cancellationReason}
+                    onChange={(event) => setCancellationReason(event.target.value)}
+                    placeholder="Required before cancelling"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
+                  />
+                </label>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {lifecycleActions.map((item) => (
+                  <button
+                    key={item.action}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void transition(item)}
+                    className={item.tone === "primary" ? "studio-button-primary" : "studio-button"}
+                  >
+                    {actionIcon(item.action)}
+                    {item.label}
+                  </button>
+                ))}
+                {!lifecycleActions.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    {terminal ? "This order is terminal." : "No valid actions are available."}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </div>
         </section>
       ) : null}
@@ -196,10 +288,10 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
                       </div>
                     ) : null}
                   </td>
-                  <td className="border-b border-border px-3 py-3 align-top text-muted-foreground">
+                  <td className="whitespace-pre-line border-b border-border px-3 py-3 align-top text-muted-foreground">
                     {formatPairs(item.selected_options)}
                   </td>
-                  <td className="border-b border-border px-3 py-3 align-top text-muted-foreground">
+                  <td className="whitespace-pre-line border-b border-border px-3 py-3 align-top text-muted-foreground">
                     {formatPairs(item.custom_field_answers)}
                   </td>
                   <td className="border-b border-border px-3 py-3 text-right align-top">
@@ -219,6 +311,45 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
       </Panel>
 
       <section className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Timeline">
+          <Timeline order={order} />
+        </Panel>
+
+        <Panel title="Notifications">
+          <Info label="Latest status" value={order.customer_notification_status} />
+          <Info label="Latest error" value={order.customer_notification_error ?? "-"} />
+          <Info
+            label="Template required"
+            value={order.template_notification_required ? "Yes" : "No"}
+          />
+          {order.notifications.length ? (
+            <div className="space-y-2 pt-2">
+              {order.notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="border-b border-border pb-2 text-sm last:border-0"
+                >
+                  <div className="font-medium">
+                    {formatStatus(notification.order_status)} / {notification.status}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {notification.sent_at
+                      ? `Sent ${formatDate(notification.sent_at)}`
+                      : `Created ${formatDate(notification.created_at)}`}
+                  </div>
+                  {notification.error_message ? (
+                    <div className="text-destructive">{notification.error_message}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No notification records yet.</p>
+          )}
+        </Panel>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
         <Panel title="Reservation">
           {order.reservations.length ? (
             order.reservations.map((reservation) => (
@@ -228,7 +359,7 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
               >
                 <div className="font-medium">{reservation.product_variant_id}</div>
                 <div className="text-muted-foreground">
-                  {reservation.quantity} reserved · {reservation.status} · expires{" "}
+                  {reservation.quantity} reserved / {reservation.status} / expires{" "}
                   {formatDate(reservation.expires_at)}
                 </div>
               </div>
@@ -240,16 +371,17 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
 
         <Panel title="Audit">
           <Info label="Created" value={formatDate(order.created_at)} />
-          <Info label="Accepted" value={order.accepted_at ? formatDate(order.accepted_at) : "-"} />
-          <Info label="Rejected" value={order.rejected_at ? formatDate(order.rejected_at) : "-"} />
+          <Info label="Accepted" value={formatOptionalDate(order.accepted_at)} />
+          <Info label="Preparing" value={formatOptionalDate(order.preparing_at)} />
+          <Info label="Ready" value={formatOptionalDate(order.ready_at)} />
+          <Info label="Out for delivery" value={formatOptionalDate(order.out_for_delivery_at)} />
+          <Info label="Completed" value={formatOptionalDate(order.completed_at)} />
+          <Info label="Rejected" value={formatOptionalDate(order.rejected_at)} />
+          <Info label="Cancelled" value={formatOptionalDate(order.cancelled_at)} />
           <Info label="Decided by" value={order.decided_by ?? "-"} />
-          <Info label="Reason" value={order.rejection_reason ?? "-"} />
-          <Info label="Notification" value={order.customer_notification_status} />
-          <Info label="Notification error" value={order.customer_notification_error ?? "-"} />
-          <Info
-            label="Template required"
-            value={order.template_notification_required ? "Yes" : "No"}
-          />
+          <Info label="Rejection reason" value={order.rejection_reason ?? "-"} />
+          <Info label="Cancellation reason" value={order.cancellation_reason ?? "-"} />
+          <Info label="Restock required" value={order.restock_required ? "Yes" : "No"} />
           <Info label="Notes" value={order.notes ?? "-"} />
         </Panel>
       </section>
@@ -257,7 +389,122 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function getLifecycleActions(order: DashboardOrderDetails): OrderAction[] {
+  if (order.status === "PENDING_OWNER_CONFIRMATION") {
+    return [cancelAction(order)];
+  }
+
+  if (order.status === "ACCEPTED") {
+    return [
+      {
+        action: "start_preparing",
+        label: "Start preparing",
+        confirm: `Start preparing ${order.order_number}?`,
+        tone: "primary",
+      },
+      cancelAction(order),
+    ];
+  }
+
+  if (order.status === "PREPARING") {
+    return [
+      {
+        action: "mark_ready",
+        label: "Mark ready",
+        confirm: `Mark ${order.order_number} as ready?`,
+        tone: "primary",
+      },
+      cancelAction(order),
+    ];
+  }
+
+  if (order.status === "READY") {
+    return order.fulfillment_method === "pickup"
+      ? [
+          {
+            action: "complete",
+            label: "Mark completed",
+            confirm: `Complete pickup order ${order.order_number}?`,
+            tone: "primary",
+          },
+          cancelAction(order),
+        ]
+      : [
+          {
+            action: "out_for_delivery",
+            label: "Out for delivery",
+            confirm: `Mark ${order.order_number} as out for delivery?`,
+            tone: "primary",
+          },
+          cancelAction(order),
+        ];
+  }
+
+  if (order.status === "OUT_FOR_DELIVERY") {
+    return [
+      {
+        action: "complete",
+        label: "Mark completed",
+        confirm: `Complete delivery order ${order.order_number}?`,
+        tone: "primary",
+      },
+      cancelAction(order),
+    ];
+  }
+
+  return [];
+}
+
+function cancelAction(order: DashboardOrderDetails): OrderAction {
+  return {
+    action: "cancel",
+    label: "Cancel order",
+    confirm: `Cancel ${order.order_number}? Stock will not be restored automatically.`,
+    tone: "danger",
+  };
+}
+
+function actionIcon(action: DashboardLifecycleAction) {
+  if (action === "out_for_delivery") return <Truck className="h-4 w-4" />;
+  if (action === "complete") return <PackageCheck className="h-4 w-4" />;
+  if (action === "cancel") return <X className="h-4 w-4" />;
+  return <Clock className="h-4 w-4" />;
+}
+
+function Timeline({ order }: { order: DashboardOrderDetails }) {
+  const entries = [
+    { label: "Order created", status: "PENDING_OWNER_CONFIRMATION", at: order.created_at },
+    ...order.history.map((item) => ({
+      label: formatStatus(item.new_status),
+      status: item.new_status,
+      at: item.created_at,
+      reason: item.reason,
+      actor: item.changed_by_user_id ?? item.source,
+    })),
+  ];
+
+  return (
+    <div className="space-y-3">
+      {entries.map((entry, index) => (
+        <div key={`${entry.status}-${entry.at}-${index}`} className="flex gap-3">
+          <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />
+          <div className="min-w-0 border-b border-border pb-3 text-sm last:border-0">
+            <div className="font-medium">{entry.label}</div>
+            <div className="text-muted-foreground">{formatDate(entry.at)}</div>
+            {"actor" in entry && entry.actor ? (
+              <div className="text-muted-foreground">By {entry.actor}</div>
+            ) : null}
+            {"reason" in entry && entry.reason ? (
+              <div className="mt-1 text-muted-foreground">Reason: {entry.reason}</div>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-border bg-surface/60 p-5">
       <h2 className="font-display text-xl font-semibold">{title}</h2>
@@ -270,18 +517,20 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-border pb-2 text-sm last:border-0 last:pb-0">
       <span className="text-muted-foreground">{label}</span>
-      <span className="max-w-[70%] text-right font-medium">{value}</span>
+      <span className="max-w-[70%] whitespace-pre-line text-right font-medium">{value}</span>
     </div>
   );
 }
 
-function Status({ tone, text }: { tone: "error" | "success"; text: string }) {
+function Status({ tone, text }: { tone: "error" | "success" | "warning"; text: string }) {
   return (
     <p
       className={
         tone === "error"
           ? "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
-          : "rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300"
+          : tone === "warning"
+            ? "rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200"
+            : "rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300"
       }
     >
       {text}
@@ -297,9 +546,25 @@ function PageState({ text }: { text: string }) {
   );
 }
 
+function getNotificationNotice(
+  prefix: string,
+  notification:
+    | { ok: true; messageId?: string }
+    | { ok: false; status: number; errorCode?: string; errorMessage: string },
+) {
+  if (notification.ok) return `${prefix}. Customer notification sent or already recorded.`;
+  if (notification.errorCode === "TEMPLATE_REQUIRED") {
+    return `${prefix}. Customer notification needs a WhatsApp template because the 24-hour window is closed.`;
+  }
+  return `${prefix}. Customer notification failed.`;
+}
+
 function formatStatus(status: string) {
   if (status === "PENDING_OWNER_CONFIRMATION") return "Pending owner confirmation";
-  return status[0] + status.slice(1).toLowerCase();
+  return status
+    .split("_")
+    .map((part) => part[0] + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function formatDate(value: string) {
@@ -307,6 +572,10 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatOptionalDate(value: string | null) {
+  return value ? formatDate(value) : "-";
 }
 
 function formatMoney(value: number | string) {

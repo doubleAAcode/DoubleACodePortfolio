@@ -18,6 +18,8 @@ import {
   getDashboardOrderDetails,
   listDashboardOrders,
   rejectDashboardOrder,
+  transitionDashboardOrder,
+  type DashboardLifecycleAction,
   type DashboardOrderStatus,
 } from "./order-dashboard-store.server";
 
@@ -218,6 +220,18 @@ export function createDashboardOrderDetailsHandlers(envSuffix = "") {
           return Response.json({ ok: true, data: result });
         }
 
+        const lifecycleAction = parseLifecycleAction(body?.action);
+        if (lifecycleAction) {
+          const result = await transitionDashboardOrder({
+            businessId: session.businessId,
+            orderId: params.orderId,
+            action: lifecycleAction,
+            reason: body?.reason,
+            actor: session.username,
+          });
+          return Response.json({ ok: true, data: result });
+        }
+
         return Response.json({ ok: false, error: "Unsupported order action." }, { status: 400 });
       } catch (error) {
         return dashboardApiError(error);
@@ -230,13 +244,32 @@ function parseStatus(value: string | null): DashboardOrderStatus | "ALL" {
   if (
     value === "PENDING_OWNER_CONFIRMATION" ||
     value === "ACCEPTED" ||
+    value === "PREPARING" ||
+    value === "READY" ||
+    value === "OUT_FOR_DELIVERY" ||
+    value === "COMPLETED" ||
     value === "REJECTED" ||
+    value === "CANCELLED" ||
     value === "ALL"
   ) {
     return value;
   }
 
   return "PENDING_OWNER_CONFIRMATION";
+}
+
+function parseLifecycleAction(value: string | undefined): DashboardLifecycleAction | undefined {
+  if (
+    value === "start_preparing" ||
+    value === "mark_ready" ||
+    value === "out_for_delivery" ||
+    value === "complete" ||
+    value === "cancel"
+  ) {
+    return value;
+  }
+
+  return undefined;
 }
 
 function dashboardApiError(error: unknown) {

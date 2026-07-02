@@ -1,5 +1,6 @@
 import type { DashboardCatalogAction, WaDashboardData } from "./dashboard-store.server";
 import type {
+  DashboardLifecycleAction,
   DashboardOrderDetails,
   DashboardOrderStatus,
   DashboardOrderSummary,
@@ -75,7 +76,7 @@ export async function getWaDashboardOrder(orderId: string) {
 
 export async function decideWaDashboardOrder(
   orderId: string,
-  action: "accept" | "reject",
+  action: "accept" | "reject" | DashboardLifecycleAction,
   reason?: string,
 ) {
   const result = await apiFetch<

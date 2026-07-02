@@ -16,7 +16,12 @@ export const Route = createFileRoute("/dashboard/orders")({
 const filters: Array<{ label: string; value: DashboardOrderStatus | "ALL" }> = [
   { label: "Pending", value: "PENDING_OWNER_CONFIRMATION" },
   { label: "Accepted", value: "ACCEPTED" },
+  { label: "Preparing", value: "PREPARING" },
+  { label: "Ready", value: "READY" },
+  { label: "Out for delivery", value: "OUT_FOR_DELIVERY" },
+  { label: "Completed", value: "COMPLETED" },
   { label: "Rejected", value: "REJECTED" },
+  { label: "Cancelled", value: "CANCELLED" },
   { label: "All", value: "ALL" },
 ];
 
@@ -59,7 +64,7 @@ export function OrdersPage() {
           <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Sales</p>
           <h1 className="mt-2 font-display text-3xl font-semibold">Orders</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Review pending WhatsApp orders and accept or reject them safely.
+            Review WhatsApp orders, track progress, and safely update fulfillment status.
           </p>
         </div>
         <button type="button" onClick={() => void loadOrders()} className="studio-button w-fit">
@@ -106,7 +111,7 @@ export function OrdersPage() {
           <PackageCheck className="mx-auto h-8 w-8 text-muted-foreground" />
           <h2 className="mt-3 font-display text-xl font-semibold">No orders found</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            New pending WhatsApp orders will appear here automatically.
+            Orders matching this status will appear here automatically.
           </p>
         </div>
       )}
@@ -126,22 +131,22 @@ function OrderCard({ order }: { order: DashboardOrderSummary }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-display text-xl font-semibold">{order.order_number}</h2>
-            {order.status === "PENDING_OWNER_CONFIRMATION" ? (
-              <span className="rounded-md bg-primary/15 px-2 py-1 text-xs text-primary">New</span>
-            ) : null}
+            <span className={statusBadgeClass(order.status)}>{formatStatus(order.status)}</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {order.customer_name} · {maskPhone(order.customer_phone)} ·{" "}
+            {order.customer_name} / {maskPhone(order.customer_phone)} /{" "}
             {formatDate(order.created_at)}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {order.item_count} item(s) · {order.fulfillment_method} · reservation{" "}
+            {order.item_count} item(s) / {order.fulfillment_method} / reservation{" "}
             {order.reservation_status.toLowerCase()}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Last status update {formatDate(order.updated_at)}
           </p>
         </div>
         <div className="text-left lg:text-right">
           <div className="font-display text-2xl font-semibold">{formatMoney(order.total)}</div>
-          <div className={statusClass(order.status)}>{formatStatus(order.status)}</div>
         </div>
       </div>
     </Link>
@@ -150,13 +155,24 @@ function OrderCard({ order }: { order: DashboardOrderSummary }) {
 
 function formatStatus(status: DashboardOrderStatus) {
   if (status === "PENDING_OWNER_CONFIRMATION") return "Pending";
-  return status[0] + status.slice(1).toLowerCase();
+  return status
+    .split("_")
+    .map((part) => part[0] + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
-function statusClass(status: DashboardOrderStatus) {
-  if (status === "ACCEPTED") return "text-sm text-emerald-400";
-  if (status === "REJECTED") return "text-sm text-destructive";
-  return "text-sm text-primary";
+function statusBadgeClass(status: DashboardOrderStatus) {
+  const base = "rounded-md px-2 py-1 text-xs";
+  if (status === "ACCEPTED" || status === "COMPLETED") {
+    return `${base} bg-emerald-500/15 text-emerald-300`;
+  }
+  if (status === "PREPARING") return `${base} bg-sky-500/15 text-sky-300`;
+  if (status === "READY") return `${base} bg-amber-500/15 text-amber-300`;
+  if (status === "OUT_FOR_DELIVERY") return `${base} bg-cyan-500/15 text-cyan-300`;
+  if (status === "REJECTED" || status === "CANCELLED") {
+    return `${base} bg-destructive/15 text-destructive`;
+  }
+  return `${base} bg-primary/15 text-primary`;
 }
 
 function formatDate(value: string) {
