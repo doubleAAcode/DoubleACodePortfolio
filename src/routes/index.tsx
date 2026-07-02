@@ -15,17 +15,20 @@ import { Contact } from "@/components/Contact";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Double A — Digital Engineering Studio" },
+      { title: "Double A - Digital Engineering Studio" },
       {
         name: "description",
-        content:
-          "Double A is a software engineering studio building scalable web, mobile, and enterprise products. React, Angular, Node.js, Flutter.",
+        content: "Double A - Digital Engineering Studio",
       },
-      { property: "og:title", content: "Double A — Digital Engineering Studio" },
+      { property: "og:title", content: "Double A - Digital Engineering Studio" },
       {
         property: "og:description",
-        content:
-          "We build software that builds businesses. From modern websites to enterprise systems, engineered with precision.",
+        content: "Double A - Digital Engineering Studio",
+      },
+      { name: "twitter:title", content: "Double A - Digital Engineering Studio" },
+      {
+        name: "twitter:description",
+        content: "Double A - Digital Engineering Studio",
       },
     ],
   }),

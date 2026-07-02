@@ -76,11 +76,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Double-A Portfolio" },
-      { name: "description", content: "Portfolio Project" },
-      { property: "og:title", content: "Double-A Portfolio" },
-      { property: "og:description", content: "Portfolio Project" },
+      { title: "Double A - Digital Engineering Studio" },
+      { name: "description", content: "Double A - Digital Engineering Studio" },
+      { property: "og:title", content: "Double A - Digital Engineering Studio" },
+      { property: "og:description", content: "Double A - Digital Engineering Studio" },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Double A - Digital Engineering Studio" },
+      { name: "twitter:description", content: "Double A - Digital Engineering Studio" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
