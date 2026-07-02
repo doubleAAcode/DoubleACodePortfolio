@@ -11,6 +11,7 @@ const diagnosticsHandler = read("src/lib/whatsapp/diagnostics.server.ts");
 const dashboardHandlers = read("src/lib/whatsapp/dashboard-api-handlers.server.ts");
 const sender = read("src/lib/whatsapp/sender.server.ts");
 const sessionStore = read("src/lib/whatsapp/conversation-store.server.ts");
+const conversationEngine = read("src/lib/whatsapp/conversation-engine.server.ts");
 
 test("order creation RPC locks stock rows before inserting reservations", () => {
   assert.match(hardeningSql, /create or replace function public\.wa_create_pending_order/);
@@ -63,6 +64,28 @@ test("stored conversation sessions are schema-validated on load", () => {
   assert.match(sessionStore, /validateStoredSessionRow/);
   assert.match(sessionStore, /recovered malformed stored session/);
   assert.match(sessionStore, /SELECT_LANGUAGE/);
+});
+
+test("new checkout flows clear previous completed order markers", () => {
+  const customerNameHandler = conversationEngine.match(
+    /async function handleCustomerName[\s\S]*?async function handleFulfillmentMethod/,
+  )?.[0];
+  assert.ok(customerNameHandler);
+  assert.doesNotMatch(customerNameHandler, /saveWhatsAppCustomerProfileFromOrder\(result\.order\)/);
+
+  const startCheckout = conversationEngine.match(
+    /async function startCheckout[\s\S]*?async function handleSavedCustomerDetails/,
+  )?.[0];
+  assert.ok(startCheckout);
+  assert.match(startCheckout, /createdOrderId:\s*undefined/);
+  assert.match(startCheckout, /createdOrderNumber:\s*undefined/);
+
+  const completedOrderHandler = conversationEngine.match(
+    /async function handleCompletedOrder[\s\S]*?async function moveToProductDetails/,
+  )?.[0];
+  assert.ok(completedOrderHandler);
+  assert.match(completedOrderHandler, /createdOrderId:\s*undefined/);
+  assert.match(completedOrderHandler, /createdOrderNumber:\s*undefined/);
 });
 
 function read(path) {
