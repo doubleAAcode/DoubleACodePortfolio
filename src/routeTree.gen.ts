@@ -28,14 +28,21 @@ import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insight
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
 import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
 import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardDeliveryRouteImport } from './routes/dashboard.delivery'
 import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
 import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
 import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
 import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
+import { Route as ApiWaDashboardUploadRouteImport } from './routes/api.wa-dashboard.upload'
+import { Route as ApiWaDashboardSessionRouteImport } from './routes/api.wa-dashboard.session'
+import { Route as ApiWaDashboardLogoutRouteImport } from './routes/api.wa-dashboard.logout'
+import { Route as ApiWaDashboardLoginRouteImport } from './routes/api.wa-dashboard.login'
+import { Route as ApiWaDashboardCatalogRouteImport } from './routes/api.wa-dashboard.catalog'
 import { Route as StoresPavoneAdminIndexRouteImport } from './routes/stores/pavone.admin.index'
 import { Route as StoresPavoneProductSlugRouteImport } from './routes/stores/pavone.product.$slug'
 import { Route as StoresPavoneCategorySlugRouteImport } from './routes/stores/pavone.category.$slug'
@@ -141,6 +148,11 @@ const DashboardSimulatorRoute = DashboardSimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardProductsRoute = DashboardProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -149,6 +161,11 @@ const DashboardProductsRoute = DashboardProductsRouteImport.update({
 const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDeliveryRoute = DashboardDeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
@@ -179,6 +196,31 @@ const StoresPavoneAdminRoute = StoresPavoneAdminRouteImport.update({
 const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
   id: '/api/whatsapp/webhook',
   path: '/api/whatsapp/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardUploadRoute = ApiWaDashboardUploadRouteImport.update({
+  id: '/api/wa-dashboard/upload',
+  path: '/api/wa-dashboard/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardSessionRoute = ApiWaDashboardSessionRouteImport.update({
+  id: '/api/wa-dashboard/session',
+  path: '/api/wa-dashboard/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardLogoutRoute = ApiWaDashboardLogoutRouteImport.update({
+  id: '/api/wa-dashboard/logout',
+  path: '/api/wa-dashboard/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardLoginRoute = ApiWaDashboardLoginRouteImport.update({
+  id: '/api/wa-dashboard/login',
+  path: '/api/wa-dashboard/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardCatalogRoute = ApiWaDashboardCatalogRouteImport.update({
+  id: '/api/wa-dashboard/catalog',
+  path: '/api/wa-dashboard/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoresPavoneAdminIndexRoute = StoresPavoneAdminIndexRouteImport.update({
@@ -242,8 +284,10 @@ export interface FileRoutesByFullPath {
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/delivery': typeof DashboardDeliveryRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -255,6 +299,11 @@ export interface FileRoutesByFullPath {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
+  '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
+  '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
+  '/api/wa-dashboard/session': typeof ApiWaDashboardSessionRoute
+  '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
@@ -278,8 +327,10 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/delivery': typeof DashboardDeliveryRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
@@ -290,6 +341,11 @@ export interface FileRoutesByTo {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard': typeof DashboardIndexRoute
   '/stores': typeof StoresIndexRoute
+  '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
+  '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
+  '/api/wa-dashboard/session': typeof ApiWaDashboardSessionRoute
+  '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
@@ -315,8 +371,10 @@ export interface FileRoutesById {
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
   '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/delivery': typeof DashboardDeliveryRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -328,6 +386,11 @@ export interface FileRoutesById {
   '/work/uno400': typeof WorkUno400Route
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
+  '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
+  '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
+  '/api/wa-dashboard/session': typeof ApiWaDashboardSessionRoute
+  '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
@@ -355,8 +418,10 @@ export interface FileRouteTypes {
     | '/spreadsheet'
     | '/stores'
     | '/dashboard/categories'
+    | '/dashboard/delivery'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
     | '/stores/pavone'
@@ -368,6 +433,11 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard/'
     | '/stores/'
+    | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/login'
+    | '/api/wa-dashboard/logout'
+    | '/api/wa-dashboard/session'
+    | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
@@ -391,8 +461,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/spreadsheet'
     | '/dashboard/categories'
+    | '/dashboard/delivery'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
     | '/work/data-insights'
@@ -403,6 +475,11 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard'
     | '/stores'
+    | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/login'
+    | '/api/wa-dashboard/logout'
+    | '/api/wa-dashboard/session'
+    | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
@@ -427,8 +504,10 @@ export interface FileRouteTypes {
     | '/spreadsheet'
     | '/stores'
     | '/dashboard/categories'
+    | '/dashboard/delivery'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
     | '/stores/pavone'
@@ -440,6 +519,11 @@ export interface FileRouteTypes {
     | '/work/uno400'
     | '/dashboard/'
     | '/stores/'
+    | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/login'
+    | '/api/wa-dashboard/logout'
+    | '/api/wa-dashboard/session'
+    | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/stores/pavone/admin'
     | '/stores/pavone/shop'
@@ -472,6 +556,11 @@ export interface RootRouteChildren {
   WorkSnapgoRoute: typeof WorkSnapgoRoute
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
+  ApiWaDashboardCatalogRoute: typeof ApiWaDashboardCatalogRoute
+  ApiWaDashboardLoginRoute: typeof ApiWaDashboardLoginRoute
+  ApiWaDashboardLogoutRoute: typeof ApiWaDashboardLogoutRoute
+  ApiWaDashboardSessionRoute: typeof ApiWaDashboardSessionRoute
+  ApiWaDashboardUploadRoute: typeof ApiWaDashboardUploadRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
 }
 
@@ -610,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSimulatorRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/products': {
       id: '/dashboard/products'
       path: '/products'
@@ -622,6 +718,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/dashboard/orders'
       preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/delivery': {
+      id: '/dashboard/delivery'
+      path: '/delivery'
+      fullPath: '/dashboard/delivery'
+      preLoaderRoute: typeof DashboardDeliveryRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/categories': {
@@ -664,6 +767,41 @@ declare module '@tanstack/react-router' {
       path: '/api/whatsapp/webhook'
       fullPath: '/api/whatsapp/webhook'
       preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/upload': {
+      id: '/api/wa-dashboard/upload'
+      path: '/api/wa-dashboard/upload'
+      fullPath: '/api/wa-dashboard/upload'
+      preLoaderRoute: typeof ApiWaDashboardUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/session': {
+      id: '/api/wa-dashboard/session'
+      path: '/api/wa-dashboard/session'
+      fullPath: '/api/wa-dashboard/session'
+      preLoaderRoute: typeof ApiWaDashboardSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/logout': {
+      id: '/api/wa-dashboard/logout'
+      path: '/api/wa-dashboard/logout'
+      fullPath: '/api/wa-dashboard/logout'
+      preLoaderRoute: typeof ApiWaDashboardLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/login': {
+      id: '/api/wa-dashboard/login'
+      path: '/api/wa-dashboard/login'
+      fullPath: '/api/wa-dashboard/login'
+      preLoaderRoute: typeof ApiWaDashboardLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/catalog': {
+      id: '/api/wa-dashboard/catalog'
+      path: '/api/wa-dashboard/catalog'
+      fullPath: '/api/wa-dashboard/catalog'
+      preLoaderRoute: typeof ApiWaDashboardCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stores/pavone/admin/': {
@@ -734,16 +872,20 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardCategoriesRoute: typeof DashboardCategoriesRoute
+  DashboardDeliveryRoute: typeof DashboardDeliveryRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProductsRoute: typeof DashboardProductsRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardSimulatorRoute: typeof DashboardSimulatorRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCategoriesRoute: DashboardCategoriesRoute,
+  DashboardDeliveryRoute: DashboardDeliveryRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProductsRoute: DashboardProductsRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardSimulatorRoute: DashboardSimulatorRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
@@ -826,6 +968,11 @@ const rootRouteChildren: RootRouteChildren = {
   WorkSnapgoRoute: WorkSnapgoRoute,
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
+  ApiWaDashboardCatalogRoute: ApiWaDashboardCatalogRoute,
+  ApiWaDashboardLoginRoute: ApiWaDashboardLoginRoute,
+  ApiWaDashboardLogoutRoute: ApiWaDashboardLogoutRoute,
+  ApiWaDashboardSessionRoute: ApiWaDashboardSessionRoute,
+  ApiWaDashboardUploadRoute: ApiWaDashboardUploadRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

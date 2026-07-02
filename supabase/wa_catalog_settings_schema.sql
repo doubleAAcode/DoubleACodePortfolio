@@ -73,10 +73,14 @@ create table if not exists public.wa_product_option_values (
   option_id text not null references public.wa_product_options(id) on delete cascade,
   value_english text not null,
   value_arabic text not null,
+  image_url text,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.wa_product_option_values
+  add column if not exists image_url text;
 
 create index if not exists wa_product_option_values_option_sort_idx
   on public.wa_product_option_values (option_id, sort_order);
@@ -453,5 +457,10 @@ grant select, insert, update, delete on public.wa_delivery_areas to service_role
 grant select, insert, update, delete on public.wa_pickup_locations to service_role;
 grant select, insert, update, delete on public.wa_payment_methods to service_role;
 
+insert into storage.buckets (id, name, public)
+values ('wa-product-images', 'wa-product-images', true)
+on conflict (id) do update set public = true;
+
 -- No anon/auth policies are created on purpose.
--- The bot reads these tables only from server code using SUPABASE_SERVICE_ROLE_KEY.
+-- The bot and owner dashboard read/write these tables only from server code using SUPABASE_SERVICE_ROLE_KEY.
+-- Product images are uploaded by the server to the public wa-product-images bucket, then only the URL is stored.

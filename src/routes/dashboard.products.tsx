@@ -1,306 +1,893 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { TEST_BUSINESS_ID } from "@/stores/store-bot/seed";
-import { makeId } from "@/stores/store-bot/storage";
-import type { Product, ProductVariant } from "@/stores/store-bot/types";
-import { useStoreBotState } from "@/stores/store-bot/use-store-bot-state";
+
+import { uploadWaDashboardImage } from "@/lib/whatsapp/dashboard-client";
+import type {
+  WaProductCustomFieldRow,
+  WaProductOptionRow,
+  WaProductOptionValueRow,
+  WaProductRow,
+  WaProductVariantRow,
+} from "@/lib/whatsapp/dashboard-store.server";
+import { formatMoney, useWaDashboardData } from "@/lib/whatsapp/use-wa-dashboard-data";
 
 export const Route = createFileRoute("/dashboard/products")({
   component: ProductsPage,
 });
 
 const emptyProduct = {
-  name: "",
-  description: "",
-  categoryId: "",
-  basePrice: 0,
-  stockQuantity: 0,
-  isActive: true,
+  id: "",
+  category_id: "",
+  code: "",
+  name_english: "",
+  name_arabic: "",
+  description_english: "",
+  description_arabic: "",
+  price: 0,
+  image_url: "",
+  is_active: true,
+  is_available: true,
+  stock_quantity: 0,
+  sort_order: 10,
+};
+
+const emptyOption = {
+  id: "",
+  product_id: "",
+  name_english: "",
+  name_arabic: "",
+  sort_order: 10,
+  is_required: true,
+};
+const emptyValue = {
+  id: "",
+  option_id: "",
+  value_english: "",
+  value_arabic: "",
+  image_url: "",
+  sort_order: 10,
+};
+const emptyVariant = {
+  id: "",
+  product_id: "",
+  sku: "",
+  selected_option_value_ids: [] as string[],
+  price: 0,
+  stock_quantity: 0,
+  is_available: true,
+};
+const emptyField = {
+  id: "",
+  product_id: "",
+  type: "short_text" as WaProductCustomFieldRow["type"],
+  label_english: "",
+  label_arabic: "",
+  placeholder_english: "",
+  placeholder_arabic: "",
+  is_required: false,
+  minimum_length: null as number | null,
+  maximum_length: null as number | null,
+  minimum_value: null as number | null,
+  maximum_value: null as number | null,
+  choicesText: "",
+  sort_order: 10,
 };
 
 function ProductsPage() {
-  const { state, save } = useStoreBotState();
-  const categories = state.categories.filter(
-    (category) => category.businessId === TEST_BUSINESS_ID,
-  );
+  const { data, loading, saving, error, notice, setError, applyAction } = useWaDashboardData();
+  const [search, setSearch] = useState("");
   const [productForm, setProductForm] = useState(emptyProduct);
-  const [editingProductId, setEditingProductId] = useState("");
-  const [variantForm, setVariantForm] = useState({
-    productId: "",
-    variantType: "Option",
-    name: "",
-    priceDelta: 0,
-    stockQuantity: 0,
-  });
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [optionForm, setOptionForm] = useState(emptyOption);
+  const [valueForm, setValueForm] = useState(emptyValue);
+  const [variantForm, setVariantForm] = useState(emptyVariant);
+  const [fieldForm, setFieldForm] = useState(emptyField);
+  const [uploading, setUploading] = useState(false);
 
-  const products = useMemo(
-    () => state.products.filter((product) => product.businessId === TEST_BUSINESS_ID),
-    [state.products],
-  );
+  const products = useMemo(() => {
+    const value = search.trim().toLowerCase();
+    return [...(data?.products ?? [])]
+      .filter((product) => {
+        if (!value) return true;
+        return [product.code, product.name_english, product.name_arabic]
+          .join(" ")
+          .toLowerCase()
+          .includes(value);
+      })
+      .sort((a, b) => a.sort_order - b.sort_order || a.name_english.localeCompare(b.name_english));
+  }, [data?.products, search]);
 
-  function submitProduct() {
-    if (!productForm.name.trim() || !productForm.categoryId) return;
-    const nextProduct: Product = {
-      id: editingProductId || makeId("prod"),
-      businessId: TEST_BUSINESS_ID,
-      name: productForm.name.trim(),
-      description: productForm.description.trim(),
-      categoryId: productForm.categoryId,
-      basePrice: Number(productForm.basePrice) || 0,
-      stockQuantity: Number(productForm.stockQuantity) || 0,
-      isActive: productForm.isActive,
-    };
-    save({
-      ...state,
-      products: editingProductId
-        ? state.products.map((product) => (product.id === editingProductId ? nextProduct : product))
-        : [...state.products, nextProduct],
-    });
+  const selectedProduct =
+    data?.products.find((product) => product.id === selectedProductId) ?? products[0];
+  const selectedId = selectedProduct?.id ?? "";
+  const productOptions = data?.options.filter((option) => option.product_id === selectedId) ?? [];
+  const optionIds = new Set(productOptions.map((option) => option.id));
+  const productValues = data?.optionValues.filter((value) => optionIds.has(value.option_id)) ?? [];
+  const productVariants =
+    data?.variants.filter((variant) => variant.product_id === selectedId) ?? [];
+  const productFields = data?.customFields.filter((field) => field.product_id === selectedId) ?? [];
+
+  async function submitProduct() {
+    const payload = { ...productForm, id: productForm.id || undefined };
+    const next = await applyAction({ type: "saveProduct", payload }, "Product saved.");
+    const saved = next.products.find((product) => product.code === payload.code.toUpperCase());
+    if (saved) setSelectedProductId(saved.id);
     setProductForm(emptyProduct);
-    setEditingProductId("");
   }
 
-  function editProduct(product: Product) {
-    setEditingProductId(product.id);
-    setProductForm({
-      name: product.name,
-      description: product.description,
-      categoryId: product.categoryId,
-      basePrice: product.basePrice,
-      stockQuantity: product.stockQuantity,
-      isActive: product.isActive,
-    });
+  async function uploadImage(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const image = await uploadWaDashboardImage(file);
+      setProductForm((current) => ({ ...current, image_url: image.url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image upload failed.");
+    } finally {
+      setUploading(false);
+    }
   }
 
-  function submitVariant() {
-    if (!variantForm.productId || !variantForm.name.trim()) return;
-    const variant: ProductVariant = {
-      id: makeId("var"),
-      businessId: TEST_BUSINESS_ID,
-      productId: variantForm.productId,
-      variantType: variantForm.variantType.trim() || "Option",
-      name: variantForm.name.trim(),
-      priceDelta: Number(variantForm.priceDelta) || 0,
-      stockQuantity: Number(variantForm.stockQuantity) || 0,
-      isActive: true,
-    };
-    save({ ...state, variants: [...state.variants, variant] });
-    setVariantForm({
-      productId: "",
-      variantType: "Option",
-      name: "",
-      priceDelta: 0,
-      stockQuantity: 0,
-    });
+  async function submitOption() {
+    await applyAction(
+      {
+        type: "saveOption",
+        payload: { ...optionForm, id: optionForm.id || undefined, product_id: selectedId },
+      },
+      "Option saved.",
+    );
+    setOptionForm(emptyOption);
   }
 
-  function removeProduct(productId: string) {
-    save({
-      ...state,
-      products: state.products.filter((product) => product.id !== productId),
-      variants: state.variants.filter((variant) => variant.productId !== productId),
-    });
+  async function submitValue() {
+    await applyAction(
+      { type: "saveOptionValue", payload: { ...valueForm, id: valueForm.id || undefined } },
+      "Option value saved.",
+    );
+    setValueForm(emptyValue);
   }
 
-  function removeVariant(variantId: string) {
-    save({ ...state, variants: state.variants.filter((variant) => variant.id !== variantId) });
+  async function submitVariant() {
+    await applyAction(
+      {
+        type: "saveVariant",
+        payload: { ...variantForm, id: variantForm.id || undefined, product_id: selectedId },
+      },
+      "Variant saved.",
+    );
+    setVariantForm(emptyVariant);
   }
+
+  async function submitField() {
+    await applyAction(
+      {
+        type: "saveCustomField",
+        payload: {
+          id: fieldForm.id || undefined,
+          product_id: selectedId,
+          type: fieldForm.type,
+          label_english: fieldForm.label_english,
+          label_arabic: fieldForm.label_arabic,
+          placeholder_english: fieldForm.placeholder_english || null,
+          placeholder_arabic: fieldForm.placeholder_arabic || null,
+          is_required: fieldForm.is_required,
+          minimum_length: fieldForm.minimum_length,
+          maximum_length: fieldForm.maximum_length,
+          minimum_value: fieldForm.minimum_value,
+          maximum_value: fieldForm.maximum_value,
+          choices: parseChoices(fieldForm.choicesText),
+          sort_order: fieldForm.sort_order,
+        },
+      },
+      "Custom field saved.",
+    );
+    setFieldForm(emptyField);
+  }
+
+  if (loading) return <Status loading={loading} error="" notice="" />;
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Catalog</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold">Products</h1>
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Catalog</p>
+          <h1 className="mt-2 font-display text-3xl font-semibold">Products</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Manage product records, options, variants, stock, images, and customer input fields.
+          </p>
+        </div>
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search products"
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary lg:w-72"
+        />
       </div>
 
+      <Status loading={false} error={error} notice={notice} />
+
       <section className="rounded-lg border border-border bg-surface/60 p-5">
-        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_160px_120px_120px_120px_auto] lg:items-end">
-          <Input
-            label="Name"
-            value={productForm.name}
-            onChange={(value) => setProductForm({ ...productForm, name: value })}
+        <h2 className="font-display text-xl font-semibold">
+          {productForm.id ? "Edit product" : "Add product"}
+        </h2>
+        <div className="mt-4 grid gap-3 lg:grid-cols-4">
+          <TextInput
+            label="Code"
+            value={productForm.code}
+            onChange={(value) => setProductForm({ ...productForm, code: value })}
           />
-          <Input
-            label="Description"
-            value={productForm.description}
-            onChange={(value) => setProductForm({ ...productForm, description: value })}
-          />
-          <label className="text-sm">
-            <span className="mb-2 block text-muted-foreground">Category</span>
-            <select
-              value={productForm.categoryId}
-              onChange={(event) =>
-                setProductForm({ ...productForm, categoryId: event.target.value })
-              }
-              className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
-            >
-              <option value="">Choose</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectInput
+            label="Category"
+            value={productForm.category_id}
+            onChange={(value) => setProductForm({ ...productForm, category_id: value })}
+          >
+            <option value="">Choose</option>
+            {data?.categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name_english}
+              </option>
+            ))}
+          </SelectInput>
           <NumberInput
             label="Price"
-            value={productForm.basePrice}
-            onChange={(value) => setProductForm({ ...productForm, basePrice: value })}
+            value={productForm.price}
+            onChange={(value) => setProductForm({ ...productForm, price: value })}
           />
           <NumberInput
             label="Stock"
-            value={productForm.stockQuantity}
-            onChange={(value) => setProductForm({ ...productForm, stockQuantity: value })}
+            value={productForm.stock_quantity}
+            onChange={(value) => setProductForm({ ...productForm, stock_quantity: value })}
           />
-          <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked={productForm.isActive}
-              onChange={(event) =>
-                setProductForm({ ...productForm, isActive: event.target.checked })
-              }
+          <TextInput
+            label="English name"
+            value={productForm.name_english}
+            onChange={(value) => setProductForm({ ...productForm, name_english: value })}
+          />
+          <TextInput
+            label="Arabic name"
+            dir="rtl"
+            value={productForm.name_arabic}
+            onChange={(value) => setProductForm({ ...productForm, name_arabic: value })}
+          />
+          <NumberInput
+            label="Sort"
+            value={productForm.sort_order}
+            onChange={(value) => setProductForm({ ...productForm, sort_order: value })}
+          />
+          <div className="flex gap-2">
+            <Toggle
+              label="Active"
+              checked={productForm.is_active}
+              onChange={(value) => setProductForm({ ...productForm, is_active: value })}
             />
-            Active
-          </label>
-          <button type="button" onClick={submitProduct} className="studio-button-primary">
-            {editingProductId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {editingProductId ? "Save" : "Add"}
-          </button>
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-border bg-surface/60 p-5">
-        <h2 className="font-display text-xl font-semibold">Add Variant</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_140px_1fr_120px_120px_auto] md:items-end">
-          <label className="text-sm">
-            <span className="mb-2 block text-muted-foreground">Product</span>
-            <select
-              value={variantForm.productId}
-              onChange={(event) =>
-                setVariantForm({ ...variantForm, productId: event.target.value })
-              }
-              className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
-            >
-              <option value="">Choose</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input
-            label="Type"
-            value={variantForm.variantType}
-            onChange={(value) => setVariantForm({ ...variantForm, variantType: value })}
+            <Toggle
+              label="Available"
+              checked={productForm.is_available}
+              onChange={(value) => setProductForm({ ...productForm, is_available: value })}
+            />
+          </div>
+          <TextArea
+            label="English description"
+            value={productForm.description_english}
+            onChange={(value) => setProductForm({ ...productForm, description_english: value })}
           />
-          <Input
-            label="Name"
-            value={variantForm.name}
-            onChange={(value) => setVariantForm({ ...variantForm, name: value })}
+          <TextArea
+            label="Arabic description"
+            dir="rtl"
+            value={productForm.description_arabic}
+            onChange={(value) => setProductForm({ ...productForm, description_arabic: value })}
           />
-          <NumberInput
-            label="Price +"
-            value={variantForm.priceDelta}
-            onChange={(value) => setVariantForm({ ...variantForm, priceDelta: value })}
-          />
-          <NumberInput
-            label="Stock"
-            value={variantForm.stockQuantity}
-            onChange={(value) => setVariantForm({ ...variantForm, stockQuantity: value })}
-          />
-          <button type="button" onClick={submitVariant} className="studio-button">
-            <Plus className="h-4 w-4" />
-            Variant
-          </button>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        {products.map((product) => {
-          const category = categories.find((item) => item.id === product.categoryId);
-          const variants = state.variants.filter((variant) => variant.productId === product.id);
-          return (
-            <div key={product.id} className="rounded-lg border border-border bg-surface/60 p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <button type="button" onClick={() => editProduct(product)} className="text-left">
-                  <div className="font-display text-xl font-semibold hover:text-primary">
-                    {product.name}
-                  </div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {category?.name ?? "No category"} · ${product.basePrice.toFixed(2)} ·{" "}
-                    {product.stockQuantity} base stock
-                  </div>
-                  <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                    {product.description}
-                  </p>
+          <div className="space-y-2 lg:col-span-2">
+            <span className="block text-sm text-muted-foreground">Product image</span>
+            <div className="flex flex-wrap items-center gap-3">
+              {productForm.image_url ? (
+                <img
+                  src={productForm.image_url}
+                  alt=""
+                  className="h-16 w-16 rounded-md object-cover"
+                />
+              ) : null}
+              <label className="studio-button cursor-pointer">
+                <ImagePlus className="h-4 w-4" />
+                {uploading ? "Uploading..." : "Upload"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadImage(file);
+                  }}
+                />
+              </label>
+              {productForm.image_url ? (
+                <button
+                  type="button"
+                  className="studio-button"
+                  onClick={() => setProductForm({ ...productForm, image_url: "" })}
+                >
+                  <X className="h-4 w-4" />
+                  Remove
                 </button>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={
-                      product.isActive
-                        ? "text-sm text-emerald-400"
-                        : "text-sm text-muted-foreground"
-                    }
-                  >
-                    {product.isActive ? "Active" : "Hidden"}
-                  </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void submitProduct()}
+            className="studio-button-primary"
+          >
+            {productForm.id ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {productForm.id ? "Save product" : "Add product"}
+          </button>
+          {productForm.id ? (
+            <button
+              type="button"
+              onClick={() => setProductForm(emptyProduct)}
+              className="studio-button"
+            >
+              Cancel
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-3">
+          {products.length ? (
+            products.map((product) => (
+              <ProductRow
+                key={product.id}
+                product={product}
+                selected={product.id === selectedId}
+                categoryName={
+                  data?.categories.find((category) => category.id === product.category_id)
+                    ?.name_english ?? "No category"
+                }
+                currency={data?.business.currency ?? "USD"}
+                onSelect={() => setSelectedProductId(product.id)}
+                onEdit={() => {
+                  setSelectedProductId(product.id);
+                  setProductForm({
+                    id: product.id,
+                    category_id: product.category_id,
+                    code: product.code,
+                    name_english: product.name_english,
+                    name_arabic: product.name_arabic,
+                    description_english: product.description_english,
+                    description_arabic: product.description_arabic,
+                    price: Number(product.price),
+                    image_url: product.image_url ?? "",
+                    is_active: product.is_active,
+                    is_available: product.is_available,
+                    stock_quantity: product.stock_quantity,
+                    sort_order: product.sort_order,
+                  });
+                }}
+                onDelete={() => {
+                  if (window.confirm(`Delete ${product.name_english}?`)) {
+                    void applyAction(
+                      { type: "deleteProduct", payload: { id: product.id } },
+                      "Product deleted.",
+                    );
+                  }
+                }}
+              />
+            ))
+          ) : (
+            <div className="rounded-lg border border-border bg-surface/60 p-8 text-center text-sm text-muted-foreground">
+              No products found.
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {selectedProduct ? (
+            <>
+              <NestedSection title={`Options for ${selectedProduct.name_english}`}>
+                <div className="grid gap-3 md:grid-cols-5">
+                  <TextInput
+                    label="English name"
+                    value={optionForm.name_english}
+                    onChange={(value) => setOptionForm({ ...optionForm, name_english: value })}
+                  />
+                  <TextInput
+                    label="Arabic name"
+                    dir="rtl"
+                    value={optionForm.name_arabic}
+                    onChange={(value) => setOptionForm({ ...optionForm, name_arabic: value })}
+                  />
+                  <NumberInput
+                    label="Sort"
+                    value={optionForm.sort_order}
+                    onChange={(value) => setOptionForm({ ...optionForm, sort_order: value })}
+                  />
+                  <Toggle
+                    label="Required"
+                    checked={optionForm.is_required}
+                    onChange={(value) => setOptionForm({ ...optionForm, is_required: value })}
+                  />
                   <button
                     type="button"
-                    onClick={() => removeProduct(product.id)}
-                    className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-destructive"
-                    aria-label={`Delete ${product.name}`}
+                    className="studio-button-primary self-end"
+                    onClick={() => void submitOption()}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
+                    Option
                   </button>
                 </div>
-              </div>
-              {variants.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {variants.map((variant) => (
-                    <span
-                      key={variant.id}
-                      className="inline-flex items-center gap-2 rounded-md border border-border bg-background/60 px-3 py-1.5 text-xs text-muted-foreground"
-                    >
-                      {variant.variantType}:{" "}
-                      <strong className="text-foreground">{variant.name}</strong> +$
-                      {variant.priceDelta.toFixed(2)} · {variant.stockQuantity} left
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(variant.id)}
-                        aria-label={`Delete ${variant.name}`}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
+                <PillList
+                  items={productOptions}
+                  label={(option) => option.name_english}
+                  onEdit={(option) => setOptionForm(option)}
+                  onDelete={(option) => {
+                    if (window.confirm(`Delete ${option.name_english}?`))
+                      void applyAction(
+                        { type: "deleteOption", payload: { id: option.id } },
+                        "Option deleted.",
+                      );
+                  }}
+                />
+              </NestedSection>
+
+              <NestedSection title="Option values">
+                <div className="grid gap-3 md:grid-cols-6">
+                  <SelectInput
+                    label="Option"
+                    value={valueForm.option_id}
+                    onChange={(value) => setValueForm({ ...valueForm, option_id: value })}
+                  >
+                    <option value="">Choose</option>
+                    {productOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name_english}
+                      </option>
+                    ))}
+                  </SelectInput>
+                  <TextInput
+                    label="English value"
+                    value={valueForm.value_english}
+                    onChange={(value) => setValueForm({ ...valueForm, value_english: value })}
+                  />
+                  <TextInput
+                    label="Arabic value"
+                    dir="rtl"
+                    value={valueForm.value_arabic}
+                    onChange={(value) => setValueForm({ ...valueForm, value_arabic: value })}
+                  />
+                  <TextInput
+                    label="Image URL"
+                    value={valueForm.image_url}
+                    onChange={(value) => setValueForm({ ...valueForm, image_url: value })}
+                  />
+                  <NumberInput
+                    label="Sort"
+                    value={valueForm.sort_order}
+                    onChange={(value) => setValueForm({ ...valueForm, sort_order: value })}
+                  />
+                  <button
+                    type="button"
+                    className="studio-button-primary self-end"
+                    onClick={() => void submitValue()}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Value
+                  </button>
                 </div>
-              )}
+                <PillList
+                  items={productValues}
+                  label={(value) =>
+                    `${optionLabel(productOptions, value.option_id)}: ${value.value_english}`
+                  }
+                  onEdit={(value) => setValueForm({ ...value, image_url: value.image_url ?? "" })}
+                  onDelete={(value) => {
+                    if (window.confirm(`Delete ${value.value_english}?`))
+                      void applyAction(
+                        { type: "deleteOptionValue", payload: { id: value.id } },
+                        "Option value deleted.",
+                      );
+                  }}
+                />
+              </NestedSection>
+
+              <NestedSection title="Variants and stock">
+                <div className="grid gap-3 md:grid-cols-6">
+                  <TextInput
+                    label="SKU"
+                    value={variantForm.sku}
+                    onChange={(value) => setVariantForm({ ...variantForm, sku: value })}
+                  />
+                  <NumberInput
+                    label="Price"
+                    value={variantForm.price}
+                    onChange={(value) => setVariantForm({ ...variantForm, price: value })}
+                  />
+                  <NumberInput
+                    label="Stock"
+                    value={variantForm.stock_quantity}
+                    onChange={(value) => setVariantForm({ ...variantForm, stock_quantity: value })}
+                  />
+                  <Toggle
+                    label="Available"
+                    checked={variantForm.is_available}
+                    onChange={(value) => setVariantForm({ ...variantForm, is_available: value })}
+                  />
+                  <div className="md:col-span-2">
+                    <span className="mb-2 block text-sm text-muted-foreground">Option values</span>
+                    <div className="max-h-28 overflow-y-auto rounded-md border border-input bg-background p-2">
+                      {productValues.map((value) => (
+                        <label key={value.id} className="flex items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={variantForm.selected_option_value_ids.includes(value.id)}
+                            onChange={(event) => {
+                              const next = event.target.checked
+                                ? [...variantForm.selected_option_value_ids, value.id]
+                                : variantForm.selected_option_value_ids.filter(
+                                    (id) => id !== value.id,
+                                  );
+                              setVariantForm({ ...variantForm, selected_option_value_ids: next });
+                            }}
+                          />
+                          {value.value_english}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="studio-button-primary mt-3"
+                  onClick={() => void submitVariant()}
+                >
+                  <Plus className="h-4 w-4" />
+                  Save variant
+                </button>
+                <VariantList
+                  variants={productVariants}
+                  values={productValues}
+                  currency={data?.business.currency ?? "USD"}
+                  onEdit={(variant) => setVariantForm({ ...variant, price: Number(variant.price) })}
+                  onDelete={(variant) => {
+                    if (window.confirm(`Delete ${variant.sku}?`))
+                      void applyAction(
+                        { type: "deleteVariant", payload: { id: variant.id } },
+                        "Variant deleted.",
+                      );
+                  }}
+                />
+              </NestedSection>
+
+              <NestedSection title="Custom fields">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <SelectInput
+                    label="Type"
+                    value={fieldForm.type}
+                    onChange={(value) =>
+                      setFieldForm({ ...fieldForm, type: value as WaProductCustomFieldRow["type"] })
+                    }
+                  >
+                    <option value="short_text">Short text</option>
+                    <option value="long_text">Long text</option>
+                    <option value="number">Number</option>
+                    <option value="yes_no">Yes/no</option>
+                    <option value="single_choice">Single choice</option>
+                  </SelectInput>
+                  <TextInput
+                    label="English label"
+                    value={fieldForm.label_english}
+                    onChange={(value) => setFieldForm({ ...fieldForm, label_english: value })}
+                  />
+                  <TextInput
+                    label="Arabic label"
+                    dir="rtl"
+                    value={fieldForm.label_arabic}
+                    onChange={(value) => setFieldForm({ ...fieldForm, label_arabic: value })}
+                  />
+                  <NumberInput
+                    label="Sort"
+                    value={fieldForm.sort_order}
+                    onChange={(value) => setFieldForm({ ...fieldForm, sort_order: value })}
+                  />
+                  <TextInput
+                    label="English placeholder"
+                    value={fieldForm.placeholder_english}
+                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_english: value })}
+                  />
+                  <TextInput
+                    label="Arabic placeholder"
+                    dir="rtl"
+                    value={fieldForm.placeholder_arabic}
+                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_arabic: value })}
+                  />
+                  <TextInput
+                    label="Choices, comma-separated"
+                    value={fieldForm.choicesText}
+                    onChange={(value) => setFieldForm({ ...fieldForm, choicesText: value })}
+                  />
+                  <Toggle
+                    label="Required"
+                    checked={fieldForm.is_required}
+                    onChange={(value) => setFieldForm({ ...fieldForm, is_required: value })}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="studio-button-primary mt-3"
+                  onClick={() => void submitField()}
+                >
+                  <Plus className="h-4 w-4" />
+                  Save field
+                </button>
+                <PillList
+                  items={productFields}
+                  label={(field) => `${field.label_english} (${field.type})`}
+                  onEdit={(field) =>
+                    setFieldForm({
+                      ...field,
+                      placeholder_english: field.placeholder_english ?? "",
+                      placeholder_arabic: field.placeholder_arabic ?? "",
+                      minimum_value:
+                        field.minimum_value === null ? null : Number(field.minimum_value),
+                      maximum_value:
+                        field.maximum_value === null ? null : Number(field.maximum_value),
+                      choicesText:
+                        field.choices?.map((choice) => choice.labelEnglish).join(", ") ?? "",
+                    })
+                  }
+                  onDelete={(field) => {
+                    if (window.confirm(`Delete ${field.label_english}?`))
+                      void applyAction(
+                        { type: "deleteCustomField", payload: { id: field.id } },
+                        "Custom field deleted.",
+                      );
+                  }}
+                />
+              </NestedSection>
+            </>
+          ) : (
+            <div className="rounded-lg border border-border bg-surface/60 p-8 text-sm text-muted-foreground">
+              Add a product before configuring options and variants.
             </div>
-          );
-        })}
+          )}
+        </div>
       </section>
     </div>
   );
 }
 
-function Input({
+function ProductRow({
+  product,
+  selected,
+  categoryName,
+  currency,
+  onSelect,
+  onEdit,
+  onDelete,
+}: {
+  product: WaProductRow;
+  selected: boolean;
+  categoryName: string;
+  currency: string;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <article
+      className={`rounded-lg border bg-surface/60 p-4 ${selected ? "border-primary" : "border-border"}`}
+    >
+      <div className="flex gap-3">
+        {product.image_url ? (
+          <img src={product.image_url} alt="" className="h-16 w-16 rounded-md object-cover" />
+        ) : null}
+        <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-display text-lg font-semibold">{product.name_english}</span>
+            <span className="text-xs text-muted-foreground">{product.code}</span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {categoryName} · {formatMoney(product.price, currency)} · {product.stock_quantity} stock
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {product.is_active ? "Active" : "Hidden"} ·{" "}
+            {product.is_available ? "Available" : "Unavailable"}
+          </p>
+        </button>
+        <div className="flex shrink-0 gap-1">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            aria-label="Edit product"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-destructive"
+            aria-label="Delete product"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function NestedSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border bg-surface/60 p-4">
+      <h2 className="font-display text-lg font-semibold">{title}</h2>
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function PillList<T extends { id: string }>({
+  items,
+  label,
+  onEdit,
+  onDelete,
+}: {
+  items: T[];
+  label: (item: T) => string;
+  onEdit: (item: T) => void;
+  onDelete: (item: T) => void;
+}) {
+  if (!items.length) return <p className="text-sm text-muted-foreground">No records yet.</p>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span
+          key={item.id}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-1.5 text-xs"
+        >
+          <button
+            type="button"
+            onClick={() => onEdit(item)}
+            className="font-medium hover:text-primary"
+          >
+            {label(item)}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(item)}
+            aria-label="Delete"
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function VariantList({
+  variants,
+  values,
+  currency,
+  onEdit,
+  onDelete,
+}: {
+  variants: WaProductVariantRow[];
+  values: WaProductOptionValueRow[];
+  currency: string;
+  onEdit: (variant: WaProductVariantRow) => void;
+  onDelete: (variant: WaProductVariantRow) => void;
+}) {
+  if (!variants.length) return <p className="text-sm text-muted-foreground">No variants yet.</p>;
+  return (
+    <div className="space-y-2">
+      {variants.map((variant) => (
+        <div
+          key={variant.id}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm"
+        >
+          <button
+            type="button"
+            onClick={() => onEdit(variant)}
+            className="text-left hover:text-primary"
+          >
+            <span className="font-medium">{variant.sku}</span>
+            <span className="ml-2 text-muted-foreground">
+              {variant.selected_option_value_ids
+                .map((id) => values.find((value) => value.id === id)?.value_english ?? id)
+                .join(" / ") || "Base"}
+            </span>
+          </button>
+          <span className="text-muted-foreground">
+            {formatMoney(variant.price, currency)} · {variant.stock_quantity} left
+          </span>
+          <button
+            type="button"
+            onClick={() => onDelete(variant)}
+            aria-label="Delete variant"
+            className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Status({ loading, error, notice }: { loading: boolean; error: string; notice: string }) {
+  if (loading)
+    return (
+      <p className="rounded-md border border-border bg-surface/60 p-3 text-sm text-muted-foreground">
+        Loading products...
+      </p>
+    );
+  if (error)
+    return (
+      <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        {error}
+      </p>
+    );
+  if (notice)
+    return (
+      <p className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+        {notice}
+      </p>
+    );
+  return null;
+}
+
+function TextInput({
   label,
   value,
   onChange,
+  dir,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  dir?: "rtl";
 }) {
   return (
     <label className="text-sm">
       <span className="mb-2 block text-muted-foreground">{label}</span>
       <input
         value={value}
+        dir={dir}
         onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  dir,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  dir?: "rtl";
+}) {
+  return (
+    <label className="text-sm lg:col-span-2">
+      <span className="mb-2 block text-muted-foreground">{label}</span>
+      <textarea
+        value={value}
+        dir={dir}
+        onChange={(event) => onChange(event.target.value)}
+        rows={3}
         className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
       />
     </label>
@@ -321,10 +908,75 @@ function NumberInput({
       <span className="mb-2 block text-muted-foreground">{label}</span>
       <input
         type="number"
+        min="0"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
       />
     </label>
   );
+}
+
+function SelectInput({
+  label,
+  value,
+  onChange,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="text-sm">
+      <span className="mb-2 block text-muted-foreground">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
+      >
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex min-h-10 items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      {label}
+    </label>
+  );
+}
+
+function optionLabel(options: WaProductOptionRow[], optionId: string) {
+  return options.find((option) => option.id === optionId)?.name_english ?? "Option";
+}
+
+function parseChoices(value: string) {
+  const choices = value
+    .split(",")
+    .map((choice) => choice.trim())
+    .filter(Boolean)
+    .map((choice, index) => ({
+      id: `choice-${index + 1}`,
+      labelEnglish: choice,
+      labelArabic: choice,
+    }));
+
+  return choices.length ? choices : null;
 }
