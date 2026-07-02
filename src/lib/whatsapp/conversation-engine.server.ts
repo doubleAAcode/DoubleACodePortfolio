@@ -1072,8 +1072,6 @@ async function handleCustomerName(
     ];
   }
 
-  await saveWhatsAppCustomerProfileFromOrder(result.order);
-
   const nextSession = await saveConversationSession(
     {
       ...session,
@@ -1396,6 +1394,8 @@ async function confirmOrder(
       ...(await cartMenuResponse(nextSession)),
     ];
   }
+
+  await saveWhatsAppCustomerProfileFromOrder(result.order);
 
   const nextSession = await saveConversationSession(
     {
