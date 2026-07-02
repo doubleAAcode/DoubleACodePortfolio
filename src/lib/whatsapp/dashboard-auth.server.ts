@@ -6,6 +6,7 @@ import { DOUBLE_A_TEST_BUSINESS_ID } from "./catalog-repository.server";
 
 const COOKIE_NAME = "wa_dashboard_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
+const PARTNER_TEST_BUSINESS_ID = "double-a-partner-test-business";
 
 type DashboardSessionPayload = {
   sub: string;
@@ -18,29 +19,37 @@ export type DashboardAuthSession = {
   businessId: string;
 };
 
-export function getDashboardCookieName() {
-  return COOKIE_NAME;
+export function getDashboardCookieName(envSuffix = "") {
+  return envSuffix ? `${COOKIE_NAME}_${envSuffix}` : COOKIE_NAME;
 }
 
-export function getDashboardAuthSettings() {
+export function getDashboardAuthSettings(envSuffix = "") {
+  const usernameKey = formatEnvKey("WA_DASHBOARD_USERNAME", envSuffix);
+  const passwordKey = formatEnvKey("WA_DASHBOARD_PASSWORD", envSuffix);
+  const secretKey = formatEnvKey("WA_DASHBOARD_SESSION_SECRET", envSuffix);
+  const businessIdKey = formatEnvKey("WA_DASHBOARD_BUSINESS_ID", envSuffix);
+
   return {
-    username: process.env.WA_DASHBOARD_USERNAME || "owner",
-    password: process.env.WA_DASHBOARD_PASSWORD,
+    username: process.env[usernameKey] || "owner",
+    password: process.env[passwordKey],
     secret:
-      process.env.WA_DASHBOARD_SESSION_SECRET ||
+      process.env[secretKey] ||
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.WA_BOT_LOGS_KEY,
-    businessId: process.env.WA_DASHBOARD_BUSINESS_ID || DOUBLE_A_TEST_BUSINESS_ID,
+    businessId:
+      process.env[businessIdKey] ||
+      (envSuffix === "2" ? PARTNER_TEST_BUSINESS_ID : DOUBLE_A_TEST_BUSINESS_ID),
+    envSuffix,
   };
 }
 
-export function isDashboardAuthConfigured() {
-  const settings = getDashboardAuthSettings();
+export function isDashboardAuthConfigured(envSuffix = "") {
+  const settings = getDashboardAuthSettings(envSuffix);
   return Boolean(settings.password && settings.secret);
 }
 
-export function validateDashboardCredentials(username: string, password: string) {
-  const settings = getDashboardAuthSettings();
+export function validateDashboardCredentials(username: string, password: string, envSuffix = "") {
+  const settings = getDashboardAuthSettings(envSuffix);
 
   if (!settings.password || !settings.secret) {
     return false;
@@ -52,8 +61,8 @@ export function validateDashboardCredentials(username: string, password: string)
   );
 }
 
-export function createDashboardSessionCookie(username: string) {
-  const settings = getDashboardAuthSettings();
+export function createDashboardSessionCookie(username: string, envSuffix = "") {
+  const settings = getDashboardAuthSettings(envSuffix);
   if (!settings.secret) throw new Error("WA dashboard session secret is not configured.");
 
   const payload: DashboardSessionPayload = {
@@ -65,19 +74,22 @@ export function createDashboardSessionCookie(username: string) {
   const signature = sign(body, settings.secret);
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
 
-  return `${COOKIE_NAME}=${body}.${signature}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${secure}`;
+  return `${getDashboardCookieName(envSuffix)}=${body}.${signature}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${secure}`;
 }
 
-export function clearDashboardSessionCookie() {
+export function clearDashboardSessionCookie(envSuffix = "") {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+  return `${getDashboardCookieName(envSuffix)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 }
 
-export function getDashboardSessionFromRequest(request: Request): DashboardAuthSession | null {
-  const settings = getDashboardAuthSettings();
+export function getDashboardSessionFromRequest(
+  request: Request,
+  envSuffix = "",
+): DashboardAuthSession | null {
+  const settings = getDashboardAuthSettings(envSuffix);
   if (!settings.secret) return null;
 
-  const token = getCookie(request, COOKIE_NAME);
+  const token = getCookie(request, getDashboardCookieName(envSuffix));
   if (!token) return null;
 
   const [body, receivedSignature] = token.split(".");
@@ -103,8 +115,8 @@ export function getDashboardSessionFromRequest(request: Request): DashboardAuthS
   }
 }
 
-export function requireDashboardSession(request: Request) {
-  const session = getDashboardSessionFromRequest(request);
+export function requireDashboardSession(request: Request, envSuffix = "") {
+  const session = getDashboardSessionFromRequest(request, envSuffix);
   if (!session) {
     throw new Response("Unauthorized", { status: 401 });
   }
@@ -140,4 +152,8 @@ function timingSafeStringEqual(a: string, b: string) {
   const right = Buffer.from(b);
 
   return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function formatEnvKey(baseKey: string, envSuffix: string) {
+  return envSuffix ? `${baseKey}_${envSuffix}` : baseKey;
 }

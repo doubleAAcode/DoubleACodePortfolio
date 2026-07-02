@@ -40,6 +40,12 @@ import {
   type BusinessCheckoutSettings,
 } from "./checkout-settings.server";
 import {
+  getReusableCheckoutFromProfile,
+  getWhatsAppCustomerProfile,
+  saveWhatsAppCustomerProfileFromOrder,
+  type WhatsAppCustomerProfile,
+} from "./customer-profile-store.server";
+import {
   createConversationSession,
   deleteConversationSession,
   getActiveConversationSession,
@@ -185,6 +191,9 @@ export async function processIncomingMessage({
   if (session.currentStep === "REMOVE_CART_ITEM") return handleRemoveCartItem(session, input, now);
   if (session.currentStep === "CHANGE_CART_ITEM_QUANTITY") {
     return handleCartItemQuantityChange(session, input, now);
+  }
+  if (session.currentStep === "USE_SAVED_CUSTOMER_DETAILS") {
+    return handleSavedCustomerDetails(session, input, now);
   }
   if (session.currentStep === "COLLECT_CUSTOMER_NAME") {
     return handleCustomerName(session, input, now);
@@ -935,6 +944,32 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
     ];
   }
 
+  const customerProfile = await getWhatsAppCustomerProfile({
+    businessId: session.businessId,
+    customerPhone: session.customerPhone,
+  });
+  const reusableCheckout = customerProfile
+    ? getReusableCheckoutFromProfile(customerProfile, settings)
+    : undefined;
+  if (customerProfile && reusableCheckout) {
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "USE_SAVED_CUSTOMER_DETAILS",
+        context: {
+          ...session.context,
+          cart: validation.cart,
+          checkout: {},
+          savedCheckout: reusableCheckout,
+          savedCustomerProfile: customerProfile,
+        },
+      },
+      now,
+    );
+
+    return [savedCustomerDetailsQuestion(nextSession, settings, customerProfile)];
+  }
+
   const nextSession = await saveConversationSession(
     {
       ...session,
@@ -949,6 +984,71 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
   );
 
   return [customerNameQuestion(nextSession)];
+}
+
+async function handleSavedCustomerDetails(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const normalized = normalize(input.value);
+
+  if (["saved_details_use", "use saved", "yes"].includes(normalized)) {
+    const savedCheckout = getSavedCheckoutFromContext(session.context);
+    if (!savedCheckout) {
+      return startCheckout(
+        { ...session, context: { ...session.context, savedCheckout: undefined } },
+        now,
+      );
+    }
+
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "REVIEW_ORDER",
+        context: {
+          ...session.context,
+          checkout: savedCheckout,
+          savedCheckout: undefined,
+          savedCustomerProfile: undefined,
+        },
+      },
+      now,
+    );
+
+    return reviewOrderResponse(nextSession);
+  }
+
+  if (["saved_details_change", "change", "no"].includes(normalized)) {
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "COLLECT_CUSTOMER_NAME",
+        context: {
+          ...session.context,
+          checkout: {},
+          savedCheckout: undefined,
+          savedCustomerProfile: undefined,
+        },
+      },
+      now,
+    );
+
+    return [customerNameQuestion(nextSession)];
+  }
+
+  await saveConversationSession(session, now);
+  return [
+    {
+      type: "text",
+      text: t(
+        language,
+        "Choose whether to use the saved details or change them.",
+        "\u0627\u062e\u062a\u0631 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0645\u062d\u0641\u0648\u0638\u0629 \u0623\u0648 \u062a\u063a\u064a\u064a\u0631\u0647\u0627.",
+      ),
+    },
+  ];
 }
 
 async function handleCustomerName(
@@ -971,6 +1071,8 @@ async function handleCustomerName(
       },
     ];
   }
+
+  await saveWhatsAppCustomerProfileFromOrder(result.order);
 
   const nextSession = await saveConversationSession(
     {
@@ -1692,6 +1794,28 @@ function customerNameQuestion(session: ConversationSession): BotResponse {
   };
 }
 
+function savedCustomerDetailsQuestion(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  profile: WhatsAppCustomerProfile,
+): BotResponse {
+  const language = session.language ?? "en";
+  return {
+    type: "buttons",
+    body: buildSavedCustomerDetailsText(language, settings, profile),
+    buttons: [
+      {
+        id: "saved_details_use",
+        title: t(language, "Use saved", "\u0627\u0633\u062a\u062e\u062f\u0645\u0647\u0627"),
+      },
+      {
+        id: "saved_details_change",
+        title: t(language, "Change", "\u062a\u063a\u064a\u064a\u0631"),
+      },
+    ],
+  };
+}
+
 function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
   const language = session.language ?? "en";
   return {
@@ -1709,6 +1833,64 @@ function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
       },
     ],
   };
+}
+
+function buildSavedCustomerDetailsText(
+  language: ConversationLanguage,
+  settings: BusinessCheckoutSettings,
+  profile: WhatsAppCustomerProfile,
+) {
+  const deliveryArea = settings.deliveryAreas.find((area) => area.id === profile.deliveryAreaId);
+  const pickupLocation = settings.pickupLocations.find(
+    (location) => location.id === profile.pickupLocationId,
+  );
+  const paymentMethod = settings.paymentMethods.find(
+    (method) => method.id === profile.paymentMethod,
+  );
+
+  return [
+    t(
+      language,
+      "Use your saved checkout details?",
+      "\u0647\u0644 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u062f\u0641\u0639 \u0627\u0644\u0645\u062d\u0641\u0648\u0638\u0629\u061f",
+    ),
+    "",
+    `${t(language, "Name", "\u0627\u0644\u0627\u0633\u0645")}: ${profile.customerName}`,
+    `${t(language, "Fulfillment", "\u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645")}: ${
+      profile.fulfillmentMethod === "pickup"
+        ? t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645")
+        : t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644")
+    }`,
+    profile.fulfillmentMethod === "delivery" && deliveryArea
+      ? `${t(language, "Area", "\u0627\u0644\u0645\u0646\u0637\u0642\u0629")}: ${getDeliveryAreaName(deliveryArea, language)}`
+      : undefined,
+    profile.fulfillmentMethod === "delivery"
+      ? `${t(language, "Address", "\u0627\u0644\u0639\u0646\u0648\u0627\u0646")}: ${profile.deliveryAddress ?? ""}`
+      : undefined,
+    profile.deliveryLatitude != null && profile.deliveryLongitude != null
+      ? `${t(language, "Location", "\u0627\u0644\u0645\u0648\u0642\u0639")}: ${profile.deliveryLatitude}, ${profile.deliveryLongitude}`
+      : undefined,
+    profile.fulfillmentMethod === "pickup" && pickupLocation
+      ? `${t(language, "Pickup location", "\u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645")}: ${getPickupLocationName(
+          pickupLocation,
+          language,
+        )}`
+      : undefined,
+    paymentMethod
+      ? `${t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639")}: ${getPaymentMethodLabel(paymentMethod, language)}`
+      : undefined,
+    profile.notes
+      ? `${t(language, "Notes", "\u0645\u0644\u0627\u062d\u0638\u0627\u062a")}: ${profile.notes}`
+      : undefined,
+    "",
+    t(
+      language,
+      "You can use these or change them for this order.",
+      "\u064a\u0645\u0643\u0646\u0643 \u0627\u0633\u062a\u062e\u062f\u0627\u0645\u0647\u0627 \u0623\u0648 \u062a\u063a\u064a\u064a\u0631\u0647\u0627 \u0644\u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628.",
+    ),
+  ]
+    .filter((line): line is string => typeof line === "string")
+    .join("\n");
 }
 
 function deliveryAreaQuestion(
@@ -2043,6 +2225,11 @@ function stockChangedResponse(language: ConversationLanguage, itemName?: string)
 function getCheckoutFromContext(context: Record<string, unknown>): CheckoutDraft {
   if (!context.checkout || typeof context.checkout !== "object") return {};
   return context.checkout as CheckoutDraft;
+}
+
+function getSavedCheckoutFromContext(context: Record<string, unknown>): CheckoutDraft | undefined {
+  if (!context.savedCheckout || typeof context.savedCheckout !== "object") return undefined;
+  return context.savedCheckout as CheckoutDraft;
 }
 
 async function labelsForSelectedOptions(

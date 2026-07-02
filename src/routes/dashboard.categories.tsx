@@ -11,7 +11,7 @@ export const Route = createFileRoute("/dashboard/categories")({
 
 const emptyForm = { id: "", name_english: "", name_arabic: "", sort_order: 10, is_active: true };
 
-function CategoriesPage() {
+export function CategoriesPage() {
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [form, setForm] = useState(emptyForm);
 

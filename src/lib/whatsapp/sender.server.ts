@@ -1,10 +1,11 @@
 import "@tanstack/react-start/server-only";
-import { getWhatsAppServerConfig } from "./config.server";
+import { getWhatsAppServerConfig, type WhatsAppServerConfig } from "./config.server";
 
 export type SendWhatsAppTextInput = {
   phoneNumberId: string;
   recipient: string;
   message: string;
+  config?: WhatsAppServerConfig;
 };
 
 export type SendWhatsAppButtonsInput = {
@@ -15,6 +16,7 @@ export type SendWhatsAppButtonsInput = {
     id: string;
     title: string;
   }>;
+  config?: WhatsAppServerConfig;
 };
 
 export type SendWhatsAppListInput = {
@@ -30,6 +32,7 @@ export type SendWhatsAppListInput = {
       description?: string;
     }>;
   }>;
+  config?: WhatsAppServerConfig;
 };
 
 export type SendResult =
@@ -55,9 +58,8 @@ export async function sendWhatsAppText({
   phoneNumberId,
   recipient,
   message,
+  config = getWhatsAppServerConfig(),
 }: SendWhatsAppTextInput): Promise<SendResult> {
-  const config = getWhatsAppServerConfig();
-
   if (!config.accessToken) {
     return {
       ok: false,
@@ -125,9 +127,11 @@ export async function sendWhatsAppButtons({
   recipient,
   body,
   buttons,
+  config,
 }: SendWhatsAppButtonsInput): Promise<SendResult> {
   return sendWhatsAppPayload({
     phoneNumberId,
+    config,
     payload: {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -158,9 +162,11 @@ export async function sendWhatsAppList({
   body,
   buttonText,
   sections,
+  config,
 }: SendWhatsAppListInput): Promise<SendResult> {
   return sendWhatsAppPayload({
     phoneNumberId,
+    config,
     payload: {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -189,13 +195,13 @@ export async function sendWhatsAppList({
 
 async function sendWhatsAppPayload({
   phoneNumberId,
+  config = getWhatsAppServerConfig(),
   payload,
 }: {
   phoneNumberId: string;
+  config?: WhatsAppServerConfig;
   payload: Record<string, unknown>;
 }): Promise<SendResult> {
-  const config = getWhatsAppServerConfig();
-
   if (!config.accessToken) {
     return {
       ok: false,

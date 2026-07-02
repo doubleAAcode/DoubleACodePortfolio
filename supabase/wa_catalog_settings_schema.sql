@@ -210,6 +210,45 @@ on conflict (id) do update set
   is_active = excluded.is_active,
   updated_at = now();
 
+insert into public.wa_businesses (
+  id,
+  name,
+  default_language,
+  currency,
+  allow_delivery,
+  allow_pickup,
+  minimum_order_amount,
+  order_confirmation_message_english,
+  order_confirmation_message_arabic,
+  require_owner_approval,
+  is_active
+)
+values (
+  'double-a-partner-test-business',
+  'Double A Partner Test Business',
+  'en',
+  'USD',
+  true,
+  true,
+  0,
+  'The store will review and confirm your order shortly.',
+  'The store will review and confirm your order shortly.',
+  true,
+  true
+)
+on conflict (id) do update set
+  name = excluded.name,
+  default_language = excluded.default_language,
+  currency = excluded.currency,
+  allow_delivery = excluded.allow_delivery,
+  allow_pickup = excluded.allow_pickup,
+  minimum_order_amount = excluded.minimum_order_amount,
+  order_confirmation_message_english = excluded.order_confirmation_message_english,
+  order_confirmation_message_arabic = excluded.order_confirmation_message_arabic,
+  require_owner_approval = excluded.require_owner_approval,
+  is_active = excluded.is_active,
+  updated_at = now();
+
 insert into public.wa_categories (id, business_id, name_english, name_arabic, is_active, sort_order)
 values
   ('cat-accessories', 'double-a-test-business', 'Accessories', 'إكسسوارات', true, 1),

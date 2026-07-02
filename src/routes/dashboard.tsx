@@ -8,6 +8,7 @@ import {
   MapPinned,
   MessageSquareText,
   Settings,
+  ShoppingCart,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -19,19 +20,20 @@ import {
 } from "@/lib/whatsapp/dashboard-client";
 
 export const Route = createFileRoute("/dashboard")({
-  component: DashboardLayout,
+  component: () => <DashboardLayout basePath="/dashboard" title="Store Bot" />,
 });
 
 const navItems = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/dashboard/categories", label: "Categories", icon: FolderTree },
-  { to: "/dashboard/products", label: "Products", icon: Boxes },
-  { to: "/dashboard/delivery", label: "Delivery", icon: MapPinned },
-  { to: "/dashboard/settings", label: "Settings", icon: Settings },
-  { to: "/dashboard/simulator", label: "Simulator", icon: MessageSquareText },
+  { path: "", label: "Overview", icon: LayoutDashboard, exact: true },
+  { path: "/categories", label: "Categories", icon: FolderTree },
+  { path: "/products", label: "Products", icon: Boxes },
+  { path: "/orders", label: "Orders", icon: ShoppingCart },
+  { path: "/delivery", label: "Delivery", icon: MapPinned },
+  { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/simulator", label: "Simulator", icon: MessageSquareText },
 ] as const;
 
-function DashboardLayout() {
+export function DashboardLayout({ basePath, title }: { basePath: string; title: string }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const router = useRouter();
   const [sessionResult, setSessionResult] = useState<WaDashboardSessionResult>();
@@ -91,7 +93,7 @@ function DashboardLayout() {
                 <Bot className="h-5 w-5" />
               </div>
               <div>
-                <div className="font-display text-lg font-semibold">Store Bot</div>
+                <div className="font-display text-lg font-semibold">{title}</div>
                 <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
                   Owner console
                 </div>
@@ -101,11 +103,12 @@ function DashboardLayout() {
           <nav className="flex-1 space-y-1 p-3">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+              const to = `${basePath}${item.path}`;
+              const active = item.exact ? pathname === basePath : pathname.startsWith(to);
               return (
                 <Link
-                  key={item.to}
-                  to={item.to}
+                  key={to}
+                  to={to}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     active
                       ? "bg-primary/14 text-foreground"
@@ -136,15 +139,16 @@ function DashboardLayout() {
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-30 border-b border-border bg-background/88 px-4 py-3 backdrop-blur md:hidden">
             <div className="flex items-center justify-between gap-3">
-              <div className="font-display text-lg font-semibold">Store Bot</div>
+              <div className="font-display text-lg font-semibold">{title}</div>
               <div className="flex gap-1 overflow-x-auto">
                 {navItems.map((item) => {
                   const Icon = item.icon;
-                  const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                  const to = `${basePath}${item.path}`;
+                  const active = item.exact ? pathname === basePath : pathname.startsWith(to);
                   return (
                     <Link
-                      key={item.to}
-                      to={item.to}
+                      key={to}
+                      to={to}
                       aria-label={item.label}
                       className={`rounded-md p-2 ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground"}`}
                     >

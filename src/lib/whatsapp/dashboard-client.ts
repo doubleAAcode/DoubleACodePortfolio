@@ -1,4 +1,9 @@
 import type { DashboardCatalogAction, WaDashboardData } from "./dashboard-store.server";
+import type {
+  DashboardOrderDetails,
+  DashboardOrderStatus,
+  DashboardOrderSummary,
+} from "./order-dashboard-store.server";
 
 export type WaDashboardSessionResult = {
   ok: boolean;
@@ -10,28 +15,28 @@ export type WaDashboardSessionResult = {
 type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function getWaDashboardSession() {
-  return apiFetch<WaDashboardSessionResult>("/api/wa-dashboard/session");
+  return apiFetch<WaDashboardSessionResult>(dashboardApiPath("/session"));
 }
 
 export async function loginWaDashboard(username: string, password: string) {
-  return apiFetch<{ ok: true }>("/api/wa-dashboard/login", {
+  return apiFetch<{ ok: true }>(dashboardApiPath("/login"), {
     method: "POST",
     body: JSON.stringify({ username, password }),
   });
 }
 
 export async function logoutWaDashboard() {
-  return apiFetch<{ ok: true }>("/api/wa-dashboard/logout", { method: "POST" });
+  return apiFetch<{ ok: true }>(dashboardApiPath("/logout"), { method: "POST" });
 }
 
 export async function getWaDashboardCatalog() {
-  const result = await apiFetch<ApiResult<WaDashboardData>>("/api/wa-dashboard/catalog");
+  const result = await apiFetch<ApiResult<WaDashboardData>>(dashboardApiPath("/catalog"));
   if (!result.ok) throw new Error(result.error);
   return result.data;
 }
 
 export async function applyWaDashboardCatalogAction(action: DashboardCatalogAction) {
-  const result = await apiFetch<ApiResult<WaDashboardData>>("/api/wa-dashboard/catalog", {
+  const result = await apiFetch<ApiResult<WaDashboardData>>(dashboardApiPath("/catalog"), {
     method: "POST",
     body: JSON.stringify(action),
   });
@@ -44,12 +49,56 @@ export async function uploadWaDashboardImage(file: File) {
   formData.append("file", file);
   const result = await apiFetch<
     { ok: true; image: { path: string; url: string } } | { ok: false; error: string }
-  >("/api/wa-dashboard/upload", {
+  >(dashboardApiPath("/upload"), {
     method: "POST",
     body: formData,
   });
   if (!result.ok) throw new Error(result.error);
   return result.image;
+}
+
+export async function getWaDashboardOrders(status: DashboardOrderStatus | "ALL") {
+  const result = await apiFetch<ApiResult<DashboardOrderSummary[]>>(
+    dashboardApiPath(`/orders?status=${encodeURIComponent(status)}`),
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function getWaDashboardOrder(orderId: string) {
+  const result = await apiFetch<ApiResult<DashboardOrderDetails>>(
+    dashboardApiPath(`/orders/${encodeURIComponent(orderId)}`),
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function decideWaDashboardOrder(
+  orderId: string,
+  action: "accept" | "reject",
+  reason?: string,
+) {
+  const result = await apiFetch<
+    ApiResult<{
+      order: DashboardOrderDetails;
+      notification:
+        | { ok: true; messageId?: string }
+        | { ok: false; status: number; errorCode?: string; errorMessage: string };
+    }>
+  >(dashboardApiPath(`/orders/${encodeURIComponent(orderId)}`), {
+    method: "POST",
+    body: JSON.stringify({ action, reason }),
+  });
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+function dashboardApiPath(path: string) {
+  const base =
+    typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard-2")
+      ? "/api/wa-dashboard-2"
+      : "/api/wa-dashboard";
+  return `${base}${path}`;
 }
 
 async function apiFetch<T>(path: string, init: RequestInit = {}) {

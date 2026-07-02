@@ -18,7 +18,7 @@ const emptyPayment = {
   sort_order: 10,
 };
 
-function SettingsPage() {
+export function SettingsPage() {
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [businessForm, setBusinessForm] = useState({
     name: "",

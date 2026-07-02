@@ -27,7 +27,7 @@ const emptyPickup = {
   sort_order: 10,
 };
 
-function DeliveryPage() {
+export function DeliveryPage() {
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [areaForm, setAreaForm] = useState(emptyArea);
   const [pickupForm, setPickupForm] = useState(emptyPickup);

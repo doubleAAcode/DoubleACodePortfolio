@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, Boxes, FolderTree, MapPinned, SlidersHorizontal } from "lucide-react";
 
+import { getWaDashboardBasePath } from "@/lib/whatsapp/dashboard-paths";
 import { formatMoney, useWaDashboardData } from "@/lib/whatsapp/use-wa-dashboard-data";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
 });
 
-function DashboardHome() {
+export function DashboardHome() {
   const { data, loading, error } = useWaDashboardData();
+  const basePath = getWaDashboardBasePath();
 
   if (loading) return <PageState text="Loading dashboard..." />;
   if (error || !data) return <PageState text={error || "Dashboard data could not be loaded."} />;
@@ -42,7 +44,7 @@ function DashboardHome() {
             WhatsApp bot without redeployment.
           </p>
         </div>
-        <Link to="/dashboard/products" className="studio-button-primary w-fit">
+        <Link to={`${basePath}/products`} className="studio-button-primary w-fit">
           Manage products
         </Link>
       </div>

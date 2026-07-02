@@ -16,7 +16,7 @@ type ChatEntry = {
   text: string;
 };
 
-function SimulatorPage() {
+export function SimulatorPage() {
   const { state } = useStoreBotState();
   const [phone, setPhone] = useState(TEST_CUSTOMER_PHONE);
   const [message, setMessage] = useState("hi");

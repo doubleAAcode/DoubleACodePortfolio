@@ -74,7 +74,7 @@ const emptyField = {
   sort_order: 10,
 };
 
-function ProductsPage() {
+export function ProductsPage() {
   const { data, loading, saving, error, notice, setError, applyAction } = useWaDashboardData();
   const [search, setSearch] = useState("");
   const [productForm, setProductForm] = useState(emptyProduct);
