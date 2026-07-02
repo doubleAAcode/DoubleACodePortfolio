@@ -154,6 +154,9 @@ create table if not exists public.wa_stock_reservations (
 create index if not exists wa_stock_reservations_active_idx
   on public.wa_stock_reservations (product_variant_id, status, expires_at);
 
+create index if not exists wa_stock_reservations_business_stock_active_idx
+  on public.wa_stock_reservations (business_id, product_variant_id, status, expires_at);
+
 create table if not exists public.wa_order_status_history (
   id uuid primary key default gen_random_uuid(),
   business_id text not null,
@@ -191,6 +194,51 @@ create unique index if not exists wa_order_notifications_unique_idx
 create index if not exists wa_order_notifications_order_idx
   on public.wa_order_notifications (business_id, order_id, created_at desc);
 
+do $$
+begin
+  alter table public.wa_orders
+    add constraint wa_orders_status_check
+    check (status in (
+      'PENDING_OWNER_CONFIRMATION',
+      'ACCEPTED',
+      'PREPARING',
+      'READY',
+      'OUT_FOR_DELIVERY',
+      'COMPLETED',
+      'REJECTED',
+      'CANCELLED'
+    ));
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_orders
+    add constraint wa_orders_totals_non_negative_check
+    check (subtotal >= 0 and delivery_fee >= 0 and total >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_stock_reservations
+    add constraint wa_stock_reservations_status_check
+    check (status in ('ACTIVE', 'COMMITTED', 'RELEASED', 'EXPIRED'));
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_order_notifications
+    add constraint wa_order_notifications_status_check
+    check (status in ('PENDING', 'SENT', 'FAILED', 'RETRYABLE', 'TEMPLATE_REQUIRED', 'SKIPPED'));
+exception
+  when duplicate_object then null;
+end $$;
+
 create sequence if not exists public.wa_order_number_seq start with 1 increment by 1;
 
 create or replace function public.wa_create_pending_order(
@@ -215,6 +263,10 @@ declare
   v_order_number text;
   v_item jsonb;
   v_reservation jsonb;
+  v_stock_id text;
+  v_requested_quantity integer;
+  v_stock_quantity integer;
+  v_active_reserved integer;
 begin
   select *
     into v_existing
@@ -229,6 +281,57 @@ begin
     return next;
     return;
   end if;
+
+  update public.wa_stock_reservations as sr
+     set status = 'EXPIRED'
+   where sr.business_id = p_business_id
+     and sr.status = 'ACTIVE'
+     and sr.expires_at <= now();
+
+  for v_reservation in select * from jsonb_array_elements(p_reservations)
+  loop
+    v_stock_id := v_reservation->>'productVariantId';
+    v_requested_quantity := (v_reservation->>'quantity')::integer;
+
+    if v_stock_id is null or v_stock_id = '' or v_requested_quantity is null or v_requested_quantity <= 0 then
+      raise exception 'Invalid stock reservation request.';
+    end if;
+
+    select pv.stock_quantity
+      into v_stock_quantity
+      from public.wa_product_variants as pv
+     where pv.id = v_stock_id
+       and pv.business_id = p_business_id
+       and pv.is_available = true
+     for update;
+
+    if not found then
+      select p.stock_quantity
+        into v_stock_quantity
+        from public.wa_products as p
+       where p.id = v_stock_id
+         and p.business_id = p_business_id
+         and p.is_active = true
+         and p.is_available = true
+       for update;
+    end if;
+
+    if not found then
+      raise exception 'Requested item is not available.';
+    end if;
+
+    select coalesce(sum(sr.quantity), 0)::integer
+      into v_active_reserved
+      from public.wa_stock_reservations as sr
+     where sr.business_id = p_business_id
+       and sr.product_variant_id = v_stock_id
+       and sr.status = 'ACTIVE'
+       and sr.expires_at > now();
+
+    if v_requested_quantity > greatest(0, v_stock_quantity - v_active_reserved) then
+      raise exception 'Insufficient stock for reservation %.%', v_stock_id, v_requested_quantity;
+    end if;
+  end loop;
 
   v_order_id := gen_random_uuid();
   v_order_number := 'DA-' || lpad(nextval('public.wa_order_number_seq')::text, 6, '0');

@@ -1,5 +1,9 @@
 import "@tanstack/react-start/server-only";
+
 import { getWhatsAppServerConfig, type WhatsAppServerConfig } from "./config.server";
+
+const WHATSAPP_SEND_TIMEOUT_MS = 8000;
+const RETRY_DELAY_MS = 300;
 
 export type SendWhatsAppTextInput = {
   phoneNumberId: string;
@@ -45,12 +49,16 @@ export type SendResult =
       status: number;
       errorCode?: string;
       errorMessage: string;
+      retryable?: boolean;
     };
 
 type GraphSendResponse = {
   messages?: Array<{ id?: string }>;
   error?: {
     code?: number | string;
+    message?: string;
+    error_subcode?: number | string;
+    type?: string;
   };
 };
 
@@ -58,68 +66,22 @@ export async function sendWhatsAppText({
   phoneNumberId,
   recipient,
   message,
-  config = getWhatsAppServerConfig(),
+  config,
 }: SendWhatsAppTextInput): Promise<SendResult> {
-  if (!config.accessToken) {
-    return {
-      ok: false,
-      status: 500,
-      errorMessage: "WhatsApp access token is not configured.",
-    };
-  }
-
-  if (!phoneNumberId) {
-    return {
-      ok: false,
-      status: 500,
-      errorMessage: "WhatsApp phone number ID is not configured.",
-    };
-  }
-
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/${config.graphApiVersion}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: recipient,
-          type: "text",
-          text: {
-            preview_url: false,
-            body: message,
-          },
-        }),
+  return sendWhatsAppPayload({
+    phoneNumberId,
+    config,
+    payload: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient,
+      type: "text",
+      text: {
+        preview_url: false,
+        body: message,
       },
-    );
-
-    const payload = (await response.json().catch(() => ({}))) as GraphSendResponse;
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        status: response.status,
-        errorCode: payload.error?.code == null ? undefined : String(payload.error.code),
-        errorMessage: "WhatsApp message send failed.",
-      };
-    }
-
-    return {
-      ok: true,
-      messageId: payload.messages?.[0]?.id,
-    };
-  } catch {
-    return {
-      ok: false,
-      status: 0,
-      errorMessage: "WhatsApp message send failed before receiving a response.",
-    };
-  }
+    },
+  });
 }
 
 export async function sendWhatsAppButtons({
@@ -207,6 +169,7 @@ async function sendWhatsAppPayload({
       ok: false,
       status: 500,
       errorMessage: "WhatsApp access token is not configured.",
+      retryable: false,
     };
   }
 
@@ -215,30 +178,53 @@ async function sendWhatsAppPayload({
       ok: false,
       status: 500,
       errorMessage: "WhatsApp phone number ID is not configured.",
+      retryable: false,
     };
   }
 
+  const url = `https://graph.facebook.com/${config.graphApiVersion}/${phoneNumberId}/messages`;
+  const first = await sendGraphRequest({ url, accessToken: config.accessToken, payload });
+  if (first.ok || !first.retryable) return first;
+
+  await delay(RETRY_DELAY_MS);
+  const second = await sendGraphRequest({ url, accessToken: config.accessToken, payload });
+  return second.ok ? second : { ...second, retryable: isRetryableStatus(second.status) };
+}
+
+async function sendGraphRequest({
+  url,
+  accessToken,
+  payload,
+}: {
+  url: string;
+  accessToken: string;
+  payload: Record<string, unknown>;
+}): Promise<SendResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WHATSAPP_SEND_TIMEOUT_MS);
+
   try {
-    const response = await fetch(
-      `https://graph.facebook.com/${config.graphApiVersion}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
 
     const graphPayload = (await response.json().catch(() => ({}))) as GraphSendResponse;
 
     if (!response.ok) {
+      const errorCode =
+        graphPayload.error?.code == null ? undefined : String(graphPayload.error.code);
       return {
         ok: false,
         status: response.status,
-        errorCode: graphPayload.error?.code == null ? undefined : String(graphPayload.error.code),
-        errorMessage: "WhatsApp message send failed.",
+        errorCode,
+        errorMessage: sanitizeMetaError(graphPayload),
+        retryable: isRetryableStatus(response.status),
       };
     }
 
@@ -246,11 +232,33 @@ async function sendWhatsAppPayload({
       ok: true,
       messageId: graphPayload.messages?.[0]?.id,
     };
-  } catch {
+  } catch (error) {
     return {
       ok: false,
       status: 0,
-      errorMessage: "WhatsApp message send failed before receiving a response.",
+      errorCode: error instanceof Error && error.name === "AbortError" ? "TIMEOUT" : undefined,
+      errorMessage:
+        error instanceof Error && error.name === "AbortError"
+          ? "WhatsApp message send timed out."
+          : "WhatsApp message send failed before receiving a response.",
+      retryable: true,
     };
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+function sanitizeMetaError(payload: GraphSendResponse) {
+  const message = payload.error?.message?.trim();
+  return message
+    ? `WhatsApp message send failed: ${message.slice(0, 180)}`
+    : "WhatsApp message send failed.";
+}
+
+function isRetryableStatus(status: number) {
+  return status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

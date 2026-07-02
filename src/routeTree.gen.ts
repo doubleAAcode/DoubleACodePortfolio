@@ -28,6 +28,7 @@ import { Route as WorkKoubarGroupRouteImport } from './routes/work/koubar-group'
 import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-lab'
 import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
+import { Route as QuotationsKhadamatiRouteImport } from './routes/quotations.khadamati'
 import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
 import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
@@ -54,12 +55,14 @@ import { Route as ApiWaDashboardSessionRouteImport } from './routes/api.wa-dashb
 import { Route as ApiWaDashboardOrdersRouteImport } from './routes/api.wa-dashboard.orders'
 import { Route as ApiWaDashboardLogoutRouteImport } from './routes/api.wa-dashboard.logout'
 import { Route as ApiWaDashboardLoginRouteImport } from './routes/api.wa-dashboard.login'
+import { Route as ApiWaDashboardDiagnosticsRouteImport } from './routes/api.wa-dashboard.diagnostics'
 import { Route as ApiWaDashboardCatalogRouteImport } from './routes/api.wa-dashboard.catalog'
 import { Route as ApiWaDashboard2UploadRouteImport } from './routes/api.wa-dashboard-2.upload'
 import { Route as ApiWaDashboard2SessionRouteImport } from './routes/api.wa-dashboard-2.session'
 import { Route as ApiWaDashboard2OrdersRouteImport } from './routes/api.wa-dashboard-2.orders'
 import { Route as ApiWaDashboard2LogoutRouteImport } from './routes/api.wa-dashboard-2.logout'
 import { Route as ApiWaDashboard2LoginRouteImport } from './routes/api.wa-dashboard-2.login'
+import { Route as ApiWaDashboard2DiagnosticsRouteImport } from './routes/api.wa-dashboard-2.diagnostics'
 import { Route as ApiWaDashboard2CatalogRouteImport } from './routes/api.wa-dashboard-2.catalog'
 import { Route as StoresPavoneAdminIndexRouteImport } from './routes/stores/pavone.admin.index'
 import { Route as StoresPavoneProductSlugRouteImport } from './routes/stores/pavone.product.$slug'
@@ -167,6 +170,11 @@ const StoresPavoneRoute = StoresPavoneRouteImport.update({
   id: '/pavone',
   path: '/pavone',
   getParentRoute: () => StoresRoute,
+} as any)
+const QuotationsKhadamatiRoute = QuotationsKhadamatiRouteImport.update({
+  id: '/quotations/khadamati',
+  path: '/quotations/khadamati',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MenusMarleysRoute = MenusMarleysRouteImport.update({
   id: '/menus/marleys',
@@ -298,6 +306,12 @@ const ApiWaDashboardLoginRoute = ApiWaDashboardLoginRouteImport.update({
   path: '/api/wa-dashboard/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWaDashboardDiagnosticsRoute =
+  ApiWaDashboardDiagnosticsRouteImport.update({
+    id: '/api/wa-dashboard/diagnostics',
+    path: '/api/wa-dashboard/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiWaDashboardCatalogRoute = ApiWaDashboardCatalogRouteImport.update({
   id: '/api/wa-dashboard/catalog',
   path: '/api/wa-dashboard/catalog',
@@ -328,6 +342,12 @@ const ApiWaDashboard2LoginRoute = ApiWaDashboard2LoginRouteImport.update({
   path: '/api/wa-dashboard-2/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWaDashboard2DiagnosticsRoute =
+  ApiWaDashboard2DiagnosticsRouteImport.update({
+    id: '/api/wa-dashboard-2/diagnostics',
+    path: '/api/wa-dashboard-2/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiWaDashboard2CatalogRoute = ApiWaDashboard2CatalogRouteImport.update({
   id: '/api/wa-dashboard-2/catalog',
   path: '/api/wa-dashboard-2/catalog',
@@ -419,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
+  '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
@@ -430,12 +451,14 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/api/wa-dashboard-2/catalog': typeof ApiWaDashboard2CatalogRoute
+  '/api/wa-dashboard-2/diagnostics': typeof ApiWaDashboard2DiagnosticsRoute
   '/api/wa-dashboard-2/login': typeof ApiWaDashboard2LoginRoute
   '/api/wa-dashboard-2/logout': typeof ApiWaDashboard2LogoutRoute
   '/api/wa-dashboard-2/orders': typeof ApiWaDashboard2OrdersRouteWithChildren
   '/api/wa-dashboard-2/session': typeof ApiWaDashboard2SessionRoute
   '/api/wa-dashboard-2/upload': typeof ApiWaDashboard2UploadRoute
   '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/diagnostics': typeof ApiWaDashboardDiagnosticsRoute
   '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
   '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
   '/api/wa-dashboard/orders': typeof ApiWaDashboardOrdersRouteWithChildren
@@ -481,6 +504,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
+  '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
   '/work/koubar-group': typeof WorkKoubarGroupRoute
@@ -491,12 +515,14 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/stores': typeof StoresIndexRoute
   '/api/wa-dashboard-2/catalog': typeof ApiWaDashboard2CatalogRoute
+  '/api/wa-dashboard-2/diagnostics': typeof ApiWaDashboard2DiagnosticsRoute
   '/api/wa-dashboard-2/login': typeof ApiWaDashboard2LoginRoute
   '/api/wa-dashboard-2/logout': typeof ApiWaDashboard2LogoutRoute
   '/api/wa-dashboard-2/orders': typeof ApiWaDashboard2OrdersRouteWithChildren
   '/api/wa-dashboard-2/session': typeof ApiWaDashboard2SessionRoute
   '/api/wa-dashboard-2/upload': typeof ApiWaDashboard2UploadRoute
   '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/diagnostics': typeof ApiWaDashboardDiagnosticsRoute
   '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
   '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
   '/api/wa-dashboard/orders': typeof ApiWaDashboardOrdersRouteWithChildren
@@ -545,6 +571,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/menus/marleys': typeof MenusMarleysRoute
+  '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
@@ -556,12 +583,14 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/api/wa-dashboard-2/catalog': typeof ApiWaDashboard2CatalogRoute
+  '/api/wa-dashboard-2/diagnostics': typeof ApiWaDashboard2DiagnosticsRoute
   '/api/wa-dashboard-2/login': typeof ApiWaDashboard2LoginRoute
   '/api/wa-dashboard-2/logout': typeof ApiWaDashboard2LogoutRoute
   '/api/wa-dashboard-2/orders': typeof ApiWaDashboard2OrdersRouteWithChildren
   '/api/wa-dashboard-2/session': typeof ApiWaDashboard2SessionRoute
   '/api/wa-dashboard-2/upload': typeof ApiWaDashboard2UploadRoute
   '/api/wa-dashboard/catalog': typeof ApiWaDashboardCatalogRoute
+  '/api/wa-dashboard/diagnostics': typeof ApiWaDashboardDiagnosticsRoute
   '/api/wa-dashboard/login': typeof ApiWaDashboardLoginRoute
   '/api/wa-dashboard/logout': typeof ApiWaDashboardLogoutRoute
   '/api/wa-dashboard/orders': typeof ApiWaDashboardOrdersRouteWithChildren
@@ -612,6 +641,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
+    | '/quotations/khadamati'
     | '/stores/pavone'
     | '/work/data-insights'
     | '/work/detailing-lab'
@@ -623,12 +653,14 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/stores/'
     | '/api/wa-dashboard-2/catalog'
+    | '/api/wa-dashboard-2/diagnostics'
     | '/api/wa-dashboard-2/login'
     | '/api/wa-dashboard-2/logout'
     | '/api/wa-dashboard-2/orders'
     | '/api/wa-dashboard-2/session'
     | '/api/wa-dashboard-2/upload'
     | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/diagnostics'
     | '/api/wa-dashboard/login'
     | '/api/wa-dashboard/logout'
     | '/api/wa-dashboard/orders'
@@ -674,6 +706,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
+    | '/quotations/khadamati'
     | '/work/data-insights'
     | '/work/detailing-lab'
     | '/work/koubar-group'
@@ -684,12 +717,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/stores'
     | '/api/wa-dashboard-2/catalog'
+    | '/api/wa-dashboard-2/diagnostics'
     | '/api/wa-dashboard-2/login'
     | '/api/wa-dashboard-2/logout'
     | '/api/wa-dashboard-2/orders'
     | '/api/wa-dashboard-2/session'
     | '/api/wa-dashboard-2/upload'
     | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/diagnostics'
     | '/api/wa-dashboard/login'
     | '/api/wa-dashboard/logout'
     | '/api/wa-dashboard/orders'
@@ -737,6 +772,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/simulator'
     | '/menus/marleys'
+    | '/quotations/khadamati'
     | '/stores/pavone'
     | '/work/data-insights'
     | '/work/detailing-lab'
@@ -748,12 +784,14 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/stores/'
     | '/api/wa-dashboard-2/catalog'
+    | '/api/wa-dashboard-2/diagnostics'
     | '/api/wa-dashboard-2/login'
     | '/api/wa-dashboard-2/logout'
     | '/api/wa-dashboard-2/orders'
     | '/api/wa-dashboard-2/session'
     | '/api/wa-dashboard-2/upload'
     | '/api/wa-dashboard/catalog'
+    | '/api/wa-dashboard/diagnostics'
     | '/api/wa-dashboard/login'
     | '/api/wa-dashboard/logout'
     | '/api/wa-dashboard/orders'
@@ -791,6 +829,7 @@ export interface RootRouteChildren {
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
   MenusMarleysRoute: typeof MenusMarleysRoute
+  QuotationsKhadamatiRoute: typeof QuotationsKhadamatiRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
   WorkDetailingLabRoute: typeof WorkDetailingLabRoute
   WorkKoubarGroupRoute: typeof WorkKoubarGroupRoute
@@ -798,12 +837,14 @@ export interface RootRouteChildren {
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
   ApiWaDashboard2CatalogRoute: typeof ApiWaDashboard2CatalogRoute
+  ApiWaDashboard2DiagnosticsRoute: typeof ApiWaDashboard2DiagnosticsRoute
   ApiWaDashboard2LoginRoute: typeof ApiWaDashboard2LoginRoute
   ApiWaDashboard2LogoutRoute: typeof ApiWaDashboard2LogoutRoute
   ApiWaDashboard2OrdersRoute: typeof ApiWaDashboard2OrdersRouteWithChildren
   ApiWaDashboard2SessionRoute: typeof ApiWaDashboard2SessionRoute
   ApiWaDashboard2UploadRoute: typeof ApiWaDashboard2UploadRoute
   ApiWaDashboardCatalogRoute: typeof ApiWaDashboardCatalogRoute
+  ApiWaDashboardDiagnosticsRoute: typeof ApiWaDashboardDiagnosticsRoute
   ApiWaDashboardLoginRoute: typeof ApiWaDashboardLoginRoute
   ApiWaDashboardLogoutRoute: typeof ApiWaDashboardLogoutRoute
   ApiWaDashboardOrdersRoute: typeof ApiWaDashboardOrdersRouteWithChildren
@@ -947,6 +988,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/stores/pavone'
       preLoaderRoute: typeof StoresPavoneRouteImport
       parentRoute: typeof StoresRoute
+    }
+    '/quotations/khadamati': {
+      id: '/quotations/khadamati'
+      path: '/quotations/khadamati'
+      fullPath: '/quotations/khadamati'
+      preLoaderRoute: typeof QuotationsKhadamatiRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/menus/marleys': {
       id: '/menus/marleys'
@@ -1130,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaDashboardLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wa-dashboard/diagnostics': {
+      id: '/api/wa-dashboard/diagnostics'
+      path: '/api/wa-dashboard/diagnostics'
+      fullPath: '/api/wa-dashboard/diagnostics'
+      preLoaderRoute: typeof ApiWaDashboardDiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/wa-dashboard/catalog': {
       id: '/api/wa-dashboard/catalog'
       path: '/api/wa-dashboard/catalog'
@@ -1170,6 +1225,13 @@ declare module '@tanstack/react-router' {
       path: '/api/wa-dashboard-2/login'
       fullPath: '/api/wa-dashboard-2/login'
       preLoaderRoute: typeof ApiWaDashboard2LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/diagnostics': {
+      id: '/api/wa-dashboard-2/diagnostics'
+      path: '/api/wa-dashboard-2/diagnostics'
+      fullPath: '/api/wa-dashboard-2/diagnostics'
+      preLoaderRoute: typeof ApiWaDashboard2DiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/wa-dashboard-2/catalog': {
@@ -1423,6 +1485,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
   MenusMarleysRoute: MenusMarleysRoute,
+  QuotationsKhadamatiRoute: QuotationsKhadamatiRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
   WorkDetailingLabRoute: WorkDetailingLabRoute,
   WorkKoubarGroupRoute: WorkKoubarGroupRoute,
@@ -1430,12 +1493,14 @@ const rootRouteChildren: RootRouteChildren = {
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
   ApiWaDashboard2CatalogRoute: ApiWaDashboard2CatalogRoute,
+  ApiWaDashboard2DiagnosticsRoute: ApiWaDashboard2DiagnosticsRoute,
   ApiWaDashboard2LoginRoute: ApiWaDashboard2LoginRoute,
   ApiWaDashboard2LogoutRoute: ApiWaDashboard2LogoutRoute,
   ApiWaDashboard2OrdersRoute: ApiWaDashboard2OrdersRouteWithChildren,
   ApiWaDashboard2SessionRoute: ApiWaDashboard2SessionRoute,
   ApiWaDashboard2UploadRoute: ApiWaDashboard2UploadRoute,
   ApiWaDashboardCatalogRoute: ApiWaDashboardCatalogRoute,
+  ApiWaDashboardDiagnosticsRoute: ApiWaDashboardDiagnosticsRoute,
   ApiWaDashboardLoginRoute: ApiWaDashboardLoginRoute,
   ApiWaDashboardLogoutRoute: ApiWaDashboardLogoutRoute,
   ApiWaDashboardOrdersRoute: ApiWaDashboardOrdersRouteWithChildren,

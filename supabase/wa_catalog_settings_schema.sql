@@ -171,6 +171,38 @@ create table if not exists public.wa_payment_methods (
 create index if not exists wa_payment_methods_business_sort_idx
   on public.wa_payment_methods (business_id, sort_order);
 
+do $$
+begin
+  alter table public.wa_products
+    add constraint wa_products_stock_non_negative_check check (stock_quantity >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_products
+    add constraint wa_products_price_non_negative_check check (price >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_product_variants
+    add constraint wa_product_variants_stock_non_negative_check check (stock_quantity >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_product_variants
+    add constraint wa_product_variants_price_non_negative_check check (price >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
 insert into public.wa_businesses (
   id,
   name,

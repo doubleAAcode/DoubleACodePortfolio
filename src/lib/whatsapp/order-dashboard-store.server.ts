@@ -127,7 +127,7 @@ export type DashboardOrderNotificationRow = {
   order_status: DashboardOrderStatus;
   message_type: string;
   language: "en" | "ar";
-  status: "PENDING" | "SENT" | "FAILED" | "TEMPLATE_REQUIRED" | "SKIPPED";
+  status: "PENDING" | "SENT" | "FAILED" | "RETRYABLE" | "TEMPLATE_REQUIRED" | "SKIPPED";
   meta_message_id: string | null;
   error_code: string | null;
   error_message: string | null;
@@ -536,7 +536,7 @@ async function notifyCustomer({
   await updateNotification({
     businessId,
     notificationId: claimedNotification.id,
-    status: result.ok ? "SENT" : "FAILED",
+    status: result.ok ? "SENT" : result.retryable ? "RETRYABLE" : "FAILED",
     metaMessageId: result.ok ? result.messageId : undefined,
     errorCode: result.ok ? undefined : result.errorCode,
     errorMessage: result.ok ? undefined : result.errorMessage,
@@ -752,7 +752,9 @@ async function recordNotificationResult({
           ? "SENT"
           : templateRequired
             ? "TEMPLATE_REQUIRED"
-            : "FAILED",
+            : result.retryable
+              ? "RETRYABLE"
+              : "FAILED",
         customer_notification_error: result.ok ? null : result.errorMessage,
         customer_notified_at: result.ok ? new Date().toISOString() : null,
         template_notification_required:

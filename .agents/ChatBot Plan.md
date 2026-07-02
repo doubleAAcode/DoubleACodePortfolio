@@ -1597,3 +1597,1767 @@ Multi-business isolation
 Client onboarding
 WhatsApp Catalog integration later
 AI only in Phase 2
+
+
+# # Milestone 8 — Owner Dashboard: Catalog and Store Settings
+
+The WhatsApp bot now reads its catalog and checkout settings dynamically from Supabase.
+
+Build a protected owner dashboard inside the existing Double A Code website.
+
+## Goal
+
+Allow the test business owner to manage:
+
+* Categories
+* Products
+* Product options and values
+* Variants, prices and stock
+* Product custom fields
+* Delivery areas and fees
+* Pickup locations
+* Payment methods
+* General store settings
+
+Changes must affect the WhatsApp bot immediately without redeployment.
+
+## Routes
+
+Use the existing project conventions, preferably:
+
+```text
+/dashboard
+/dashboard/categories
+/dashboard/products
+/dashboard/delivery
+/dashboard/settings
+```
+
+Do not modify the public website design.
+
+## Authentication
+
+* Protect all dashboard routes.
+* Use the existing authentication system if available.
+* Otherwise add Supabase Auth with email/password.
+* Every query and mutation must be scoped using `businessId`.
+* Do not rely only on frontend filtering for business isolation.
+
+For this milestone, one seeded test business is enough.
+
+## Dashboard overview
+
+Show:
+
+* Active categories
+* Active products
+* Low-stock variants
+* Unavailable products
+* Delivery areas
+* Recent configuration changes if available
+
+Do not build order management yet.
+
+## Categories
+
+Allow:
+
+* Create
+* Edit English and Arabic names
+* Activate/deactivate
+* Change display order
+* Delete only when safe
+
+Prevent accidental deletion when products still belong to the category.
+
+## Products
+
+Allow:
+
+* Create and edit products
+* Select category
+* English and Arabic names/descriptions
+* Product code
+* Base price
+* Image
+* Active/inactive status
+* Available/unavailable status
+
+Product codes must be unique within the business.
+
+## Product images
+
+Use Supabase Storage.
+
+Requirements:
+
+* Upload image
+* Preview image
+* Replace image
+* Remove image
+* Validate file type and reasonable file size
+* Store only the resulting path/URL in product data
+
+Do not store image files directly in database rows.
+
+## Options and variants
+
+For each product, allow configuration of:
+
+* Option groups such as Size, Color, Material and Length
+* English and Arabic option names
+* Option values
+* Display order
+* Optional image URL for option values
+* Required/optional status
+
+Allow variant management:
+
+* SKU
+* Selected option values
+* Price override
+* Stock quantity
+* Available/unavailable status
+
+Prevent duplicate option combinations.
+
+## Custom fields
+
+Allow product-specific fields:
+
+* Short text
+* Long text
+* Number
+* Yes/no
+* Single choice
+
+Configuration must include:
+
+* English and Arabic labels
+* Required status
+* Validation rules
+* Display order
+* Choice values where applicable
+
+Examples:
+
+* Engraving name
+* Gift message
+* Gift wrapping
+
+## Delivery settings
+
+Allow management of:
+
+* Delivery enabled
+* Pickup enabled
+* Delivery areas
+* Delivery fee per area
+* Pickup locations
+* Minimum order amount
+* Currency
+
+## Payment methods
+
+Allow:
+
+* Create and edit payment methods
+* English and Arabic labels
+* Delivery eligibility
+* Pickup eligibility
+* Active/inactive status
+* Display order
+
+For now, continue supporting cash methods only.
+
+## Bot compatibility
+
+All dashboard writes must use the same Supabase tables and schemas already used by the bot.
+
+After saving changes:
+
+* New categories appear in WhatsApp
+* Updated prices appear in WhatsApp
+* Unavailable variants cannot be ordered
+* Updated delivery fees affect checkout
+* Disabled payment methods disappear
+
+Do not duplicate catalog data into frontend-only state.
+
+## Validation
+
+Validate both client-side and server-side:
+
+* Required fields
+* Non-negative prices
+* Non-negative stock
+* Unique product codes
+* Unique SKUs
+* Unique variant combinations
+* Valid delivery fees
+* At least one supported language field
+* Safe deletion rules
+
+## User experience
+
+Include:
+
+* Loading states
+* Empty states
+* Confirmation before destructive actions
+* Clear success and error messages
+* Mobile-friendly dashboard layout
+* Arabic field support
+* Search and filters for products
+
+## Completion criteria
+
+Milestone 8 is complete when:
+
+1. Owner can log in securely.
+2. Categories can be created and edited.
+3. Products can be created and edited.
+4. Images can be uploaded.
+5. Options, variants and stock can be managed.
+6. Custom fields can be configured.
+7. Delivery areas and fees can be managed.
+8. Pickup locations can be managed.
+9. Payment methods can be managed.
+10. Every query is scoped by `businessId`.
+11. Dashboard changes immediately affect the live WhatsApp flow.
+12. Existing public website pages remain unchanged.
+
+After implementation, report:
+
+* Files created
+* Files modified
+* Database changes
+* Storage bucket configuration
+* Authentication approach
+* Business isolation approach
+* Manual test instructions
+* Known limitations
+
+Stop after catalog and store-settings management works.
+
+Do not build:
+
+* Order management
+* Owner notifications
+* Client self-onboarding
+* Subscription billing
+* WhatsApp Catalog synchronization
+* AI features
+
+
+# # Milestone 9 — Orders Dashboard, Accept and Reject
+
+The owner dashboard, catalog management, and business settings are working.
+
+Confirmed WhatsApp orders are already stored in Supabase with:
+
+* Order status `PENDING_OWNER_CONFIRMATION`
+* Order items
+* Active stock reservations
+* Customer and checkout details
+
+Build the owner order-management flow.
+
+## Important rules
+
+* Inspect and reuse the current dashboard architecture.
+* Do not modify public website pages.
+* Do not deploy.
+* Do not push or merge to `main`.
+* Keep all sensitive Supabase operations server-side.
+* Every query and mutation must be scoped by `businessId`.
+* Order acceptance and stock changes must be transactional.
+* Repeated clicks or requests must never deduct stock twice.
+
+---
+
+## Goal
+
+Implement:
+
+```text
+New WhatsApp order
+→ Appears in owner dashboard
+→ Owner opens order
+→ Owner accepts or rejects
+→ Stock reservation is committed or released
+→ Customer receives the correct update when possible
+```
+
+---
+
+## Routes
+
+Use:
+
+```text
+/dashboard/orders
+/dashboard/orders/[orderId]
+```
+
+---
+
+## 1. Orders list
+
+Show:
+
+* Order number
+* Customer name
+* Customer phone
+* Created time
+* Item count
+* Fulfillment method
+* Total
+* Order status
+* Reservation status
+
+Add filters for:
+
+* Pending
+* Accepted
+* Rejected
+* All
+
+Default to pending orders.
+
+Add:
+
+* Loading state
+* Empty state
+* Error state
+* New-order badge
+* Mobile-friendly layout
+
+Use Supabase Realtime if appropriate so new orders appear without refreshing.
+
+---
+
+## 2. Order details
+
+Show the full saved order snapshot:
+
+### Customer
+
+* Name
+* WhatsApp phone
+* Alternate phone if present
+* Language
+
+### Items
+
+For every item show:
+
+* Product name
+* Product code
+* Variant/SKU
+* Selected options
+* Custom-field answers
+* Quantity
+* Unit price
+* Line total
+
+### Fulfillment
+
+* Delivery or pickup
+* Delivery area
+* Address
+* Shared latitude/longitude if available
+* Pickup location
+
+### Payment
+
+* Payment method
+
+### Totals
+
+* Subtotal
+* Delivery fee
+* Final total
+
+### Additional information
+
+* Customer notes
+* Order creation time
+* Current status
+* Stock reservation status and expiration
+
+The dashboard must display the saved order snapshot, not current product names or prices that may have changed later.
+
+---
+
+## 3. Accept order
+
+Add an `Accept order` action only for:
+
+```text
+PENDING_OWNER_CONFIRMATION
+```
+
+Acceptance must happen through one atomic Supabase RPC/database transaction.
+
+The transaction must:
+
+1. Lock or safely validate the order.
+2. Confirm the order still belongs to the current business.
+3. Confirm the order is still pending.
+4. Confirm all reservations are `ACTIVE`.
+5. Confirm reservations have not expired.
+6. Confirm sufficient reserved quantities exist.
+7. Deduct the reserved quantities from actual variant stock.
+8. Change reservation status to `COMMITTED`.
+9. Change order status to `ACCEPTED`.
+10. Save `acceptedAt`.
+11. Prevent the same order from being accepted twice.
+
+If the transaction fails, do not partially change stock or status.
+
+---
+
+## 4. Reject order
+
+Allow the owner to select or type an optional rejection reason.
+
+Examples:
+
+* Item unavailable
+* Cannot deliver to area
+* Store closed
+* Customer request
+* Other
+
+Rejection must happen atomically:
+
+1. Confirm the order belongs to the current business.
+2. Confirm it is still pending.
+3. Change order status to `REJECTED`.
+4. Save the reason and `rejectedAt`.
+5. Change active reservations to `RELEASED`.
+6. Do not deduct actual stock.
+7. Prevent repeated rejection actions from changing stock.
+
+---
+
+## 5. Reservation expiration
+
+Implement safe handling for expired reservations.
+
+Requirements:
+
+* Expired reservations cannot be accepted.
+* Expired active reservations must become `EXPIRED`.
+* Reserved quantities must become available again.
+* The order should show that stock reservation expired.
+* The owner may reject the order or ask the customer to place it again.
+
+Create an idempotent database function or server process for releasing expired reservations.
+
+Do not build a complex background-worker system unless the project already has one.
+
+---
+
+## 6. Customer WhatsApp update
+
+After acceptance, send:
+
+```text
+Your order DA-000001 has been accepted ✅
+
+The store is now preparing your order.
+```
+
+After rejection, send:
+
+```text
+Unfortunately, order DA-000001 could not be accepted.
+
+Reason: {reason}
+```
+
+Arabic versions must be supported.
+
+Rules:
+
+* Send the message only after the database transaction succeeds.
+* Notification failure must not undo the order decision.
+* Log notification success or failure.
+* Do not send duplicate customer updates.
+* If a normal message cannot legally be sent because the customer-service window is closed, do not force-send it.
+* Record that a template notification is required for a later milestone.
+
+---
+
+## 7. Audit information
+
+Store or log:
+
+* Who accepted or rejected the order
+* Previous status
+* New status
+* Decision timestamp
+* Rejection reason
+* Customer-notification result
+
+Use the authenticated dashboard user ID where available.
+
+---
+
+## 8. Security
+
+* Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.
+* Validate authenticated business ownership server-side.
+* Do not accept `businessId` from the browser without verifying it.
+* Prevent one business from reading or changing another business’s orders.
+* Validate every status transition server-side.
+
+---
+
+## 9. User experience
+
+Pending order page:
+
+```text
+Order DA-000001
+Pending owner confirmation
+
+[Accept order]
+[Reject order]
+```
+
+After acceptance:
+
+```text
+Order accepted ✅
+Stock committed
+Customer notification sent
+```
+
+After rejection:
+
+```text
+Order rejected
+Stock reservation released
+```
+
+Disable buttons while requests are in progress.
+
+Require confirmation before accepting or rejecting.
+
+---
+
+## Completion criteria
+
+Milestone 9 is complete when:
+
+1. New WhatsApp orders appear in `/dashboard/orders`.
+2. The owner can view complete order details.
+3. Accepting deducts stock exactly once.
+4. Accepting changes reservations to `COMMITTED`.
+5. Rejecting releases reservations without deducting stock.
+6. Repeated actions cannot change stock twice.
+7. Expired reservations cannot be accepted.
+8. Business isolation is enforced server-side.
+9. The customer receives an accepted/rejected update when allowed.
+10. Notification failure does not corrupt the order.
+11. Arabic and English messages work.
+12. New pending orders appear without a manual page refresh where supported.
+13. Existing catalog and WhatsApp ordering flows remain working.
+
+After completion, report:
+
+* Files created
+* Files modified
+* Database migrations
+* RPC functions added
+* Status-transition logic
+* Stock-commit logic
+* Reservation-release logic
+* Customer-notification behavior
+* Manual test cases
+* Known limitations
+
+Stop after accept/reject order management works.
+
+Do not implement yet:
+
+* Full preparing/out-for-delivery workflow
+* WhatsApp owner notifications
+* Client onboarding
+* Subscription billing
+* Meta Embedded Signup
+* WhatsApp Catalog synchronization
+* AI features
+
+
+# # Milestone 10 — Complete Order Lifecycle
+
+The current WhatsApp commerce system already supports:
+
+* Customer checkout and pending-order creation
+* Orders visible in the owner dashboard
+* Owner acceptance and rejection
+* Stock reservation commit/release
+* Customer acceptance/rejection messages
+* Supabase persistence
+* Business-scoped data
+* Arabic and English
+
+Implement the complete post-order lifecycle.
+
+## Important rules
+
+* Inspect and reuse the existing order architecture.
+* Do not rewrite working checkout or accept/reject behavior unnecessarily.
+* Do not modify public website pages.
+* Do not deploy.
+* Do not push or merge to `main`.
+* All status changes must be validated server-side.
+* Every query and mutation must be scoped by the authenticated `businessId`.
+* Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.
+* Repeated requests must not create duplicate status changes or messages.
+
+---
+
+## Goal
+
+Support this lifecycle:
+
+```text
+PENDING_OWNER_CONFIRMATION
+→ ACCEPTED
+→ PREPARING
+→ READY
+→ OUT_FOR_DELIVERY
+→ COMPLETED
+```
+
+Also support terminal states:
+
+```text
+REJECTED
+CANCELLED
+```
+
+Pickup orders may use:
+
+```text
+PENDING_OWNER_CONFIRMATION
+→ ACCEPTED
+→ PREPARING
+→ READY
+→ COMPLETED
+```
+
+Pickup orders must not require `OUT_FOR_DELIVERY`.
+
+---
+
+## 1. Valid status transitions
+
+Create a single server-side transition map.
+
+Example:
+
+```ts
+const allowedTransitions = {
+  PENDING_OWNER_CONFIRMATION: ["ACCEPTED", "REJECTED", "CANCELLED"],
+  ACCEPTED: ["PREPARING", "CANCELLED"],
+  PREPARING: ["READY", "CANCELLED"],
+  READY: ["OUT_FOR_DELIVERY", "COMPLETED", "CANCELLED"],
+  OUT_FOR_DELIVERY: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  REJECTED: [],
+  CANCELLED: [],
+};
+```
+
+Additional rules:
+
+* `READY → COMPLETED` is valid for pickup.
+* `READY → OUT_FOR_DELIVERY` is valid for delivery.
+* `OUT_FOR_DELIVERY` must not be available for pickup orders.
+* Terminal states cannot transition again.
+* Invalid transitions must return a clear error.
+* The browser must not decide whether a transition is valid.
+
+---
+
+## 2. Database fields
+
+Add or confirm these fields on orders:
+
+* status
+* acceptedAt
+* preparingAt
+* readyAt
+* outForDeliveryAt
+* completedAt
+* rejectedAt
+* cancelledAt
+* rejectionReason
+* cancellationReason
+* updatedAt
+
+Do not overwrite existing timestamps once set.
+
+---
+
+## 3. Atomic status transition
+
+Create one server-side service or Supabase RPC for post-acceptance transitions.
+
+Suggested interface:
+
+```ts
+transitionOrderStatus({
+  orderId,
+  targetStatus,
+  reason?,
+  authenticatedUserId,
+});
+```
+
+The transaction must:
+
+1. Load and lock the order safely.
+2. Confirm it belongs to the authenticated business.
+3. Confirm the current status.
+4. Validate the requested transition.
+5. Validate fulfillment-specific rules.
+6. Update the status.
+7. Set the relevant timestamp.
+8. Create an audit record.
+9. Return the updated order.
+10. Prevent duplicate transitions.
+
+Acceptance and rejection may continue using their existing transactional functions if already reliable.
+
+---
+
+## 4. Order audit log
+
+Create or use an order-status history table.
+
+Suggested model:
+
+### `wa_order_status_history`
+
+* id
+* businessId
+* orderId
+* previousStatus
+* newStatus
+* reason
+* changedByUserId
+* source
+* createdAt
+
+Supported sources:
+
+```text
+OWNER_DASHBOARD
+SYSTEM
+CUSTOMER
+ADMIN
+```
+
+Every successful status change must create exactly one history record.
+
+---
+
+## 5. Dashboard order actions
+
+Update the order details page so it shows only valid actions.
+
+Examples:
+
+### Accepted order
+
+```text
+Order accepted
+
+[Start preparing]
+[Cancel order]
+```
+
+### Preparing order
+
+```text
+Preparing
+
+[Mark ready]
+[Cancel order]
+```
+
+### Ready delivery order
+
+```text
+Ready
+
+[Out for delivery]
+[Cancel order]
+```
+
+### Ready pickup order
+
+```text
+Ready for pickup
+
+[Mark completed]
+[Cancel order]
+```
+
+### Out-for-delivery order
+
+```text
+Out for delivery
+
+[Mark completed]
+[Cancel order]
+```
+
+Requirements:
+
+* Disable actions while requests are running.
+* Require confirmation for cancellation and completion.
+* Require a cancellation reason.
+* Show clear success and error messages.
+* Refresh the order after successful changes.
+* Realtime updates should appear where supported.
+
+---
+
+## 6. Orders list
+
+Update `/dashboard/orders` to support:
+
+* Pending
+* Accepted
+* Preparing
+* Ready
+* Out for delivery
+* Completed
+* Rejected
+* Cancelled
+* All
+
+Show:
+
+* Order number
+* Customer
+* Created time
+* Fulfillment type
+* Total
+* Current status
+* Last status update
+
+Add clear status badges.
+
+Default view may remain pending orders.
+
+---
+
+## 7. Customer WhatsApp messages
+
+After each successful transition, send the appropriate message when legally allowed.
+
+### Preparing
+
+English:
+
+```text
+Your order {orderNumber} is now being prepared.
+```
+
+Arabic:
+
+```text
+يتم الآن تحضير طلبك {orderNumber}.
+```
+
+### Ready for pickup
+
+English:
+
+```text
+Your order {orderNumber} is ready for pickup ✅
+```
+
+Arabic:
+
+```text
+طلبك {orderNumber} جاهز للاستلام ✅
+```
+
+### Out for delivery
+
+English:
+
+```text
+Your order {orderNumber} is out for delivery 🚚
+```
+
+Arabic:
+
+```text
+طلبك {orderNumber} أصبح في طريقه إليك 🚚
+```
+
+### Completed
+
+English:
+
+```text
+Order {orderNumber} has been completed. Thank you for your order.
+```
+
+Arabic:
+
+```text
+تم إكمال الطلب {orderNumber}. شكرًا لطلبك.
+```
+
+### Cancelled
+
+English:
+
+```text
+Order {orderNumber} has been cancelled.
+
+Reason: {reason}
+```
+
+Arabic:
+
+```text
+تم إلغاء الطلب {orderNumber}.
+
+السبب: {reason}
+```
+
+---
+
+## 8. WhatsApp 24-hour window handling
+
+Before sending a free-form customer message:
+
+1. Load the conversation session.
+2. Check `lastCustomerMessageAt`.
+3. Calculate whether the 24-hour service window is still open.
+4. Send the normal message only when allowed.
+
+When the window is closed:
+
+* Do not force-send a free-form message.
+* Do not fail the status transition.
+* Record notification state as `TEMPLATE_REQUIRED`.
+* Save the intended notification type for future template support.
+
+Suggested notification statuses:
+
+```text
+PENDING
+SENT
+FAILED
+TEMPLATE_REQUIRED
+SKIPPED
+```
+
+---
+
+## 9. Notification records
+
+Create or use a notification table.
+
+Suggested model:
+
+### `wa_order_notifications`
+
+* id
+* businessId
+* orderId
+* customerPhone
+* orderStatus
+* messageType
+* language
+* status
+* metaMessageId
+* errorCode
+* errorMessage
+* createdAt
+* sentAt
+
+Requirements:
+
+* One notification per order/status/message type.
+* Add a database uniqueness constraint where appropriate.
+* Duplicate dashboard requests must not send duplicate WhatsApp messages.
+* Notification failure must not revert the order status.
+* Never store access tokens or secrets.
+
+---
+
+## 10. Cancellation behavior
+
+Owner cancellation must:
+
+* Require a reason.
+* Be valid only from configured non-terminal states.
+* Not restore stock that was already committed unless the current inventory design explicitly supports returns.
+* Record the cancellation in order history.
+* Notify the customer when possible.
+
+Important:
+
+Acceptance already commits reserved stock.
+
+Therefore, cancellation after acceptance must not silently increase stock unless an explicit restock action is implemented.
+
+For this milestone:
+
+* Do not automatically restock accepted-order cancellations.
+* Clearly record `restockRequired` or equivalent when relevant.
+* Show this warning to the owner.
+
+Do not implement returns or refunds yet.
+
+---
+
+## 11. Completed orders
+
+When marking an order completed:
+
+* Require confirmation.
+* Save `completedAt`.
+* Prevent further transitions.
+* Do not change stock again.
+* Do not modify the saved order snapshot.
+* Create the audit record.
+* Send the customer message when allowed.
+
+---
+
+## 12. Order timeline
+
+On the order details page, show a timeline:
+
+```text
+Order created
+Accepted
+Preparing
+Ready
+Out for delivery
+Completed
+```
+
+Each entry should show:
+
+* Status
+* Timestamp
+* User or system that changed it
+* Optional reason
+
+Rejected and cancelled orders should show their reason clearly.
+
+---
+
+## 13. Security
+
+Confirm:
+
+* Order ownership is validated server-side.
+* Authenticated users can access only their business orders.
+* Status cannot be changed directly from the browser database client.
+* Service-role operations remain server-side.
+* Transition targets are validated against an allowlist.
+* Reasons are sanitized and length-limited.
+* Meta errors do not expose secrets.
+
+---
+
+## 14. Completion criteria
+
+Milestone 10 is complete when:
+
+1. Accepted orders can move to preparing.
+2. Preparing orders can move to ready.
+3. Delivery orders can move from ready to out for delivery.
+4. Pickup orders can move from ready directly to completed.
+5. Out-for-delivery orders can move to completed.
+6. Valid cancellations work with a required reason.
+7. Invalid transitions are rejected server-side.
+8. Terminal orders cannot be modified.
+9. Every transition creates one audit-history entry.
+10. The dashboard shows a complete order timeline.
+11. The customer receives status updates inside the open 24-hour window.
+12. Closed-window updates are recorded as `TEMPLATE_REQUIRED`.
+13. Notification failures do not revert order status.
+14. Duplicate requests do not send duplicate messages.
+15. Stock is not deducted more than once.
+16. Accepted-order cancellations do not automatically restock.
+17. Arabic and English messages both work.
+18. Existing checkout, accept/reject, catalog, and dashboard functionality remain working.
+
+After implementation, report:
+
+* Files created
+* Files modified
+* Database migrations
+* RPCs or server actions added
+* Valid transition map
+* Audit-history implementation
+* Notification deduplication approach
+* 24-hour window handling
+* Cancellation and stock behavior
+* Manual test cases
+* Known limitations
+
+Stop after the complete order lifecycle works.
+
+Do not implement yet:
+
+* Owner WhatsApp alerts
+* Delivery-driver management
+* Returns or refunds
+* Automatic restocking
+* Subscription billing
+* Meta Embedded Signup
+* WhatsApp Catalog synchronization
+* Workflow builder
+* AI features
+
+
+
+# # Milestone 11 — Reliability, Concurrency and Data Integrity Hardening
+
+The deterministic WhatsApp commerce system is working end to end:
+
+* WhatsApp webhook and replies
+* Persistent sessions
+* Products, variants and custom fields
+* Cart and checkout
+* Stock reservations
+* Order creation
+* Owner dashboard
+* Accept/reject
+* Complete order lifecycle
+* Customer status notifications
+* Arabic and English
+* Supabase persistence
+* Two separate Meta test setups
+
+Do not add new product features in this milestone.
+
+The goal is to prove that the existing system remains correct under simultaneous users, duplicate requests, retries, failures and malicious cross-business access.
+
+## Important rules
+
+* Inspect the existing architecture before changing anything.
+* Preserve all working behavior.
+* Do not redesign public website pages.
+* Do not deploy.
+* Do not push or merge to `main`.
+* Do not add AI, voice, billing, onboarding or workflow-builder features.
+* Do not expose Supabase service-role credentials to the browser.
+* Prefer database constraints and transactions over frontend checks.
+* Every operation must remain scoped by the authenticated business.
+* Do not hide errors with empty catch blocks.
+
+---
+
+## Goal
+
+Prove the following statement:
+
+> Duplicate webhooks, simultaneous customers, repeated owner actions, API failures and server restarts cannot duplicate orders, corrupt stock, leak tenant data or send duplicate notifications.
+
+---
+
+# 1. Automated test foundation
+
+Add automated tests around the critical business services.
+
+Use the testing tools already available in the project. Do not add a large testing framework unless necessary.
+
+Tests should cover:
+
+* Conversation session creation
+* Conversation session loading
+* Cart updates
+* Variant resolution
+* Stock validation
+* Order total calculation
+* Order creation
+* Stock reservation
+* Order acceptance
+* Order rejection
+* Status transitions
+* Notification deduplication
+* Business isolation
+
+Separate:
+
+* Unit tests
+* Database/RPC integration tests
+* End-to-end simulation tests
+
+Do not require real WhatsApp messages for every automated test.
+
+---
+
+# 2. Concurrent final-stock test
+
+Create a repeatable test for this scenario:
+
+```text
+Variant stock: 1
+
+Customer A confirms quantity 1
+Customer B confirms quantity 1
+Both requests arrive nearly simultaneously
+```
+
+Expected result:
+
+* Only one active reservation/order succeeds.
+* The other request receives an out-of-stock result.
+* Stock never becomes negative.
+* Reserved quantity never exceeds available stock.
+* No partial order or orphan order item is created.
+* The result remains correct across repeated test runs.
+
+The reservation and order creation transaction must use database-level concurrency protection.
+
+Do not rely on:
+
+```text
+Read stock
+→ Check in application code
+→ Update later
+```
+
+without database locking or an equivalent atomic strategy.
+
+---
+
+# 3. Multiple simultaneous customers
+
+Test at least two different WhatsApp sender numbers against the same business.
+
+Verify that each customer has an independent:
+
+* Language
+* Current conversation step
+* Selected category
+* Selected product
+* Pending item
+* Cart
+* Checkout data
+* Order
+* Notification history
+
+One customer must never receive or modify another customer’s state.
+
+Session uniqueness should be based on appropriate identifiers such as:
+
+```text
+businessId + customerPhone
+```
+
+or the existing equivalent.
+
+---
+
+# 4. Duplicate webhook protection
+
+Meta may deliver the same webhook more than once.
+
+Verify that the same incoming Meta message ID:
+
+* Is processed only once.
+* Does not advance the conversation twice.
+* Does not add the same item twice.
+* Does not confirm two orders.
+* Does not send two replies.
+* Remains protected after a redeployment or server restart.
+
+Use persistent database-backed idempotency.
+
+Do not depend only on in-memory caches.
+
+Test duplicates for:
+
+* Text messages
+* Button replies
+* List replies
+* Checkout confirmation
+* Location messages
+* Unsupported message types
+
+---
+
+# 5. Duplicate order confirmation
+
+Test repeated confirmation attempts using:
+
+* Same Meta message ID
+* Different requests with the same checkout state
+* Double-click or rapid repeated owner/customer action
+* Network retry after an unclear response
+
+Expected result:
+
+* One order
+* One set of order items
+* One set of stock reservations
+* One public order number
+* One customer confirmation message
+
+Add or verify appropriate database uniqueness constraints and idempotency keys.
+
+---
+
+# 6. Duplicate owner actions
+
+Test repeated owner actions:
+
+* Accept twice
+* Reject twice
+* Accept and reject simultaneously
+* Mark preparing twice
+* Mark ready twice
+* Mark completed twice
+* Send repeated identical API requests
+
+Expected result:
+
+* Stock is committed once.
+* Reservations transition once.
+* One status-history entry is created per real transition.
+* Customer notifications are sent once.
+* Invalid repeated transitions return a safe result.
+* No order can be both accepted and rejected.
+
+---
+
+# 7. Reservation expiration
+
+Verify expired reservation behavior.
+
+Test:
+
+```text
+Order pending
+→ Reservation expires
+→ Owner attempts to accept
+```
+
+Expected result:
+
+* Acceptance is rejected safely.
+* Reservation becomes `EXPIRED`.
+* Reserved quantity becomes available again.
+* Stock is not deducted.
+* Order clearly displays expired reservation status.
+* Re-running expiration logic causes no duplicate changes.
+
+Create an idempotent expiration function or job-compatible service.
+
+For now, it may be triggered manually or by a safe scheduled endpoint, but the logic itself must be production-ready.
+
+---
+
+# 8. Stock integrity audit
+
+Add a diagnostic service or protected internal report that checks for:
+
+* Negative stock
+* Active reservations exceeding stock
+* Committed reservations on unaccepted orders
+* Accepted orders with active reservations
+* Rejected orders with committed reservations
+* Orphan reservations
+* Orphan order items
+* Duplicate variant combinations
+* Duplicate product codes or SKUs within one business
+
+The report must be read-only unless an explicit repair action is later implemented.
+
+Do not silently repair production data.
+
+---
+
+# 9. Failure handling
+
+Simulate failures at critical points.
+
+Test failures during:
+
+* Supabase session read
+* Session write
+* Order transaction
+* Reservation creation
+* Order acceptance
+* Status transition
+* WhatsApp send request
+* Notification record creation
+* Product/catalog loading
+
+Expected behavior:
+
+* No partial financial or stock state.
+* No duplicate retry side effects.
+* User receives a safe fallback message where possible.
+* Errors are logged with correlation information.
+* Secrets are never logged.
+* Failed WhatsApp notifications do not revert successful order changes.
+* Failed order transactions do not clear the customer cart.
+
+---
+
+# 10. WhatsApp API timeout and retry behavior
+
+Harden outgoing WhatsApp sending.
+
+Requirements:
+
+* Use reasonable request timeouts.
+* Parse and record Meta error responses safely.
+* Do not retry permanent validation errors.
+* Allow controlled retries for temporary network or server failures.
+* Never send the same logical notification twice.
+* Use notification idempotency records.
+* Record:
+
+  * pending
+  * sent
+  * failed
+  * retryable
+  * template required
+  * skipped
+
+Do not implement a complex distributed queue unless the project already uses one.
+
+Create a design that can later move into a queue without rewriting business logic.
+
+---
+
+# 11. Conversation recovery
+
+Verify sessions survive:
+
+* Vercel deployment
+* Server restart
+* Different serverless instance handling the next message
+* Temporary Supabase failure
+* Customer returning within 24 hours
+* Customer returning after session expiration
+
+Expected behavior:
+
+* Active sessions continue from the correct step.
+* Expired sessions start safely.
+* Existing confirmed orders remain untouched.
+* Cart recovery follows the current intended rules.
+* A customer is not returned to an invalid node/state.
+
+Add session-schema validation when loading stored context.
+
+If stored session data is malformed, recover safely and log the issue.
+
+---
+
+# 12. Order snapshot integrity
+
+Verify that changing current catalog data does not modify old orders.
+
+After order creation, change:
+
+* Product name
+* Product price
+* Product code
+* Variant name
+* Option labels
+* Delivery fee
+* Product availability
+
+The old order must continue showing the original saved values.
+
+Order details must use the saved order snapshot, not current catalog data.
+
+---
+
+# 13. Business and tenant isolation
+
+Perform explicit cross-business tests.
+
+Using Business A and Business B:
+
+* Business A user cannot read Business B products.
+* Business A user cannot read Business B orders.
+* Business A cannot update Business B stock.
+* Business A cannot accept or reject Business B orders.
+* Business A cannot access Business B sessions.
+* Business A cannot access Business B notifications.
+* Business A cannot access Business B webhook logs.
+* Phone-number IDs map only to their assigned business.
+
+Test both:
+
+* Normal frontend/API access
+* Manually crafted requests with another `businessId`
+
+The server must derive or verify the business from authenticated membership and trusted WhatsApp connection mappings.
+
+Never trust a browser-supplied `businessId` by itself.
+
+Review Supabase RLS policies and server-side service-role usage.
+
+---
+
+# 14. Two Meta test setup verification
+
+## Parallel `_2` implementation protection
+
+The project currently contains a separate `_2` implementation used by another developer with:
+
+* A separate Meta developer app
+* A separate webhook
+* Separate WhatsApp credentials
+* Separate business/test IDs
+* Shared Supabase infrastructure with isolated records
+
+This parallel implementation is actively being developed.
+
+Rules:
+
+* Do not delete any `_2` file.
+* Do not rename any `_2` file.
+* Do not merge `_2` files into the primary implementation.
+* Do not move shared logic out of `_2` files.
+* Do not change the second webhook route.
+* Do not change its environment-variable names.
+* Do not change its business IDs, phone-number IDs, or Meta configuration.
+* Do not apply migrations or refactors that break either implementation.
+* Test and harden only the primary implementation unless a shared database constraint requires validation for both.
+* Any shared Supabase schema change must remain backward-compatible with both implementations.
+* Document any risk discovered in the `_2` setup, but do not fix or refactor it during this milestone.
+
+The `_2` implementation may be consolidated only in a future milestone after both developers explicitly agree.
+
+
+---
+
+# 15. Database constraints review
+
+Review and add necessary constraints such as:
+
+* Unique processed Meta message identity
+* Unique order idempotency key
+* Unique business-scoped product code
+* Unique business-scoped SKU
+* Unique notification per order/status/type
+* Non-negative stock
+* Non-negative prices
+* Non-negative quantities
+* Quantity greater than zero
+* Valid order statuses
+* Valid reservation statuses
+* Required business ownership fields
+* Foreign-key integrity
+
+Use database constraints as the final line of defence.
+
+Application validation alone is insufficient.
+
+---
+
+# 16. Transaction review
+
+Verify these operations are atomic:
+
+### Order confirmation
+
+```text
+Create order
+Create order items
+Create stock reservations
+Assign order number
+```
+
+### Accept order
+
+```text
+Validate pending order
+Validate active reservations
+Commit stock deduction
+Commit reservations
+Update order status
+Create status history
+```
+
+### Reject order
+
+```text
+Update order status
+Release reservations
+Create status history
+```
+
+### Status transition
+
+```text
+Validate transition
+Update order status
+Set timestamp
+Create history entry
+```
+
+No transaction should leave partial state.
+
+---
+
+# 17. Observability
+
+Add safe structured logging for critical operations.
+
+Include:
+
+* Correlation/request ID
+* Meta message ID
+* Business ID
+* Phone-number ID
+* Customer identifier in a safely masked form
+* Order ID/order number
+* Operation
+* Result
+* Error code
+* Duration
+
+Never log:
+
+* Access tokens
+* App secrets
+* Supabase service-role key
+* Full customer address unnecessarily
+* Full payment-sensitive information
+
+Make logs useful for tracing one order from webhook to completion.
+
+---
+
+# 18. Protected health and diagnostics
+
+Add a protected internal diagnostics view or endpoint showing:
+
+* Database connectivity
+* Supabase RPC availability
+* WhatsApp configuration presence
+* Latest webhook received time
+* Latest successful outgoing message time
+* Failed notifications count
+* Expired active reservations count
+* Data-integrity warnings
+* Current application version/commit when available
+
+Do not expose secrets or raw credentials.
+
+Use existing admin/log protection conventions.
+
+---
+
+# 19. Manual concurrency test plan
+
+Provide a clear manual test plan using two verified WhatsApp numbers.
+
+Required test:
+
+```text
+Customer A: English
+Customer B: Arabic
+→ Separate carts
+→ Different products
+→ Simultaneous checkout
+→ Separate orders
+```
+
+Final-stock test:
+
+```text
+Set one variant stock to 1
+→ Both customers add quantity 1
+→ Both confirm as close together as possible
+→ Exactly one succeeds
+```
+
+Also test:
+
+* Same message delivered twice
+* Owner accepts twice
+* Owner changes status twice
+* Customer restarts during checkout
+* Meta send failure
+* Reservation expiration
+* Product price changed after order creation
+
+---
+
+# 20. Completion criteria
+
+Milestone 11 is complete only when:
+
+1. Two simultaneous customers remain fully isolated.
+2. The last unit cannot be reserved by two customers.
+3. Stock never becomes negative.
+4. Duplicate Meta webhooks do not cause duplicate processing.
+5. Duplicate confirmations create one order only.
+6. Duplicate owner actions do not commit stock twice.
+7. Expired reservations cannot be accepted.
+8. Reservation expiration is idempotent.
+9. Failed order transactions do not create partial orders.
+10. Failed WhatsApp sends do not corrupt order state.
+11. Sessions survive deployments and serverless instance changes.
+12. Old order snapshots do not change when products are edited.
+13. Cross-business access attempts are rejected.
+14. Both Meta test setups remain isolated.
+15. Critical database constraints are present.
+16. All stock-sensitive operations are transactional.
+17. Main critical services have automated tests.
+18. A repeatable manual two-phone test plan is documented.
+19. Logs allow tracing one order without exposing secrets.
+20. Existing customer and owner flows remain working.
+
+After implementation, report:
+
+* Files created
+* Files modified
+* Database migrations
+* Constraints added
+* RPC changes
+* Tests added
+* Test commands
+* Concurrency strategy
+* Idempotency strategy
+* Reservation-expiration strategy
+* Tenant-isolation review
+* Failure scenarios tested
+* Manual two-phone test instructions
+* Remaining risks
+* Recommended work for Milestone 12
+
+Stop after reliability and data-integrity hardening.
+
+Do not begin:
+
+* Client onboarding
+* Owner WhatsApp alerts
+* Billing
+* Workflow builder
+* AI
+* Voice transcription
+* WhatsApp Catalog integration
+* Meta Embedded Signup

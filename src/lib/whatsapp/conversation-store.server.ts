@@ -55,6 +55,32 @@ type ConversationSessionRow = {
   updated_at: string;
 };
 
+const validSteps: ReadonlySet<ConversationStep> = new Set([
+  "SELECT_LANGUAGE",
+  "MAIN_MENU",
+  "SELECT_CATEGORY",
+  "SELECT_PRODUCT",
+  "PRODUCT_DETAILS",
+  "SELECT_PRODUCT_OPTION",
+  "COLLECT_CUSTOM_FIELD",
+  "SELECT_QUANTITY",
+  "CART_MENU",
+  "EDIT_CART_ITEM",
+  "REMOVE_CART_ITEM",
+  "CHANGE_CART_ITEM_QUANTITY",
+  "USE_SAVED_CUSTOMER_DETAILS",
+  "COLLECT_CUSTOMER_NAME",
+  "SELECT_FULFILLMENT_METHOD",
+  "SELECT_DELIVERY_AREA",
+  "SELECT_PICKUP_LOCATION",
+  "COLLECT_DELIVERY_ADDRESS",
+  "SELECT_PAYMENT_METHOD",
+  "COLLECT_ORDER_NOTES",
+  "REVIEW_ORDER",
+  "CONFIRM_ORDER",
+  "ORDER_CREATED",
+]);
+
 export async function getActiveConversationSession({
   businessId,
   customerPhone,
@@ -172,17 +198,48 @@ async function persistConversationSession(session: ConversationSession) {
 }
 
 function fromRow(row: ConversationSessionRow): ConversationSession {
+  const validated = validateStoredSessionRow(row);
   return {
     businessId: row.business_id,
     customerPhone: row.customer_phone,
-    currentStep: row.current_step,
-    language: row.language ?? undefined,
-    context: row.context,
+    currentStep: validated.currentStep,
+    language: validated.language,
+    context: validated.context,
     lastCustomerMessageAt: row.last_customer_message_at,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function validateStoredSessionRow(row: ConversationSessionRow) {
+  const language = row.language === "en" || row.language === "ar" ? row.language : undefined;
+  const context =
+    row.context && typeof row.context === "object" && !Array.isArray(row.context)
+      ? row.context
+      : {};
+  let currentStep: ConversationStep = validSteps.has(row.current_step)
+    ? row.current_step
+    : language
+      ? "MAIN_MENU"
+      : "SELECT_LANGUAGE";
+
+  if (currentStep !== row.current_step || context !== row.context || language !== row.language) {
+    console.warn("[whatsapp:session] recovered malformed stored session", {
+      businessId: row.business_id,
+      customer: maskPhone(row.customer_phone),
+      storedStep: row.current_step,
+      recoveredStep: currentStep,
+      hadValidContext: context === row.context,
+      hadValidLanguage: language === row.language,
+    });
+  }
+
+  if (!language && currentStep !== "SELECT_LANGUAGE") {
+    currentStep = "SELECT_LANGUAGE";
+  }
+
+  return { currentStep, language, context };
 }
 
 function toRow(session: ConversationSession): ConversationSessionRow {
@@ -197,4 +254,9 @@ function toRow(session: ConversationSession): ConversationSessionRow {
     created_at: session.createdAt,
     updated_at: session.updatedAt,
   };
+}
+
+function maskPhone(phone: string) {
+  if (phone.length <= 4) return "****";
+  return `${"*".repeat(Math.max(0, phone.length - 4))}${phone.slice(-4)}`;
 }

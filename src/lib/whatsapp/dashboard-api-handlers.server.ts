@@ -7,6 +7,7 @@ import {
   isDashboardAuthConfigured,
   validateDashboardCredentials,
 } from "./dashboard-auth.server";
+import { getWaDiagnostics } from "./diagnostics.server";
 import {
   applyWaDashboardAction,
   getWaDashboardData,
@@ -163,6 +164,28 @@ export function createDashboardOrdersHandlers(envSuffix = "") {
         const orders = await listDashboardOrders({ businessId: session.businessId, status });
 
         return Response.json({ ok: true, data: orders });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
+    },
+  };
+}
+
+export function createDashboardDiagnosticsHandlers(envSuffix = "") {
+  return {
+    GET: async ({ request }: { request: Request }) => {
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const data = await getWaDiagnostics({
+          businessId: session.businessId,
+          configSuffix: envSuffix,
+        });
+
+        return Response.json({ ok: true, data });
       } catch (error) {
         return dashboardApiError(error);
       }
