@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { PackageCheck, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -21,6 +21,9 @@ const filters: Array<{ label: string; value: DashboardOrderStatus | "ALL" }> = [
 ];
 
 export function OrdersPage() {
+  const basePath = getWaDashboardBasePath();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const showingOrderDetails = pathname !== `${basePath}/orders`;
   const [status, setStatus] = useState<DashboardOrderStatus | "ALL">("PENDING_OWNER_CONFIRMATION");
   const [orders, setOrders] = useState<DashboardOrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +42,15 @@ export function OrdersPage() {
   }, [status]);
 
   useEffect(() => {
+    if (showingOrderDetails) return;
     void loadOrders();
     const interval = window.setInterval(() => void loadOrders(), 15000);
     return () => window.clearInterval(interval);
-  }, [loadOrders]);
+  }, [loadOrders, showingOrderDetails]);
+
+  if (showingOrderDetails) {
+    return <Outlet />;
+  }
 
   return (
     <div className="space-y-6">

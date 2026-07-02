@@ -94,23 +94,31 @@ export function createDashboardLogoutHandlers(envSuffix = "") {
 export function createDashboardCatalogHandlers(envSuffix = "") {
   return {
     GET: async ({ request }: { request: Request }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-      }
-      const data = await getWaDashboardData(session.businessId);
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+        const data = await getWaDashboardData(session.businessId);
 
-      return Response.json({ ok: true, data });
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
     },
     POST: async ({ request }: { request: Request }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-      }
-      const action = (await request.json()) as DashboardCatalogAction;
-      const data = await applyWaDashboardAction(session.businessId, action);
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+        const action = (await request.json()) as DashboardCatalogAction;
+        const data = await applyWaDashboardAction(session.businessId, action);
 
-      return Response.json({ ok: true, data });
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
     },
   };
 }
@@ -118,19 +126,23 @@ export function createDashboardCatalogHandlers(envSuffix = "") {
 export function createDashboardUploadHandlers(envSuffix = "") {
   return {
     POST: async ({ request }: { request: Request }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-      }
-      const formData = await request.formData();
-      const file = formData.get("file");
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+        const formData = await request.formData();
+        const file = formData.get("file");
 
-      if (!(file instanceof File)) {
-        return Response.json({ ok: false, error: "Choose an image to upload." }, { status: 400 });
-      }
+        if (!(file instanceof File)) {
+          return Response.json({ ok: false, error: "Choose an image to upload." }, { status: 400 });
+        }
 
-      const image = await uploadWaProductImage(file, session.businessId);
-      return Response.json({ ok: true, image });
+        const image = await uploadWaProductImage(file, session.businessId);
+        return Response.json({ ok: true, image });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
     },
   };
 }
@@ -138,16 +150,20 @@ export function createDashboardUploadHandlers(envSuffix = "") {
 export function createDashboardOrdersHandlers(envSuffix = "") {
   return {
     GET: async ({ request }: { request: Request }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const url = new URL(request.url);
+        const status = parseStatus(url.searchParams.get("status"));
+        const orders = await listDashboardOrders({ businessId: session.businessId, status });
+
+        return Response.json({ ok: true, data: orders });
+      } catch (error) {
+        return dashboardApiError(error);
       }
-
-      const url = new URL(request.url);
-      const status = parseStatus(url.searchParams.get("status"));
-      const orders = await listDashboardOrders({ businessId: session.businessId, status });
-
-      return Response.json({ ok: true, data: orders });
     },
   };
 }
@@ -155,49 +171,57 @@ export function createDashboardOrdersHandlers(envSuffix = "") {
 export function createDashboardOrderDetailsHandlers(envSuffix = "") {
   return {
     GET: async ({ request, params }: { request: Request; params: { orderId: string } }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const order = await getDashboardOrderDetails({
+          businessId: session.businessId,
+          orderId: params.orderId,
+        });
+
+        return Response.json({ ok: true, data: order });
+      } catch (error) {
+        return dashboardApiError(error);
       }
-
-      const order = await getDashboardOrderDetails({
-        businessId: session.businessId,
-        orderId: params.orderId,
-      });
-
-      return Response.json({ ok: true, data: order });
     },
     POST: async ({ request, params }: { request: Request; params: { orderId: string } }) => {
-      const session = getDashboardSessionFromRequest(request, envSuffix);
-      if (!session) {
-        return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const body = (await request.json().catch(() => null)) as {
+          action?: string;
+          reason?: string;
+        } | null;
+
+        if (body?.action === "accept") {
+          const result = await acceptDashboardOrder({
+            businessId: session.businessId,
+            orderId: params.orderId,
+            actor: session.username,
+          });
+          return Response.json({ ok: true, data: result });
+        }
+
+        if (body?.action === "reject") {
+          const result = await rejectDashboardOrder({
+            businessId: session.businessId,
+            orderId: params.orderId,
+            reason: body.reason,
+            actor: session.username,
+          });
+          return Response.json({ ok: true, data: result });
+        }
+
+        return Response.json({ ok: false, error: "Unsupported order action." }, { status: 400 });
+      } catch (error) {
+        return dashboardApiError(error);
       }
-
-      const body = (await request.json().catch(() => null)) as {
-        action?: string;
-        reason?: string;
-      } | null;
-
-      if (body?.action === "accept") {
-        const result = await acceptDashboardOrder({
-          businessId: session.businessId,
-          orderId: params.orderId,
-          actor: session.username,
-        });
-        return Response.json({ ok: true, data: result });
-      }
-
-      if (body?.action === "reject") {
-        const result = await rejectDashboardOrder({
-          businessId: session.businessId,
-          orderId: params.orderId,
-          reason: body.reason,
-          actor: session.username,
-        });
-        return Response.json({ ok: true, data: result });
-      }
-
-      return Response.json({ ok: false, error: "Unsupported order action." }, { status: 400 });
     },
   };
 }
@@ -213,4 +237,10 @@ function parseStatus(value: string | null): DashboardOrderStatus | "ALL" {
   }
 
   return "PENDING_OWNER_CONFIRMATION";
+}
+
+function dashboardApiError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Dashboard request failed.";
+  console.error("[wa-dashboard:api] request failed", { message });
+  return Response.json({ ok: false, error: message }, { status: 500 });
 }

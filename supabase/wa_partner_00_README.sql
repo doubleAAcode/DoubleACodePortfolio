@@ -1,0 +1,24 @@
+-- WhatsApp partner SQL guide
+-- Run these files only when you want to manage the partner bot data directly in Supabase.
+--
+-- Partner business id:
+--   double-a-partner-test-business
+--
+-- Main business id, do not edit from partner SQL:
+--   double-a-test-business
+--
+-- Recommended order:
+--   1. wa_partner_01_setup_business.sql
+--   2. wa_partner_02_sample_catalog.sql, optional
+--   3. wa_partner_03_verify.sql
+--
+-- Cleanup:
+--   wa_partner_99_cleanup_partner_data.sql only deletes partner rows.
+--
+-- Safety rule:
+-- Every partner update/delete must target:
+--   business_id = 'double-a-partner-test-business'
+--
+-- Never run broad statements like:
+--   delete from public.wa_products;
+--   update public.wa_orders set status = ...;

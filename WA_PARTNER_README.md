@@ -156,6 +156,41 @@ Same uploaded image storage bucket/path style
 
 Shared infrastructure is safe as long as every partner data query uses `double-a-partner-test-business`.
 
+## Partner SQL Files
+
+Use only these partner-safe SQL files when editing partner data directly in Supabase:
+
+```txt
+supabase/wa_partner_00_README.sql
+supabase/wa_partner_01_setup_business.sql
+supabase/wa_partner_02_sample_catalog.sql
+supabase/wa_partner_03_verify.sql
+supabase/wa_partner_99_cleanup_partner_data.sql
+```
+
+Recommended order:
+
+```txt
+1. wa_partner_01_setup_business.sql
+2. wa_partner_02_sample_catalog.sql, optional
+3. wa_partner_03_verify.sql
+```
+
+Only use this reset file when intentionally clearing partner test data:
+
+```txt
+wa_partner_99_cleanup_partner_data.sql
+```
+
+Do not use the main schema seed files for partner day-to-day edits:
+
+```txt
+supabase/wa_catalog_settings_schema.sql
+supabase/wa_bot_core_schema.sql
+```
+
+Those files define shared tables and include main bot seed data. They are for schema setup/migrations, not partner catalog editing.
+
 ## Supabase Safety
 
 The project uses one Supabase database, but bot data is separated by `business_id`.
