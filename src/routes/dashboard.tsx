@@ -33,11 +33,21 @@ const navItems = [
   { path: "/simulator", label: "Simulator", icon: MessageSquareText },
 ] as const;
 
-export function DashboardLayout({ basePath, title }: { basePath: string; title: string }) {
+export function DashboardLayout({
+  basePath,
+  title,
+  appearance = "default",
+}: {
+  basePath: string;
+  title: string;
+  appearance?: "default" | "light";
+}) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const router = useRouter();
   const [sessionResult, setSessionResult] = useState<WaDashboardSessionResult>();
   const [error, setError] = useState("");
+  const lightMode = appearance === "light";
+  const themeClass = lightMode ? "wa-dashboard-light" : "";
 
   useEffect(() => {
     let mounted = true;
@@ -63,7 +73,7 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
 
   if (!sessionResult && !error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <div className={`flex min-h-screen items-center justify-center bg-background text-muted-foreground ${themeClass}`}>
         Loading dashboard...
       </div>
     );
@@ -71,7 +81,8 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
 
   if (error || !sessionResult?.authenticated) {
     return (
-      <DashboardLogin
+      <div className={themeClass}>
+        <DashboardLogin
         configured={sessionResult?.configured ?? true}
         error={error}
         onLogin={(nextSession) => {
@@ -79,12 +90,13 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
           setSessionResult(nextSession);
           router.invalidate();
         }}
-      />
+        />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`min-h-screen bg-background text-foreground ${themeClass}`}>
       <div className="flex min-h-screen">
         <aside className="hidden w-64 shrink-0 border-r border-border bg-surface/70 md:flex md:flex-col">
           <div className="border-b border-border px-5 py-5">

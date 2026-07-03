@@ -172,6 +172,7 @@ export function SettingsPage() {
       {showBotFlowSettings ? (
         <section className="rounded-lg border border-border bg-surface/60 p-5">
           <h2 className="font-display text-xl font-semibold">Bot flow</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Control the partner customer path without touching code.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <Toggle
               label="Ask language first"
@@ -233,8 +234,11 @@ export function SettingsPage() {
               checked={flowForm.orderNotesEnabled}
               onChange={(value) => setFlowForm({ ...flowForm, orderNotesEnabled: value })}
             />
-            <TextArea
-              label="English main menu message"
+            <details className="md:col-span-3 rounded-md border border-border bg-background/60 p-4">
+              <summary className="cursor-pointer text-sm font-medium">Advanced message text</summary>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <TextArea
+                  label="English main menu message"
               value={flowForm.welcomeMessageEnglish}
               onChange={(value) => setFlowForm({ ...flowForm, welcomeMessageEnglish: value })}
             />
@@ -381,12 +385,14 @@ export function SettingsPage() {
               value={flowForm.noNotesButtonEnglish}
               onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonEnglish: value })}
             />
-            <TextInput
-              label="Arabic no-notes button"
-              dir="rtl"
-              value={flowForm.noNotesButtonArabic}
-              onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonArabic: value })}
-            />
+                <TextInput
+                  label="Arabic no-notes button"
+                  dir="rtl"
+                  value={flowForm.noNotesButtonArabic}
+                  onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonArabic: value })}
+                />
+              </div>
+            </details>
           </div>
           <button
             type="button"
