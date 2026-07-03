@@ -11,6 +11,7 @@
 --   1. wa_partner_01_setup_business.sql
 --   2. wa_partner_02_sample_catalog.sql, optional
 --   3. wa_partner_03_verify.sql
+--   4. wa_bot_flow_settings_schema.sql, partner-only bot flow settings for /dashboard-2
 --
 -- Cleanup:
 --   wa_partner_99_cleanup_partner_data.sql only deletes partner rows.

@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useWaDashboardData } from "@/lib/whatsapp/use-wa-dashboard-data";
+import type { BotFlowSettingsInput } from "@/lib/whatsapp/bot-flow-settings.server";
 import type { WaPaymentMethodRow } from "@/lib/whatsapp/dashboard-store.server";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -18,7 +19,29 @@ const emptyPayment = {
   sort_order: 10,
 };
 
+const defaultFlowForm: BotFlowSettingsInput = {
+  languageSelectionEnabled: true,
+  defaultLanguage: "en",
+  welcomeMessageEnglish: "How can we help?",
+  welcomeMessageArabic: "\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0646\u0627 \u0645\u0633\u0627\u0639\u062f\u062a\u0643\u061f",
+  orderButtonEnglish: "Place an order",
+  orderButtonArabic: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
+  questionButtonEnglish: "Ask a question",
+  questionButtonArabic: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644",
+  infoButtonEnglish: "Store information",
+  infoButtonArabic: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  showProductDetailsBeforeOrdering: true,
+  autoUseSavedCheckoutDetails: false,
+  skipFulfillmentWhenSingleOption: true,
+  skipDeliveryAreaWhenSingleOption: true,
+  skipPickupLocationWhenSingleOption: true,
+  skipPaymentWhenSingleOption: true,
+  orderNotesEnabled: true,
+};
+
 export function SettingsPage() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const showBotFlowSettings = pathname.startsWith("/dashboard-2");
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [businessForm, setBusinessForm] = useState({
     name: "",
@@ -32,6 +55,7 @@ export function SettingsPage() {
     require_owner_approval: true,
     is_active: true,
   });
+  const [flowForm, setFlowForm] = useState<BotFlowSettingsInput>(defaultFlowForm);
   const [paymentForm, setPaymentForm] = useState(emptyPayment);
 
   useEffect(() => {
@@ -48,11 +72,34 @@ export function SettingsPage() {
       require_owner_approval: data.business.require_owner_approval,
       is_active: data.business.is_active,
     });
+    setFlowForm({
+      languageSelectionEnabled: data.botFlowSettings.languageSelectionEnabled,
+      defaultLanguage: data.botFlowSettings.defaultLanguage,
+      welcomeMessageEnglish: data.botFlowSettings.welcomeMessageEnglish,
+      welcomeMessageArabic: data.botFlowSettings.welcomeMessageArabic,
+      orderButtonEnglish: data.botFlowSettings.orderButtonEnglish,
+      orderButtonArabic: data.botFlowSettings.orderButtonArabic,
+      questionButtonEnglish: data.botFlowSettings.questionButtonEnglish,
+      questionButtonArabic: data.botFlowSettings.questionButtonArabic,
+      infoButtonEnglish: data.botFlowSettings.infoButtonEnglish,
+      infoButtonArabic: data.botFlowSettings.infoButtonArabic,
+      showProductDetailsBeforeOrdering: data.botFlowSettings.showProductDetailsBeforeOrdering,
+      autoUseSavedCheckoutDetails: data.botFlowSettings.autoUseSavedCheckoutDetails,
+      skipFulfillmentWhenSingleOption: data.botFlowSettings.skipFulfillmentWhenSingleOption,
+      skipDeliveryAreaWhenSingleOption: data.botFlowSettings.skipDeliveryAreaWhenSingleOption,
+      skipPickupLocationWhenSingleOption: data.botFlowSettings.skipPickupLocationWhenSingleOption,
+      skipPaymentWhenSingleOption: data.botFlowSettings.skipPaymentWhenSingleOption,
+      orderNotesEnabled: data.botFlowSettings.orderNotesEnabled,
+    });
   }, [data]);
 
   async function saveBusiness() {
     await applyAction({ type: "saveBusiness", payload: businessForm }, "Store settings saved.");
   }
+  async function saveBotFlowSettings() {
+    await applyAction({ type: "saveBotFlowSettings", payload: flowForm }, "Bot flow saved.");
+  }
+
 
   async function savePayment() {
     await applyAction(
@@ -70,6 +117,127 @@ export function SettingsPage() {
       </div>
 
       <Status loading={loading} error={error} notice={notice} />
+
+      {showBotFlowSettings ? (
+        <section className="rounded-lg border border-border bg-surface/60 p-5">
+          <h2 className="font-display text-xl font-semibold">Bot flow</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <Toggle
+              label="Ask language first"
+              checked={flowForm.languageSelectionEnabled}
+              onChange={(value) => setFlowForm({ ...flowForm, languageSelectionEnabled: value })}
+            />
+            <SelectInput
+              label="Default language"
+              value={flowForm.defaultLanguage}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, defaultLanguage: value === "ar" ? "ar" : "en" })
+              }
+            >
+              <option value="en">English</option>
+              <option value="ar">Arabic</option>
+            </SelectInput>
+            <Toggle
+              label="Show product details"
+              checked={flowForm.showProductDetailsBeforeOrdering}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, showProductDetailsBeforeOrdering: value })
+              }
+            />
+            <Toggle
+              label="Auto-use saved checkout"
+              checked={flowForm.autoUseSavedCheckoutDetails}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, autoUseSavedCheckoutDetails: value })
+              }
+            />
+            <Toggle
+              label="Skip one delivery choice"
+              checked={flowForm.skipFulfillmentWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipFulfillmentWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one area"
+              checked={flowForm.skipDeliveryAreaWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipDeliveryAreaWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one pickup place"
+              checked={flowForm.skipPickupLocationWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipPickupLocationWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one payment"
+              checked={flowForm.skipPaymentWhenSingleOption}
+              onChange={(value) => setFlowForm({ ...flowForm, skipPaymentWhenSingleOption: value })}
+            />
+            <Toggle
+              label="Ask order notes"
+              checked={flowForm.orderNotesEnabled}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesEnabled: value })}
+            />
+            <TextArea
+              label="English main menu message"
+              value={flowForm.welcomeMessageEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, welcomeMessageEnglish: value })}
+            />
+            <TextArea
+              label="Arabic main menu message"
+              dir="rtl"
+              value={flowForm.welcomeMessageArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, welcomeMessageArabic: value })}
+            />
+            <TextInput
+              label="English order button"
+              value={flowForm.orderButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, orderButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic order button"
+              dir="rtl"
+              value={flowForm.orderButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, orderButtonArabic: value })}
+            />
+            <TextInput
+              label="English question button"
+              value={flowForm.questionButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, questionButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic question button"
+              dir="rtl"
+              value={flowForm.questionButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, questionButtonArabic: value })}
+            />
+            <TextInput
+              label="English info button"
+              value={flowForm.infoButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, infoButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic info button"
+              dir="rtl"
+              value={flowForm.infoButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, infoButtonArabic: value })}
+            />
+          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void saveBotFlowSettings()}
+            className="studio-button-primary mt-4"
+          >
+            <Check className="h-4 w-4" />
+            Save bot flow
+          </button>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-border bg-surface/60 p-5">
         <h2 className="font-display text-xl font-semibold">General store settings</h2>

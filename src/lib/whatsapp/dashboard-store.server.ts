@@ -2,6 +2,13 @@ import "@tanstack/react-start/server-only";
 
 import { getServerSupabaseConfig, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
+import {
+  getBusinessBotFlowSettings,
+  saveBusinessBotFlowSettings,
+  type BotFlowSettingsInput,
+  type BusinessBotFlowSettings,
+} from "./bot-flow-settings.server";
+
 export type WaBusinessRow = {
   id: string;
   name: string;
@@ -133,6 +140,7 @@ export type WaPaymentMethodRow = {
 
 export type WaDashboardData = {
   business: WaBusinessRow;
+  botFlowSettings: BusinessBotFlowSettings;
   categories: WaCategoryRow[];
   products: WaProductRow[];
   options: WaProductOptionRow[];
@@ -243,6 +251,7 @@ type SavePaymentMethodInput = {
 };
 
 export type DashboardCatalogAction =
+  | { type: "saveBotFlowSettings"; payload: BotFlowSettingsInput }
   | { type: "saveCategory"; payload: SaveCategoryInput }
   | { type: "deleteCategory"; payload: { id: string } }
   | { type: "saveProduct"; payload: SaveProductInput }
@@ -278,6 +287,7 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
     deliveryAreas,
     pickupLocations,
     paymentMethods,
+    botFlowSettings,
   ] = await Promise.all([
     supabaseServerRest<WaBusinessRow[]>(
       `/wa_businesses?select=*&id=eq.${encodeURIComponent(businessId)}&limit=1`,
@@ -318,6 +328,7 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
         businessId,
       )}&order=sort_order.asc`,
     ),
+    getBusinessBotFlowSettings(businessId),
   ]);
 
   const business = businessRows[0];
@@ -336,6 +347,7 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
 
   return {
     business,
+    botFlowSettings,
     categories,
     products,
     options,
@@ -352,6 +364,10 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
   const data = await getWaDashboardData(businessId);
 
   switch (action.type) {
+    case "saveBotFlowSettings":
+      await saveBusinessBotFlowSettings(businessId, action.payload);
+      break;
+
     case "saveCategory":
       validateLanguagePair(
         action.payload.name_english,
