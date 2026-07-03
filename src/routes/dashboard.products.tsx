@@ -107,6 +107,19 @@ export function ProductsPage() {
   const productVariants =
     data?.variants.filter((variant) => variant.product_id === selectedId) ?? [];
   const productFields = data?.customFields.filter((field) => field.product_id === selectedId) ?? [];
+  const variantOptionGroups = productOptions
+    .map((option) => ({
+      option,
+      values: productValues.filter((value) => value.option_id === option.id),
+    }))
+    .filter((group) => group.values.length > 0);
+  const variantCombinations = buildVariantCombinations(variantOptionGroups);
+  const existingVariantKeys = new Set(
+    productVariants.map((variant) => combinationKey(variant.selected_option_value_ids)),
+  );
+  const missingVariantCombinations = variantCombinations.filter(
+    (combination) => !existingVariantKeys.has(combinationKey(combination.map((value) => value.id))),
+  );
 
   async function submitProduct() {
     const payload = { ...productForm, id: productForm.id || undefined };
@@ -155,10 +168,41 @@ export function ProductsPage() {
     await applyAction(
       {
         type: "saveVariant",
-        payload: { ...variantForm, id: variantForm.id || undefined, product_id: selectedId },
+        payload: {
+          ...variantForm,
+          id: variantForm.id || undefined,
+          product_id: selectedId,
+          selected_option_value_ids: buildSelectedOptionValueIds(
+            variantForm.selected_option_value_ids,
+            variantOptionGroups,
+          ),
+        },
       },
       "Variant saved.",
     );
+    setVariantForm(emptyVariant);
+  }
+
+  async function generateMissingVariants() {
+    if (!selectedProduct || !missingVariantCombinations.length) return;
+
+    for (const combination of missingVariantCombinations) {
+      await applyAction(
+        {
+          type: "saveVariant",
+          payload: {
+            product_id: selectedId,
+            sku: buildVariantSku(selectedProduct.code, combination),
+            selected_option_value_ids: combination.map((value) => value.id),
+            price: Number(selectedProduct.price),
+            stock_quantity: selectedProduct.stock_quantity,
+            is_available: selectedProduct.is_available,
+          },
+        },
+        "Variant generated.",
+      );
+    }
+
     setVariantForm(emptyVariant);
   }
 
@@ -498,6 +542,20 @@ export function ProductsPage() {
               </NestedSection>
 
               <NestedSection title="Variants and stock">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">
+                    {productVariants.length} variants - {missingVariantCombinations.length} missing
+                  </span>
+                  <button
+                    type="button"
+                    className="studio-button-primary"
+                    disabled={!missingVariantCombinations.length || saving}
+                    onClick={() => void generateMissingVariants()}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Generate missing variants
+                  </button>
+                </div>
                 <div className="grid gap-3 md:grid-cols-6">
                   <TextInput
                     label="SKU"
@@ -519,28 +577,35 @@ export function ProductsPage() {
                     checked={variantForm.is_available}
                     onChange={(value) => setVariantForm({ ...variantForm, is_available: value })}
                   />
-                  <div className="md:col-span-2">
-                    <span className="mb-2 block text-sm text-muted-foreground">Option values</span>
-                    <div className="max-h-28 overflow-y-auto rounded-md border border-input bg-background p-2">
-                      {productValues.map((value) => (
-                        <label key={value.id} className="flex items-center gap-2 py-1 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={variantForm.selected_option_value_ids.includes(value.id)}
-                            onChange={(event) => {
-                              const next = event.target.checked
-                                ? [...variantForm.selected_option_value_ids, value.id]
-                                : variantForm.selected_option_value_ids.filter(
-                                    (id) => id !== value.id,
-                                  );
-                              setVariantForm({ ...variantForm, selected_option_value_ids: next });
-                            }}
-                          />
+                  {variantOptionGroups.map((group) => (
+                    <SelectInput
+                      key={group.option.id}
+                      label={group.option.name_english}
+                      value={getSelectedValueForOption(
+                        variantForm.selected_option_value_ids,
+                        group.option.id,
+                        productValues,
+                      )}
+                      onChange={(value) =>
+                        setVariantForm({
+                          ...variantForm,
+                          selected_option_value_ids: replaceVariantOptionValue(
+                            variantForm.selected_option_value_ids,
+                            group.option.id,
+                            value,
+                            productValues,
+                          ),
+                        })
+                      }
+                    >
+                      <option value="">Choose</option>
+                      {group.values.map((value) => (
+                        <option key={value.id} value={value.id}>
                           {value.value_english}
-                        </label>
+                        </option>
                       ))}
-                    </div>
-                  </div>
+                    </SelectInput>
+                  ))}
                 </div>
                 <button
                   type="button"
@@ -1041,6 +1106,64 @@ function Toggle({
 
 function optionLabel(options: WaProductOptionRow[], optionId: string) {
   return options.find((option) => option.id === optionId)?.name_english ?? "Option";
+}
+
+type VariantOptionGroup = { option: WaProductOptionRow; values: WaProductOptionValueRow[] };
+
+function buildVariantCombinations(groups: VariantOptionGroup[]) {
+  if (!groups.length) return [] as WaProductOptionValueRow[][];
+
+  return groups.reduce<WaProductOptionValueRow[][]>(
+    (combinations, group) =>
+      combinations.flatMap((combination) =>
+        group.values.map((value) => [...combination, value]),
+      ),
+    [[]],
+  );
+}
+
+function combinationKey(ids: string[]) {
+  return [...new Set(ids.filter(Boolean))].sort().join("|");
+}
+
+function getSelectedValueForOption(
+  selectedIds: string[],
+  optionId: string,
+  values: WaProductOptionValueRow[],
+) {
+  return selectedIds.find((id) => values.find((value) => value.id === id)?.option_id === optionId) ?? "";
+}
+
+function replaceVariantOptionValue(
+  selectedIds: string[],
+  optionId: string,
+  nextValueId: string,
+  values: WaProductOptionValueRow[],
+) {
+  const withoutOption = selectedIds.filter(
+    (id) => values.find((value) => value.id === id)?.option_id !== optionId,
+  );
+  return nextValueId ? [...withoutOption, nextValueId] : withoutOption;
+}
+
+function buildSelectedOptionValueIds(selectedIds: string[], groups: VariantOptionGroup[]) {
+  return groups
+    .map((group) => getSelectedValueForOption(selectedIds, group.option.id, group.values))
+    .filter(Boolean);
+}
+
+function buildVariantSku(baseCode: string, values: WaProductOptionValueRow[]) {
+  const suffix = values.map((value) => makeSkuPart(value.value_english)).filter(Boolean).join("-");
+  return [makeSkuPart(baseCode), suffix].filter(Boolean).join("-");
+}
+
+function makeSkuPart(value: string) {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
 }
 
 function parseChoices(value: string) {

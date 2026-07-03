@@ -483,7 +483,7 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
       await deleteRow("/wa_product_option_values", action.payload.id);
       break;
 
-    case "saveVariant":
+    case "saveVariant": {
       requireOwned(data.products, action.payload.product_id, "Product");
       validateUnique(
         data.variants,
@@ -492,19 +492,20 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
         action.payload.id,
         "SKU already exists.",
       );
-      validateVariantCombination(data, action.payload);
+      const selectedOptionValueIds = validateVariantCombination(data, action.payload);
       await upsertRow("/wa_product_variants?on_conflict=id", {
         id: action.payload.id || makeId("var", action.payload.sku),
         business_id: businessId,
         product_id: action.payload.product_id,
         sku: requiredText(action.payload.sku, "SKU").toUpperCase(),
-        selected_option_value_ids: action.payload.selected_option_value_ids,
+        selected_option_value_ids: selectedOptionValueIds,
         price: nonNegativeNumber(action.payload.price, "Variant price"),
         stock_quantity: nonNegativeInt(action.payload.stock_quantity, "Variant stock"),
         is_available: action.payload.is_available,
         updated_at: new Date().toISOString(),
       });
       break;
+    }
 
     case "deleteVariant":
       requireOwned(data.variants, action.payload.id, "Variant");
@@ -791,7 +792,37 @@ function normalizeQuestionChoices(choices: SaveCustomFieldInput["choices"]) {
 }
 
 function validateVariantCombination(data: WaDashboardData, input: SaveVariantInput) {
-  const normalized = normalizeCombination(input.selected_option_value_ids);
+  const selectedValueIds = input.selected_option_value_ids.filter(Boolean);
+  const uniqueValueIds = [...new Set(selectedValueIds)];
+  if (uniqueValueIds.length !== selectedValueIds.length) {
+    throw new Error("Variant contains the same option value more than once.");
+  }
+
+  const productOptions = data.options.filter((option) => option.product_id === input.product_id);
+  const optionIds = new Set(productOptions.map((option) => option.id));
+  const valuesForProduct = data.optionValues.filter((value) => optionIds.has(value.option_id));
+  const valueById = new Map(valuesForProduct.map((value) => [value.id, value]));
+
+  const invalidValue = uniqueValueIds.find((valueId) => !valueById.has(valueId));
+  if (invalidValue) throw new Error("Variant contains an option value from another product.");
+
+  const selectedOptionIds = new Set<string>();
+  for (const valueId of uniqueValueIds) {
+    const value = valueById.get(valueId);
+    if (!value) continue;
+    if (selectedOptionIds.has(value.option_id)) {
+      throw new Error("Choose only one value from each product option.");
+    }
+    selectedOptionIds.add(value.option_id);
+  }
+
+  const optionsWithValues = productOptions.filter((option) =>
+    valuesForProduct.some((value) => value.option_id === option.id),
+  );
+  const missingOption = optionsWithValues.find((option) => !selectedOptionIds.has(option.id));
+  if (missingOption) throw new Error("Choose one value for each product option.");
+
+  const normalized = normalizeCombination(uniqueValueIds);
   const duplicate = data.variants.find(
     (variant) =>
       variant.product_id === input.product_id &&
@@ -800,15 +831,9 @@ function validateVariantCombination(data: WaDashboardData, input: SaveVariantInp
   );
   if (duplicate) throw new Error("A variant with this option combination already exists.");
 
-  const productOptions = data.options.filter((option) => option.product_id === input.product_id);
-  const optionIds = new Set(productOptions.map((option) => option.id));
-  const validValueIds = new Set(
-    data.optionValues.filter((value) => optionIds.has(value.option_id)).map((value) => value.id),
-  );
-  const invalidValue = input.selected_option_value_ids.find(
-    (valueId) => !validValueIds.has(valueId),
-  );
-  if (invalidValue) throw new Error("Variant contains an option value from another product.");
+  return productOptions
+    .map((option) => uniqueValueIds.find((valueId) => valueById.get(valueId)?.option_id === option.id))
+    .filter((valueId): valueId is string => Boolean(valueId));
 }
 
 function normalizeCombination(ids: string[]) {
