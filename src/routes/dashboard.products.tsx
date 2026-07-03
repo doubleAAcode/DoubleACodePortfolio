@@ -241,7 +241,7 @@ export function ProductsPage() {
           <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Catalog</p>
           <h1 className="mt-2 font-display text-3xl font-semibold">Products</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Manage product records, options, variants, stock, images, and product questions.
+            Set up what customers can buy, the choices that affect price or stock, and the extra questions the bot should ask.
           </p>
         </div>
         <input
@@ -256,7 +256,7 @@ export function ProductsPage() {
 
       <section className="rounded-lg border border-border bg-surface/60 p-5">
         <h2 className="font-display text-xl font-semibold">
-          {productForm.id ? "Edit product" : "Add product"}
+          {productForm.id ? "Edit product basics" : "Add product basics"}
         </h2>
         <div className="mt-4 grid gap-3 lg:grid-cols-4">
           <TextInput
@@ -277,12 +277,12 @@ export function ProductsPage() {
             ))}
           </SelectInput>
           <NumberInput
-            label="Price"
+            label="Base price"
             value={productForm.price}
             onChange={(value) => setProductForm({ ...productForm, price: value })}
           />
           <NumberInput
-            label="Stock"
+            label="Base stock"
             value={productForm.stock_quantity}
             onChange={(value) => setProductForm({ ...productForm, stock_quantity: value })}
           />
@@ -296,11 +296,6 @@ export function ProductsPage() {
             dir="rtl"
             value={productForm.name_arabic}
             onChange={(value) => setProductForm({ ...productForm, name_arabic: value })}
-          />
-          <NumberInput
-            label="Sort"
-            value={productForm.sort_order}
-            onChange={(value) => setProductForm({ ...productForm, sort_order: value })}
           />
           <div className="flex gap-2">
             <Toggle
@@ -435,28 +430,21 @@ export function ProductsPage() {
         <div className="space-y-4">
           {selectedProduct ? (
             <>
-              <NestedSection title={`Options for ${selectedProduct.name_english}`}>
-                <div className="grid gap-3 md:grid-cols-5">
+              <NestedSection
+                title="Sellable choices"
+                description="Use this for anything that can change price, stock, SKU, or availability, like size or color."
+              >
+                <div className="grid gap-3 md:grid-cols-3">
                   <TextInput
-                    label="English name"
+                    label="Choice name (English)"
                     value={optionForm.name_english}
                     onChange={(value) => setOptionForm({ ...optionForm, name_english: value })}
                   />
                   <TextInput
-                    label="Arabic name"
+                    label="Choice name (Arabic)"
                     dir="rtl"
                     value={optionForm.name_arabic}
                     onChange={(value) => setOptionForm({ ...optionForm, name_arabic: value })}
-                  />
-                  <NumberInput
-                    label="Sort"
-                    value={optionForm.sort_order}
-                    onChange={(value) => setOptionForm({ ...optionForm, sort_order: value })}
-                  />
-                  <Toggle
-                    label="Required"
-                    checked={optionForm.is_required}
-                    onChange={(value) => setOptionForm({ ...optionForm, is_required: value })}
                   />
                   <button
                     type="button"
@@ -464,7 +452,7 @@ export function ProductsPage() {
                     onClick={() => void submitOption()}
                   >
                     <Plus className="h-4 w-4" />
-                    Option
+                    Save choice
                   </button>
                 </div>
                 <PillList
@@ -481,8 +469,11 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Option values">
-                <div className="grid gap-3 md:grid-cols-6">
+              <NestedSection
+                title="Choice values"
+                description="Add the values customers will choose. For Size, add Small, Medium, and Large."
+              >
+                <div className="grid gap-3 md:grid-cols-4">
                   <SelectInput
                     label="Option"
                     value={valueForm.option_id}
@@ -496,25 +487,15 @@ export function ProductsPage() {
                     ))}
                   </SelectInput>
                   <TextInput
-                    label="English value"
+                    label="Value (English)"
                     value={valueForm.value_english}
                     onChange={(value) => setValueForm({ ...valueForm, value_english: value })}
                   />
                   <TextInput
-                    label="Arabic value"
+                    label="Value (Arabic)"
                     dir="rtl"
                     value={valueForm.value_arabic}
                     onChange={(value) => setValueForm({ ...valueForm, value_arabic: value })}
-                  />
-                  <TextInput
-                    label="Image URL"
-                    value={valueForm.image_url}
-                    onChange={(value) => setValueForm({ ...valueForm, image_url: value })}
-                  />
-                  <NumberInput
-                    label="Sort"
-                    value={valueForm.sort_order}
-                    onChange={(value) => setValueForm({ ...valueForm, sort_order: value })}
                   />
                   <button
                     type="button"
@@ -522,7 +503,7 @@ export function ProductsPage() {
                     onClick={() => void submitValue()}
                   >
                     <Plus className="h-4 w-4" />
-                    Value
+                    Save value
                   </button>
                 </div>
                 <PillList
@@ -541,7 +522,10 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Variants and stock">
+              <NestedSection
+                title="Variant prices and stock"
+                description="Generate one row for each sellable combination, then set the exact price, stock, and availability."
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm">
                   <span className="text-muted-foreground">
                     {productVariants.length} variants - {missingVariantCombinations.length} missing
@@ -553,7 +537,7 @@ export function ProductsPage() {
                     onClick={() => void generateMissingVariants()}
                   >
                     <Plus className="h-4 w-4" />
-                    Generate missing variants
+                    Generate variant rows
                   </button>
                 </div>
                 <div className="grid gap-3 md:grid-cols-6">
@@ -563,12 +547,12 @@ export function ProductsPage() {
                     onChange={(value) => setVariantForm({ ...variantForm, sku: value })}
                   />
                   <NumberInput
-                    label="Price"
+                    label="Variant price"
                     value={variantForm.price}
                     onChange={(value) => setVariantForm({ ...variantForm, price: value })}
                   />
                   <NumberInput
-                    label="Stock"
+                    label="Variant stock"
                     value={variantForm.stock_quantity}
                     onChange={(value) => setVariantForm({ ...variantForm, stock_quantity: value })}
                   />
@@ -630,7 +614,10 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Product questions">
+              <NestedSection
+                title="Extra product questions"
+                description="Use this only for extra customer info that does not change price or stock, like notes, names, or delivery preferences."
+              >
                 <div className="grid gap-3 md:grid-cols-4">
                   <SelectInput
                     label="Answer type"
@@ -669,11 +656,6 @@ export function ProductsPage() {
                     dir="rtl"
                     value={fieldForm.label_arabic}
                     onChange={(value) => setFieldForm({ ...fieldForm, label_arabic: value })}
-                  />
-                  <NumberInput
-                    label="Question order"
-                    value={fieldForm.sort_order}
-                    onChange={(value) => setFieldForm({ ...fieldForm, sort_order: value })}
                   />
                   {(fieldForm.type === "short_text" || fieldForm.type === "long_text") ? (
                     <>
@@ -810,10 +792,10 @@ function ProductRow({
             <span className="text-xs text-muted-foreground">{product.code}</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {categoryName} · {formatMoney(product.price, currency)} · {product.stock_quantity} stock
+            {categoryName} - {formatMoney(product.price, currency)} - {product.stock_quantity} stock
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {product.is_active ? "Active" : "Hidden"} ·{" "}
+            {product.is_active ? "Active" : "Hidden"} -{" "}
             {product.is_available ? "Available" : "Unavailable"}
           </p>
         </button>
@@ -840,10 +822,19 @@ function ProductRow({
   );
 }
 
-function NestedSection({ title, children }: { title: string; children: React.ReactNode }) {
+function NestedSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-lg border border-border bg-surface/60 p-4">
       <h2 className="font-display text-lg font-semibold">{title}</h2>
+      {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
       <div className="mt-4 space-y-4">{children}</div>
     </section>
   );
@@ -923,7 +914,7 @@ function VariantList({
             </span>
           </button>
           <span className="text-muted-foreground">
-            {formatMoney(variant.price, currency)} · {variant.stock_quantity} left
+            {formatMoney(variant.price, currency)} - {variant.stock_quantity} left
           </span>
           <button
             type="button"
@@ -1131,7 +1122,9 @@ function getSelectedValueForOption(
   optionId: string,
   values: WaProductOptionValueRow[],
 ) {
-  return selectedIds.find((id) => values.find((value) => value.id === id)?.option_id === optionId) ?? "";
+  return (
+    selectedIds.find((id) => values.find((value) => value.id === id)?.option_id === optionId) ?? ""
+  );
 }
 
 function replaceVariantOptionValue(
