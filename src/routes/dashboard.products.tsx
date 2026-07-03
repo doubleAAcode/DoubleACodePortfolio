@@ -120,6 +120,14 @@ export function ProductsPage() {
   const missingVariantCombinations = variantCombinations.filter(
     (combination) => !existingVariantKeys.has(combinationKey(combination.map((value) => value.id))),
   );
+  const availableVariantCount = productVariants.filter((variant) => variant.is_available).length;
+  const totalVariantStock = productVariants.reduce(
+    (total, variant) => total + Math.max(0, variant.stock_quantity),
+    0,
+  );
+  const missingVariantPreview = missingVariantCombinations
+    .slice(0, 3)
+    .map((combination) => combination.map((value) => value.value_english).join(" / "));
 
   async function submitProduct() {
     const payload = { ...productForm, id: productForm.id || undefined };
@@ -430,6 +438,17 @@ export function ProductsPage() {
         <div className="space-y-4">
           {selectedProduct ? (
             <>
+              <ProductSetupGuide
+                product={selectedProduct}
+                currency={data?.business.currency ?? "USD"}
+                optionsCount={productOptions.length}
+                valuesCount={productValues.length}
+                variantsCount={productVariants.length}
+                availableVariantsCount={availableVariantCount}
+                totalVariantStock={totalVariantStock}
+                questionsCount={productFields.length}
+              />
+
               <NestedSection
                 title="Sellable choices"
                 description="Use this for anything that can change price, stock, SKU, or availability, like size or color."
@@ -524,81 +543,122 @@ export function ProductsPage() {
 
               <NestedSection
                 title="Variant prices and stock"
-                description="Generate one row for each sellable combination, then set the exact price, stock, and availability."
+                description="Each row is a final sellable item. This is where size, color, flavor, or any choice gets its own price, stock, and availability."
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {productVariants.length} variants - {missingVariantCombinations.length} missing
-                  </span>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MetricTile label="Variant rows" value={`${productVariants.length}`} />
+                  <MetricTile label="Available rows" value={`${availableVariantCount}`} />
+                  <MetricTile label="Total stock" value={`${totalVariantStock}`} />
+                </div>
+
+                <div className="rounded-md border border-border bg-background/60 p-4 text-sm">
+                  <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+                    <div>
+                      <div className="font-medium">Generate all missing sellable rows</div>
+                      <p className="mt-1 text-muted-foreground">
+                        After adding values like Small, Medium, and Large, generate rows so each one can have its own price and quantity.
+                      </p>
+                      {missingVariantPreview.length ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Missing: {missingVariantPreview.join(", ")}
+                          {missingVariantCombinations.length > missingVariantPreview.length ? "..." : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      className="studio-button-primary w-fit"
+                      disabled={!missingVariantCombinations.length || saving}
+                      onClick={() => void generateMissingVariants()}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Generate {missingVariantCombinations.length || ""} rows
+                    </button>
+                  </div>
+                </div>
+
+                {!variantOptionGroups.length ? (
+                  <div className="rounded-md border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                    Add at least one sellable choice and value first. Example: Size -> Small, Medium, Large.
+                  </div>
+                ) : null}
+
+                <div className="rounded-md border border-border bg-background/60 p-4">
+                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                    <div>
+                      <h3 className="font-medium">{variantForm.id ? "Edit variant row" : "Add or edit one row"}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Choose the final customer choice, then set the price and stock for that exact row.
+                      </p>
+                    </div>
+                    {variantForm.id ? (
+                      <button type="button" className="studio-button" onClick={() => setVariantForm(emptyVariant)}>
+                        Cancel edit
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    {variantOptionGroups.map((group) => (
+                      <SelectInput
+                        key={group.option.id}
+                        label={group.option.name_english}
+                        value={getSelectedValueForOption(
+                          variantForm.selected_option_value_ids,
+                          group.option.id,
+                          productValues,
+                        )}
+                        onChange={(value) =>
+                          setVariantForm({
+                            ...variantForm,
+                            selected_option_value_ids: replaceVariantOptionValue(
+                              variantForm.selected_option_value_ids,
+                              group.option.id,
+                              value,
+                              productValues,
+                            ),
+                          })
+                        }
+                      >
+                        <option value="">Choose</option>
+                        {group.values.map((value) => (
+                          <option key={value.id} value={value.id}>
+                            {value.value_english}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    ))}
+                    <TextInput
+                      label="SKU"
+                      value={variantForm.sku}
+                      onChange={(value) => setVariantForm({ ...variantForm, sku: value })}
+                    />
+                    <NumberInput
+                      label="Price"
+                      value={variantForm.price}
+                      onChange={(value) => setVariantForm({ ...variantForm, price: value })}
+                    />
+                    <NumberInput
+                      label="Stock quantity"
+                      value={variantForm.stock_quantity}
+                      onChange={(value) => setVariantForm({ ...variantForm, stock_quantity: value })}
+                    />
+                    <Toggle
+                      label="Available to sell"
+                      checked={variantForm.is_available}
+                      onChange={(value) => setVariantForm({ ...variantForm, is_available: value })}
+                    />
+                  </div>
                   <button
                     type="button"
-                    className="studio-button-primary"
-                    disabled={!missingVariantCombinations.length || saving}
-                    onClick={() => void generateMissingVariants()}
+                    className="studio-button-primary mt-4"
+                    onClick={() => void submitVariant()}
                   >
-                    <Plus className="h-4 w-4" />
-                    Generate variant rows
+                    {variantForm.id ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {variantForm.id ? "Save variant" : "Add variant"}
                   </button>
                 </div>
-                <div className="grid gap-3 md:grid-cols-6">
-                  <TextInput
-                    label="SKU"
-                    value={variantForm.sku}
-                    onChange={(value) => setVariantForm({ ...variantForm, sku: value })}
-                  />
-                  <NumberInput
-                    label="Variant price"
-                    value={variantForm.price}
-                    onChange={(value) => setVariantForm({ ...variantForm, price: value })}
-                  />
-                  <NumberInput
-                    label="Variant stock"
-                    value={variantForm.stock_quantity}
-                    onChange={(value) => setVariantForm({ ...variantForm, stock_quantity: value })}
-                  />
-                  <Toggle
-                    label="Available"
-                    checked={variantForm.is_available}
-                    onChange={(value) => setVariantForm({ ...variantForm, is_available: value })}
-                  />
-                  {variantOptionGroups.map((group) => (
-                    <SelectInput
-                      key={group.option.id}
-                      label={group.option.name_english}
-                      value={getSelectedValueForOption(
-                        variantForm.selected_option_value_ids,
-                        group.option.id,
-                        productValues,
-                      )}
-                      onChange={(value) =>
-                        setVariantForm({
-                          ...variantForm,
-                          selected_option_value_ids: replaceVariantOptionValue(
-                            variantForm.selected_option_value_ids,
-                            group.option.id,
-                            value,
-                            productValues,
-                          ),
-                        })
-                      }
-                    >
-                      <option value="">Choose</option>
-                      {group.values.map((value) => (
-                        <option key={value.id} value={value.id}>
-                          {value.value_english}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="studio-button-primary mt-3"
-                  onClick={() => void submitVariant()}
-                >
-                  <Plus className="h-4 w-4" />
-                  Save variant
-                </button>
+
                 <VariantList
                   variants={productVariants}
                   values={productValues}
@@ -613,7 +673,6 @@ export function ProductsPage() {
                   }}
                 />
               </NestedSection>
-
               <NestedSection
                 title="Extra product questions"
                 description="Use this only for extra customer info that does not change price or stock, like notes, names, or delivery preferences."
@@ -822,6 +881,57 @@ function ProductRow({
   );
 }
 
+function ProductSetupGuide({
+  product,
+  currency,
+  optionsCount,
+  valuesCount,
+  variantsCount,
+  availableVariantsCount,
+  totalVariantStock,
+  questionsCount,
+}: {
+  product: WaProductRow;
+  currency: string;
+  optionsCount: number;
+  valuesCount: number;
+  variantsCount: number;
+  availableVariantsCount: number;
+  totalVariantStock: number;
+  questionsCount: number;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-surface/60 p-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div>
+          <h2 className="font-display text-lg font-semibold">{product.name_english}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Base product: {formatMoney(product.price, currency)} - {product.stock_quantity} base stock
+          </p>
+        </div>
+        <span className="w-fit rounded-md border border-border bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+          {product.is_available ? "Available" : "Unavailable"}
+        </span>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile label="Sellable choices" value={`${optionsCount}`} detail={`${valuesCount} values`} />
+        <MetricTile label="Variant rows" value={`${variantsCount}`} detail={`${availableVariantsCount} available`} />
+        <MetricTile label="Variant stock" value={`${totalVariantStock}`} detail="from variant rows" />
+        <MetricTile label="Extra questions" value={`${questionsCount}`} detail="do not change price" />
+      </div>
+    </section>
+  );
+}
+
+function MetricTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background/60 p-3">
+      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-2xl font-semibold">{value}</div>
+      {detail ? <div className="mt-1 text-xs text-muted-foreground">{detail}</div> : null}
+    </div>
+  );
+}
 function NestedSection({
   title,
   description,
@@ -893,43 +1003,86 @@ function VariantList({
   onEdit: (variant: WaProductVariantRow) => void;
   onDelete: (variant: WaProductVariantRow) => void;
 }) {
-  if (!variants.length) return <p className="text-sm text-muted-foreground">No variants yet.</p>;
+  if (!variants.length) {
+    return (
+      <div className="rounded-md border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+        No variant rows yet. Generate rows after adding choices, then set the price and stock for each final item.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-2">
-      {variants.map((variant) => (
-        <div
-          key={variant.id}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm"
-        >
-          <button
-            type="button"
-            onClick={() => onEdit(variant)}
-            className="text-left hover:text-primary"
+    <div className="overflow-hidden rounded-md border border-border bg-background/60">
+      <div className="grid grid-cols-[1.3fr_0.9fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-border px-3 py-2 text-xs uppercase tracking-[0.14em] text-muted-foreground max-lg:hidden">
+        <span>Customer choice</span>
+        <span>SKU</span>
+        <span>Price</span>
+        <span>Stock</span>
+        <span>Status</span>
+        <span />
+      </div>
+      <div className="divide-y divide-border">
+        {variants.map((variant) => (
+          <div
+            key={variant.id}
+            className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[1.3fr_0.9fr_0.7fr_0.7fr_0.7fr_auto] lg:items-center"
           >
-            <span className="font-medium">{variant.sku}</span>
-            <span className="ml-2 text-muted-foreground">
-              {variant.selected_option_value_ids
-                .map((id) => values.find((value) => value.id === id)?.value_english ?? id)
-                .join(" / ") || "Base"}
+            <button type="button" onClick={() => onEdit(variant)} className="text-left hover:text-primary">
+              <span className="font-medium">{variantChoiceLabel(variant, values)}</span>
+              <span className="mt-1 block text-xs text-muted-foreground lg:hidden">{variant.sku}</span>
+            </button>
+            <span className="text-muted-foreground max-lg:hidden">{variant.sku}</span>
+            <span className="font-medium">{formatMoney(variant.price, currency)}</span>
+            <span className={variant.stock_quantity <= 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
+              {variant.stock_quantity}
             </span>
-          </button>
-          <span className="text-muted-foreground">
-            {formatMoney(variant.price, currency)} - {variant.stock_quantity} left
-          </span>
-          <button
-            type="button"
-            onClick={() => onDelete(variant)}
-            aria-label="Delete variant"
-            className="rounded-md p-1 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
+            <span
+              className={`w-fit rounded-md px-2 py-1 text-xs ${
+                variant.is_available && variant.stock_quantity > 0
+                  ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-destructive/10 text-destructive"
+              }`}
+            >
+              {variantAvailabilityLabel(variant)}
+            </span>
+            <div className="flex justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => onEdit(variant)}
+                aria-label="Edit variant"
+                className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(variant)}
+                aria-label="Delete variant"
+                className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
+function variantChoiceLabel(variant: WaProductVariantRow, values: WaProductOptionValueRow[]) {
+  return (
+    variant.selected_option_value_ids
+      .map((id) => values.find((value) => value.id === id)?.value_english ?? id)
+      .join(" / ") || "Base product"
+  );
+}
+
+function variantAvailabilityLabel(variant: WaProductVariantRow) {
+  if (!variant.is_available) return "Hidden";
+  if (variant.stock_quantity <= 0) return "Sold out";
+  return "Selling";
+}
 function Status({ loading, error, notice }: { loading: boolean; error: string; notice: string }) {
   if (loading)
     return (
