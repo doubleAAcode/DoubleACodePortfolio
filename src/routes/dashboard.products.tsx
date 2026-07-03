@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { uploadWaDashboardImage } from "@/lib/whatsapp/dashboard-client";
@@ -74,6 +74,8 @@ const emptyField = {
   sort_order: 10,
 };
 
+type SavingAction = "product" | "option" | "value" | "variant" | "field" | null;
+
 export function ProductsPage() {
   const { data, loading, saving, error, notice, setError, applyAction } = useWaDashboardData();
   const [search, setSearch] = useState("");
@@ -84,6 +86,7 @@ export function ProductsPage() {
   const [variantForm, setVariantForm] = useState(emptyVariant);
   const [fieldForm, setFieldForm] = useState(emptyField);
   const [uploading, setUploading] = useState(false);
+  const [savingAction, setSavingAction] = useState<SavingAction>(null);
 
   const products = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -108,12 +111,23 @@ export function ProductsPage() {
     data?.variants.filter((variant) => variant.product_id === selectedId) ?? [];
   const productFields = data?.customFields.filter((field) => field.product_id === selectedId) ?? [];
 
+  async function runSave<T>(action: Exclude<SavingAction, null>, task: () => Promise<T>) {
+    setSavingAction(action);
+    try {
+      return await task();
+    } finally {
+      setSavingAction(null);
+    }
+  }
+
   async function submitProduct() {
-    const payload = { ...productForm, id: productForm.id || undefined };
-    const next = await applyAction({ type: "saveProduct", payload }, "Product saved.");
-    const saved = next.products.find((product) => product.code === payload.code.toUpperCase());
-    if (saved) setSelectedProductId(saved.id);
-    setProductForm(emptyProduct);
+    await runSave("product", async () => {
+      const payload = { ...productForm, id: productForm.id || undefined };
+      const next = await applyAction({ type: "saveProduct", payload }, "Product saved.");
+      const saved = next.products.find((product) => product.code === payload.code.toUpperCase());
+      if (saved) setSelectedProductId(saved.id);
+      setProductForm(emptyProduct);
+    });
   }
 
   async function uploadImage(file: File) {
@@ -133,59 +147,67 @@ export function ProductsPage() {
   }
 
   async function submitOption() {
-    await applyAction(
-      {
-        type: "saveOption",
-        payload: { ...optionForm, id: optionForm.id || undefined, product_id: selectedId },
-      },
-      "Option saved.",
-    );
-    setOptionForm(emptyOption);
+    await runSave("option", async () => {
+      await applyAction(
+        {
+          type: "saveOption",
+          payload: { ...optionForm, id: optionForm.id || undefined, product_id: selectedId },
+        },
+        "Option saved.",
+      );
+      setOptionForm(emptyOption);
+    });
   }
 
   async function submitValue() {
-    await applyAction(
-      { type: "saveOptionValue", payload: { ...valueForm, id: valueForm.id || undefined } },
-      "Option value saved.",
-    );
-    setValueForm(emptyValue);
+    await runSave("value", async () => {
+      await applyAction(
+        { type: "saveOptionValue", payload: { ...valueForm, id: valueForm.id || undefined } },
+        "Option value saved.",
+      );
+      setValueForm(emptyValue);
+    });
   }
 
   async function submitVariant() {
-    await applyAction(
-      {
-        type: "saveVariant",
-        payload: { ...variantForm, id: variantForm.id || undefined, product_id: selectedId },
-      },
-      "Variant saved.",
-    );
-    setVariantForm(emptyVariant);
+    await runSave("variant", async () => {
+      await applyAction(
+        {
+          type: "saveVariant",
+          payload: { ...variantForm, id: variantForm.id || undefined, product_id: selectedId },
+        },
+        "Variant saved.",
+      );
+      setVariantForm(emptyVariant);
+    });
   }
 
   async function submitField() {
-    await applyAction(
-      {
-        type: "saveCustomField",
-        payload: {
-          id: fieldForm.id || undefined,
-          product_id: selectedId,
-          type: fieldForm.type,
-          label_english: fieldForm.label_english,
-          label_arabic: fieldForm.label_arabic,
-          placeholder_english: fieldForm.placeholder_english || null,
-          placeholder_arabic: fieldForm.placeholder_arabic || null,
-          is_required: fieldForm.is_required,
-          minimum_length: fieldForm.minimum_length,
-          maximum_length: fieldForm.maximum_length,
-          minimum_value: fieldForm.minimum_value,
-          maximum_value: fieldForm.maximum_value,
-          choices: parseChoices(fieldForm.choicesText),
-          sort_order: fieldForm.sort_order,
+    await runSave("field", async () => {
+      await applyAction(
+        {
+          type: "saveCustomField",
+          payload: {
+            id: fieldForm.id || undefined,
+            product_id: selectedId,
+            type: fieldForm.type,
+            label_english: fieldForm.label_english,
+            label_arabic: fieldForm.label_arabic,
+            placeholder_english: fieldForm.placeholder_english || null,
+            placeholder_arabic: fieldForm.placeholder_arabic || null,
+            is_required: fieldForm.is_required,
+            minimum_length: fieldForm.minimum_length,
+            maximum_length: fieldForm.maximum_length,
+            minimum_value: fieldForm.minimum_value,
+            maximum_value: fieldForm.maximum_value,
+            choices: parseChoices(fieldForm.choicesText),
+            sort_order: fieldForm.sort_order,
+          },
         },
-      },
-      "Custom field saved.",
-    );
-    setFieldForm(emptyField);
+        "Custom field saved.",
+      );
+      setFieldForm(emptyField);
+    });
   }
 
   if (loading) return <Status loading={loading} error="" notice="" />;
@@ -318,15 +340,15 @@ export function ProductsPage() {
           </div>
         </div>
         <div className="mt-4 flex gap-2">
-          <button
-            type="button"
+          <SaveButton
             disabled={saving}
+            saving={savingAction === "product"}
+            savingLabel={productForm.id ? "Saving product..." : "Adding product..."}
+            icon={productForm.id ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             onClick={() => void submitProduct()}
-            className="studio-button-primary"
           >
-            {productForm.id ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {productForm.id ? "Save product" : "Add product"}
-          </button>
+          </SaveButton>
           {productForm.id ? (
             <button
               type="button"
@@ -414,14 +436,16 @@ export function ProductsPage() {
                     checked={optionForm.is_required}
                     onChange={(value) => setOptionForm({ ...optionForm, is_required: value })}
                   />
-                  <button
-                    type="button"
+                  <SaveButton
                     className="studio-button-primary self-end"
+                    disabled={saving || !selectedId}
+                    saving={savingAction === "option"}
+                    savingLabel="Saving option..."
+                    icon={<Plus className="h-4 w-4" />}
                     onClick={() => void submitOption()}
                   >
-                    <Plus className="h-4 w-4" />
-                    Option
-                  </button>
+                    {optionForm.id ? "Save option" : "Add option"}
+                  </SaveButton>
                 </div>
                 <PillList
                   items={productOptions}
@@ -472,14 +496,16 @@ export function ProductsPage() {
                     value={valueForm.sort_order}
                     onChange={(value) => setValueForm({ ...valueForm, sort_order: value })}
                   />
-                  <button
-                    type="button"
+                  <SaveButton
                     className="studio-button-primary self-end"
+                    disabled={saving || !valueForm.option_id}
+                    saving={savingAction === "value"}
+                    savingLabel="Saving value..."
+                    icon={<Plus className="h-4 w-4" />}
                     onClick={() => void submitValue()}
                   >
-                    <Plus className="h-4 w-4" />
-                    Value
-                  </button>
+                    {valueForm.id ? "Save value" : "Add value"}
+                  </SaveButton>
                 </div>
                 <PillList
                   items={productValues}
@@ -542,14 +568,16 @@ export function ProductsPage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
+                <SaveButton
                   className="studio-button-primary mt-3"
+                  disabled={saving || !selectedId}
+                  saving={savingAction === "variant"}
+                  savingLabel="Saving variant..."
+                  icon={<Plus className="h-4 w-4" />}
                   onClick={() => void submitVariant()}
                 >
-                  <Plus className="h-4 w-4" />
                   Save variant
-                </button>
+                </SaveButton>
                 <VariantList
                   variants={productVariants}
                   values={productValues}
@@ -618,14 +646,16 @@ export function ProductsPage() {
                     onChange={(value) => setFieldForm({ ...fieldForm, is_required: value })}
                   />
                 </div>
-                <button
-                  type="button"
+                <SaveButton
                   className="studio-button-primary mt-3"
+                  disabled={saving || !selectedId}
+                  saving={savingAction === "field"}
+                  savingLabel="Saving field..."
+                  icon={<Plus className="h-4 w-4" />}
                   onClick={() => void submitField()}
                 >
-                  <Plus className="h-4 w-4" />
                   Save field
-                </button>
+                </SaveButton>
                 <PillList
                   items={productFields}
                   label={(field) => `${field.label_english} (${field.type})`}
@@ -942,6 +972,37 @@ function SelectInput({
   );
 }
 
+function SaveButton({
+  children,
+  className = "studio-button-primary",
+  disabled = false,
+  icon,
+  saving,
+  savingLabel,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  saving: boolean;
+  savingLabel: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={disabled || saving}
+      aria-busy={saving}
+      onClick={onClick}
+    >
+      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+      {saving ? savingLabel : children}
+    </button>
+  );
+}
+
 function Toggle({
   label,
   checked,
@@ -952,14 +1013,30 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex min-h-10 items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      {label}
-    </label>
+    <button
+      type="button"
+      aria-pressed={checked}
+      onClick={() => onChange(!checked)}
+      className={`flex min-h-10 items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+        checked
+          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+          : "border-input bg-background text-muted-foreground hover:border-border hover:text-foreground"
+      }`}
+    >
+      <span className="font-medium">{label}</span>
+      <span
+        aria-hidden="true"
+        className={`relative h-5 w-9 shrink-0 rounded-full transition ${
+          checked ? "bg-emerald-500" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${
+            checked ? "left-[18px]" : "left-0.5"
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
