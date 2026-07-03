@@ -579,7 +579,7 @@ export function ProductsPage() {
 
                 {!variantOptionGroups.length ? (
                   <div className="rounded-md border border-border bg-background/60 p-4 text-sm text-muted-foreground">
-                    Add at least one sellable choice and value first. Example: Size -> Small, Medium, Large.
+                    Add at least one sellable choice and value first. Example: Size -`{'>'}` Small, Medium, Large.
                   </div>
                 ) : null}
 
