@@ -1060,7 +1060,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
     now,
   );
 
-  return [customerNameQuestion(nextSession)];
+  return [customerNameQuestion(nextSession, flowSettings)];
 }
 
 async function handleSavedCustomerDetails(
@@ -1112,7 +1112,8 @@ async function handleSavedCustomerDetails(
       now,
     );
 
-    return [customerNameQuestion(nextSession)];
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [customerNameQuestion(nextSession, flowSettings)];
   }
 
   await saveConversationSession(session, now);
@@ -1196,7 +1197,7 @@ async function continueCheckoutAfterCustomerName(
     { ...session, currentStep: "SELECT_FULFILLMENT_METHOD" },
     now,
   );
-  return [fulfillmentMethodQuestion(nextSession)];
+  return [fulfillmentMethodQuestion(nextSession, flowSettings)];
 }
 
 async function handleFulfillmentMethod(
@@ -1216,7 +1217,10 @@ async function handleFulfillmentMethod(
         ? "pickup"
         : undefined;
 
-  if (!fulfillmentMethod) return [fulfillmentMethodQuestion(session)];
+  if (!fulfillmentMethod) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [fulfillmentMethodQuestion(session, flowSettings)];
+  }
 
   const checkout = { ...getCheckoutFromContext(session.context), fulfillmentMethod };
   const nextSession = await saveConversationSession(
@@ -1254,14 +1258,14 @@ async function continueCheckoutAfterFulfillmentMethod(
         },
         now,
       );
-      return [deliveryAddressQuestion(nextSession)];
+      return [deliveryAddressQuestion(nextSession, flowSettings)];
     }
 
     const nextSession = await saveConversationSession(
       { ...session, currentStep: "SELECT_DELIVERY_AREA" },
       now,
     );
-    return [deliveryAreaQuestion(nextSession, settings)];
+    return [deliveryAreaQuestion(nextSession, settings, flowSettings)];
   }
 
   if (checkout.fulfillmentMethod === "pickup") {
@@ -1285,7 +1289,7 @@ async function continueCheckoutAfterFulfillmentMethod(
       { ...session, currentStep: "SELECT_PICKUP_LOCATION" },
       now,
     );
-    return [pickupLocationQuestion(nextSession, settings)];
+    return [pickupLocationQuestion(nextSession, settings, flowSettings)];
   }
 
   return continueCheckoutAfterCustomerName(session, settings, now);
@@ -1320,7 +1324,7 @@ async function continueCheckoutAfterFulfillmentTarget(
     { ...session, currentStep: "SELECT_PAYMENT_METHOD" },
     now,
   );
-  return [paymentMethodQuestion(nextSession, settings)];
+  return [paymentMethodQuestion(nextSession, settings, flowSettings)];
 }
 
 async function continueCheckoutAfterPaymentMethod(
@@ -1348,7 +1352,7 @@ async function continueCheckoutAfterPaymentMethod(
     { ...session, currentStep: "COLLECT_ORDER_NOTES" },
     now,
   );
-  return [orderNotesQuestion(nextSession)];
+  return [orderNotesQuestion(nextSession, flowSettings)];
 }
 
 async function handleDeliveryArea(
@@ -1360,7 +1364,10 @@ async function handleDeliveryArea(
   if (!settings) return startCheckout(session, now);
 
   const area = settings.deliveryAreas.find((entry) => entry.id === input.value);
-  if (!area) return [deliveryAreaQuestion(session, settings)];
+  if (!area) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [deliveryAreaQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1374,7 +1381,8 @@ async function handleDeliveryArea(
     now,
   );
 
-  return [deliveryAddressQuestion(nextSession)];
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  return [deliveryAddressQuestion(nextSession, flowSettings)];
 }
 
 async function handlePickupLocation(
@@ -1386,7 +1394,10 @@ async function handlePickupLocation(
   if (!settings) return startCheckout(session, now);
 
   const pickupLocation = settings.pickupLocations.find((entry) => entry.id === input.value);
-  if (!pickupLocation) return [pickupLocationQuestion(session, settings)];
+  if (!pickupLocation) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [pickupLocationQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1414,6 +1425,7 @@ async function handleDeliveryAddress(
   const language = session.language ?? "en";
   const settings = await getBusinessCheckoutSettings(session.businessId);
   if (!settings) return startCheckout(session, now);
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
 
   const address =
     input.type === "location" ? input.value || "WhatsApp location" : input.value.trim();
@@ -1428,7 +1440,7 @@ async function handleDeliveryAddress(
           "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0643\u0646\u0635 \u0623\u0648 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
         ),
       },
-      deliveryAddressQuestion(session),
+      deliveryAddressQuestion(session, flowSettings),
     ];
   }
   if (address.length < 4) {
@@ -1480,7 +1492,10 @@ async function handlePaymentMethod(
       checkout.fulfillmentMethod &&
       method.fulfillmentMethods.includes(checkout.fulfillmentMethod),
   );
-  if (!paymentMethod) return [paymentMethodQuestion(session, settings)];
+  if (!paymentMethod) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [paymentMethodQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -2046,14 +2061,17 @@ async function cartMenuResponse(session: ConversationSession): Promise<BotRespon
   ];
 }
 
-function customerNameQuestion(session: ConversationSession): BotResponse {
+function customerNameQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
+  const language = session.language ?? "en";
   return {
     type: "text",
-    text: t(
-      session.language ?? "en",
-      "What name should we put on the order?",
-      "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
-    ),
+    text:
+      language === "ar"
+        ? flowSettings.customerNamePromptArabic
+        : flowSettings.customerNamePromptEnglish,
   };
 }
 
@@ -2079,15 +2097,15 @@ function savedCustomerDetailsQuestion(
   };
 }
 
-function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
+function fulfillmentMethodQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "buttons",
-    body: t(
-      language,
-      "How would you like to receive your order?",
-      "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
-    ),
+    body:
+      language === "ar" ? flowSettings.fulfillmentPromptArabic : flowSettings.fulfillmentPromptEnglish,
     buttons: [
       { id: "checkout_delivery", title: t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644") },
       {
@@ -2180,15 +2198,13 @@ function buildSavedCustomerDetailsText(
 function deliveryAreaQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose your delivery area:",
-      "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
-    ),
+    body:
+      language === "ar" ? flowSettings.deliveryAreaPromptArabic : flowSettings.deliveryAreaPromptEnglish,
     buttonText: t(language, "Areas", "\u0627\u0644\u0645\u0646\u0627\u0637\u0642"),
     sections: [
       {
@@ -2210,15 +2226,15 @@ function deliveryAreaQuestion(
 function pickupLocationQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose a pickup location:",
-      "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
-    ),
+    body:
+      language === "ar"
+        ? flowSettings.pickupLocationPromptArabic
+        : flowSettings.pickupLocationPromptEnglish,
     buttonText: t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645"),
     sections: [
       {
@@ -2237,20 +2253,24 @@ function pickupLocationQuestion(
   };
 }
 
-function deliveryAddressQuestion(session: ConversationSession): BotResponse {
+function deliveryAddressQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
+  const language = session.language ?? "en";
   return {
     type: "text",
-    text: t(
-      session.language ?? "en",
-      "Send the full delivery address. You can also send a WhatsApp location.",
-      "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
-    ),
+    text:
+      language === "ar"
+        ? flowSettings.deliveryAddressPromptArabic
+        : flowSettings.deliveryAddressPromptEnglish,
   };
 }
 
 function paymentMethodQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   const checkout = getCheckoutFromContext(session.context);
@@ -2261,11 +2281,8 @@ function paymentMethodQuestion(
 
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose a payment method:",
-      "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
-    ),
+    body:
+      language === "ar" ? flowSettings.paymentMethodPromptArabic : flowSettings.paymentMethodPromptEnglish,
     buttonText: t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639"),
     sections: [
       {
@@ -2279,22 +2296,20 @@ function paymentMethodQuestion(
   };
 }
 
-function orderNotesQuestion(session: ConversationSession): BotResponse {
+function orderNotesQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "buttons",
-    body: t(
-      language,
-      "Would you like to add any notes?",
-      "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
-    ),
+    body:
+      language === "ar" ? flowSettings.orderNotesPromptArabic : flowSettings.orderNotesPromptEnglish,
     buttons: [
       {
         id: "no_notes",
-        title: t(
-          language,
-          "No notes",
-          "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+        title: truncateButtonTitle(
+          language === "ar" ? flowSettings.noNotesButtonArabic : flowSettings.noNotesButtonEnglish,
         ),
       },
     ],

@@ -36,6 +36,31 @@ const defaultFlowForm: BotFlowSettingsInput = {
   infoResponseEnglish: "We are open daily. Send a message here if you need help.",
   infoResponseArabic:
     "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
+  customerNamePromptEnglish: "What name should we put on the order?",
+  customerNamePromptArabic:
+    "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
+  fulfillmentPromptEnglish: "How would you like to receive your order?",
+  fulfillmentPromptArabic:
+    "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
+  deliveryAreaPromptEnglish: "Choose your delivery area:",
+  deliveryAreaPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
+  pickupLocationPromptEnglish: "Choose a pickup location:",
+  pickupLocationPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
+  deliveryAddressPromptEnglish:
+    "Send the full delivery address. You can also send a WhatsApp location.",
+  deliveryAddressPromptArabic:
+    "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+  paymentMethodPromptEnglish: "Choose a payment method:",
+  paymentMethodPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
+  orderNotesPromptEnglish: "Would you like to add any notes?",
+  orderNotesPromptArabic:
+    "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
+  noNotesButtonEnglish: "No notes",
+  noNotesButtonArabic:
+    "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -93,6 +118,22 @@ export function SettingsPage() {
       infoButtonArabic: data.botFlowSettings.infoButtonArabic,
       infoResponseEnglish: data.botFlowSettings.infoResponseEnglish,
       infoResponseArabic: data.botFlowSettings.infoResponseArabic,
+      customerNamePromptEnglish: data.botFlowSettings.customerNamePromptEnglish,
+      customerNamePromptArabic: data.botFlowSettings.customerNamePromptArabic,
+      fulfillmentPromptEnglish: data.botFlowSettings.fulfillmentPromptEnglish,
+      fulfillmentPromptArabic: data.botFlowSettings.fulfillmentPromptArabic,
+      deliveryAreaPromptEnglish: data.botFlowSettings.deliveryAreaPromptEnglish,
+      deliveryAreaPromptArabic: data.botFlowSettings.deliveryAreaPromptArabic,
+      pickupLocationPromptEnglish: data.botFlowSettings.pickupLocationPromptEnglish,
+      pickupLocationPromptArabic: data.botFlowSettings.pickupLocationPromptArabic,
+      deliveryAddressPromptEnglish: data.botFlowSettings.deliveryAddressPromptEnglish,
+      deliveryAddressPromptArabic: data.botFlowSettings.deliveryAddressPromptArabic,
+      paymentMethodPromptEnglish: data.botFlowSettings.paymentMethodPromptEnglish,
+      paymentMethodPromptArabic: data.botFlowSettings.paymentMethodPromptArabic,
+      orderNotesPromptEnglish: data.botFlowSettings.orderNotesPromptEnglish,
+      orderNotesPromptArabic: data.botFlowSettings.orderNotesPromptArabic,
+      noNotesButtonEnglish: data.botFlowSettings.noNotesButtonEnglish,
+      noNotesButtonArabic: data.botFlowSettings.noNotesButtonArabic,
       showProductDetailsBeforeOrdering: data.botFlowSettings.showProductDetailsBeforeOrdering,
       autoUseSavedCheckoutDetails: data.botFlowSettings.autoUseSavedCheckoutDetails,
       skipFulfillmentWhenSingleOption: data.botFlowSettings.skipFulfillmentWhenSingleOption,
@@ -257,6 +298,94 @@ export function SettingsPage() {
               dir="rtl"
               value={flowForm.infoResponseArabic}
               onChange={(value) => setFlowForm({ ...flowForm, infoResponseArabic: value })}
+            />
+            <TextArea
+              label="English customer name prompt"
+              value={flowForm.customerNamePromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, customerNamePromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic customer name prompt"
+              dir="rtl"
+              value={flowForm.customerNamePromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, customerNamePromptArabic: value })}
+            />
+            <TextArea
+              label="English fulfillment prompt"
+              value={flowForm.fulfillmentPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, fulfillmentPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic fulfillment prompt"
+              dir="rtl"
+              value={flowForm.fulfillmentPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, fulfillmentPromptArabic: value })}
+            />
+            <TextArea
+              label="English delivery area prompt"
+              value={flowForm.deliveryAreaPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAreaPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic delivery area prompt"
+              dir="rtl"
+              value={flowForm.deliveryAreaPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAreaPromptArabic: value })}
+            />
+            <TextArea
+              label="English pickup location prompt"
+              value={flowForm.pickupLocationPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, pickupLocationPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic pickup location prompt"
+              dir="rtl"
+              value={flowForm.pickupLocationPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, pickupLocationPromptArabic: value })}
+            />
+            <TextArea
+              label="English delivery address prompt"
+              value={flowForm.deliveryAddressPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAddressPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic delivery address prompt"
+              dir="rtl"
+              value={flowForm.deliveryAddressPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAddressPromptArabic: value })}
+            />
+            <TextArea
+              label="English payment method prompt"
+              value={flowForm.paymentMethodPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, paymentMethodPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic payment method prompt"
+              dir="rtl"
+              value={flowForm.paymentMethodPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, paymentMethodPromptArabic: value })}
+            />
+            <TextArea
+              label="English order notes prompt"
+              value={flowForm.orderNotesPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic order notes prompt"
+              dir="rtl"
+              value={flowForm.orderNotesPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesPromptArabic: value })}
+            />
+            <TextInput
+              label="English no-notes button"
+              value={flowForm.noNotesButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic no-notes button"
+              dir="rtl"
+              value={flowForm.noNotesButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonArabic: value })}
             />
           </div>
           <button

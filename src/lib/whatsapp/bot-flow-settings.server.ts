@@ -20,6 +20,22 @@ export type BusinessBotFlowSettings = {
   infoButtonArabic: string;
   infoResponseEnglish: string;
   infoResponseArabic: string;
+  customerNamePromptEnglish: string;
+  customerNamePromptArabic: string;
+  fulfillmentPromptEnglish: string;
+  fulfillmentPromptArabic: string;
+  deliveryAreaPromptEnglish: string;
+  deliveryAreaPromptArabic: string;
+  pickupLocationPromptEnglish: string;
+  pickupLocationPromptArabic: string;
+  deliveryAddressPromptEnglish: string;
+  deliveryAddressPromptArabic: string;
+  paymentMethodPromptEnglish: string;
+  paymentMethodPromptArabic: string;
+  orderNotesPromptEnglish: string;
+  orderNotesPromptArabic: string;
+  noNotesButtonEnglish: string;
+  noNotesButtonArabic: string;
   showProductDetailsBeforeOrdering: boolean;
   autoUseSavedCheckoutDetails: boolean;
   skipFulfillmentWhenSingleOption: boolean;
@@ -48,6 +64,7 @@ type BotFlowSettingsRow = {
   info_button_arabic: string;
   info_response_english?: string | null;
   info_response_arabic?: string | null;
+  checkout_prompt_overrides?: Partial<CheckoutPromptSettings> | null;
   show_product_details_before_ordering: boolean;
   auto_use_saved_checkout_details: boolean;
   skip_fulfillment_when_single_option: boolean;
@@ -59,6 +76,26 @@ type BotFlowSettingsRow = {
 };
 
 const inMemorySettings = new Map<string, BusinessBotFlowSettings>();
+
+type CheckoutPromptSettings = Pick<
+  BusinessBotFlowSettings,
+  | "customerNamePromptEnglish"
+  | "customerNamePromptArabic"
+  | "fulfillmentPromptEnglish"
+  | "fulfillmentPromptArabic"
+  | "deliveryAreaPromptEnglish"
+  | "deliveryAreaPromptArabic"
+  | "pickupLocationPromptEnglish"
+  | "pickupLocationPromptArabic"
+  | "deliveryAddressPromptEnglish"
+  | "deliveryAddressPromptArabic"
+  | "paymentMethodPromptEnglish"
+  | "paymentMethodPromptArabic"
+  | "orderNotesPromptEnglish"
+  | "orderNotesPromptArabic"
+  | "noNotesButtonEnglish"
+  | "noNotesButtonArabic"
+>;
 
 const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   languageSelectionEnabled: true,
@@ -79,6 +116,31 @@ const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   infoResponseEnglish: "We are open daily. Send a message here if you need help.",
   infoResponseArabic:
     "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
+  customerNamePromptEnglish: "What name should we put on the order?",
+  customerNamePromptArabic:
+    "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
+  fulfillmentPromptEnglish: "How would you like to receive your order?",
+  fulfillmentPromptArabic:
+    "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
+  deliveryAreaPromptEnglish: "Choose your delivery area:",
+  deliveryAreaPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
+  pickupLocationPromptEnglish: "Choose a pickup location:",
+  pickupLocationPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
+  deliveryAddressPromptEnglish:
+    "Send the full delivery address. You can also send a WhatsApp location.",
+  deliveryAddressPromptArabic:
+    "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+  paymentMethodPromptEnglish: "Choose a payment method:",
+  paymentMethodPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
+  orderNotesPromptEnglish: "Would you like to add any notes?",
+  orderNotesPromptArabic:
+    "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
+  noNotesButtonEnglish: "No notes",
+  noNotesButtonArabic:
+    "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -163,6 +225,7 @@ function normalizeSettings(
     infoButtonArabic: input.infoButtonArabic.trim() || DEFAULT_SETTINGS.infoButtonArabic,
     infoResponseEnglish: requiredText(input.infoResponseEnglish, "English info response"),
     infoResponseArabic: input.infoResponseArabic.trim() || DEFAULT_SETTINGS.infoResponseArabic,
+    ...normalizeCheckoutPrompts(input),
     showProductDetailsBeforeOrdering: Boolean(input.showProductDetailsBeforeOrdering),
     autoUseSavedCheckoutDetails: Boolean(input.autoUseSavedCheckoutDetails),
     skipFulfillmentWhenSingleOption: Boolean(input.skipFulfillmentWhenSingleOption),
@@ -174,6 +237,141 @@ function normalizeSettings(
   };
 }
 
+function normalizeCheckoutPrompts(input: BotFlowSettingsInput): CheckoutPromptSettings {
+  return {
+    customerNamePromptEnglish: requiredText(
+      input.customerNamePromptEnglish,
+      "English customer name prompt",
+    ),
+    customerNamePromptArabic:
+      input.customerNamePromptArabic.trim() || DEFAULT_SETTINGS.customerNamePromptArabic,
+    fulfillmentPromptEnglish: requiredText(input.fulfillmentPromptEnglish, "English delivery prompt"),
+    fulfillmentPromptArabic:
+      input.fulfillmentPromptArabic.trim() || DEFAULT_SETTINGS.fulfillmentPromptArabic,
+    deliveryAreaPromptEnglish: requiredText(input.deliveryAreaPromptEnglish, "English area prompt"),
+    deliveryAreaPromptArabic:
+      input.deliveryAreaPromptArabic.trim() || DEFAULT_SETTINGS.deliveryAreaPromptArabic,
+    pickupLocationPromptEnglish: requiredText(
+      input.pickupLocationPromptEnglish,
+      "English pickup prompt",
+    ),
+    pickupLocationPromptArabic:
+      input.pickupLocationPromptArabic.trim() || DEFAULT_SETTINGS.pickupLocationPromptArabic,
+    deliveryAddressPromptEnglish: requiredText(
+      input.deliveryAddressPromptEnglish,
+      "English address prompt",
+    ),
+    deliveryAddressPromptArabic:
+      input.deliveryAddressPromptArabic.trim() || DEFAULT_SETTINGS.deliveryAddressPromptArabic,
+    paymentMethodPromptEnglish: requiredText(
+      input.paymentMethodPromptEnglish,
+      "English payment prompt",
+    ),
+    paymentMethodPromptArabic:
+      input.paymentMethodPromptArabic.trim() || DEFAULT_SETTINGS.paymentMethodPromptArabic,
+    orderNotesPromptEnglish: requiredText(input.orderNotesPromptEnglish, "English notes prompt"),
+    orderNotesPromptArabic:
+      input.orderNotesPromptArabic.trim() || DEFAULT_SETTINGS.orderNotesPromptArabic,
+    noNotesButtonEnglish: requiredText(input.noNotesButtonEnglish, "English no-notes button"),
+    noNotesButtonArabic: input.noNotesButtonArabic.trim() || DEFAULT_SETTINGS.noNotesButtonArabic,
+  };
+}
+
+function checkoutPromptsFromRow(
+  overrides: Partial<CheckoutPromptSettings> | null | undefined,
+): CheckoutPromptSettings {
+  return {
+    customerNamePromptEnglish: textOrFallback(
+      overrides?.customerNamePromptEnglish,
+      DEFAULT_SETTINGS.customerNamePromptEnglish,
+    ),
+    customerNamePromptArabic: textOrFallback(
+      overrides?.customerNamePromptArabic,
+      DEFAULT_SETTINGS.customerNamePromptArabic,
+    ),
+    fulfillmentPromptEnglish: textOrFallback(
+      overrides?.fulfillmentPromptEnglish,
+      DEFAULT_SETTINGS.fulfillmentPromptEnglish,
+    ),
+    fulfillmentPromptArabic: textOrFallback(
+      overrides?.fulfillmentPromptArabic,
+      DEFAULT_SETTINGS.fulfillmentPromptArabic,
+    ),
+    deliveryAreaPromptEnglish: textOrFallback(
+      overrides?.deliveryAreaPromptEnglish,
+      DEFAULT_SETTINGS.deliveryAreaPromptEnglish,
+    ),
+    deliveryAreaPromptArabic: textOrFallback(
+      overrides?.deliveryAreaPromptArabic,
+      DEFAULT_SETTINGS.deliveryAreaPromptArabic,
+    ),
+    pickupLocationPromptEnglish: textOrFallback(
+      overrides?.pickupLocationPromptEnglish,
+      DEFAULT_SETTINGS.pickupLocationPromptEnglish,
+    ),
+    pickupLocationPromptArabic: textOrFallback(
+      overrides?.pickupLocationPromptArabic,
+      DEFAULT_SETTINGS.pickupLocationPromptArabic,
+    ),
+    deliveryAddressPromptEnglish: textOrFallback(
+      overrides?.deliveryAddressPromptEnglish,
+      DEFAULT_SETTINGS.deliveryAddressPromptEnglish,
+    ),
+    deliveryAddressPromptArabic: textOrFallback(
+      overrides?.deliveryAddressPromptArabic,
+      DEFAULT_SETTINGS.deliveryAddressPromptArabic,
+    ),
+    paymentMethodPromptEnglish: textOrFallback(
+      overrides?.paymentMethodPromptEnglish,
+      DEFAULT_SETTINGS.paymentMethodPromptEnglish,
+    ),
+    paymentMethodPromptArabic: textOrFallback(
+      overrides?.paymentMethodPromptArabic,
+      DEFAULT_SETTINGS.paymentMethodPromptArabic,
+    ),
+    orderNotesPromptEnglish: textOrFallback(
+      overrides?.orderNotesPromptEnglish,
+      DEFAULT_SETTINGS.orderNotesPromptEnglish,
+    ),
+    orderNotesPromptArabic: textOrFallback(
+      overrides?.orderNotesPromptArabic,
+      DEFAULT_SETTINGS.orderNotesPromptArabic,
+    ),
+    noNotesButtonEnglish: textOrFallback(
+      overrides?.noNotesButtonEnglish,
+      DEFAULT_SETTINGS.noNotesButtonEnglish,
+    ),
+    noNotesButtonArabic: textOrFallback(
+      overrides?.noNotesButtonArabic,
+      DEFAULT_SETTINGS.noNotesButtonArabic,
+    ),
+  };
+}
+
+function pickCheckoutPromptSettings(settings: BusinessBotFlowSettings): CheckoutPromptSettings {
+  return {
+    customerNamePromptEnglish: settings.customerNamePromptEnglish,
+    customerNamePromptArabic: settings.customerNamePromptArabic,
+    fulfillmentPromptEnglish: settings.fulfillmentPromptEnglish,
+    fulfillmentPromptArabic: settings.fulfillmentPromptArabic,
+    deliveryAreaPromptEnglish: settings.deliveryAreaPromptEnglish,
+    deliveryAreaPromptArabic: settings.deliveryAreaPromptArabic,
+    pickupLocationPromptEnglish: settings.pickupLocationPromptEnglish,
+    pickupLocationPromptArabic: settings.pickupLocationPromptArabic,
+    deliveryAddressPromptEnglish: settings.deliveryAddressPromptEnglish,
+    deliveryAddressPromptArabic: settings.deliveryAddressPromptArabic,
+    paymentMethodPromptEnglish: settings.paymentMethodPromptEnglish,
+    paymentMethodPromptArabic: settings.paymentMethodPromptArabic,
+    orderNotesPromptEnglish: settings.orderNotesPromptEnglish,
+    orderNotesPromptArabic: settings.orderNotesPromptArabic,
+    noNotesButtonEnglish: settings.noNotesButtonEnglish,
+    noNotesButtonArabic: settings.noNotesButtonArabic,
+  };
+}
+
+function textOrFallback(value: string | null | undefined, fallback: string) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
 function requiredText(value: string, label: string) {
   const next = value.trim();
   if (!next) throw new Error(`${label} is required.`);
@@ -202,6 +400,7 @@ function fromRow(row: BotFlowSettingsRow): BusinessBotFlowSettings {
     infoButtonArabic: row.info_button_arabic,
     infoResponseEnglish: row.info_response_english ?? DEFAULT_SETTINGS.infoResponseEnglish,
     infoResponseArabic: row.info_response_arabic ?? DEFAULT_SETTINGS.infoResponseArabic,
+    ...checkoutPromptsFromRow(row.checkout_prompt_overrides),
     showProductDetailsBeforeOrdering: row.show_product_details_before_ordering,
     autoUseSavedCheckoutDetails: row.auto_use_saved_checkout_details,
     skipFulfillmentWhenSingleOption: row.skip_fulfillment_when_single_option,
@@ -230,6 +429,7 @@ function toRow(settings: BusinessBotFlowSettings): BotFlowSettingsRow {
     info_button_arabic: settings.infoButtonArabic,
     info_response_english: settings.infoResponseEnglish,
     info_response_arabic: settings.infoResponseArabic,
+    checkout_prompt_overrides: pickCheckoutPromptSettings(settings),
     show_product_details_before_ordering: settings.showProductDetailsBeforeOrdering,
     auto_use_saved_checkout_details: settings.autoUseSavedCheckoutDetails,
     skip_fulfillment_when_single_option: settings.skipFulfillmentWhenSingleOption,

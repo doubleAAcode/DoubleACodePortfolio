@@ -24,6 +24,7 @@ create table if not exists public.wa_bot_flow_settings (
   info_button_arabic text not null default U&'\0645\0639\0644\0648\0645\0627\062a \0627\0644\0645\062a\062c\0631',
   info_response_english text not null default 'We are open daily. Send a message here if you need help.',
   info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
+  checkout_prompt_overrides jsonb not null default '{}'::jsonb,
   show_product_details_before_ordering boolean not null default true,
   auto_use_saved_checkout_details boolean not null default false,
   skip_fulfillment_when_single_option boolean not null default true,
@@ -39,7 +40,8 @@ alter table public.wa_bot_flow_settings
   add column if not exists question_response_english text not null default 'Send us your question here and our team will reply shortly.',
   add column if not exists question_response_arabic text not null default U&'\0627\0631\0633\0644 \0633\0624\0627\0644\0643 \0647\0646\0627 \0648\0633\064a\0631\062f \0641\0631\064a\0642\0646\0627 \0642\0631\064a\0628\0627.',
   add column if not exists info_response_english text not null default 'We are open daily. Send a message here if you need help.',
-  add column if not exists info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.';
+  add column if not exists info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
+  add column if not exists checkout_prompt_overrides jsonb not null default '{}'::jsonb;
 
 alter table public.wa_bot_flow_settings enable row level security;
 
@@ -62,6 +64,7 @@ insert into public.wa_bot_flow_settings (
   info_button_arabic,
   info_response_english,
   info_response_arabic,
+  checkout_prompt_overrides,
   show_product_details_before_ordering,
   auto_use_saved_checkout_details,
   skip_fulfillment_when_single_option,
@@ -86,6 +89,7 @@ values (
   U&'\0645\0639\0644\0648\0645\0627\062a \0627\0644\0645\062a\062c\0631',
   'We are open daily. Send a message here if you need help.',
   U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
+  '{"customerNamePromptEnglish":"What name should we put on the order?","customerNamePromptArabic":"\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f","fulfillmentPromptEnglish":"How would you like to receive your order?","fulfillmentPromptArabic":"\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f","deliveryAreaPromptEnglish":"Choose your delivery area:","deliveryAreaPromptArabic":"\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:","pickupLocationPromptEnglish":"Choose a pickup location:","pickupLocationPromptArabic":"\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:","deliveryAddressPromptEnglish":"Send the full delivery address. You can also send a WhatsApp location.","deliveryAddressPromptArabic":"\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.","paymentMethodPromptEnglish":"Choose a payment method:","paymentMethodPromptArabic":"\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:","orderNotesPromptEnglish":"Would you like to add any notes?","orderNotesPromptArabic":"\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f","noNotesButtonEnglish":"No notes","noNotesButtonArabic":"\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a"}'::jsonb,
   true,
   false,
   true,
@@ -109,6 +113,7 @@ on conflict (business_id) do update set
   info_button_arabic = excluded.info_button_arabic,
   info_response_english = excluded.info_response_english,
   info_response_arabic = excluded.info_response_arabic,
+  checkout_prompt_overrides = excluded.checkout_prompt_overrides,
   show_product_details_before_ordering = excluded.show_product_details_before_ordering,
   auto_use_saved_checkout_details = excluded.auto_use_saved_checkout_details,
   skip_fulfillment_when_single_option = excluded.skip_fulfillment_when_single_option,
