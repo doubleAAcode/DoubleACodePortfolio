@@ -559,9 +559,33 @@ async function continuePendingItem(
 
   const fields = await listProductCustomFields(session.businessId, pendingItem.productId);
   const fieldIndex = getPageNumber(withVariant.context.customFieldIndex);
+  const pendingWithVariant = getPendingItemFromContext(withVariant.context) ?? pendingItem;
   if (fieldIndex < fields.length) {
+    const field = fields[fieldIndex];
+    const automaticAnswer = automaticCustomFieldAnswer(field, session.language ?? "en");
+    if (automaticAnswer) {
+      const nextSession = await saveConversationSession(
+        {
+          ...withVariant,
+          context: {
+            ...withVariant.context,
+            customFieldIndex: fieldIndex + 1,
+            pendingItem: {
+              ...pendingWithVariant,
+              customFieldAnswers: {
+                ...pendingWithVariant.customFieldAnswers,
+                [field.id]: automaticAnswer,
+              },
+            },
+          },
+        },
+        now,
+      );
+      return continuePendingItem(nextSession, now);
+    }
+
     await saveConversationSession({ ...withVariant, currentStep: "COLLECT_CUSTOM_FIELD" }, now);
-    return [customFieldQuestionResponse(withVariant, fields[fieldIndex])];
+    return [customFieldQuestionResponse(withVariant, field)];
   }
 
   const quantitySession = await saveConversationSession(
@@ -660,6 +684,26 @@ async function handleCustomFieldInput(
 ): Promise<BotResponse[]> {
   const navigation = parseNavigation(input.value);
   if (navigation === "back") return backFromCustomField(session, now);
+
+  if (normalize(input.value) === "main_menu") {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    const language = session.language ?? flowSettings.defaultLanguage;
+    await saveConversationSession(
+      {
+        ...session,
+        language,
+        currentStep: "MAIN_MENU",
+        context: {
+          ...session.context,
+          pendingItem: undefined,
+          optionIndex: undefined,
+          customFieldIndex: undefined,
+        },
+      },
+      now,
+    );
+    return [mainMenuResponse(language, flowSettings)];
+  }
 
   const pendingItem = getPendingItemFromContext(session.context);
   if (!pendingItem) return [mainMenuResponse(session.language ?? "en")];
@@ -1922,39 +1966,75 @@ function customFieldQuestionResponse(
   if (field.type === "yes_no") {
     return {
       type: "buttons",
-      body: getCustomFieldLabel(field, language),
+      body: customFieldPromptText(field, language),
       buttons: [
-        { id: "yes", title: t(language, "Yes", "نعم") },
-        { id: "no", title: t(language, "No", "لا") },
-        { id: "back", title: t(language, "Back", "رجوع") },
+        { id: "yes", title: t(language, "Yes", "\u0646\u0639\u0645") },
+        { id: "no", title: t(language, "No", "\u0644\u0627") },
+        field.isRequired
+          ? { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") }
+          : { id: "skip", title: t(language, "Skip", "\u062a\u062e\u0637\u064a") },
       ],
     };
   }
 
   if (field.type === "single_choice" && field.choices?.length) {
+    const rows = [
+      ...field.choices.map((choice) => ({
+        id: choice.id,
+        title: truncateListTitle(language === "ar" ? choice.labelArabic : choice.labelEnglish),
+      })),
+      ...(!field.isRequired
+        ? [{ id: "skip", title: t(language, "Skip", "\u062a\u062e\u0637\u064a") }]
+        : []),
+      { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
+      { id: "main_menu", title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629") },
+    ];
+
     return {
       type: "list",
-      body: getCustomFieldLabel(field, language),
-      buttonText: t(language, "Choose", "اختر"),
+      body: customFieldPromptText(field, language),
+      buttonText: t(language, "Choose", "\u0627\u062e\u062a\u0631"),
       sections: [
         {
-          title: getCustomFieldLabel(field, language),
-          rows: field.choices.map((choice) => ({
-            id: choice.id,
-            title: language === "ar" ? choice.labelArabic : choice.labelEnglish,
-          })),
+          title: truncateListTitle(getCustomFieldLabel(field, language)),
+          rows,
         },
       ],
     };
   }
 
-  const placeholder = getCustomFieldPlaceholder(field, language);
   return {
     type: "text",
-    text: placeholder
-      ? `${getCustomFieldLabel(field, language)}\n${placeholder}`
-      : getCustomFieldLabel(field, language),
+    text: customFieldPromptText(field, language),
   };
+}
+
+function customFieldPromptText(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  const placeholder = getCustomFieldPlaceholder(field, language);
+  const skipHint = field.isRequired
+    ? undefined
+    : t(
+        language,
+        "Type skip to leave empty.",
+        "\u0627\u0643\u062a\u0628 \u062a\u062e\u0637\u064a \u0644\u0644\u062a\u0631\u0643 \u0641\u0627\u0631\u063a\u0627.",
+      );
+  return [getCustomFieldLabel(field, language), placeholder, skipHint]
+    .filter((line): line is string => Boolean(line))
+    .join("\n");
+}
+
+function automaticCustomFieldAnswer(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  if (field.type !== "single_choice" || !field.isRequired || field.choices?.length !== 1) {
+    return undefined;
+  }
+  const [choice] = field.choices;
+  return language === "ar" ? choice.labelArabic : choice.labelEnglish;
 }
 
 async function quantityQuestionResponse(
@@ -2567,12 +2647,18 @@ function validateCustomField(
       error: string;
     } {
   const value = rawValue.trim();
-  const skipValues = ["skip", "none", "تخطي", "لا"];
-  if (!field.isRequired && skipValues.includes(normalize(value))) return { ok: true };
+  const normalized = normalize(value);
+  const skipValues = ["skip", "none", "\u062a\u062e\u0637\u064a"];
   if (field.isRequired && !value) {
-    return { ok: false, error: t(language, "This field is required.", "هذا الحقل مطلوب.") };
+    return {
+      ok: false,
+      error: t(language, "This field is required.", "\u0647\u0630\u0627 \u0627\u0644\u062d\u0642\u0644 \u0645\u0637\u0644\u0648\u0628."),
+    };
   }
   if (!field.isRequired && !value) return { ok: true };
+  if (field.type !== "yes_no" && !field.isRequired && skipValues.includes(normalized)) {
+    return { ok: true };
+  }
 
   if (
     (field.type === "short_text" || field.type === "long_text") &&
@@ -2584,7 +2670,7 @@ function validateCustomField(
       error: t(
         language,
         `Minimum ${field.minimumLength} characters.`,
-        `الحد الأدنى ${field.minimumLength} أحرف.`,
+        `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 ${field.minimumLength} \u0623\u062d\u0631\u0641.`,
       ),
     };
   }
@@ -2598,21 +2684,25 @@ function validateCustomField(
       error: t(
         language,
         `Maximum ${field.maximumLength} characters.`,
-        `الحد الأقصى ${field.maximumLength} حرفا.`,
+        `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u0642\u0635\u0649 ${field.maximumLength} \u0623\u062d\u0631\u0641.`,
       ),
     };
   }
   if (field.type === "number") {
     const number = Number(value);
-    if (!Number.isFinite(number))
-      return { ok: false, error: t(language, "Enter a valid number.", "أدخل رقما صحيحا.") };
+    if (!Number.isFinite(number)) {
+      return {
+        ok: false,
+        error: t(language, "Enter a valid number.", "\u0623\u062f\u062e\u0644 \u0631\u0642\u0645\u0627 \u0635\u062d\u064a\u062d\u0627."),
+      };
+    }
     if (field.minimumValue != null && number < field.minimumValue) {
       return {
         ok: false,
         error: t(
           language,
           `Minimum value is ${field.minimumValue}.`,
-          `الحد الأدنى ${field.minimumValue}.`,
+          `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 ${field.minimumValue}.`,
         ),
       };
     }
@@ -2622,30 +2712,33 @@ function validateCustomField(
         error: t(
           language,
           `Maximum value is ${field.maximumValue}.`,
-          `الحد الأقصى ${field.maximumValue}.`,
+          `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u0642\u0635\u0649 ${field.maximumValue}.`,
         ),
       };
     }
   }
   if (field.type === "yes_no") {
-    const normalized = normalize(value);
-    if (["yes", "y", "true", "1", "نعم"].includes(normalized))
-      return { ok: true, value: t(language, "Yes", "نعم") };
-    if (["no", "n", "false", "0", "لا"].includes(normalized))
-      return { ok: true, value: t(language, "No", "لا") };
-    return { ok: false, error: t(language, "Choose yes or no.", "اختر نعم أو لا.") };
+    if (["yes", "y", "true", "1", "\u0646\u0639\u0645"].includes(normalized))
+      return { ok: true, value: t(language, "Yes", "\u0646\u0639\u0645") };
+    if (["no", "n", "false", "0", "\u0644\u0627"].includes(normalized))
+      return { ok: true, value: t(language, "No", "\u0644\u0627") };
+    if (!field.isRequired && skipValues.includes(normalized)) return { ok: true };
+    return {
+      ok: false,
+      error: t(language, "Choose yes or no.", "\u0627\u062e\u062a\u0631 \u0646\u0639\u0645 \u0623\u0648 \u0644\u0627."),
+    };
   }
   if (field.type === "single_choice" && field.choices?.length) {
     const choice = field.choices.find(
       (entry) =>
         entry.id === value ||
-        normalize(entry.labelEnglish) === normalize(value) ||
-        normalize(entry.labelArabic) === normalize(value),
+        normalize(entry.labelEnglish) === normalized ||
+        normalize(entry.labelArabic) === normalized,
     );
     if (!choice)
       return {
         ok: false,
-        error: t(language, "Choose one of the listed options.", "اختر أحد الخيارات."),
+        error: t(language, "Choose one of the listed options.", "\u0627\u062e\u062a\u0631 \u0623\u062d\u062f \u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a."),
       };
     return { ok: true, value: language === "ar" ? choice.labelArabic : choice.labelEnglish };
   }

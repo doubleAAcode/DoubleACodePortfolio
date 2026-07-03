@@ -511,29 +511,34 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
       await deleteRow("/wa_product_variants", action.payload.id);
       break;
 
-    case "saveCustomField":
+    case "saveCustomField": {
       requireOwned(data.products, action.payload.product_id, "Product");
       validateLanguagePair(
         action.payload.label_english,
         action.payload.label_arabic,
-        "field label",
+        "question label",
       );
+      const normalizedField = normalizeCustomField(action.payload);
       await upsertRow("/wa_product_custom_fields?on_conflict=id", {
-        ...action.payload,
         id: action.payload.id || makeId("field", action.payload.label_english),
         business_id: businessId,
+        product_id: action.payload.product_id,
+        type: normalizedField.type,
         label_english: action.payload.label_english.trim(),
         label_arabic: action.payload.label_arabic.trim(),
         placeholder_english: normalizeNullableText(action.payload.placeholder_english),
         placeholder_arabic: normalizeNullableText(action.payload.placeholder_arabic),
-        minimum_length: nullableNonNegativeInt(action.payload.minimum_length, "Minimum length"),
-        maximum_length: nullableNonNegativeInt(action.payload.maximum_length, "Maximum length"),
-        minimum_value: nullableNonNegativeNumber(action.payload.minimum_value, "Minimum value"),
-        maximum_value: nullableNonNegativeNumber(action.payload.maximum_value, "Maximum value"),
+        is_required: action.payload.is_required,
+        minimum_length: normalizedField.minimum_length,
+        maximum_length: normalizedField.maximum_length,
+        minimum_value: normalizedField.minimum_value,
+        maximum_value: normalizedField.maximum_value,
+        choices: normalizedField.choices,
         sort_order: nonNegativeInt(action.payload.sort_order, "Sort order"),
         updated_at: new Date().toISOString(),
       });
       break;
+    }
 
     case "deleteCustomField":
       requireOwned(data.customFields, action.payload.id, "Custom field");
@@ -714,6 +719,75 @@ function requireOptionValueOwned(data: WaDashboardData, id: string) {
   const option = data.options.find((item) => item.id === value.option_id);
   if (!option) throw new Error("Option value was not found for this business.");
   return value;
+}
+
+function normalizeCustomField(input: SaveCustomFieldInput) {
+  const allowedTypes: Array<WaProductCustomFieldRow["type"]> = [
+    "short_text",
+    "long_text",
+    "number",
+    "yes_no",
+    "single_choice",
+  ];
+  if (!allowedTypes.includes(input.type)) throw new Error("Choose a valid question type.");
+
+  const minimum_length =
+    input.type === "short_text" || input.type === "long_text"
+      ? nullableNonNegativeInt(input.minimum_length, "Minimum length")
+      : null;
+  const maximum_length =
+    input.type === "short_text" || input.type === "long_text"
+      ? nullableNonNegativeInt(input.maximum_length, "Maximum length")
+      : null;
+  if (minimum_length != null && maximum_length != null && minimum_length > maximum_length) {
+    throw new Error("Minimum length cannot be greater than maximum length.");
+  }
+
+  const minimum_value =
+    input.type === "number"
+      ? nullableNonNegativeNumber(input.minimum_value, "Minimum value")
+      : null;
+  const maximum_value =
+    input.type === "number"
+      ? nullableNonNegativeNumber(input.maximum_value, "Maximum value")
+      : null;
+  if (minimum_value != null && maximum_value != null && minimum_value > maximum_value) {
+    throw new Error("Minimum value cannot be greater than maximum value.");
+  }
+
+  const choices = input.type === "single_choice" ? normalizeQuestionChoices(input.choices) : null;
+  if (input.type === "single_choice" && (!choices || choices.length < 1)) {
+    throw new Error("Add at least one choice for a single-choice question.");
+  }
+
+  return {
+    type: input.type,
+    minimum_length,
+    maximum_length,
+    minimum_value,
+    maximum_value,
+    choices,
+  };
+}
+
+function normalizeQuestionChoices(choices: SaveCustomFieldInput["choices"]) {
+  const normalized = (choices ?? [])
+    .map((choice, index) => {
+      const labelEnglish = requiredText(choice.labelEnglish, "English choice");
+      const labelArabic = choice.labelArabic.trim() || labelEnglish;
+      return {
+        id: choice.id || `choice-${index + 1}`,
+        labelEnglish,
+        labelArabic,
+      };
+    })
+    .filter((choice, index, all) =>
+      all.findIndex(
+        (entry) => entry.labelEnglish.toLowerCase() === choice.labelEnglish.toLowerCase(),
+      ) === index,
+    );
+
+  return normalized.length ? normalized : null;
 }
 
 function validateVariantCombination(data: WaDashboardData, input: SaveVariantInput) {
