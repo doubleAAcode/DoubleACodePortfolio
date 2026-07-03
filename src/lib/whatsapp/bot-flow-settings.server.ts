@@ -14,8 +14,12 @@ export type BusinessBotFlowSettings = {
   orderButtonArabic: string;
   questionButtonEnglish: string;
   questionButtonArabic: string;
+  questionResponseEnglish: string;
+  questionResponseArabic: string;
   infoButtonEnglish: string;
   infoButtonArabic: string;
+  infoResponseEnglish: string;
+  infoResponseArabic: string;
   showProductDetailsBeforeOrdering: boolean;
   autoUseSavedCheckoutDetails: boolean;
   skipFulfillmentWhenSingleOption: boolean;
@@ -38,8 +42,12 @@ type BotFlowSettingsRow = {
   order_button_arabic: string;
   question_button_english: string;
   question_button_arabic: string;
+  question_response_english?: string | null;
+  question_response_arabic?: string | null;
   info_button_english: string;
   info_button_arabic: string;
+  info_response_english?: string | null;
+  info_response_arabic?: string | null;
   show_product_details_before_ordering: boolean;
   auto_use_saved_checkout_details: boolean;
   skip_fulfillment_when_single_option: boolean;
@@ -62,9 +70,15 @@ const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   orderButtonArabic: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
   questionButtonEnglish: "Ask a question",
   questionButtonArabic: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644",
+  questionResponseEnglish: "Send us your question here and our team will reply shortly.",
+  questionResponseArabic:
+    "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
   infoButtonEnglish: "Store information",
   infoButtonArabic:
     "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  infoResponseEnglish: "We are open daily. Send a message here if you need help.",
+  infoResponseArabic:
+    "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -139,8 +153,16 @@ function normalizeSettings(
     orderButtonArabic: input.orderButtonArabic.trim() || DEFAULT_SETTINGS.orderButtonArabic,
     questionButtonEnglish: requiredText(input.questionButtonEnglish, "English question button"),
     questionButtonArabic: input.questionButtonArabic.trim() || DEFAULT_SETTINGS.questionButtonArabic,
+    questionResponseEnglish: requiredText(
+      input.questionResponseEnglish,
+      "English question response",
+    ),
+    questionResponseArabic:
+      input.questionResponseArabic.trim() || DEFAULT_SETTINGS.questionResponseArabic,
     infoButtonEnglish: requiredText(input.infoButtonEnglish, "English info button"),
     infoButtonArabic: input.infoButtonArabic.trim() || DEFAULT_SETTINGS.infoButtonArabic,
+    infoResponseEnglish: requiredText(input.infoResponseEnglish, "English info response"),
+    infoResponseArabic: input.infoResponseArabic.trim() || DEFAULT_SETTINGS.infoResponseArabic,
     showProductDetailsBeforeOrdering: Boolean(input.showProductDetailsBeforeOrdering),
     autoUseSavedCheckoutDetails: Boolean(input.autoUseSavedCheckoutDetails),
     skipFulfillmentWhenSingleOption: Boolean(input.skipFulfillmentWhenSingleOption),
@@ -174,8 +196,12 @@ function fromRow(row: BotFlowSettingsRow): BusinessBotFlowSettings {
     orderButtonArabic: row.order_button_arabic,
     questionButtonEnglish: row.question_button_english,
     questionButtonArabic: row.question_button_arabic,
+    questionResponseEnglish: row.question_response_english ?? DEFAULT_SETTINGS.questionResponseEnglish,
+    questionResponseArabic: row.question_response_arabic ?? DEFAULT_SETTINGS.questionResponseArabic,
     infoButtonEnglish: row.info_button_english,
     infoButtonArabic: row.info_button_arabic,
+    infoResponseEnglish: row.info_response_english ?? DEFAULT_SETTINGS.infoResponseEnglish,
+    infoResponseArabic: row.info_response_arabic ?? DEFAULT_SETTINGS.infoResponseArabic,
     showProductDetailsBeforeOrdering: row.show_product_details_before_ordering,
     autoUseSavedCheckoutDetails: row.auto_use_saved_checkout_details,
     skipFulfillmentWhenSingleOption: row.skip_fulfillment_when_single_option,
@@ -198,8 +224,12 @@ function toRow(settings: BusinessBotFlowSettings): BotFlowSettingsRow {
     order_button_arabic: settings.orderButtonArabic,
     question_button_english: settings.questionButtonEnglish,
     question_button_arabic: settings.questionButtonArabic,
+    question_response_english: settings.questionResponseEnglish,
+    question_response_arabic: settings.questionResponseArabic,
     info_button_english: settings.infoButtonEnglish,
     info_button_arabic: settings.infoButtonArabic,
+    info_response_english: settings.infoResponseEnglish,
+    info_response_arabic: settings.infoResponseArabic,
     show_product_details_before_ordering: settings.showProductDetailsBeforeOrdering,
     auto_use_saved_checkout_details: settings.autoUseSavedCheckoutDetails,
     skip_fulfillment_when_single_option: settings.skipFulfillmentWhenSingleOption,

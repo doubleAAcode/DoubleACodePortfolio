@@ -18,8 +18,12 @@ create table if not exists public.wa_bot_flow_settings (
   order_button_arabic text not null default U&'\062a\0642\062f\064a\0645 \0637\0644\0628',
   question_button_english text not null default 'Ask a question',
   question_button_arabic text not null default U&'\0637\0631\062d \0633\0624\0627\0644',
+  question_response_english text not null default 'Send us your question here and our team will reply shortly.',
+  question_response_arabic text not null default U&'\0627\0631\0633\0644 \0633\0624\0627\0644\0643 \0647\0646\0627 \0648\0633\064a\0631\062f \0641\0631\064a\0642\0646\0627 \0642\0631\064a\0628\0627.',
   info_button_english text not null default 'Store information',
   info_button_arabic text not null default U&'\0645\0639\0644\0648\0645\0627\062a \0627\0644\0645\062a\062c\0631',
+  info_response_english text not null default 'We are open daily. Send a message here if you need help.',
+  info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
   show_product_details_before_ordering boolean not null default true,
   auto_use_saved_checkout_details boolean not null default false,
   skip_fulfillment_when_single_option boolean not null default true,
@@ -30,6 +34,12 @@ create table if not exists public.wa_bot_flow_settings (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.wa_bot_flow_settings
+  add column if not exists question_response_english text not null default 'Send us your question here and our team will reply shortly.',
+  add column if not exists question_response_arabic text not null default U&'\0627\0631\0633\0644 \0633\0624\0627\0644\0643 \0647\0646\0627 \0648\0633\064a\0631\062f \0641\0631\064a\0642\0646\0627 \0642\0631\064a\0628\0627.',
+  add column if not exists info_response_english text not null default 'We are open daily. Send a message here if you need help.',
+  add column if not exists info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.';
 
 alter table public.wa_bot_flow_settings enable row level security;
 
@@ -46,8 +56,12 @@ insert into public.wa_bot_flow_settings (
   order_button_arabic,
   question_button_english,
   question_button_arabic,
+  question_response_english,
+  question_response_arabic,
   info_button_english,
   info_button_arabic,
+  info_response_english,
+  info_response_arabic,
   show_product_details_before_ordering,
   auto_use_saved_checkout_details,
   skip_fulfillment_when_single_option,
@@ -66,8 +80,12 @@ values (
   U&'\062a\0642\062f\064a\0645 \0637\0644\0628',
   'Ask a question',
   U&'\0637\0631\062d \0633\0624\0627\0644',
+  'Send us your question here and our team will reply shortly.',
+  U&'\0627\0631\0633\0644 \0633\0624\0627\0644\0643 \0647\0646\0627 \0648\0633\064a\0631\062f \0641\0631\064a\0642\0646\0627 \0642\0631\064a\0628\0627.',
   'Store information',
   U&'\0645\0639\0644\0648\0645\0627\062a \0627\0644\0645\062a\062c\0631',
+  'We are open daily. Send a message here if you need help.',
+  U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
   true,
   false,
   true,
@@ -85,8 +103,12 @@ on conflict (business_id) do update set
   order_button_arabic = excluded.order_button_arabic,
   question_button_english = excluded.question_button_english,
   question_button_arabic = excluded.question_button_arabic,
+  question_response_english = excluded.question_response_english,
+  question_response_arabic = excluded.question_response_arabic,
   info_button_english = excluded.info_button_english,
   info_button_arabic = excluded.info_button_arabic,
+  info_response_english = excluded.info_response_english,
+  info_response_arabic = excluded.info_response_arabic,
   show_product_details_before_ordering = excluded.show_product_details_before_ordering,
   auto_use_saved_checkout_details = excluded.auto_use_saved_checkout_details,
   skip_fulfillment_when_single_option = excluded.skip_fulfillment_when_single_option,

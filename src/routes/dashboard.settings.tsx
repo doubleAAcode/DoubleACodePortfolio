@@ -28,8 +28,14 @@ const defaultFlowForm: BotFlowSettingsInput = {
   orderButtonArabic: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
   questionButtonEnglish: "Ask a question",
   questionButtonArabic: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644",
+  questionResponseEnglish: "Send us your question here and our team will reply shortly.",
+  questionResponseArabic:
+    "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
   infoButtonEnglish: "Store information",
   infoButtonArabic: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  infoResponseEnglish: "We are open daily. Send a message here if you need help.",
+  infoResponseArabic:
+    "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -81,8 +87,12 @@ export function SettingsPage() {
       orderButtonArabic: data.botFlowSettings.orderButtonArabic,
       questionButtonEnglish: data.botFlowSettings.questionButtonEnglish,
       questionButtonArabic: data.botFlowSettings.questionButtonArabic,
+      questionResponseEnglish: data.botFlowSettings.questionResponseEnglish,
+      questionResponseArabic: data.botFlowSettings.questionResponseArabic,
       infoButtonEnglish: data.botFlowSettings.infoButtonEnglish,
       infoButtonArabic: data.botFlowSettings.infoButtonArabic,
+      infoResponseEnglish: data.botFlowSettings.infoResponseEnglish,
+      infoResponseArabic: data.botFlowSettings.infoResponseArabic,
       showProductDetailsBeforeOrdering: data.botFlowSettings.showProductDetailsBeforeOrdering,
       autoUseSavedCheckoutDetails: data.botFlowSettings.autoUseSavedCheckoutDetails,
       skipFulfillmentWhenSingleOption: data.botFlowSettings.skipFulfillmentWhenSingleOption,
@@ -215,6 +225,17 @@ export function SettingsPage() {
               value={flowForm.questionButtonArabic}
               onChange={(value) => setFlowForm({ ...flowForm, questionButtonArabic: value })}
             />
+            <TextArea
+              label="English question response"
+              value={flowForm.questionResponseEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, questionResponseEnglish: value })}
+            />
+            <TextArea
+              label="Arabic question response"
+              dir="rtl"
+              value={flowForm.questionResponseArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, questionResponseArabic: value })}
+            />
             <TextInput
               label="English info button"
               value={flowForm.infoButtonEnglish}
@@ -225,6 +246,17 @@ export function SettingsPage() {
               dir="rtl"
               value={flowForm.infoButtonArabic}
               onChange={(value) => setFlowForm({ ...flowForm, infoButtonArabic: value })}
+            />
+            <TextArea
+              label="English store info response"
+              value={flowForm.infoResponseEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, infoResponseEnglish: value })}
+            />
+            <TextArea
+              label="Arabic store info response"
+              dir="rtl"
+              value={flowForm.infoResponseArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, infoResponseArabic: value })}
             />
           </div>
           <button

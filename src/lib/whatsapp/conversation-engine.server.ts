@@ -308,7 +308,7 @@ async function handleMainMenu(
     return categorySelectionResponse(nextSession);
   }
 
-  await saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       language,
@@ -317,6 +317,14 @@ async function handleMainMenu(
     },
     now,
   );
+
+  if (option === "question" || option === "info") {
+    return [
+      menuBranchResponse(option, language, flowSettings),
+      mainMenuResponse(language, flowSettings),
+    ];
+  }
+
   return [mainMenuResponse(language, flowSettings)];
 }
 
@@ -1718,6 +1726,23 @@ function languageSelectionResponse(): BotResponse {
       { id: "language_ar", title: "العربية" },
     ],
   };
+}
+
+function menuBranchResponse(
+  option: "question" | "info",
+  language: ConversationLanguage,
+  flowSettings: BusinessBotFlowSettings,
+): BotResponse {
+  const text =
+    option === "question"
+      ? language === "ar"
+        ? flowSettings.questionResponseArabic
+        : flowSettings.questionResponseEnglish
+      : language === "ar"
+        ? flowSettings.infoResponseArabic
+        : flowSettings.infoResponseEnglish;
+
+  return { type: "text", text };
 }
 
 function mainMenuResponse(
