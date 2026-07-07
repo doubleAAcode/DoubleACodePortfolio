@@ -204,7 +204,7 @@ export function ProductsPage() {
             sort_order: fieldForm.sort_order,
           },
         },
-        "Custom field saved.",
+        "Product question saved.",
       );
       setFieldForm(emptyField);
     });
@@ -219,7 +219,7 @@ export function ProductsPage() {
           <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Catalog</p>
           <h1 className="mt-2 font-display text-3xl font-semibold">Products</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Manage product records, options, variants, stock, images, and customer input fields.
+            Manage product records, options, variants, stock, images, and product questions.
           </p>
         </div>
         <input
@@ -593,13 +593,27 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Custom fields">
+              <NestedSection title="Product questions">
                 <div className="grid gap-3 md:grid-cols-4">
                   <SelectInput
-                    label="Type"
+                    label="Answer type"
                     value={fieldForm.type}
                     onChange={(value) =>
-                      setFieldForm({ ...fieldForm, type: value as WaProductCustomFieldRow["type"] })
+                      setFieldForm({
+                        ...fieldForm,
+                        type: value as WaProductCustomFieldRow["type"],
+                        choicesText: value === "single_choice" ? fieldForm.choicesText : "",
+                        minimum_value: value === "number" ? fieldForm.minimum_value : null,
+                        maximum_value: value === "number" ? fieldForm.maximum_value : null,
+                        minimum_length:
+                          value === "short_text" || value === "long_text"
+                            ? fieldForm.minimum_length
+                            : null,
+                        maximum_length:
+                          value === "short_text" || value === "long_text"
+                            ? fieldForm.maximum_length
+                            : null,
+                      })
                     }
                   >
                     <option value="short_text">Short text</option>
@@ -609,37 +623,71 @@ export function ProductsPage() {
                     <option value="single_choice">Single choice</option>
                   </SelectInput>
                   <TextInput
-                    label="English label"
+                    label="English question"
                     value={fieldForm.label_english}
                     onChange={(value) => setFieldForm({ ...fieldForm, label_english: value })}
                   />
                   <TextInput
-                    label="Arabic label"
+                    label="Arabic question"
                     dir="rtl"
                     value={fieldForm.label_arabic}
                     onChange={(value) => setFieldForm({ ...fieldForm, label_arabic: value })}
                   />
                   <NumberInput
-                    label="Sort"
+                    label="Question order"
                     value={fieldForm.sort_order}
                     onChange={(value) => setFieldForm({ ...fieldForm, sort_order: value })}
                   />
-                  <TextInput
-                    label="English placeholder"
-                    value={fieldForm.placeholder_english}
-                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_english: value })}
-                  />
-                  <TextInput
-                    label="Arabic placeholder"
-                    dir="rtl"
-                    value={fieldForm.placeholder_arabic}
-                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_arabic: value })}
-                  />
-                  <TextInput
-                    label="Choices, comma-separated"
-                    value={fieldForm.choicesText}
-                    onChange={(value) => setFieldForm({ ...fieldForm, choicesText: value })}
-                  />
+                  {fieldForm.type === "short_text" || fieldForm.type === "long_text" ? (
+                    <>
+                      <TextInput
+                        label="English helper text"
+                        value={fieldForm.placeholder_english}
+                        onChange={(value) =>
+                          setFieldForm({ ...fieldForm, placeholder_english: value })
+                        }
+                      />
+                      <TextInput
+                        label="Arabic helper text"
+                        dir="rtl"
+                        value={fieldForm.placeholder_arabic}
+                        onChange={(value) =>
+                          setFieldForm({ ...fieldForm, placeholder_arabic: value })
+                        }
+                      />
+                      <OptionalNumberInput
+                        label="Minimum length"
+                        value={fieldForm.minimum_length}
+                        onChange={(value) => setFieldForm({ ...fieldForm, minimum_length: value })}
+                      />
+                      <OptionalNumberInput
+                        label="Maximum length"
+                        value={fieldForm.maximum_length}
+                        onChange={(value) => setFieldForm({ ...fieldForm, maximum_length: value })}
+                      />
+                    </>
+                  ) : null}
+                  {fieldForm.type === "number" ? (
+                    <>
+                      <OptionalNumberInput
+                        label="Minimum value"
+                        value={fieldForm.minimum_value}
+                        onChange={(value) => setFieldForm({ ...fieldForm, minimum_value: value })}
+                      />
+                      <OptionalNumberInput
+                        label="Maximum value"
+                        value={fieldForm.maximum_value}
+                        onChange={(value) => setFieldForm({ ...fieldForm, maximum_value: value })}
+                      />
+                    </>
+                  ) : null}
+                  {fieldForm.type === "single_choice" ? (
+                    <TextArea
+                      label="Choices, one per line: English | Arabic"
+                      value={fieldForm.choicesText}
+                      onChange={(value) => setFieldForm({ ...fieldForm, choicesText: value })}
+                    />
+                  ) : null}
                   <Toggle
                     label="Required"
                     checked={fieldForm.is_required}
@@ -654,11 +702,15 @@ export function ProductsPage() {
                   icon={<Plus className="h-4 w-4" />}
                   onClick={() => void submitField()}
                 >
-                  Save field
+                  Save question
                 </SaveButton>
                 <PillList
                   items={productFields}
-                  label={(field) => `${field.label_english} (${field.type})`}
+                  label={(field) =>
+                    `${field.sort_order}. ${field.label_english} (${questionTypeLabel(field.type)}${
+                      field.is_required ? ", required" : ", optional"
+                    })`
+                  }
                   onEdit={(field) =>
                     setFieldForm({
                       ...field,
@@ -668,15 +720,14 @@ export function ProductsPage() {
                         field.minimum_value === null ? null : Number(field.minimum_value),
                       maximum_value:
                         field.maximum_value === null ? null : Number(field.maximum_value),
-                      choicesText:
-                        field.choices?.map((choice) => choice.labelEnglish).join(", ") ?? "",
+                      choicesText: formatChoicesForEditing(field.choices),
                     })
                   }
                   onDelete={(field) => {
                     if (window.confirm(`Delete ${field.label_english}?`))
                       void applyAction(
                         { type: "deleteCustomField", payload: { id: field.id } },
-                        "Custom field deleted.",
+                        "Product question deleted.",
                       );
                   }}
                 />
@@ -947,6 +998,31 @@ function NumberInput({
   );
 }
 
+function OptionalNumberInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+}) {
+  return (
+    <label className="text-sm">
+      <span className="mb-2 block text-muted-foreground">{label}</span>
+      <input
+        type="number"
+        min="0"
+        value={value ?? ""}
+        onChange={(event) =>
+          onChange(event.target.value === "" ? null : Number(event.target.value))
+        }
+        className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
+      />
+    </label>
+  );
+}
+
 function SelectInput({
   label,
   value,
@@ -1045,15 +1121,34 @@ function optionLabel(options: WaProductOptionRow[], optionId: string) {
 }
 
 function parseChoices(value: string) {
-  const choices = value
-    .split(",")
+  const lines = value
+    .split(/\r?\n|,/)
     .map((choice) => choice.trim())
-    .filter(Boolean)
-    .map((choice, index) => ({
+    .filter(Boolean);
+  const choices = lines.map((choice, index) => {
+    const [english, arabic] = choice.split("|").map((part) => part.trim());
+    return {
       id: `choice-${index + 1}`,
-      labelEnglish: choice,
-      labelArabic: choice,
-    }));
+      labelEnglish: english,
+      labelArabic: arabic || english,
+    };
+  });
 
   return choices.length ? choices : null;
+}
+
+function formatChoicesForEditing(choices: WaProductCustomFieldRow["choices"]) {
+  return (
+    choices
+      ?.map((choice) =>
+        choice.labelArabic && choice.labelArabic !== choice.labelEnglish
+          ? `${choice.labelEnglish} | ${choice.labelArabic}`
+          : choice.labelEnglish,
+      )
+      .join("\n") ?? ""
+  );
+}
+
+function questionTypeLabel(type: WaProductCustomFieldRow["type"]) {
+  return type.replace(/_/g, " ");
 }

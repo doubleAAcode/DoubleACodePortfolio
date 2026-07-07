@@ -23,6 +23,11 @@ import {
   type StoreProductOption,
 } from "./catalog-repository.server";
 import {
+  getBusinessBotFlowSettings,
+  getDefaultBotFlowSettings,
+  type BusinessBotFlowSettings,
+} from "./bot-flow-settings.server";
+import {
   buildCartItem,
   calculateCart,
   getCartFromContext,
@@ -35,6 +40,7 @@ import {
   getBusinessCheckoutSettings,
   getDeliveryAreaName,
   getPaymentMethodLabel,
+  type FulfillmentMethod,
   getPickupLocationAddress,
   getPickupLocationName,
   type BusinessCheckoutSettings,
@@ -101,23 +107,51 @@ export async function processIncomingMessage({
   input: ConversationInput;
 }): Promise<BotResponse[]> {
   const now = new Date();
-  let session =
-    (await getActiveConversationSession({ businessId, customerPhone, now })) ??
-    (await createConversationSession({ businessId, customerPhone, now }));
+  const flowSettings = await getBusinessBotFlowSettings(businessId);
+  let session = await getActiveConversationSession({ businessId, customerPhone, now });
+
+  if (!session) {
+    session = await createConversationSession({ businessId, customerPhone, now });
+    if (!flowSettings.languageSelectionEnabled) {
+      session = await saveConversationSession(
+        {
+          ...session,
+          language: flowSettings.defaultLanguage,
+          currentStep: "MAIN_MENU",
+        },
+        now,
+      );
+      return handleMainMenu(session, input, now, flowSettings);
+    }
+  }
 
   const command = getGlobalCommand(input.value);
 
   if (command === "restart") {
     await deleteConversationSession({ businessId, customerPhone });
     session = await createConversationSession({ businessId, customerPhone, now });
+    if (!flowSettings.languageSelectionEnabled) {
+      await saveConversationSession(
+        {
+          ...session,
+          language: flowSettings.defaultLanguage,
+          currentStep: "MAIN_MENU",
+        },
+        now,
+      );
+      return [mainMenuResponse(flowSettings.defaultLanguage, flowSettings)];
+    }
     return [languageSelectionResponse()];
   }
 
   if (command === "menu") {
-    if (!session.language) return [languageSelectionResponse()];
+    if (!session.language && flowSettings.languageSelectionEnabled)
+      return [languageSelectionResponse()];
+    const language = session.language ?? flowSettings.defaultLanguage;
     await saveConversationSession(
       {
         ...session,
+        language,
         currentStep: "MAIN_MENU",
         context: {
           ...session.context,
@@ -129,7 +163,7 @@ export async function processIncomingMessage({
       },
       now,
     );
-    return [mainMenuResponse(session.language)];
+    return [mainMenuResponse(language, flowSettings)];
   }
 
   if (command === "cart") {
@@ -174,7 +208,7 @@ export async function processIncomingMessage({
   }
 
   if (session.currentStep === "SELECT_LANGUAGE")
-    return handleLanguageSelection(session, input, now);
+    return handleLanguageSelection(session, input, now, flowSettings);
   if (session.currentStep === "SELECT_CATEGORY")
     return handleCategorySelection(session, input, now);
   if (session.currentStep === "SELECT_PRODUCT") return handleProductSelection(session, input, now);
@@ -226,13 +260,14 @@ export async function processIncomingMessage({
     return handleCompletedOrder(session, input, now);
   }
 
-  return handleMainMenu(session, input, now);
+  return handleMainMenu(session, input, now, flowSettings);
 }
 
 async function handleLanguageSelection(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
+  flowSettings: BusinessBotFlowSettings,
 ): Promise<BotResponse[]> {
   const language = parseLanguage(input.value);
   if (!language) {
@@ -241,16 +276,17 @@ async function handleLanguageSelection(
   }
 
   await saveConversationSession({ ...session, language, currentStep: "MAIN_MENU" }, now);
-  return [mainMenuResponse(language)];
+  return [mainMenuResponse(language, flowSettings)];
 }
 
 async function handleMainMenu(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
-  const option = parseMainMenuOption(input.value);
+  const option = parseMainMenuOption(input.value, flowSettings);
 
   if (option === "order") {
     const nextSession = await saveConversationSession(
@@ -272,7 +308,7 @@ async function handleMainMenu(
     return categorySelectionResponse(nextSession);
   }
 
-  await saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       language,
@@ -281,7 +317,15 @@ async function handleMainMenu(
     },
     now,
   );
-  return [mainMenuResponse(language)];
+
+  if (option === "question" || option === "info") {
+    return [
+      menuBranchResponse(option, language, flowSettings),
+      mainMenuResponse(language, flowSettings),
+    ];
+  }
+
+  return [mainMenuResponse(language, flowSettings)];
 }
 
 async function handleCategorySelection(
@@ -515,9 +559,33 @@ async function continuePendingItem(
 
   const fields = await listProductCustomFields(session.businessId, pendingItem.productId);
   const fieldIndex = getPageNumber(withVariant.context.customFieldIndex);
+  const pendingWithVariant = getPendingItemFromContext(withVariant.context) ?? pendingItem;
   if (fieldIndex < fields.length) {
+    const field = fields[fieldIndex];
+    const automaticAnswer = automaticCustomFieldAnswer(field, session.language ?? "en");
+    if (automaticAnswer) {
+      const nextSession = await saveConversationSession(
+        {
+          ...withVariant,
+          context: {
+            ...withVariant.context,
+            customFieldIndex: fieldIndex + 1,
+            pendingItem: {
+              ...pendingWithVariant,
+              customFieldAnswers: {
+                ...pendingWithVariant.customFieldAnswers,
+                [field.id]: automaticAnswer,
+              },
+            },
+          },
+        },
+        now,
+      );
+      return continuePendingItem(nextSession, now);
+    }
+
     await saveConversationSession({ ...withVariant, currentStep: "COLLECT_CUSTOM_FIELD" }, now);
-    return [customFieldQuestionResponse(withVariant, fields[fieldIndex])];
+    return [customFieldQuestionResponse(withVariant, field)];
   }
 
   const quantitySession = await saveConversationSession(
@@ -616,6 +684,26 @@ async function handleCustomFieldInput(
 ): Promise<BotResponse[]> {
   const navigation = parseNavigation(input.value);
   if (navigation === "back") return backFromCustomField(session, now);
+
+  if (normalize(input.value) === "main_menu") {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    const language = session.language ?? flowSettings.defaultLanguage;
+    await saveConversationSession(
+      {
+        ...session,
+        language,
+        currentStep: "MAIN_MENU",
+        context: {
+          ...session.context,
+          pendingItem: undefined,
+          optionIndex: undefined,
+          customFieldIndex: undefined,
+        },
+      },
+      now,
+    );
+    return [mainMenuResponse(language, flowSettings)];
+  }
 
   const pendingItem = getPendingItemFromContext(session.context);
   if (!pendingItem) return [mainMenuResponse(session.language ?? "en")];
@@ -958,7 +1046,29 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
   const reusableCheckout = customerProfile
     ? getReusableCheckoutFromProfile(customerProfile, settings)
     : undefined;
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
   if (customerProfile && reusableCheckout) {
+    if (flowSettings.autoUseSavedCheckoutDetails) {
+      const nextSession = await saveConversationSession(
+        {
+          ...session,
+          currentStep: "REVIEW_ORDER",
+          context: {
+            ...session.context,
+            cart: validation.cart,
+            checkout: reusableCheckout,
+            savedCheckout: undefined,
+            savedCustomerProfile: undefined,
+            createdOrderId: undefined,
+            createdOrderNumber: undefined,
+          },
+        },
+        now,
+      );
+
+      return reviewOrderResponse(nextSession);
+    }
+
     const nextSession = await saveConversationSession(
       {
         ...session,
@@ -994,7 +1104,7 @@ async function startCheckout(session: ConversationSession, now: Date): Promise<B
     now,
   );
 
-  return [customerNameQuestion(nextSession)];
+  return [customerNameQuestion(nextSession, flowSettings)];
 }
 
 async function handleSavedCustomerDetails(
@@ -1046,7 +1156,8 @@ async function handleSavedCustomerDetails(
       now,
     );
 
-    return [customerNameQuestion(nextSession)];
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [customerNameQuestion(nextSession, flowSettings)];
   }
 
   await saveConversationSession(session, now);
@@ -1083,19 +1194,54 @@ async function handleCustomerName(
     ];
   }
 
-  const nextSession = await saveConversationSession(
+  const settings = await getBusinessCheckoutSettings(session.businessId);
+  if (!settings) return startCheckout(session, now);
+
+  return continueCheckoutAfterCustomerName(
     {
       ...session,
-      currentStep: "SELECT_FULFILLMENT_METHOD",
       context: {
         ...session.context,
         checkout: { ...getCheckoutFromContext(session.context), customerName },
       },
     },
+    settings,
     now,
   );
+}
 
-  return [fulfillmentMethodQuestion(nextSession)];
+async function continueCheckoutAfterCustomerName(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  now: Date,
+): Promise<BotResponse[]> {
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  const singleFulfillmentMethod = getSingleFulfillmentMethod(settings);
+
+  if (flowSettings.skipFulfillmentWhenSingleOption && singleFulfillmentMethod) {
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep:
+          singleFulfillmentMethod === "delivery" ? "SELECT_DELIVERY_AREA" : "SELECT_PICKUP_LOCATION",
+        context: {
+          ...session.context,
+          checkout: {
+            ...getCheckoutFromContext(session.context),
+            fulfillmentMethod: singleFulfillmentMethod,
+          },
+        },
+      },
+      now,
+    );
+    return continueCheckoutAfterFulfillmentMethod(nextSession, settings, now);
+  }
+
+  const nextSession = await saveConversationSession(
+    { ...session, currentStep: "SELECT_FULFILLMENT_METHOD" },
+    now,
+  );
+  return [fulfillmentMethodQuestion(nextSession, flowSettings)];
 }
 
 async function handleFulfillmentMethod(
@@ -1115,7 +1261,10 @@ async function handleFulfillmentMethod(
         ? "pickup"
         : undefined;
 
-  if (!fulfillmentMethod) return [fulfillmentMethodQuestion(session)];
+  if (!fulfillmentMethod) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [fulfillmentMethodQuestion(session, flowSettings)];
+  }
 
   const checkout = { ...getCheckoutFromContext(session.context), fulfillmentMethod };
   const nextSession = await saveConversationSession(
@@ -1128,9 +1277,126 @@ async function handleFulfillmentMethod(
     now,
   );
 
-  return fulfillmentMethod === "delivery"
-    ? [deliveryAreaQuestion(nextSession, settings)]
-    : [pickupLocationQuestion(nextSession, settings)];
+  return continueCheckoutAfterFulfillmentMethod(nextSession, settings, now);
+}
+
+async function continueCheckoutAfterFulfillmentMethod(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  now: Date,
+): Promise<BotResponse[]> {
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  const checkout = getCheckoutFromContext(session.context);
+
+  if (checkout.fulfillmentMethod === "delivery") {
+    if (flowSettings.skipDeliveryAreaWhenSingleOption && settings.deliveryAreas.length === 1) {
+      const [deliveryArea] = settings.deliveryAreas;
+      const nextSession = await saveConversationSession(
+        {
+          ...session,
+          currentStep: "COLLECT_DELIVERY_ADDRESS",
+          context: {
+            ...session.context,
+            checkout: { ...checkout, deliveryAreaId: deliveryArea.id },
+          },
+        },
+        now,
+      );
+      return [deliveryAddressQuestion(nextSession, flowSettings)];
+    }
+
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "SELECT_DELIVERY_AREA" },
+      now,
+    );
+    return [deliveryAreaQuestion(nextSession, settings, flowSettings)];
+  }
+
+  if (checkout.fulfillmentMethod === "pickup") {
+    if (flowSettings.skipPickupLocationWhenSingleOption && settings.pickupLocations.length === 1) {
+      const [pickupLocation] = settings.pickupLocations;
+      const nextSession = await saveConversationSession(
+        {
+          ...session,
+          currentStep: "SELECT_PAYMENT_METHOD",
+          context: {
+            ...session.context,
+            checkout: { ...checkout, pickupLocationId: pickupLocation.id },
+          },
+        },
+        now,
+      );
+      return continueCheckoutAfterFulfillmentTarget(nextSession, settings, now);
+    }
+
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "SELECT_PICKUP_LOCATION" },
+      now,
+    );
+    return [pickupLocationQuestion(nextSession, settings, flowSettings)];
+  }
+
+  return continueCheckoutAfterCustomerName(session, settings, now);
+}
+
+async function continueCheckoutAfterFulfillmentTarget(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  now: Date,
+): Promise<BotResponse[]> {
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  const checkout = getCheckoutFromContext(session.context);
+  const paymentMethods = getAvailablePaymentMethods(settings, checkout.fulfillmentMethod);
+
+  if (flowSettings.skipPaymentWhenSingleOption && paymentMethods.length === 1) {
+    const [paymentMethod] = paymentMethods;
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "COLLECT_ORDER_NOTES",
+        context: {
+          ...session.context,
+          checkout: { ...checkout, paymentMethod: paymentMethod.id },
+        },
+      },
+      now,
+    );
+    return continueCheckoutAfterPaymentMethod(nextSession, settings, now);
+  }
+
+  const nextSession = await saveConversationSession(
+    { ...session, currentStep: "SELECT_PAYMENT_METHOD" },
+    now,
+  );
+  return [paymentMethodQuestion(nextSession, settings, flowSettings)];
+}
+
+async function continueCheckoutAfterPaymentMethod(
+  session: ConversationSession,
+  settings: BusinessCheckoutSettings,
+  now: Date,
+): Promise<BotResponse[]> {
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  if (!flowSettings.orderNotesEnabled) {
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "REVIEW_ORDER",
+        context: {
+          ...session.context,
+          checkout: { ...getCheckoutFromContext(session.context), notes: undefined },
+        },
+      },
+      now,
+    );
+    return reviewOrderResponse(nextSession);
+  }
+
+  const nextSession = await saveConversationSession(
+    { ...session, currentStep: "COLLECT_ORDER_NOTES" },
+    now,
+  );
+  return [orderNotesQuestion(nextSession, flowSettings)];
 }
 
 async function handleDeliveryArea(
@@ -1142,7 +1408,10 @@ async function handleDeliveryArea(
   if (!settings) return startCheckout(session, now);
 
   const area = settings.deliveryAreas.find((entry) => entry.id === input.value);
-  if (!area) return [deliveryAreaQuestion(session, settings)];
+  if (!area) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [deliveryAreaQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1156,7 +1425,8 @@ async function handleDeliveryArea(
     now,
   );
 
-  return [deliveryAddressQuestion(nextSession)];
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  return [deliveryAddressQuestion(nextSession, flowSettings)];
 }
 
 async function handlePickupLocation(
@@ -1168,7 +1438,10 @@ async function handlePickupLocation(
   if (!settings) return startCheckout(session, now);
 
   const pickupLocation = settings.pickupLocations.find((entry) => entry.id === input.value);
-  if (!pickupLocation) return [pickupLocationQuestion(session, settings)];
+  if (!pickupLocation) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [pickupLocationQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1185,7 +1458,7 @@ async function handlePickupLocation(
     now,
   );
 
-  return [paymentMethodQuestion(nextSession, settings)];
+  return continueCheckoutAfterFulfillmentTarget(nextSession, settings, now);
 }
 
 async function handleDeliveryAddress(
@@ -1196,6 +1469,7 @@ async function handleDeliveryAddress(
   const language = session.language ?? "en";
   const settings = await getBusinessCheckoutSettings(session.businessId);
   if (!settings) return startCheckout(session, now);
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
 
   const address =
     input.type === "location" ? input.value || "WhatsApp location" : input.value.trim();
@@ -1210,7 +1484,7 @@ async function handleDeliveryAddress(
           "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0643\u0646\u0635 \u0623\u0648 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
         ),
       },
-      deliveryAddressQuestion(session),
+      deliveryAddressQuestion(session, flowSettings),
     ];
   }
   if (address.length < 4) {
@@ -1244,7 +1518,7 @@ async function handleDeliveryAddress(
     now,
   );
 
-  return [paymentMethodQuestion(nextSession, settings)];
+  return continueCheckoutAfterFulfillmentTarget(nextSession, settings, now);
 }
 
 async function handlePaymentMethod(
@@ -1262,7 +1536,10 @@ async function handlePaymentMethod(
       checkout.fulfillmentMethod &&
       method.fulfillmentMethods.includes(checkout.fulfillmentMethod),
   );
-  if (!paymentMethod) return [paymentMethodQuestion(session, settings)];
+  if (!paymentMethod) {
+    const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+    return [paymentMethodQuestion(session, settings, flowSettings)];
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1276,7 +1553,7 @@ async function handlePaymentMethod(
     now,
   );
 
-  return [orderNotesQuestion(nextSession)];
+  return continueCheckoutAfterPaymentMethod(nextSession, settings, now);
 }
 
 async function handleOrderNotes(
@@ -1478,7 +1755,7 @@ async function moveToProductDetails(
   now: Date,
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
-  await saveConversationSession(
+  const nextSession = await saveConversationSession(
     {
       ...session,
       currentStep: "PRODUCT_DETAILS",
@@ -1490,6 +1767,11 @@ async function moveToProductDetails(
     },
     now,
   );
+
+  const flowSettings = await getBusinessBotFlowSettings(session.businessId);
+  if (product.isAvailable && !flowSettings.showProductDetailsBeforeOrdering) {
+    return startPendingItem(nextSession, product, now);
+  }
 
   return [productDetailsResponse(product, language)];
 }
@@ -1505,30 +1787,57 @@ function languageSelectionResponse(): BotResponse {
   };
 }
 
-function mainMenuResponse(language: ConversationLanguage): BotResponse {
-  if (language === "ar") {
-    return {
-      type: "buttons",
-      body: "كيف يمكننا مساعدتك؟",
-      buttons: [
-        { id: "main_order", title: "تقديم طلب" },
-        { id: "main_question", title: "طرح سؤال" },
-        { id: "main_info", title: "معلومات المتجر" },
-      ],
-    };
-  }
+function menuBranchResponse(
+  option: "question" | "info",
+  language: ConversationLanguage,
+  flowSettings: BusinessBotFlowSettings,
+): BotResponse {
+  const text =
+    option === "question"
+      ? language === "ar"
+        ? flowSettings.questionResponseArabic
+        : flowSettings.questionResponseEnglish
+      : language === "ar"
+        ? flowSettings.infoResponseArabic
+        : flowSettings.infoResponseEnglish;
 
+  return { type: "text", text };
+}
+
+function mainMenuResponse(
+  language: ConversationLanguage,
+  flowSettings = getDefaultBotFlowSettings(""),
+): BotResponse {
   return {
     type: "buttons",
-    body: "How can we help?",
+    body:
+      language === "ar"
+        ? flowSettings.welcomeMessageArabic
+        : flowSettings.welcomeMessageEnglish,
     buttons: [
-      { id: "main_order", title: "Place an order" },
-      { id: "main_question", title: "Ask a question" },
-      { id: "main_info", title: "Store information" },
+      {
+        id: "main_order",
+        title: truncateButtonTitle(
+          language === "ar" ? flowSettings.orderButtonArabic : flowSettings.orderButtonEnglish,
+        ),
+      },
+      {
+        id: "main_question",
+        title: truncateButtonTitle(
+          language === "ar"
+            ? flowSettings.questionButtonArabic
+            : flowSettings.questionButtonEnglish,
+        ),
+      },
+      {
+        id: "main_info",
+        title: truncateButtonTitle(
+          language === "ar" ? flowSettings.infoButtonArabic : flowSettings.infoButtonEnglish,
+        ),
+      },
     ],
   };
 }
-
 async function categorySelectionResponse(session: ConversationSession): Promise<BotResponse[]> {
   const language = session.language ?? "en";
   const categories = await listActiveCategories(session.businessId);
@@ -1657,39 +1966,75 @@ function customFieldQuestionResponse(
   if (field.type === "yes_no") {
     return {
       type: "buttons",
-      body: getCustomFieldLabel(field, language),
+      body: customFieldPromptText(field, language),
       buttons: [
-        { id: "yes", title: t(language, "Yes", "نعم") },
-        { id: "no", title: t(language, "No", "لا") },
-        { id: "back", title: t(language, "Back", "رجوع") },
+        { id: "yes", title: t(language, "Yes", "\u0646\u0639\u0645") },
+        { id: "no", title: t(language, "No", "\u0644\u0627") },
+        field.isRequired
+          ? { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") }
+          : { id: "skip", title: t(language, "Skip", "\u062a\u062e\u0637\u064a") },
       ],
     };
   }
 
   if (field.type === "single_choice" && field.choices?.length) {
+    const rows = [
+      ...field.choices.map((choice) => ({
+        id: choice.id,
+        title: truncateListTitle(language === "ar" ? choice.labelArabic : choice.labelEnglish),
+      })),
+      ...(!field.isRequired
+        ? [{ id: "skip", title: t(language, "Skip", "\u062a\u062e\u0637\u064a") }]
+        : []),
+      { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
+      { id: "main_menu", title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629") },
+    ];
+
     return {
       type: "list",
-      body: getCustomFieldLabel(field, language),
-      buttonText: t(language, "Choose", "اختر"),
+      body: customFieldPromptText(field, language),
+      buttonText: t(language, "Choose", "\u0627\u062e\u062a\u0631"),
       sections: [
         {
-          title: getCustomFieldLabel(field, language),
-          rows: field.choices.map((choice) => ({
-            id: choice.id,
-            title: language === "ar" ? choice.labelArabic : choice.labelEnglish,
-          })),
+          title: truncateListTitle(getCustomFieldLabel(field, language)),
+          rows,
         },
       ],
     };
   }
 
-  const placeholder = getCustomFieldPlaceholder(field, language);
   return {
     type: "text",
-    text: placeholder
-      ? `${getCustomFieldLabel(field, language)}\n${placeholder}`
-      : getCustomFieldLabel(field, language),
+    text: customFieldPromptText(field, language),
   };
+}
+
+function customFieldPromptText(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  const placeholder = getCustomFieldPlaceholder(field, language);
+  const skipHint = field.isRequired
+    ? undefined
+    : t(
+        language,
+        "Type skip to leave empty.",
+        "\u0627\u0643\u062a\u0628 \u062a\u062e\u0637\u064a \u0644\u0644\u062a\u0631\u0643 \u0641\u0627\u0631\u063a\u0627.",
+      );
+  return [getCustomFieldLabel(field, language), placeholder, skipHint]
+    .filter((line): line is string => Boolean(line))
+    .join("\n");
+}
+
+function automaticCustomFieldAnswer(
+  field: StoreProductCustomField,
+  language: ConversationLanguage,
+) {
+  if (field.type !== "single_choice" || !field.isRequired || field.choices?.length !== 1) {
+    return undefined;
+  }
+  const [choice] = field.choices;
+  return language === "ar" ? choice.labelArabic : choice.labelEnglish;
 }
 
 async function quantityQuestionResponse(
@@ -1796,14 +2141,17 @@ async function cartMenuResponse(session: ConversationSession): Promise<BotRespon
   ];
 }
 
-function customerNameQuestion(session: ConversationSession): BotResponse {
+function customerNameQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
+  const language = session.language ?? "en";
   return {
     type: "text",
-    text: t(
-      session.language ?? "en",
-      "What name should we put on the order?",
-      "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
-    ),
+    text:
+      language === "ar"
+        ? flowSettings.customerNamePromptArabic
+        : flowSettings.customerNamePromptEnglish,
   };
 }
 
@@ -1829,15 +2177,15 @@ function savedCustomerDetailsQuestion(
   };
 }
 
-function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
+function fulfillmentMethodQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "buttons",
-    body: t(
-      language,
-      "How would you like to receive your order?",
-      "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
-    ),
+    body:
+      language === "ar" ? flowSettings.fulfillmentPromptArabic : flowSettings.fulfillmentPromptEnglish,
     buttons: [
       { id: "checkout_delivery", title: t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644") },
       {
@@ -1846,6 +2194,27 @@ function fulfillmentMethodQuestion(session: ConversationSession): BotResponse {
       },
     ],
   };
+}
+
+function getAvailableFulfillmentMethods(settings: BusinessCheckoutSettings): FulfillmentMethod[] {
+  return [
+    settings.allowDelivery ? "delivery" : undefined,
+    settings.allowPickup ? "pickup" : undefined,
+  ].filter((method): method is FulfillmentMethod => Boolean(method));
+}
+
+function getSingleFulfillmentMethod(settings: BusinessCheckoutSettings) {
+  const methods = getAvailableFulfillmentMethods(settings);
+  return methods.length === 1 ? methods[0] : undefined;
+}
+
+function getAvailablePaymentMethods(
+  settings: BusinessCheckoutSettings,
+  fulfillmentMethod?: FulfillmentMethod,
+) {
+  return settings.paymentMethods.filter((method) =>
+    fulfillmentMethod ? method.fulfillmentMethods.includes(fulfillmentMethod) : false,
+  );
 }
 
 function buildSavedCustomerDetailsText(
@@ -1909,15 +2278,13 @@ function buildSavedCustomerDetailsText(
 function deliveryAreaQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose your delivery area:",
-      "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
-    ),
+    body:
+      language === "ar" ? flowSettings.deliveryAreaPromptArabic : flowSettings.deliveryAreaPromptEnglish,
     buttonText: t(language, "Areas", "\u0627\u0644\u0645\u0646\u0627\u0637\u0642"),
     sections: [
       {
@@ -1939,15 +2306,15 @@ function deliveryAreaQuestion(
 function pickupLocationQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose a pickup location:",
-      "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
-    ),
+    body:
+      language === "ar"
+        ? flowSettings.pickupLocationPromptArabic
+        : flowSettings.pickupLocationPromptEnglish,
     buttonText: t(language, "Pickup", "\u0627\u0633\u062a\u0644\u0627\u0645"),
     sections: [
       {
@@ -1966,20 +2333,24 @@ function pickupLocationQuestion(
   };
 }
 
-function deliveryAddressQuestion(session: ConversationSession): BotResponse {
+function deliveryAddressQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
+  const language = session.language ?? "en";
   return {
     type: "text",
-    text: t(
-      session.language ?? "en",
-      "Send the full delivery address. You can also send a WhatsApp location.",
-      "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
-    ),
+    text:
+      language === "ar"
+        ? flowSettings.deliveryAddressPromptArabic
+        : flowSettings.deliveryAddressPromptEnglish,
   };
 }
 
 function paymentMethodQuestion(
   session: ConversationSession,
   settings: BusinessCheckoutSettings,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): BotResponse {
   const language = session.language ?? "en";
   const checkout = getCheckoutFromContext(session.context);
@@ -1990,11 +2361,8 @@ function paymentMethodQuestion(
 
   return {
     type: "list",
-    body: t(
-      language,
-      "Choose a payment method:",
-      "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
-    ),
+    body:
+      language === "ar" ? flowSettings.paymentMethodPromptArabic : flowSettings.paymentMethodPromptEnglish,
     buttonText: t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639"),
     sections: [
       {
@@ -2008,22 +2376,20 @@ function paymentMethodQuestion(
   };
 }
 
-function orderNotesQuestion(session: ConversationSession): BotResponse {
+function orderNotesQuestion(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): BotResponse {
   const language = session.language ?? "en";
   return {
     type: "buttons",
-    body: t(
-      language,
-      "Would you like to add any notes?",
-      "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
-    ),
+    body:
+      language === "ar" ? flowSettings.orderNotesPromptArabic : flowSettings.orderNotesPromptEnglish,
     buttons: [
       {
         id: "no_notes",
-        title: t(
-          language,
-          "No notes",
-          "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+        title: truncateButtonTitle(
+          language === "ar" ? flowSettings.noNotesButtonArabic : flowSettings.noNotesButtonEnglish,
         ),
       },
     ],
@@ -2281,12 +2647,18 @@ function validateCustomField(
       error: string;
     } {
   const value = rawValue.trim();
-  const skipValues = ["skip", "none", "تخطي", "لا"];
-  if (!field.isRequired && skipValues.includes(normalize(value))) return { ok: true };
+  const normalized = normalize(value);
+  const skipValues = ["skip", "none", "\u062a\u062e\u0637\u064a"];
   if (field.isRequired && !value) {
-    return { ok: false, error: t(language, "This field is required.", "هذا الحقل مطلوب.") };
+    return {
+      ok: false,
+      error: t(language, "This field is required.", "\u0647\u0630\u0627 \u0627\u0644\u062d\u0642\u0644 \u0645\u0637\u0644\u0648\u0628."),
+    };
   }
   if (!field.isRequired && !value) return { ok: true };
+  if (field.type !== "yes_no" && !field.isRequired && skipValues.includes(normalized)) {
+    return { ok: true };
+  }
 
   if (
     (field.type === "short_text" || field.type === "long_text") &&
@@ -2298,7 +2670,7 @@ function validateCustomField(
       error: t(
         language,
         `Minimum ${field.minimumLength} characters.`,
-        `الحد الأدنى ${field.minimumLength} أحرف.`,
+        `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 ${field.minimumLength} \u0623\u062d\u0631\u0641.`,
       ),
     };
   }
@@ -2312,21 +2684,25 @@ function validateCustomField(
       error: t(
         language,
         `Maximum ${field.maximumLength} characters.`,
-        `الحد الأقصى ${field.maximumLength} حرفا.`,
+        `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u0642\u0635\u0649 ${field.maximumLength} \u0623\u062d\u0631\u0641.`,
       ),
     };
   }
   if (field.type === "number") {
     const number = Number(value);
-    if (!Number.isFinite(number))
-      return { ok: false, error: t(language, "Enter a valid number.", "أدخل رقما صحيحا.") };
+    if (!Number.isFinite(number)) {
+      return {
+        ok: false,
+        error: t(language, "Enter a valid number.", "\u0623\u062f\u062e\u0644 \u0631\u0642\u0645\u0627 \u0635\u062d\u064a\u062d\u0627."),
+      };
+    }
     if (field.minimumValue != null && number < field.minimumValue) {
       return {
         ok: false,
         error: t(
           language,
           `Minimum value is ${field.minimumValue}.`,
-          `الحد الأدنى ${field.minimumValue}.`,
+          `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 ${field.minimumValue}.`,
         ),
       };
     }
@@ -2336,30 +2712,33 @@ function validateCustomField(
         error: t(
           language,
           `Maximum value is ${field.maximumValue}.`,
-          `الحد الأقصى ${field.maximumValue}.`,
+          `\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u0642\u0635\u0649 ${field.maximumValue}.`,
         ),
       };
     }
   }
   if (field.type === "yes_no") {
-    const normalized = normalize(value);
-    if (["yes", "y", "true", "1", "نعم"].includes(normalized))
-      return { ok: true, value: t(language, "Yes", "نعم") };
-    if (["no", "n", "false", "0", "لا"].includes(normalized))
-      return { ok: true, value: t(language, "No", "لا") };
-    return { ok: false, error: t(language, "Choose yes or no.", "اختر نعم أو لا.") };
+    if (["yes", "y", "true", "1", "\u0646\u0639\u0645"].includes(normalized))
+      return { ok: true, value: t(language, "Yes", "\u0646\u0639\u0645") };
+    if (["no", "n", "false", "0", "\u0644\u0627"].includes(normalized))
+      return { ok: true, value: t(language, "No", "\u0644\u0627") };
+    if (!field.isRequired && skipValues.includes(normalized)) return { ok: true };
+    return {
+      ok: false,
+      error: t(language, "Choose yes or no.", "\u0627\u062e\u062a\u0631 \u0646\u0639\u0645 \u0623\u0648 \u0644\u0627."),
+    };
   }
   if (field.type === "single_choice" && field.choices?.length) {
     const choice = field.choices.find(
       (entry) =>
         entry.id === value ||
-        normalize(entry.labelEnglish) === normalize(value) ||
-        normalize(entry.labelArabic) === normalize(value),
+        normalize(entry.labelEnglish) === normalized ||
+        normalize(entry.labelArabic) === normalized,
     );
     if (!choice)
       return {
         ok: false,
-        error: t(language, "Choose one of the listed options.", "اختر أحد الخيارات."),
+        error: t(language, "Choose one of the listed options.", "\u0627\u062e\u062a\u0631 \u0623\u062d\u062f \u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a."),
       };
     return { ok: true, value: language === "ar" ? choice.labelArabic : choice.labelEnglish };
   }
@@ -2391,13 +2770,24 @@ function parseLanguage(value: string): ConversationLanguage | undefined {
   return undefined;
 }
 
-function parseMainMenuOption(value: string) {
+function parseMainMenuOption(value: string, flowSettings?: BusinessBotFlowSettings) {
   const normalized = normalize(value);
-  if (["1", "main_order", "place an order", "تقديم طلب"].includes(normalized)) return "order";
-  if (["2", "main_question", "ask a question", "طرح سؤال"].includes(normalized)) return "question";
-  if (["3", "main_info", "store information", "معلومات المتجر"].includes(normalized)) return "info";
+  const orderValues = ["1", "main_order", "place an order", "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628"];
+  const questionValues = ["2", "main_question", "ask a question", "\u0637\u0631\u062d \u0633\u0624\u0627\u0644"];
+  const infoValues = ["3", "main_info", "store information", "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631"];
+
+  if (flowSettings) {
+    orderValues.push(flowSettings.orderButtonEnglish, flowSettings.orderButtonArabic);
+    questionValues.push(flowSettings.questionButtonEnglish, flowSettings.questionButtonArabic);
+    infoValues.push(flowSettings.infoButtonEnglish, flowSettings.infoButtonArabic);
+  }
+
+  if (orderValues.map(normalize).includes(normalized)) return "order";
+  if (questionValues.map(normalize).includes(normalized)) return "question";
+  if (infoValues.map(normalize).includes(normalized)) return "info";
   return undefined;
 }
+
 
 function parseNavigation(value: string) {
   const normalized = normalize(value);
@@ -2488,6 +2878,10 @@ function formatPrice(price: number) {
 
 function truncateListTitle(value: string) {
   return value.length <= 24 ? value : `${value.slice(0, 21)}...`;
+}
+
+function truncateButtonTitle(value: string) {
+  return value.length <= 20 ? value : `${value.slice(0, 17)}...`;
 }
 
 function normalize(value: string) {

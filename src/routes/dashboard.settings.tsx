@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useWaDashboardData } from "@/lib/whatsapp/use-wa-dashboard-data";
+import type { BotFlowSettingsInput } from "@/lib/whatsapp/bot-flow-settings.server";
 import type { WaPaymentMethodRow } from "@/lib/whatsapp/dashboard-store.server";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -18,7 +19,60 @@ const emptyPayment = {
   sort_order: 10,
 };
 
+const defaultFlowForm: BotFlowSettingsInput = {
+  languageSelectionEnabled: true,
+  defaultLanguage: "en",
+  welcomeMessageEnglish: "How can we help?",
+  welcomeMessageArabic: "\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0646\u0627 \u0645\u0633\u0627\u0639\u062f\u062a\u0643\u061f",
+  orderButtonEnglish: "Place an order",
+  orderButtonArabic: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
+  questionButtonEnglish: "Ask a question",
+  questionButtonArabic: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644",
+  questionResponseEnglish: "Send us your question here and our team will reply shortly.",
+  questionResponseArabic:
+    "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
+  infoButtonEnglish: "Store information",
+  infoButtonArabic: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  infoResponseEnglish: "We are open daily. Send a message here if you need help.",
+  infoResponseArabic:
+    "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
+  customerNamePromptEnglish: "What name should we put on the order?",
+  customerNamePromptArabic:
+    "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
+  fulfillmentPromptEnglish: "How would you like to receive your order?",
+  fulfillmentPromptArabic:
+    "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
+  deliveryAreaPromptEnglish: "Choose your delivery area:",
+  deliveryAreaPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
+  pickupLocationPromptEnglish: "Choose a pickup location:",
+  pickupLocationPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
+  deliveryAddressPromptEnglish:
+    "Send the full delivery address. You can also send a WhatsApp location.",
+  deliveryAddressPromptArabic:
+    "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+  paymentMethodPromptEnglish: "Choose a payment method:",
+  paymentMethodPromptArabic:
+    "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
+  orderNotesPromptEnglish: "Would you like to add any notes?",
+  orderNotesPromptArabic:
+    "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
+  noNotesButtonEnglish: "No notes",
+  noNotesButtonArabic:
+    "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+  showProductDetailsBeforeOrdering: true,
+  autoUseSavedCheckoutDetails: false,
+  skipFulfillmentWhenSingleOption: true,
+  skipDeliveryAreaWhenSingleOption: true,
+  skipPickupLocationWhenSingleOption: true,
+  skipPaymentWhenSingleOption: true,
+  orderNotesEnabled: true,
+};
+
 export function SettingsPage() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const showBotFlowSettings = pathname.startsWith("/dashboard-2");
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [businessForm, setBusinessForm] = useState({
     name: "",
@@ -32,6 +86,7 @@ export function SettingsPage() {
     require_owner_approval: true,
     is_active: true,
   });
+  const [flowForm, setFlowForm] = useState<BotFlowSettingsInput>(defaultFlowForm);
   const [paymentForm, setPaymentForm] = useState(emptyPayment);
 
   useEffect(() => {
@@ -48,11 +103,54 @@ export function SettingsPage() {
       require_owner_approval: data.business.require_owner_approval,
       is_active: data.business.is_active,
     });
+    setFlowForm({
+      languageSelectionEnabled: data.botFlowSettings.languageSelectionEnabled,
+      defaultLanguage: data.botFlowSettings.defaultLanguage,
+      welcomeMessageEnglish: data.botFlowSettings.welcomeMessageEnglish,
+      welcomeMessageArabic: data.botFlowSettings.welcomeMessageArabic,
+      orderButtonEnglish: data.botFlowSettings.orderButtonEnglish,
+      orderButtonArabic: data.botFlowSettings.orderButtonArabic,
+      questionButtonEnglish: data.botFlowSettings.questionButtonEnglish,
+      questionButtonArabic: data.botFlowSettings.questionButtonArabic,
+      questionResponseEnglish: data.botFlowSettings.questionResponseEnglish,
+      questionResponseArabic: data.botFlowSettings.questionResponseArabic,
+      infoButtonEnglish: data.botFlowSettings.infoButtonEnglish,
+      infoButtonArabic: data.botFlowSettings.infoButtonArabic,
+      infoResponseEnglish: data.botFlowSettings.infoResponseEnglish,
+      infoResponseArabic: data.botFlowSettings.infoResponseArabic,
+      customerNamePromptEnglish: data.botFlowSettings.customerNamePromptEnglish,
+      customerNamePromptArabic: data.botFlowSettings.customerNamePromptArabic,
+      fulfillmentPromptEnglish: data.botFlowSettings.fulfillmentPromptEnglish,
+      fulfillmentPromptArabic: data.botFlowSettings.fulfillmentPromptArabic,
+      deliveryAreaPromptEnglish: data.botFlowSettings.deliveryAreaPromptEnglish,
+      deliveryAreaPromptArabic: data.botFlowSettings.deliveryAreaPromptArabic,
+      pickupLocationPromptEnglish: data.botFlowSettings.pickupLocationPromptEnglish,
+      pickupLocationPromptArabic: data.botFlowSettings.pickupLocationPromptArabic,
+      deliveryAddressPromptEnglish: data.botFlowSettings.deliveryAddressPromptEnglish,
+      deliveryAddressPromptArabic: data.botFlowSettings.deliveryAddressPromptArabic,
+      paymentMethodPromptEnglish: data.botFlowSettings.paymentMethodPromptEnglish,
+      paymentMethodPromptArabic: data.botFlowSettings.paymentMethodPromptArabic,
+      orderNotesPromptEnglish: data.botFlowSettings.orderNotesPromptEnglish,
+      orderNotesPromptArabic: data.botFlowSettings.orderNotesPromptArabic,
+      noNotesButtonEnglish: data.botFlowSettings.noNotesButtonEnglish,
+      noNotesButtonArabic: data.botFlowSettings.noNotesButtonArabic,
+      showProductDetailsBeforeOrdering: data.botFlowSettings.showProductDetailsBeforeOrdering,
+      autoUseSavedCheckoutDetails: data.botFlowSettings.autoUseSavedCheckoutDetails,
+      skipFulfillmentWhenSingleOption: data.botFlowSettings.skipFulfillmentWhenSingleOption,
+      skipDeliveryAreaWhenSingleOption: data.botFlowSettings.skipDeliveryAreaWhenSingleOption,
+      skipPickupLocationWhenSingleOption: data.botFlowSettings.skipPickupLocationWhenSingleOption,
+      skipPaymentWhenSingleOption: data.botFlowSettings.skipPaymentWhenSingleOption,
+      orderNotesEnabled: data.botFlowSettings.orderNotesEnabled,
+    });
   }, [data]);
 
   async function saveBusiness() {
     await applyAction({ type: "saveBusiness", payload: businessForm }, "Store settings saved.");
   }
+  async function saveBotFlowSettings() {
+    await applyAction({ type: "saveBotFlowSettings", payload: flowForm }, "Bot flow saved.");
+  }
+
 
   async function savePayment() {
     await applyAction(
@@ -70,6 +168,237 @@ export function SettingsPage() {
       </div>
 
       <Status loading={loading} error={error} notice={notice} />
+
+      {showBotFlowSettings ? (
+        <section className="rounded-lg border border-border bg-surface/60 p-5">
+          <h2 className="font-display text-xl font-semibold">Bot flow</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <Toggle
+              label="Ask language first"
+              checked={flowForm.languageSelectionEnabled}
+              onChange={(value) => setFlowForm({ ...flowForm, languageSelectionEnabled: value })}
+            />
+            <SelectInput
+              label="Default language"
+              value={flowForm.defaultLanguage}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, defaultLanguage: value === "ar" ? "ar" : "en" })
+              }
+            >
+              <option value="en">English</option>
+              <option value="ar">Arabic</option>
+            </SelectInput>
+            <Toggle
+              label="Show product details"
+              checked={flowForm.showProductDetailsBeforeOrdering}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, showProductDetailsBeforeOrdering: value })
+              }
+            />
+            <Toggle
+              label="Auto-use saved checkout"
+              checked={flowForm.autoUseSavedCheckoutDetails}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, autoUseSavedCheckoutDetails: value })
+              }
+            />
+            <Toggle
+              label="Skip one delivery choice"
+              checked={flowForm.skipFulfillmentWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipFulfillmentWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one area"
+              checked={flowForm.skipDeliveryAreaWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipDeliveryAreaWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one pickup place"
+              checked={flowForm.skipPickupLocationWhenSingleOption}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, skipPickupLocationWhenSingleOption: value })
+              }
+            />
+            <Toggle
+              label="Skip one payment"
+              checked={flowForm.skipPaymentWhenSingleOption}
+              onChange={(value) => setFlowForm({ ...flowForm, skipPaymentWhenSingleOption: value })}
+            />
+            <Toggle
+              label="Ask order notes"
+              checked={flowForm.orderNotesEnabled}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesEnabled: value })}
+            />
+            <TextArea
+              label="English main menu message"
+              value={flowForm.welcomeMessageEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, welcomeMessageEnglish: value })}
+            />
+            <TextArea
+              label="Arabic main menu message"
+              dir="rtl"
+              value={flowForm.welcomeMessageArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, welcomeMessageArabic: value })}
+            />
+            <TextInput
+              label="English order button"
+              value={flowForm.orderButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, orderButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic order button"
+              dir="rtl"
+              value={flowForm.orderButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, orderButtonArabic: value })}
+            />
+            <TextInput
+              label="English question button"
+              value={flowForm.questionButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, questionButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic question button"
+              dir="rtl"
+              value={flowForm.questionButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, questionButtonArabic: value })}
+            />
+            <TextArea
+              label="English question response"
+              value={flowForm.questionResponseEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, questionResponseEnglish: value })}
+            />
+            <TextArea
+              label="Arabic question response"
+              dir="rtl"
+              value={flowForm.questionResponseArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, questionResponseArabic: value })}
+            />
+            <TextInput
+              label="English info button"
+              value={flowForm.infoButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, infoButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic info button"
+              dir="rtl"
+              value={flowForm.infoButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, infoButtonArabic: value })}
+            />
+            <TextArea
+              label="English store info response"
+              value={flowForm.infoResponseEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, infoResponseEnglish: value })}
+            />
+            <TextArea
+              label="Arabic store info response"
+              dir="rtl"
+              value={flowForm.infoResponseArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, infoResponseArabic: value })}
+            />
+            <TextArea
+              label="English customer name prompt"
+              value={flowForm.customerNamePromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, customerNamePromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic customer name prompt"
+              dir="rtl"
+              value={flowForm.customerNamePromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, customerNamePromptArabic: value })}
+            />
+            <TextArea
+              label="English fulfillment prompt"
+              value={flowForm.fulfillmentPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, fulfillmentPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic fulfillment prompt"
+              dir="rtl"
+              value={flowForm.fulfillmentPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, fulfillmentPromptArabic: value })}
+            />
+            <TextArea
+              label="English delivery area prompt"
+              value={flowForm.deliveryAreaPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAreaPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic delivery area prompt"
+              dir="rtl"
+              value={flowForm.deliveryAreaPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAreaPromptArabic: value })}
+            />
+            <TextArea
+              label="English pickup location prompt"
+              value={flowForm.pickupLocationPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, pickupLocationPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic pickup location prompt"
+              dir="rtl"
+              value={flowForm.pickupLocationPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, pickupLocationPromptArabic: value })}
+            />
+            <TextArea
+              label="English delivery address prompt"
+              value={flowForm.deliveryAddressPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAddressPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic delivery address prompt"
+              dir="rtl"
+              value={flowForm.deliveryAddressPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, deliveryAddressPromptArabic: value })}
+            />
+            <TextArea
+              label="English payment method prompt"
+              value={flowForm.paymentMethodPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, paymentMethodPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic payment method prompt"
+              dir="rtl"
+              value={flowForm.paymentMethodPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, paymentMethodPromptArabic: value })}
+            />
+            <TextArea
+              label="English order notes prompt"
+              value={flowForm.orderNotesPromptEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesPromptEnglish: value })}
+            />
+            <TextArea
+              label="Arabic order notes prompt"
+              dir="rtl"
+              value={flowForm.orderNotesPromptArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, orderNotesPromptArabic: value })}
+            />
+            <TextInput
+              label="English no-notes button"
+              value={flowForm.noNotesButtonEnglish}
+              onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonEnglish: value })}
+            />
+            <TextInput
+              label="Arabic no-notes button"
+              dir="rtl"
+              value={flowForm.noNotesButtonArabic}
+              onChange={(value) => setFlowForm({ ...flowForm, noNotesButtonArabic: value })}
+            />
+          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void saveBotFlowSettings()}
+            className="studio-button-primary mt-4"
+          >
+            <Check className="h-4 w-4" />
+            Save bot flow
+          </button>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-border bg-surface/60 p-5">
         <h2 className="font-display text-xl font-semibold">General store settings</h2>
