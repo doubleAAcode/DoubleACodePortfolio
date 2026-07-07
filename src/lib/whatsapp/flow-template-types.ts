@@ -106,6 +106,8 @@ export type FlowCustomQuestion = {
   choices?: Array<{
     value: string;
     label: Record<FlowLanguage, string>;
+    targetNodeId?: string;
+    active?: boolean;
   }>;
 };
 

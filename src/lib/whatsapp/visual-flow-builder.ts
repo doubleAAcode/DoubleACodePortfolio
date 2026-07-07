@@ -1,8 +1,4 @@
-import {
-  validateFlowForEditor,
-  type FlowValidationIssue,
-  type FlowValidationResult,
-} from "./flow-editor.ts";
+import { validateFlowForEditor } from "./flow-editor.ts";
 import type {
   FlowCustomQuestion,
   FlowDefinition,
@@ -11,6 +7,8 @@ import type {
   FlowMainMenuOption,
   FlowNode,
   FlowNodeType,
+  FlowValidationIssue,
+  FlowValidationResult,
 } from "./flow-template-types.ts";
 
 export type VisualFlowBlockType =
@@ -360,11 +358,14 @@ export function compileVisualFlowToRuntimeFlow(
     mainMenuOptions.find((option) => option.key === "info") ?? mainMenuOptions[2];
   const copy = {
     ...baseFlow.copy,
-    welcome: mainMenu?.config.messages ?? start?.config.messages ?? baseFlow.copy.welcome,
+    welcome: languageCopy(
+      mainMenu?.config.messages ?? start?.config.messages,
+      baseFlow.copy.welcome,
+    ),
     orderButton: legacyOrderOption?.label ?? baseFlow.copy.orderButton,
     questionButton: legacyQuestionOption?.label ?? baseFlow.copy.questionButton,
     infoButton: legacyInfoOption?.label ?? baseFlow.copy.infoButton,
-    infoResponse: storeInfo?.config.messages ?? baseFlow.copy.infoResponse,
+    infoResponse: languageCopy(storeInfo?.config.messages, baseFlow.copy.infoResponse),
   };
   const flow: FlowDefinition = {
     ...baseFlow,
@@ -386,12 +387,17 @@ export function compileVisualFlowToRuntimeFlow(
       humanHandoff: handoff
         ? {
             enabled: true,
-            label: handoff.config.labels ?? { en: "Human support", ar: "دعم بشري" },
-            response: handoff.config.messages ??
+            label: languageCopy(handoff.config.labels, {
+              en: "Human support",
+              ar: "دعم بشري",
+            }),
+            response: languageCopy(
+              handoff.config.messages,
               baseFlow.editor?.humanHandoff?.response ?? {
                 en: "A team member will help you shortly.",
                 ar: "سيساعدك أحد أعضاء الفريق قريباً.",
               },
+            ),
             maxInvalidAttempts: baseFlow.editor?.humanHandoff?.maxInvalidAttempts ?? 3,
             ownerSupportNote: baseFlow.editor?.humanHandoff?.ownerSupportNote ?? "",
           }
@@ -424,17 +430,44 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
       issues.push(error("VISUAL_EDGE_TARGET", "Edge target is missing."));
   }
   const reachable = reachableVisualNodes(startNodes[0]?.id, effectiveEdges);
+  const startHasTarget = startNodes[0]
+    ? effectiveEdges.some((edge) => edge.sourceNodeId === startNodes[0].id)
+    : false;
+  if (startNodes[0] && !startHasTarget) {
+    issues.push(
+      error(
+        "VISUAL_ENTRY_NEXT_REQUIRED",
+        "Entry point needs a first step. Choose the first customer experience in Entry point settings.",
+      ),
+    );
+  }
   for (const node of visualFlow.nodes) {
     if (startNodes.length && !reachable.has(node.id)) {
-      issues.push(warning("VISUAL_UNREACHABLE", `${node.title} is not reachable from START.`));
+      issues.push(
+        warning(
+          "VISUAL_UNREACHABLE",
+          `${friendlyValidationStepName(node)} is not reachable from Entry point.`,
+        ),
+      );
     }
     const outgoing = effectiveEdges.some((edge) => edge.sourceNodeId === node.id);
     if (!outgoing && node.type !== "END") {
-      issues.push(warning("VISUAL_DEAD_END", `${node.title} has no outgoing connection.`));
+      issues.push(
+        warning(
+          "VISUAL_DEAD_END",
+          `${friendlyValidationStepName(node)} has no next step. Choose what happens after this step.`,
+        ),
+      );
     }
     if (node.type === "MAIN_MENU") {
       const options = node.config.menuOptions ?? [];
-      if (options.length < 2) issues.push(error("VISUAL_MENU_OPTIONS", "Main menu needs options."));
+      const activeOptions = options.filter((option) => option.active !== false);
+      if (!activeOptions.length)
+        issues.push(error("VISUAL_MENU_OPTIONS", "Main menu needs at least one active option."));
+      const optionKeys = activeOptions.map((option) => (option.key || "").trim().toLowerCase());
+      if (new Set(optionKeys).size !== optionKeys.length) {
+        issues.push(error("VISUAL_MENU_KEY_DUPLICATE", "Main menu option keys must be unique."));
+      }
       for (const option of options) {
         if (option.active === false) continue;
         if (!option.label.en.trim()) {
@@ -447,6 +480,7 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
         }
       }
     }
+    if (node.config.messageBehavior === "options") validateOptionsNode(node, issues);
     if (node.type === "QUESTION") validateQuestionNode(node, issues);
     if (node.type === "CONDITION") {
       const rules = node.config.conditionRules ?? [];
@@ -641,10 +675,73 @@ function validateQuestionNode(node: VisualFlowNode, issues: FlowValidationIssue[
     issues.push(error("VISUAL_QUESTION_KEY", `${node.title} has an invalid question key.`));
   }
   if (!question.label.en.trim()) {
-    issues.push(error("VISUAL_QUESTION_LABEL", `${node.title} needs English question text.`));
+    issues.push(
+      error("VISUAL_QUESTION_LABEL", `${friendlyValidationStepName(node)} needs question text.`),
+    );
   }
-  if (question.type === "single_choice" && (question.choices?.length ?? 0) < 2) {
-    issues.push(error("VISUAL_QUESTION_CHOICES", `${node.title} needs at least two choices.`));
+  if (!node.config.questionNextNodeId) {
+    issues.push(
+      error(
+        "VISUAL_QUESTION_NEXT",
+        `${friendlyValidationStepName(node)} needs a next step after the customer answers.`,
+      ),
+    );
+  }
+  if (question.type === "single_choice") {
+    const activeChoices = (question.choices ?? []).filter((choice) => choice.active !== false);
+    if (activeChoices.length < 2) {
+      issues.push(
+        error(
+          "VISUAL_QUESTION_CHOICES",
+          `${friendlyValidationStepName(node)} needs at least two active choices.`,
+        ),
+      );
+    }
+    const choiceKeys = activeChoices.map((choice) => choice.value.trim().toLowerCase());
+    if (new Set(choiceKeys).size !== choiceKeys.length) {
+      issues.push(
+        error(
+          "VISUAL_QUESTION_CHOICE_DUPLICATE",
+          `${friendlyValidationStepName(node)} has duplicate choice keys.`,
+        ),
+      );
+    }
+  }
+}
+
+function validateOptionsNode(node: VisualFlowNode, issues: FlowValidationIssue[]) {
+  const options = (node.config.menuOptions ?? []).filter((option) => option.active !== false);
+  if (!options.length) {
+    issues.push(
+      error("VISUAL_OPTIONS_REQUIRED", `${friendlyValidationStepName(node)} needs active options.`),
+    );
+  }
+  const keys = options.map((option) => (option.key || "").trim().toLowerCase());
+  if (new Set(keys).size !== keys.length) {
+    issues.push(
+      error(
+        "VISUAL_OPTIONS_KEY_DUPLICATE",
+        `${friendlyValidationStepName(node)} has duplicate option keys.`,
+      ),
+    );
+  }
+  for (const option of options) {
+    if (!option.label.en.trim()) {
+      issues.push(
+        error(
+          "VISUAL_OPTIONS_LABEL",
+          `${friendlyValidationStepName(node)} has an option without an English label.`,
+        ),
+      );
+    }
+    if (!option.targetNodeId) {
+      issues.push(
+        error(
+          "VISUAL_OPTIONS_TARGET",
+          `${friendlyValidationStepName(node)} has an option without a target step.`,
+        ),
+      );
+    }
   }
 }
 
@@ -734,6 +831,20 @@ function generatedEdgesFromNodeSettings(visualFlow: VisualFlowDefinition): Visua
         });
       }
     } else if (node.type === "QUESTION") {
+      if (node.config.question?.type === "single_choice") {
+        for (const choice of node.config.question.choices ?? []) {
+          if (choice.active === false || !choice.targetNodeId) continue;
+          edges.push({
+            id: `${node.id}_choice_${choice.value}_to_${choice.targetNodeId}`,
+            sourceNodeId: node.id,
+            sourceHandle: choice.value,
+            targetNodeId: choice.targetNodeId,
+            label: choice.label.en || choice.value,
+            condition: choice.value,
+            sortOrder: sortOrder++,
+          });
+        }
+      }
       if (node.config.questionNextNodeId) {
         edges.push({
           id: `${node.id}_answer_to_${node.config.questionNextNodeId}`,
@@ -835,6 +946,20 @@ function visualTypeToRuntime(type: VisualFlowBlockType): FlowNodeType {
 
 function visualTitle(type: VisualFlowBlockType) {
   return visualBlockPalette.find((block) => block.type === type)?.title ?? type;
+}
+
+function friendlyValidationStepName(node: VisualFlowNode) {
+  return node.title || visualTitle(node.type);
+}
+
+function languageCopy(
+  value: Partial<Record<FlowLanguage, string>> | undefined,
+  fallback: Record<FlowLanguage, string>,
+): Record<FlowLanguage, string> {
+  return {
+    en: value?.en ?? fallback.en,
+    ar: value?.ar ?? fallback.ar,
+  };
 }
 
 function isVisualFlow(value: unknown): value is VisualFlowDefinition {

@@ -774,17 +774,20 @@ export function VisualFlowBuilderEditor({
           </button>
         </div>
         {showAddStep ? (
-          <AddStepWizard
+          <GuidedAddStepWizard
             visualFlow={visualFlow}
+            selectedBlockId={selectedBlock?.id ?? selectedBlockId}
             onCancel={() => setShowAddStep(false)}
-            onCreate={(next) => {
+            onCreate={(next, createdNodeId) => {
               onChange(next);
+              onSelectBlock(createdNodeId);
               setShowAddStep(false);
             }}
           />
         ) : null}
         <ConversationOutline
           nodes={visualFlow.nodes}
+          validation={validation}
           selectedBlockId={selectedBlockId}
           onSelect={onSelectBlock}
         />
@@ -943,6 +946,7 @@ export function VisualFlowBuilderEditor({
           selectedBlock={selectedBlock}
           selectedBlockId={selectedBlockId}
           showAddStep={showAddStep}
+          validation={validation}
           onToggleAddStep={() => setShowAddStep((value) => !value)}
           onAddStep={(next) => {
             onChange(next);
@@ -1273,6 +1277,7 @@ function ConfigureFlowMode({
   selectedBlock,
   selectedBlockId,
   showAddStep,
+  validation,
   onToggleAddStep,
   onAddStep,
   onCancelAddStep,
@@ -1284,6 +1289,7 @@ function ConfigureFlowMode({
   selectedBlock?: VisualFlowNode;
   selectedBlockId: string;
   showAddStep: boolean;
+  validation?: ReturnType<typeof validateVisualFlow>;
   onToggleAddStep: () => void;
   onAddStep: (flow: VisualFlowDefinition) => void;
   onCancelAddStep: () => void;
@@ -1310,10 +1316,19 @@ function ConfigureFlowMode({
           </button>
         </div>
         {showAddStep ? (
-          <AddStepWizard visualFlow={visualFlow} onCreate={onAddStep} onCancel={onCancelAddStep} />
+          <GuidedAddStepWizard
+            visualFlow={visualFlow}
+            selectedBlockId={selectedBlock?.id ?? selectedBlockId}
+            onCreate={(next, createdNodeId) => {
+              onAddStep(next);
+              onSelectBlock(createdNodeId);
+            }}
+            onCancel={onCancelAddStep}
+          />
         ) : null}
         <ConversationOutline
           nodes={visualFlow.nodes}
+          validation={validation}
           selectedBlockId={selectedBlockId}
           onSelect={onSelectBlock}
         />
@@ -1341,6 +1356,7 @@ function ConfigureFlowMode({
       <StepSettingsColumn
         visualFlow={visualFlow}
         selectedBlock={selectedBlock}
+        validation={validation}
         onUpdateNode={onUpdateNode}
         onChange={onChange}
       />
@@ -1423,14 +1439,17 @@ function JourneySectionGrid({
 function StepSettingsColumn({
   visualFlow,
   selectedBlock,
+  validation,
   onUpdateNode,
   onChange,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
+  validation?: ReturnType<typeof validateVisualFlow>;
   onUpdateNode: (node: VisualFlowNode) => void;
   onChange: (flow: VisualFlowDefinition) => void;
 }) {
+  const selectedIssues = selectedBlock ? issuesForStep(validation, selectedBlock) : [];
   return (
     <div className="min-h-0 min-w-0 overflow-y-auto rounded-md border border-border bg-background p-4">
       <div className="font-medium">Selected step</div>
@@ -1449,6 +1468,7 @@ function StepSettingsColumn({
             onChange={onUpdateNode}
             onFlowChange={onChange}
           />
+          {selectedIssues.length ? <StepIssueList issues={selectedIssues} /> : null}
           <WhatsAppStepPreview block={selectedBlock} />
         </div>
       ) : (
@@ -1519,7 +1539,11 @@ function AdvancedVisualFlowMode({
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-h-0 overflow-hidden rounded-md border border-border bg-background p-4">
-        <div className="font-medium">Visual flow JSON</div>
+        <div className="font-medium">Advanced JSON - for developers only</div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Editing JSON directly can break the flow. Use the visual editor unless you know what you
+          are doing.
+        </p>
         <textarea
           readOnly
           value={JSON.stringify(visualFlow, null, 2)}
@@ -1651,12 +1675,173 @@ function AddStepWizard({
   );
 }
 
+function GuidedAddStepWizard({
+  visualFlow,
+  selectedBlockId,
+  onCreate,
+  onCancel,
+}: {
+  visualFlow: VisualFlowDefinition;
+  selectedBlockId: string;
+  onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
+  onCancel: () => void;
+}) {
+  const [kind, setKind] = useState<AddStepKind>("message");
+  const [title, setTitle] = useState("");
+  const [placement, setPlacement] = useState<"after_selected" | "option_target" | "unconnected">(
+    "after_selected",
+  );
+  const [afterBehavior, setAfterBehavior] = useState<"next" | "options" | "main_menu" | "end">(
+    "next",
+  );
+  const [nextNodeId, setNextNodeId] = useState("");
+  const selectedKind = addStepKinds.find((entry) => entry.id === kind) ?? addStepKinds[0];
+  const selectedBlock = visualFlow.nodes.find((node) => node.id === selectedBlockId);
+
+  function createStep() {
+    const afterNodeId = placement === "after_selected" ? selectedBlockId : "";
+    const withNode = addConfiguredVisualNode(visualFlow, selectedKind.type, {
+      title: title.trim() || selectedKind.label,
+      afterNodeId,
+      nextNodeId: afterBehavior === "next" ? nextNodeId : undefined,
+    });
+    const created = withNode.nodes[withNode.nodes.length - 1];
+    const createdConfig: VisualFlowNode["config"] =
+      kind === "options" || afterBehavior === "options"
+        ? {
+            ...created.config,
+            messageBehavior: "options",
+            menuOptions: [
+              {
+                key: "option_1",
+                label: { en: "First option", ar: "" },
+                active: true,
+              },
+            ],
+          }
+        : {
+            ...created.config,
+            messageBehavior:
+              selectedKind.type === "SEND_MESSAGE"
+                ? afterBehavior === "main_menu"
+                  ? "main_menu"
+                  : afterBehavior === "end"
+                    ? "end"
+                    : created.config.messageBehavior
+                : created.config.messageBehavior,
+          };
+    let nextFlow: VisualFlowDefinition = {
+      ...withNode,
+      nodes: withNode.nodes.map((node) =>
+        node.id === created.id ? { ...node, config: createdConfig } : node,
+      ),
+    };
+
+    if (placement === "option_target" && selectedBlock) {
+      const optionKey = `option_${(selectedBlock.config.menuOptions ?? []).length + 1}`;
+      nextFlow = {
+        ...nextFlow,
+        nodes: nextFlow.nodes.map((node) =>
+          node.id === selectedBlock.id
+            ? {
+                ...node,
+                config: {
+                  ...node.config,
+                  messageBehavior:
+                    node.type === "MAIN_MENU" ? node.config.messageBehavior : "options",
+                  menuOptions: [
+                    ...(node.config.menuOptions ?? []),
+                    {
+                      key: optionKey,
+                      label: { en: title.trim() || selectedKind.label, ar: "" },
+                      targetNodeId: created.id,
+                      active: true,
+                    },
+                  ],
+                },
+              }
+            : node,
+        ),
+      };
+    }
+
+    onCreate(nextFlow, created.id);
+  }
+
+  return (
+    <div className="mt-3 space-y-3 rounded-md border border-primary/40 bg-primary/5 p-3">
+      <label className="block text-sm">
+        <span className="mb-1 block text-muted-foreground">Step type</span>
+        <select
+          value={kind}
+          onChange={(event) => setKind(event.target.value as AddStepKind)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          {addStepKinds.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {entry.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <TextField label="Step title" value={title} onChange={setTitle} />
+      <label className="block text-sm">
+        <span className="mb-1 block text-muted-foreground">Where should this step be placed?</span>
+        <select
+          value={placement}
+          onChange={(event) => setPlacement(event.target.value as typeof placement)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option value="after_selected">
+            After selected step{selectedBlock ? ` (${selectedBlock.title})` : ""}
+          </option>
+          <option value="option_target">As a new option target from selected step</option>
+          <option value="unconnected">Unconnected / custom</option>
+        </select>
+      </label>
+      <label className="block text-sm">
+        <span className="mb-1 block text-muted-foreground">
+          What should happen after this step?
+        </span>
+        <select
+          value={afterBehavior}
+          onChange={(event) => setAfterBehavior(event.target.value as typeof afterBehavior)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option value="next">Go to another step</option>
+          <option value="options">Show options</option>
+          <option value="main_menu">Go to main menu</option>
+          <option value="end">End conversation</option>
+        </select>
+      </label>
+      {afterBehavior === "next" ? (
+        <NextBlockSelect
+          label="Then go to"
+          nodes={visualFlow.nodes}
+          value={nextNodeId}
+          onChange={setNextNodeId}
+        />
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className="studio-button-primary" onClick={createStep}>
+          Create step
+        </button>
+        <button type="button" className="studio-button-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ConversationOutline({
   nodes,
+  validation,
   selectedBlockId,
   onSelect,
 }: {
   nodes: VisualFlowNode[];
+  validation?: ReturnType<typeof validateVisualFlow>;
   selectedBlockId: string;
   onSelect: (nodeId: string) => void;
 }) {
@@ -1704,21 +1889,13 @@ function ConversationOutline({
             </div>
             <div className="space-y-1">
               {groupNodes.map((node) => (
-                <button
+                <OutlineStepButton
                   key={node.id}
-                  type="button"
-                  onClick={() => onSelect(node.id)}
-                  className={`block w-full rounded-md border px-3 py-2 text-left text-sm transition hover:border-primary ${
-                    selectedBlockId === node.id ? "border-primary bg-primary/10" : "border-border"
-                  }`}
-                >
-                  <span className="block font-medium">
-                    {node.title || friendlyBlockName(node.type)}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {friendlyBlockName(node.type)}
-                  </span>
-                </button>
+                  node={node}
+                  selected={selectedBlockId === node.id}
+                  issues={issuesForStep(validation, node)}
+                  onSelect={onSelect}
+                />
               ))}
             </div>
           </div>
@@ -1733,26 +1910,66 @@ function ConversationOutline({
             {nodes
               .filter((node) => !used.has(node.id))
               .map((node) => (
-                <button
+                <OutlineStepButton
                   key={node.id}
-                  type="button"
-                  onClick={() => onSelect(node.id)}
-                  className={`block w-full rounded-md border px-3 py-2 text-left text-sm transition hover:border-primary ${
-                    selectedBlockId === node.id ? "border-primary bg-primary/10" : "border-border"
-                  }`}
-                >
-                  <span className="block font-medium">
-                    {node.title || friendlyBlockName(node.type)}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {friendlyBlockName(node.type)}
-                  </span>
-                </button>
+                  node={node}
+                  selected={selectedBlockId === node.id}
+                  issues={issuesForStep(validation, node)}
+                  onSelect={onSelect}
+                />
               ))}
           </div>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function OutlineStepButton({
+  node,
+  selected,
+  issues,
+  onSelect,
+}: {
+  node: VisualFlowNode;
+  selected: boolean;
+  issues: NonNullable<ReturnType<typeof validateVisualFlow>>["issues"];
+  onSelect: (nodeId: string) => void;
+}) {
+  const hasError = issues.some((issue) => issue.severity === "ERROR");
+  const hasWarning = issues.some((issue) => issue.severity === "WARNING");
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(node.id)}
+      className={`block w-full rounded-md border px-3 py-2 text-left text-sm transition hover:border-primary ${
+        selected ? "border-primary bg-primary/10" : "border-border"
+      }`}
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="font-medium">{node.title || friendlyBlockName(node.type)}</span>
+        {hasError || hasWarning ? (
+          <span
+            className={
+              hasError
+                ? "rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive"
+                : "rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] text-amber-200"
+            }
+          >
+            {hasError ? "Error" : "Warning"}
+          </span>
+        ) : (
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+        )}
+      </span>
+      <span className="mt-1 block text-xs text-muted-foreground">
+        {friendlyBlockName(node.type)}
+      </span>
+      <span className="mt-1 block truncate text-[11px] text-muted-foreground/70">{node.id}</span>
+      {visualBlockSummary(node) ? (
+        <span className="mt-1 block text-xs text-muted-foreground">{visualBlockSummary(node)}</span>
+      ) : null}
+    </button>
   );
 }
 
@@ -1858,8 +2075,13 @@ function EntryPointSettings({
   const behavior = block.config.startBehavior ?? "welcome_then_next";
   return (
     <div className="space-y-4">
+      <SettingsSection title="Entry point">
+        <p className="text-sm text-muted-foreground">
+          This controls what happens when a customer first messages the business.
+        </p>
+      </SettingsSection>
       <label className="block text-sm">
-        <span className="mb-1 block text-muted-foreground">Conversation start</span>
+        <span className="mb-1 block text-muted-foreground">First step behavior</span>
         <select
           value={behavior}
           onChange={(event) =>
@@ -1875,50 +2097,87 @@ function EntryPointSettings({
           }
           className="w-full rounded-md border border-input bg-background px-3 py-2"
         >
-          <option value="welcome_then_next">Use normal start path</option>
-          <option value="language_first">Ask for language first</option>
-          <option value="main_menu">Skip language and open Main Menu</option>
+          <option value="language_first">Ask language first</option>
+          <option value="welcome_then_next">Send welcome message first</option>
+          <option value="main_menu">Go directly to main menu</option>
           <option value="custom_step">Start from a custom step</option>
         </select>
       </label>
-      <div className="rounded-md border border-border bg-surface/50 p-3 text-sm text-muted-foreground">
-        Start is only routing. The visible welcome text is the Main Menu customer message. With the
-        normal path, customers see language selection first, then the Main Menu message. Edit that
-        text by selecting Main Menu from the journey outline.
-      </div>
-      <NextBlockSelect
-        label="Next step"
-        nodes={nodes}
-        value={block.config.messageNextNodeId ?? outgoing?.targetNodeId ?? ""}
-        onChange={(targetNodeId) => {
-          const updatedBlock: VisualFlowNode = {
-            ...block,
-            config: {
-              ...block.config,
-              messageNextNodeId: targetNodeId,
-              startBehavior: "custom_step",
-            },
-          };
-          onFlowChange({
-            ...visualFlow,
-            nodes: visualFlow.nodes.map((node) =>
-              node.id === updatedBlock.id ? updatedBlock : node,
-            ),
-            edges: [
-              ...visualFlow.edges.filter((edge) => edge.sourceNodeId !== block.id),
-              {
-                id: `${block.id}_entry_to_${targetNodeId}`,
-                sourceNodeId: block.id,
-                sourceHandle: "entry",
-                targetNodeId,
-                label: "First step",
-                condition: null,
-                sortOrder: visualFlow.edges.length + 1,
+      {behavior === "welcome_then_next" ? (
+        <SettingsSection title="Welcome message">
+          <TextAreaField
+            label="Welcome message EN"
+            value={block.config.messages?.en ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                config: { ...block.config, messages: { ...block.config.messages, en: value } },
+              })
+            }
+          />
+          <TextAreaField
+            label="Welcome message AR"
+            value={block.config.messages?.ar ?? ""}
+            dir="rtl"
+            onChange={(value) =>
+              onChange({
+                ...block,
+                config: { ...block.config, messages: { ...block.config.messages, ar: value } },
+              })
+            }
+          />
+          <NextBlockSelect
+            label="Next step"
+            nodes={nodes}
+            value={block.config.messageNextNodeId ?? outgoing?.targetNodeId ?? ""}
+            onChange={(targetNodeId) =>
+              onChange({
+                ...block,
+                config: {
+                  ...block.config,
+                  messageNextNodeId: targetNodeId,
+                  startBehavior: "welcome_then_next",
+                },
+              })
+            }
+          />
+        </SettingsSection>
+      ) : null}
+      {behavior === "custom_step" ? (
+        <NextBlockSelect
+          label="Target step"
+          nodes={nodes}
+          value={block.config.messageNextNodeId ?? outgoing?.targetNodeId ?? ""}
+          onChange={(targetNodeId) => {
+            const updatedBlock: VisualFlowNode = {
+              ...block,
+              config: {
+                ...block.config,
+                messageNextNodeId: targetNodeId,
+                startBehavior: "custom_step",
               },
-            ],
-          });
-        }}
-      />
+            };
+            onFlowChange({
+              ...visualFlow,
+              nodes: visualFlow.nodes.map((node) =>
+                node.id === updatedBlock.id ? updatedBlock : node,
+              ),
+              edges: [
+                ...visualFlow.edges.filter((edge) => edge.sourceNodeId !== block.id),
+                {
+                  id: `${block.id}_entry_to_${targetNodeId}`,
+                  sourceNodeId: block.id,
+                  sourceHandle: "entry",
+                  targetNodeId,
+                  label: "First step",
+                  condition: null,
+                  sortOrder: visualFlow.edges.length + 1,
+                },
+              ],
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1995,6 +2254,31 @@ function MessageStepSettings({
             onChange({ ...block, config: { ...block.config, messageNextNodeId: value } })
           }
         />
+      ) : null}
+      {behavior === "end" ? (
+        <SettingsSection title="Optional closing message">
+          <TextAreaField
+            label="Closing message EN"
+            value={block.config.fallback?.en ?? ""}
+            onChange={(value) =>
+              onChange({
+                ...block,
+                config: { ...block.config, fallback: { ...block.config.fallback, en: value } },
+              })
+            }
+          />
+          <TextAreaField
+            label="Closing message AR"
+            value={block.config.fallback?.ar ?? ""}
+            dir="rtl"
+            onChange={(value) =>
+              onChange({
+                ...block,
+                config: { ...block.config, fallback: { ...block.config.fallback, ar: value } },
+              })
+            }
+          />
+        </SettingsSection>
       ) : null}
     </div>
   );
@@ -2252,6 +2536,13 @@ function QuestionBlockSettings({
   const updateQuestion = (next: FlowCustomQuestion) =>
     onChange({ ...block, config: { ...block.config, question: next } });
   const choices = question.choices ?? [];
+  const moveChoice = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= choices.length) return;
+    const nextChoices = [...choices];
+    [nextChoices[index], nextChoices[nextIndex]] = [nextChoices[nextIndex], nextChoices[index]];
+    updateQuestion({ ...question, choices: nextChoices });
+  };
   return (
     <div className="space-y-4">
       <TextField
@@ -2274,6 +2565,23 @@ function QuestionBlockSettings({
           updateQuestion({ ...question, label: { ...question.label, ar: value } })
         }
       />
+      <div className="grid gap-3 md:grid-cols-2">
+        <TextField
+          label="Help text EN"
+          value={question.helpText.en}
+          onChange={(value) =>
+            updateQuestion({ ...question, helpText: { ...question.helpText, en: value } })
+          }
+        />
+        <TextField
+          label="Help text AR"
+          value={question.helpText.ar}
+          dir="rtl"
+          onChange={(value) =>
+            updateQuestion({ ...question, helpText: { ...question.helpText, ar: value } })
+          }
+        />
+      </div>
       <label className="block text-sm">
         <span className="mb-1 block text-muted-foreground">Type</span>
         <select
@@ -2295,6 +2603,32 @@ function QuestionBlockSettings({
         checked={question.required}
         onChange={(checked) => updateQuestion({ ...question, required: checked })}
       />
+      {question.type === "number" ? (
+        <SettingsSection title="Number validation">
+          <div className="grid gap-3 md:grid-cols-2">
+            <TextField
+              label="Optional min"
+              value={question.minValue == null ? "" : String(question.minValue)}
+              onChange={(value) =>
+                updateQuestion({
+                  ...question,
+                  minValue: value.trim() ? Number(value) : null,
+                })
+              }
+            />
+            <TextField
+              label="Optional max"
+              value={question.maxValue == null ? "" : String(question.maxValue)}
+              onChange={(value) =>
+                updateQuestion({
+                  ...question,
+                  maxValue: value.trim() ? Number(value) : null,
+                })
+              }
+            />
+          </div>
+        </SettingsSection>
+      ) : null}
       {question.type === "single_choice" ? (
         <SettingsSection title="Choices">
           <div className="space-y-3">
@@ -2303,18 +2637,25 @@ function QuestionBlockSettings({
                 key={`${choice.value}-${index}`}
                 className="space-y-3 rounded-md border border-border p-3"
               >
-                <TextField
-                  label="Choice value"
-                  value={choice.value}
-                  onChange={(value) =>
-                    updateQuestion({
-                      ...question,
-                      choices: choices.map((entry, entryIndex) =>
-                        entryIndex === index ? { ...entry, value } : entry,
-                      ),
-                    })
-                  }
-                />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium">Choice {index + 1}</div>
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      className="studio-button-secondary px-2 py-1"
+                      onClick={() => moveChoice(index, -1)}
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      className="studio-button-secondary px-2 py-1"
+                      onClick={() => moveChoice(index, 1)}
+                    >
+                      Down
+                    </button>
+                  </div>
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <TextField
                     label="Label EN"
@@ -2346,6 +2687,43 @@ function QuestionBlockSettings({
                     }
                   />
                 </div>
+                <TextField
+                  label="Choice value/key"
+                  value={choice.value}
+                  onChange={(value) =>
+                    updateQuestion({
+                      ...question,
+                      choices: choices.map((entry, entryIndex) =>
+                        entryIndex === index ? { ...entry, value } : entry,
+                      ),
+                    })
+                  }
+                />
+                <NextBlockSelect
+                  label="Optional target override"
+                  nodes={nodes}
+                  value={choice.targetNodeId ?? ""}
+                  onChange={(value) =>
+                    updateQuestion({
+                      ...question,
+                      choices: choices.map((entry, entryIndex) =>
+                        entryIndex === index ? { ...entry, targetNodeId: value } : entry,
+                      ),
+                    })
+                  }
+                />
+                <ToggleField
+                  label="Active"
+                  checked={choice.active !== false}
+                  onChange={(checked) =>
+                    updateQuestion({
+                      ...question,
+                      choices: choices.map((entry, entryIndex) =>
+                        entryIndex === index ? { ...entry, active: checked } : entry,
+                      ),
+                    })
+                  }
+                />
                 <button
                   type="button"
                   className="studio-button-secondary"
@@ -2421,6 +2799,29 @@ function QuestionBlockSettings({
           onChange({ ...block, config: { ...block.config, questionFallbackNodeId: value } })
         }
       />
+      <SettingsSection title="Invalid or unclear answer">
+        <TextAreaField
+          label="Fallback message EN"
+          value={block.config.fallback?.en ?? ""}
+          onChange={(value) =>
+            onChange({
+              ...block,
+              config: { ...block.config, fallback: { ...block.config.fallback, en: value } },
+            })
+          }
+        />
+        <TextAreaField
+          label="Fallback message AR"
+          value={block.config.fallback?.ar ?? ""}
+          dir="rtl"
+          onChange={(value) =>
+            onChange({
+              ...block,
+              config: { ...block.config, fallback: { ...block.config.fallback, ar: value } },
+            })
+          }
+        />
+      </SettingsSection>
     </div>
   );
 }
@@ -2693,21 +3094,58 @@ function StepExplanation({ block }: { block: VisualFlowNode }) {
   );
 }
 
+function StepIssueList({ issues }: { issues: ReturnType<typeof validateVisualFlow>["issues"] }) {
+  return (
+    <div className="space-y-2 rounded-md border border-border bg-surface/40 p-3">
+      <div className="text-sm font-medium">Fixes for this step</div>
+      {issues.map((issue, index) => (
+        <div key={`${issue.code}-${index}`} className="text-sm">
+          <span className={issue.severity === "ERROR" ? "text-destructive" : "text-amber-200"}>
+            {issue.severity === "ERROR" ? "Error" : "Warning"}:
+          </span>{" "}
+          <span className="text-muted-foreground">{humanizeValidationIssue(issue.message)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function WhatsAppStepPreview({ block }: { block: VisualFlowNode }) {
-  const message = previewMessageForBlock(block);
+  const [language, setLanguage] = useState<"en" | "ar">("en");
+  const message = previewMessageForBlock(block, language);
   const options =
     block.config.menuOptions
       ?.filter((option) => option.active !== false)
-      .map((option) => option.label.en) ?? [];
+      .map((option) => option.label[language] || option.label.en) ?? [];
+  const choices =
+    block.type === "QUESTION" && block.config.question?.type === "single_choice"
+      ? (block.config.question.choices ?? [])
+          .filter((choice) => choice.active !== false)
+          .map((choice) => choice.label[language] || choice.label.en)
+      : [];
   return (
     <div className="rounded-md border border-border bg-[#0b141a] p-3 text-sm text-white">
-      <div className="mb-2 text-xs uppercase tracking-[0.14em] text-white/50">WhatsApp preview</div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-xs uppercase tracking-[0.14em] text-white/50">WhatsApp preview</div>
+        <div className="flex rounded-md border border-[#2a3942] p-0.5 text-xs">
+          {(["en", "ar"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`rounded px-2 py-1 ${language === item ? "bg-[#2a3942]" : ""}`}
+              onClick={() => setLanguage(item)}
+            >
+              {item.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="max-w-[90%] rounded-lg bg-[#1f2c34] px-3 py-2">
         <div className="whitespace-pre-wrap">{message}</div>
       </div>
-      {options.length ? (
+      {[...options, ...choices].length ? (
         <div className="mt-2 max-w-[90%] space-y-1">
-          {options.slice(0, 10).map((option) => (
+          {[...options, ...choices].slice(0, 10).map((option) => (
             <div
               key={option}
               className="rounded-md border border-[#2a3942] px-3 py-2 text-[#53bdeb]"
@@ -2729,15 +3167,57 @@ function StepRunPreview({
   selectedBlockId: string;
 }) {
   const [mode, setMode] = useState<"start" | "selected">("selected");
+  const [currentId, setCurrentId] = useState("");
+  const [sampleReply, setSampleReply] = useState("");
+  const [transcript, setTranscript] = useState<Array<{ speaker: "bot" | "admin"; text: string }>>(
+    [],
+  );
   const startId =
     mode === "start"
       ? visualFlow.nodes.find((node) => node.type === "START")?.id || selectedBlockId
       : selectedBlockId;
-  const steps = simulatePreviewSteps(visualFlow, startId);
+  const activeId = currentId || startId;
+  const currentNode = visualFlow.nodes.find((node) => node.id === activeId);
+  const outgoing = getEffectiveVisualEdges(visualFlow)
+    .filter((edge) => edge.sourceNodeId === activeId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  function reset(nextMode = mode) {
+    const nextStartId =
+      nextMode === "start"
+        ? visualFlow.nodes.find((node) => node.type === "START")?.id || selectedBlockId
+        : selectedBlockId;
+    setCurrentId(nextStartId);
+    setSampleReply("");
+    const node = visualFlow.nodes.find((entry) => entry.id === nextStartId);
+    setTranscript(node ? [{ speaker: "bot", text: previewMessageForBlock(node) }] : []);
+  }
+
+  function moveTo(targetNodeId: string, adminText?: string) {
+    const target = visualFlow.nodes.find((node) => node.id === targetNodeId);
+    setCurrentId(targetNodeId);
+    setSampleReply("");
+    setTranscript((current) => [
+      ...current,
+      ...(adminText ? [{ speaker: "admin" as const, text: adminText }] : []),
+      ...(target ? [{ speaker: "bot" as const, text: previewMessageForBlock(target) }] : []),
+    ]);
+  }
+
+  useEffect(() => {
+    reset(mode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, selectedBlockId, visualFlow]);
+
   return (
     <div className="rounded-md border border-border p-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="font-medium">Test preview</div>
+        <div>
+          <div className="font-medium">Conversation simulator</div>
+          <div className="text-xs text-muted-foreground">
+            Visual only. It does not send WhatsApp messages or modify customer sessions.
+          </div>
+        </div>
         <div className="flex gap-1">
           <button
             type="button"
@@ -2761,18 +3241,120 @@ function StepRunPreview({
           >
             From here
           </button>
+          <button
+            type="button"
+            className="studio-button-secondary px-2 py-1"
+            onClick={() => reset()}
+          >
+            Reset
+          </button>
         </div>
       </div>
-      <div className="mt-3 space-y-2">
-        {steps.map((step, index) => (
+      <div className="mt-3 max-h-80 space-y-2 overflow-y-auto rounded-md border border-border bg-[#0b141a] p-3 text-white">
+        {transcript.map((entry, index) => (
           <div
-            key={`${step}-${index}`}
-            className="rounded-md border border-border bg-surface/40 p-2"
+            key={`${entry.speaker}-${index}`}
+            className={entry.speaker === "admin" ? "flex justify-end" : ""}
           >
-            {step}
+            <div
+              className={`max-w-[84%] whitespace-pre-wrap rounded-lg px-3 py-2 ${
+                entry.speaker === "admin" ? "bg-[#005c4b]" : "bg-[#1f2c34]"
+              }`}
+            >
+              {entry.text}
+            </div>
           </div>
         ))}
       </div>
+      {currentNode ? (
+        <div className="mt-3 space-y-2">
+          {currentNode.config.menuOptions?.filter((option) => option.active !== false).length ? (
+            <div className="flex flex-wrap gap-2">
+              {(currentNode.config.menuOptions ?? [])
+                .filter((option) => option.active !== false)
+                .map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    disabled={!option.targetNodeId}
+                    className="studio-button-secondary"
+                    onClick={() =>
+                      option.targetNodeId
+                        ? moveTo(option.targetNodeId, option.label.en || option.key)
+                        : undefined
+                    }
+                  >
+                    {option.label.en || option.key}
+                  </button>
+                ))}
+            </div>
+          ) : null}
+          {currentNode.type === "QUESTION" ? (
+            <div className="space-y-2">
+              {currentNode.config.question?.type === "single_choice" ? (
+                <div className="flex flex-wrap gap-2">
+                  {(currentNode.config.question.choices ?? [])
+                    .filter((choice) => choice.active !== false)
+                    .map((choice) => (
+                      <button
+                        key={choice.value}
+                        type="button"
+                        className="studio-button-secondary"
+                        onClick={() =>
+                          moveTo(
+                            choice.targetNodeId || currentNode.config.questionNextNodeId || "",
+                            choice.label.en || choice.value,
+                          )
+                        }
+                        disabled={!choice.targetNodeId && !currentNode.config.questionNextNodeId}
+                      >
+                        {choice.label.en || choice.value}
+                      </button>
+                    ))}
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={sampleReply}
+                    onChange={(event) => setSampleReply(event.target.value)}
+                    placeholder="Type a sample reply"
+                    className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2"
+                  />
+                  <button
+                    type="button"
+                    className="studio-button-primary"
+                    disabled={!currentNode.config.questionNextNodeId}
+                    onClick={() =>
+                      currentNode.config.questionNextNodeId
+                        ? moveTo(
+                            currentNode.config.questionNextNodeId,
+                            sampleReply || "Sample reply",
+                          )
+                        : undefined
+                    }
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+          {!currentNode.config.menuOptions?.length &&
+          currentNode.type !== "QUESTION" &&
+          outgoing[0] ? (
+            <button
+              type="button"
+              className="studio-button-secondary"
+              onClick={() => moveTo(outgoing[0].targetNodeId)}
+            >
+              Continue to{" "}
+              {stepTargetLabel(
+                visualFlow.nodes.find((node) => node.id === outgoing[0].targetNodeId),
+              )}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2901,7 +3483,7 @@ function stepPrimaryText(node: VisualFlowNode) {
   return node.config.messages?.en ?? node.config.labels?.en ?? "";
 }
 
-function previewMessageForBlock(block: VisualFlowNode) {
+function previewMessageForBlock(block: VisualFlowNode, language: "en" | "ar" = "en") {
   if (block.type === "START") {
     if (block.config.startBehavior === "language_first") return "Choose your language:";
     if (block.config.startBehavior === "main_menu")
@@ -2909,8 +3491,14 @@ function previewMessageForBlock(block: VisualFlowNode) {
     return "Entry point controls routing. Edit visible copy on the next message step.";
   }
   return block.type === "QUESTION"
-    ? block.config.question?.label.en || "No question configured yet."
-    : block.config.messages?.en || block.config.labels?.en || "No message configured yet.";
+    ? block.config.question?.label[language] ||
+        block.config.question?.label.en ||
+        "No question configured yet."
+    : block.config.messages?.[language] ||
+        block.config.labels?.[language] ||
+        block.config.messages?.en ||
+        block.config.labels?.en ||
+        "No message configured yet.";
 }
 
 function stepTargetLabel(node?: VisualFlowNode) {
@@ -2957,6 +3545,24 @@ function humanizeValidationIssue(message: string) {
     .replaceAll("START", "Entry point")
     .replaceAll("MAIN_MENU", "Main menu")
     .replaceAll("HUMAN_HANDOFF", "Talk to human");
+}
+
+function issuesForStep(
+  validation: ReturnType<typeof validateVisualFlow> | undefined,
+  node: VisualFlowNode,
+) {
+  if (!validation?.issues.length) return [];
+  const labels = [
+    node.id,
+    node.title,
+    friendlyBlockName(node.type),
+    node.type,
+    node.type === "HUMAN_HANDOFF" ? "Talk to human" : "",
+    node.type === "START" ? "Entry point" : "",
+  ].filter(Boolean);
+  return validation.issues.filter((issue) =>
+    labels.some((label) => issue.message.toLowerCase().includes(label.toLowerCase())),
+  );
 }
 
 function GeneralFlowEditor({
@@ -3604,7 +4210,7 @@ function PreviewFlowEditor({
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {[previewEn, previewAr].filter(Boolean).map((preview) => (
+      {[previewEn, previewAr].filter(isFlowPreview).map((preview) => (
         <div
           key={preview.language}
           className="rounded-md border border-border bg-background p-4 text-sm"
@@ -3635,6 +4241,12 @@ function PreviewFlowEditor({
       ))}
     </div>
   );
+}
+
+function isFlowPreview(
+  preview: ReturnType<typeof createFlowPreview> | undefined,
+): preview is ReturnType<typeof createFlowPreview> {
+  return Boolean(preview);
 }
 
 function FlowStepsOverview({ visualFlow }: { visualFlow: VisualFlowDefinition }) {
