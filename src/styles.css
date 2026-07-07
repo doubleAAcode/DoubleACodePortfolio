@@ -288,6 +288,41 @@
 }
 
 
+
+.wa-dashboard-light {
+  --background: oklch(0.975 0.006 285);
+  --surface: oklch(0.99 0.004 285);
+  --surface-2: oklch(0.945 0.009 285);
+  --foreground: oklch(0.22 0.02 285);
+  --muted: oklch(0.93 0.008 285);
+  --muted-foreground: oklch(0.46 0.025 285);
+  --card: oklch(0.99 0.004 285);
+  --card-foreground: oklch(0.22 0.02 285);
+  --popover: oklch(0.99 0.004 285);
+  --popover-foreground: oklch(0.22 0.02 285);
+  --primary: oklch(0.5 0.22 305);
+  --primary-foreground: oklch(0.99 0.004 285);
+  --accent: oklch(0.61 0.23 8);
+  --accent-foreground: oklch(0.99 0.004 285);
+  --secondary: oklch(0.93 0.008 285);
+  --secondary-foreground: oklch(0.22 0.02 285);
+  --border: oklch(0.35 0.025 285 / 0.16);
+  --input: oklch(0.35 0.025 285 / 0.18);
+  --ring: oklch(0.5 0.22 305 / 0.45);
+  --gradient-brand: linear-gradient(135deg, oklch(0.5 0.22 305), oklch(0.61 0.23 8));
+  --gradient-text: linear-gradient(180deg, oklch(0.18 0.02 285), oklch(0.38 0.02 285));
+  --shadow-elevated: 0 24px 60px -24px oklch(0.22 0.02 285 / 0.2);
+  color-scheme: light;
+}
+
+.wa-dashboard-light .studio-button {
+  background: oklch(0.99 0.004 285 / 0.82);
+}
+
+.wa-dashboard-light .studio-button-primary {
+  color: var(--primary-foreground);
+}
+
 @layer base {
   html {
     /* color-scheme is set dynamically by ThemeToggle */

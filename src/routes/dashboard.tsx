@@ -39,11 +39,21 @@ const navItems = [
   { path: "/simulator", label: "Simulator", icon: MessageSquareText },
 ] as const;
 
-export function DashboardLayout({ basePath, title }: { basePath: string; title: string }) {
+export function DashboardLayout({
+  basePath,
+  title,
+  appearance = "default",
+}: {
+  basePath: string;
+  title: string;
+  appearance?: "default" | "light";
+}) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const router = useRouter();
   const [sessionResult, setSessionResult] = useState<WaDashboardSessionResult>();
   const [error, setError] = useState("");
+  const lightMode = appearance === "light";
+  const themeClass = lightMode ? "wa-dashboard-light" : "";
 
   useEffect(() => {
     let mounted = true;
@@ -77,7 +87,8 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
 
   if (error || !sessionResult?.authenticated) {
     return (
-      <DashboardLogin
+      <div className={themeClass}>
+        <DashboardLogin
         configured={sessionResult?.configured ?? true}
         error={error}
         onLogin={(nextSession) => {
@@ -85,7 +96,8 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
           setSessionResult(nextSession);
           router.invalidate();
         }}
-      />
+        />
+      </div>
     );
   }
 

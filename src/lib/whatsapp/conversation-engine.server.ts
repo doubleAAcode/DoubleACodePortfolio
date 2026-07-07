@@ -2010,25 +2010,56 @@ async function optionQuestionResponse(
   if (!option) return [mainMenuResponse(session.language ?? "en")];
   const language = session.language ?? "en";
   const values = await listProductOptionValues(option.id);
+  const pendingItem = getPendingItemFromContext(session.context);
+  const allOptions = pendingItem
+    ? await listProductOptions(session.businessId, pendingItem.productId)
+    : [];
+  const isFinalOption =
+    allOptions.findIndex((entry) => entry.id === option.id) === allOptions.length - 1;
+  const valueRows = await Promise.all(
+    values.map(async (value) => {
+      const variant =
+        pendingItem && isFinalOption
+          ? await resolveProductVariant({
+              businessId: session.businessId,
+              productId: pendingItem.productId,
+              selectedOptionValueIds: [...pendingItem.selectedOptionValueIds, value.id],
+            })
+          : undefined;
+
+      if (variant && (!variant.isAvailable || variant.stockQuantity <= 0)) return undefined;
+
+      const name = getOptionValueName(value, language);
+      const price = variant ? ` - ${formatPrice(variant.price)}` : "";
+      return {
+        id: value.id,
+        title: truncateListTitle(`${name}${price}`),
+        description: variant
+          ? t(language, `${variant.stockQuantity} available`, `\u0627\u0644\u0645\u062a\u0648\u0641\u0631: ${variant.stockQuantity}`)
+          : undefined,
+      };
+    }),
+  );
+  const rows = valueRows.filter(
+    (row): row is { id: string; title: string; description?: string } => Boolean(row),
+  );
+
   return [
     {
       type: "list",
       body: t(
         language,
         `Choose ${getOptionName(option, language)}:`,
-        `اختر ${getOptionName(option, language)}:`,
+        `\u0627\u062e\u062a\u0631 ${getOptionName(option, language)}:`,
       ),
       buttonText: getOptionName(option, language).slice(0, 20),
       sections: [
         {
           title: getOptionName(option, language),
           rows: [
-            ...values.map((value) => ({
-              id: value.id,
-              title: getOptionValueName(value, language),
-            })),
-            { id: "back", title: t(language, "Back", "رجوع") },
-            { id: "main_menu", title: t(language, "Main menu", "القائمة") },
+            ...rows,
+            { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
+            { id: "main_menu", title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629") },
           ],
         },
       ],

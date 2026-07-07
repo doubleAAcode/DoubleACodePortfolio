@@ -182,30 +182,55 @@ export function ProductsPage() {
     });
   }
 
-  async function submitField() {
-    await applyAction(
-      {
-        type: "saveCustomField",
-        payload: {
-          id: fieldForm.id || undefined,
-          product_id: selectedId,
-          type: fieldForm.type,
-          label_english: fieldForm.label_english,
-          label_arabic: fieldForm.label_arabic,
-          placeholder_english: fieldForm.placeholder_english || null,
-          placeholder_arabic: fieldForm.placeholder_arabic || null,
-          is_required: fieldForm.is_required,
-          minimum_length: fieldForm.minimum_length,
-          maximum_length: fieldForm.maximum_length,
-          minimum_value: fieldForm.minimum_value,
-          maximum_value: fieldForm.maximum_value,
-          choices: parseChoices(fieldForm.choicesText),
-          sort_order: fieldForm.sort_order,
+  async function generateMissingVariants() {
+    if (!selectedProduct || !missingVariantCombinations.length) return;
+
+    for (const combination of missingVariantCombinations) {
+      await applyAction(
+        {
+          type: "saveVariant",
+          payload: {
+            product_id: selectedId,
+            sku: buildVariantSku(selectedProduct.code, combination),
+            selected_option_value_ids: combination.map((value) => value.id),
+            price: Number(selectedProduct.price),
+            stock_quantity: selectedProduct.stock_quantity,
+            is_available: selectedProduct.is_available,
+          },
         },
-      },
-      "Product question saved.",
-    );
-    setFieldForm(emptyField);
+        "Variant generated.",
+      );
+    }
+
+    setVariantForm(emptyVariant);
+  }
+
+  async function submitField() {
+    await runSave("field", async () => {
+      await applyAction(
+        {
+          type: "saveCustomField",
+          payload: {
+            id: fieldForm.id || undefined,
+            product_id: selectedId,
+            type: fieldForm.type,
+            label_english: fieldForm.label_english,
+            label_arabic: fieldForm.label_arabic,
+            placeholder_english: fieldForm.placeholder_english || null,
+            placeholder_arabic: fieldForm.placeholder_arabic || null,
+            is_required: fieldForm.is_required,
+            minimum_length: fieldForm.minimum_length,
+            maximum_length: fieldForm.maximum_length,
+            minimum_value: fieldForm.minimum_value,
+            maximum_value: fieldForm.maximum_value,
+            choices: parseChoices(fieldForm.choicesText),
+            sort_order: fieldForm.sort_order,
+          },
+        },
+        "Custom field saved.",
+      );
+      setFieldForm(emptyField);
+    });
   }
 
   if (loading) return <Status loading={loading} error="" notice="" />;
@@ -217,7 +242,7 @@ export function ProductsPage() {
           <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Catalog</p>
           <h1 className="mt-2 font-display text-3xl font-semibold">Products</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Manage product records, options, variants, stock, images, and product questions.
+            Manage product records, options, variants, stock, images, and customer input fields.
           </p>
         </div>
         <input
@@ -232,7 +257,7 @@ export function ProductsPage() {
 
       <section className="rounded-lg border border-border bg-surface/60 p-5">
         <h2 className="font-display text-xl font-semibold">
-          {productForm.id ? "Edit product" : "Add product"}
+          {productForm.id ? "Edit product basics" : "Add product basics"}
         </h2>
         <div className="mt-4 grid gap-3 lg:grid-cols-4">
           <TextInput
@@ -253,12 +278,12 @@ export function ProductsPage() {
             ))}
           </SelectInput>
           <NumberInput
-            label="Price"
+            label="Base price"
             value={productForm.price}
             onChange={(value) => setProductForm({ ...productForm, price: value })}
           />
           <NumberInput
-            label="Stock"
+            label="Base stock"
             value={productForm.stock_quantity}
             onChange={(value) => setProductForm({ ...productForm, stock_quantity: value })}
           />
@@ -272,11 +297,6 @@ export function ProductsPage() {
             dir="rtl"
             value={productForm.name_arabic}
             onChange={(value) => setProductForm({ ...productForm, name_arabic: value })}
-          />
-          <NumberInput
-            label="Sort"
-            value={productForm.sort_order}
-            onChange={(value) => setProductForm({ ...productForm, sort_order: value })}
           />
           <div className="flex gap-2">
             <Toggle
@@ -411,15 +431,29 @@ export function ProductsPage() {
         <div className="space-y-4">
           {selectedProduct ? (
             <>
-              <NestedSection title={`Options for ${selectedProduct.name_english}`}>
-                <div className="grid gap-3 md:grid-cols-5">
+              <ProductSetupGuide
+                product={selectedProduct}
+                currency={data?.business.currency ?? "USD"}
+                optionsCount={productOptions.length}
+                valuesCount={productValues.length}
+                variantsCount={productVariants.length}
+                availableVariantsCount={availableVariantCount}
+                totalVariantStock={totalVariantStock}
+                questionsCount={productFields.length}
+              />
+
+              <NestedSection
+                title="Sellable choices"
+                description="Use this for anything that can change price, stock, SKU, or availability, like size or color."
+              >
+                <div className="grid gap-3 md:grid-cols-3">
                   <TextInput
-                    label="English name"
+                    label="Choice name (English)"
                     value={optionForm.name_english}
                     onChange={(value) => setOptionForm({ ...optionForm, name_english: value })}
                   />
                   <TextInput
-                    label="Arabic name"
+                    label="Choice name (Arabic)"
                     dir="rtl"
                     value={optionForm.name_arabic}
                     onChange={(value) => setOptionForm({ ...optionForm, name_arabic: value })}
@@ -459,8 +493,11 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Option values">
-                <div className="grid gap-3 md:grid-cols-6">
+              <NestedSection
+                title="Choice values"
+                description="Add the values customers will choose. For Size, add Small, Medium, and Large."
+              >
+                <div className="grid gap-3 md:grid-cols-4">
                   <SelectInput
                     label="Option"
                     value={valueForm.option_id}
@@ -474,12 +511,12 @@ export function ProductsPage() {
                     ))}
                   </SelectInput>
                   <TextInput
-                    label="English value"
+                    label="Value (English)"
                     value={valueForm.value_english}
                     onChange={(value) => setValueForm({ ...valueForm, value_english: value })}
                   />
                   <TextInput
-                    label="Arabic value"
+                    label="Value (Arabic)"
                     dir="rtl"
                     value={valueForm.value_arabic}
                     onChange={(value) => setValueForm({ ...valueForm, value_arabic: value })}
@@ -591,27 +628,13 @@ export function ProductsPage() {
                 />
               </NestedSection>
 
-              <NestedSection title="Product questions">
+              <NestedSection title="Custom fields">
                 <div className="grid gap-3 md:grid-cols-4">
                   <SelectInput
-                    label="Answer type"
+                    label="Type"
                     value={fieldForm.type}
                     onChange={(value) =>
-                      setFieldForm({
-                        ...fieldForm,
-                        type: value as WaProductCustomFieldRow["type"],
-                        choicesText: value === "single_choice" ? fieldForm.choicesText : "",
-                        minimum_value: value === "number" ? fieldForm.minimum_value : null,
-                        maximum_value: value === "number" ? fieldForm.maximum_value : null,
-                        minimum_length:
-                          value === "short_text" || value === "long_text"
-                            ? fieldForm.minimum_length
-                            : null,
-                        maximum_length:
-                          value === "short_text" || value === "long_text"
-                            ? fieldForm.maximum_length
-                            : null,
-                      })
+                      setFieldForm({ ...fieldForm, type: value as WaProductCustomFieldRow["type"] })
                     }
                   >
                     <option value="short_text">Short text</option>
@@ -621,71 +644,37 @@ export function ProductsPage() {
                     <option value="single_choice">Single choice</option>
                   </SelectInput>
                   <TextInput
-                    label="English question"
+                    label="English label"
                     value={fieldForm.label_english}
                     onChange={(value) => setFieldForm({ ...fieldForm, label_english: value })}
                   />
                   <TextInput
-                    label="Arabic question"
+                    label="Arabic label"
                     dir="rtl"
                     value={fieldForm.label_arabic}
                     onChange={(value) => setFieldForm({ ...fieldForm, label_arabic: value })}
                   />
                   <NumberInput
-                    label="Question order"
+                    label="Sort"
                     value={fieldForm.sort_order}
                     onChange={(value) => setFieldForm({ ...fieldForm, sort_order: value })}
                   />
-                  {(fieldForm.type === "short_text" || fieldForm.type === "long_text") ? (
-                    <>
-                      <TextInput
-                        label="English helper text"
-                        value={fieldForm.placeholder_english}
-                        onChange={(value) =>
-                          setFieldForm({ ...fieldForm, placeholder_english: value })
-                        }
-                      />
-                      <TextInput
-                        label="Arabic helper text"
-                        dir="rtl"
-                        value={fieldForm.placeholder_arabic}
-                        onChange={(value) =>
-                          setFieldForm({ ...fieldForm, placeholder_arabic: value })
-                        }
-                      />
-                      <OptionalNumberInput
-                        label="Minimum length"
-                        value={fieldForm.minimum_length}
-                        onChange={(value) => setFieldForm({ ...fieldForm, minimum_length: value })}
-                      />
-                      <OptionalNumberInput
-                        label="Maximum length"
-                        value={fieldForm.maximum_length}
-                        onChange={(value) => setFieldForm({ ...fieldForm, maximum_length: value })}
-                      />
-                    </>
-                  ) : null}
-                  {fieldForm.type === "number" ? (
-                    <>
-                      <OptionalNumberInput
-                        label="Minimum value"
-                        value={fieldForm.minimum_value}
-                        onChange={(value) => setFieldForm({ ...fieldForm, minimum_value: value })}
-                      />
-                      <OptionalNumberInput
-                        label="Maximum value"
-                        value={fieldForm.maximum_value}
-                        onChange={(value) => setFieldForm({ ...fieldForm, maximum_value: value })}
-                      />
-                    </>
-                  ) : null}
-                  {fieldForm.type === "single_choice" ? (
-                    <TextArea
-                      label="Choices, one per line: English | Arabic"
-                      value={fieldForm.choicesText}
-                      onChange={(value) => setFieldForm({ ...fieldForm, choicesText: value })}
-                    />
-                  ) : null}
+                  <TextInput
+                    label="English placeholder"
+                    value={fieldForm.placeholder_english}
+                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_english: value })}
+                  />
+                  <TextInput
+                    label="Arabic placeholder"
+                    dir="rtl"
+                    value={fieldForm.placeholder_arabic}
+                    onChange={(value) => setFieldForm({ ...fieldForm, placeholder_arabic: value })}
+                  />
+                  <TextInput
+                    label="Choices, comma-separated"
+                    value={fieldForm.choicesText}
+                    onChange={(value) => setFieldForm({ ...fieldForm, choicesText: value })}
+                  />
                   <Toggle
                     label="Required"
                     checked={fieldForm.is_required}
@@ -700,16 +689,11 @@ export function ProductsPage() {
                   icon={<Plus className="h-4 w-4" />}
                   onClick={() => void submitField()}
                 >
-                  <Plus className="h-4 w-4" />
-                  Save question
-                </button>
+                  Save field
+                </SaveButton>
                 <PillList
                   items={productFields}
-                  label={(field) =>
-                    `${field.sort_order}. ${field.label_english} (${questionTypeLabel(field.type)}${
-                      field.is_required ? ", required" : ", optional"
-                    })`
-                  }
+                  label={(field) => `${field.label_english} (${field.type})`}
                   onEdit={(field) =>
                     setFieldForm({
                       ...field,
@@ -719,14 +703,15 @@ export function ProductsPage() {
                         field.minimum_value === null ? null : Number(field.minimum_value),
                       maximum_value:
                         field.maximum_value === null ? null : Number(field.maximum_value),
-                      choicesText: formatChoicesForEditing(field.choices),
+                      choicesText:
+                        field.choices?.map((choice) => choice.labelEnglish).join(", ") ?? "",
                     })
                   }
                   onDelete={(field) => {
                     if (window.confirm(`Delete ${field.label_english}?`))
                       void applyAction(
                         { type: "deleteCustomField", payload: { id: field.id } },
-                        "Product question deleted.",
+                        "Custom field deleted.",
                       );
                   }}
                 />
@@ -774,10 +759,10 @@ function ProductRow({
             <span className="text-xs text-muted-foreground">{product.code}</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {categoryName} · {formatMoney(product.price, currency)} · {product.stock_quantity} stock
+            {categoryName} - {formatMoney(product.price, currency)} - {product.stock_quantity} stock
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {product.is_active ? "Active" : "Hidden"} ·{" "}
+            {product.is_active ? "Active" : "Hidden"} -{" "}
             {product.is_available ? "Available" : "Unavailable"}
           </p>
         </button>
@@ -804,10 +789,70 @@ function ProductRow({
   );
 }
 
-function NestedSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ProductSetupGuide({
+  product,
+  currency,
+  optionsCount,
+  valuesCount,
+  variantsCount,
+  availableVariantsCount,
+  totalVariantStock,
+  questionsCount,
+}: {
+  product: WaProductRow;
+  currency: string;
+  optionsCount: number;
+  valuesCount: number;
+  variantsCount: number;
+  availableVariantsCount: number;
+  totalVariantStock: number;
+  questionsCount: number;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-surface/60 p-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div>
+          <h2 className="font-display text-lg font-semibold">{product.name_english}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Base product: {formatMoney(product.price, currency)} - {product.stock_quantity} base stock
+          </p>
+        </div>
+        <span className="w-fit rounded-md border border-border bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+          {product.is_available ? "Available" : "Unavailable"}
+        </span>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile label="Sellable choices" value={`${optionsCount}`} detail={`${valuesCount} values`} />
+        <MetricTile label="Variant rows" value={`${variantsCount}`} detail={`${availableVariantsCount} available`} />
+        <MetricTile label="Variant stock" value={`${totalVariantStock}`} detail="from variant rows" />
+        <MetricTile label="Extra questions" value={`${questionsCount}`} detail="do not change price" />
+      </div>
+    </section>
+  );
+}
+
+function MetricTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background/60 p-3">
+      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-2xl font-semibold">{value}</div>
+      {detail ? <div className="mt-1 text-xs text-muted-foreground">{detail}</div> : null}
+    </div>
+  );
+}
+function NestedSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-lg border border-border bg-surface/60 p-4">
       <h2 className="font-display text-lg font-semibold">{title}</h2>
+      {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
       <div className="mt-4 space-y-4">{children}</div>
     </section>
   );
@@ -866,43 +911,86 @@ function VariantList({
   onEdit: (variant: WaProductVariantRow) => void;
   onDelete: (variant: WaProductVariantRow) => void;
 }) {
-  if (!variants.length) return <p className="text-sm text-muted-foreground">No variants yet.</p>;
+  if (!variants.length) {
+    return (
+      <div className="rounded-md border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+        No variant rows yet. Generate rows after adding choices, then set the price and stock for each final item.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-2">
-      {variants.map((variant) => (
-        <div
-          key={variant.id}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-sm"
-        >
-          <button
-            type="button"
-            onClick={() => onEdit(variant)}
-            className="text-left hover:text-primary"
+    <div className="overflow-hidden rounded-md border border-border bg-background/60">
+      <div className="grid grid-cols-[1.3fr_0.9fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-border px-3 py-2 text-xs uppercase tracking-[0.14em] text-muted-foreground max-lg:hidden">
+        <span>Customer choice</span>
+        <span>SKU</span>
+        <span>Price</span>
+        <span>Stock</span>
+        <span>Status</span>
+        <span />
+      </div>
+      <div className="divide-y divide-border">
+        {variants.map((variant) => (
+          <div
+            key={variant.id}
+            className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[1.3fr_0.9fr_0.7fr_0.7fr_0.7fr_auto] lg:items-center"
           >
-            <span className="font-medium">{variant.sku}</span>
-            <span className="ml-2 text-muted-foreground">
-              {variant.selected_option_value_ids
-                .map((id) => values.find((value) => value.id === id)?.value_english ?? id)
-                .join(" / ") || "Base"}
+            <button type="button" onClick={() => onEdit(variant)} className="text-left hover:text-primary">
+              <span className="font-medium">{variantChoiceLabel(variant, values)}</span>
+              <span className="mt-1 block text-xs text-muted-foreground lg:hidden">{variant.sku}</span>
+            </button>
+            <span className="text-muted-foreground max-lg:hidden">{variant.sku}</span>
+            <span className="font-medium">{formatMoney(variant.price, currency)}</span>
+            <span className={variant.stock_quantity <= 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
+              {variant.stock_quantity}
             </span>
-          </button>
-          <span className="text-muted-foreground">
-            {formatMoney(variant.price, currency)} · {variant.stock_quantity} left
-          </span>
-          <button
-            type="button"
-            onClick={() => onDelete(variant)}
-            aria-label="Delete variant"
-            className="rounded-md p-1 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
+            <span
+              className={`w-fit rounded-md px-2 py-1 text-xs ${
+                variant.is_available && variant.stock_quantity > 0
+                  ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-destructive/10 text-destructive"
+              }`}
+            >
+              {variantAvailabilityLabel(variant)}
+            </span>
+            <div className="flex justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => onEdit(variant)}
+                aria-label="Edit variant"
+                className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(variant)}
+                aria-label="Delete variant"
+                className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
+function variantChoiceLabel(variant: WaProductVariantRow, values: WaProductOptionValueRow[]) {
+  return (
+    variant.selected_option_value_ids
+      .map((id) => values.find((value) => value.id === id)?.value_english ?? id)
+      .join(" / ") || "Base product"
+  );
+}
+
+function variantAvailabilityLabel(variant: WaProductVariantRow) {
+  if (!variant.is_available) return "Hidden";
+  if (variant.stock_quantity <= 0) return "Sold out";
+  return "Selling";
+}
 function Status({ loading, error, notice }: { loading: boolean; error: string; notice: string }) {
   if (loading)
     return (
@@ -991,31 +1079,6 @@ function NumberInput({
         min="0"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
-      />
-    </label>
-  );
-}
-
-function OptionalNumberInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-}) {
-  return (
-    <label className="text-sm">
-      <span className="mb-2 block text-muted-foreground">{label}</span>
-      <input
-        type="number"
-        min="0"
-        value={value ?? ""}
-        onChange={(event) =>
-          onChange(event.target.value === "" ? null : Number(event.target.value))
-        }
         className="w-full rounded-md border border-input bg-background px-3 py-2 outline-none focus:border-primary"
       />
     </label>
@@ -1119,35 +1182,76 @@ function optionLabel(options: WaProductOptionRow[], optionId: string) {
   return options.find((option) => option.id === optionId)?.name_english ?? "Option";
 }
 
-function parseChoices(value: string) {
-  const lines = value
-    .split(/\r?\n|,/)
-    .map((choice) => choice.trim())
+type VariantOptionGroup = { option: WaProductOptionRow; values: WaProductOptionValueRow[] };
+
+function buildVariantCombinations(groups: VariantOptionGroup[]) {
+  if (!groups.length) return [] as WaProductOptionValueRow[][];
+
+  return groups.reduce<WaProductOptionValueRow[][]>(
+    (combinations, group) =>
+      combinations.flatMap((combination) =>
+        group.values.map((value) => [...combination, value]),
+      ),
+    [[]],
+  );
+}
+
+function combinationKey(ids: string[]) {
+  return [...new Set(ids.filter(Boolean))].sort().join("|");
+}
+
+function getSelectedValueForOption(
+  selectedIds: string[],
+  optionId: string,
+  values: WaProductOptionValueRow[],
+) {
+  return (
+    selectedIds.find((id) => values.find((value) => value.id === id)?.option_id === optionId) ?? ""
+  );
+}
+
+function replaceVariantOptionValue(
+  selectedIds: string[],
+  optionId: string,
+  nextValueId: string,
+  values: WaProductOptionValueRow[],
+) {
+  const withoutOption = selectedIds.filter(
+    (id) => values.find((value) => value.id === id)?.option_id !== optionId,
+  );
+  return nextValueId ? [...withoutOption, nextValueId] : withoutOption;
+}
+
+function buildSelectedOptionValueIds(selectedIds: string[], groups: VariantOptionGroup[]) {
+  return groups
+    .map((group) => getSelectedValueForOption(selectedIds, group.option.id, group.values))
     .filter(Boolean);
-  const choices = lines.map((choice, index) => {
-    const [english, arabic] = choice.split("|").map((part) => part.trim());
-    return {
+}
+
+function buildVariantSku(baseCode: string, values: WaProductOptionValueRow[]) {
+  const suffix = values.map((value) => makeSkuPart(value.value_english)).filter(Boolean).join("-");
+  return [makeSkuPart(baseCode), suffix].filter(Boolean).join("-");
+}
+
+function makeSkuPart(value: string) {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
+}
+
+function parseChoices(value: string) {
+  const choices = value
+    .split(",")
+    .map((choice) => choice.trim())
+    .filter(Boolean)
+    .map((choice, index) => ({
       id: `choice-${index + 1}`,
-      labelEnglish: english,
-      labelArabic: arabic || english,
-    };
-  });
+      labelEnglish: choice,
+      labelArabic: choice,
+    }));
 
   return choices.length ? choices : null;
-}
-
-function formatChoicesForEditing(
-  choices: WaProductCustomFieldRow["choices"],
-) {
-  return choices
-    ?.map((choice) =>
-      choice.labelArabic && choice.labelArabic !== choice.labelEnglish
-        ? `${choice.labelEnglish} | ${choice.labelArabic}`
-        : choice.labelEnglish,
-    )
-    .join("\n") ?? "";
-}
-
-function questionTypeLabel(type: WaProductCustomFieldRow["type"]) {
-  return type.replace(/_/g, " ");
 }
