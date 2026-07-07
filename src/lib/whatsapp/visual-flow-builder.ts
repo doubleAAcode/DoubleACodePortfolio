@@ -356,12 +356,14 @@ export function compileVisualFlowToRuntimeFlow(
     mainMenuOptions.find((option) => option.key === "question") ?? mainMenuOptions[1];
   const legacyInfoOption =
     mainMenuOptions.find((option) => option.key === "info") ?? mainMenuOptions[2];
+  const startBehavior = start?.config.startBehavior ?? "welcome_then_next";
+  const welcomeCopy =
+    startBehavior === "welcome_then_next"
+      ? languageCopy(start?.config.messages, baseFlow.copy.welcome)
+      : languageCopy(mainMenu?.config.messages ?? start?.config.messages, baseFlow.copy.welcome);
   const copy = {
     ...baseFlow.copy,
-    welcome: languageCopy(
-      mainMenu?.config.messages ?? start?.config.messages,
-      baseFlow.copy.welcome,
-    ),
+    welcome: welcomeCopy,
     orderButton: legacyOrderOption?.label ?? baseFlow.copy.orderButton,
     questionButton: legacyQuestionOption?.label ?? baseFlow.copy.questionButton,
     infoButton: legacyInfoOption?.label ?? baseFlow.copy.infoButton,
@@ -378,6 +380,7 @@ export function compileVisualFlowToRuntimeFlow(
     settings: {
       ...baseFlow.settings,
       defaultLanguage: visualFlow.metadata.defaultLanguage,
+      languageSelectionEnabled: startBehavior === "language_first",
       allowHumanHandoff: Boolean(handoff) || baseFlow.settings.allowHumanHandoff,
     },
     editor: {
@@ -763,12 +766,11 @@ function generatedEdgesFromNodeSettings(visualFlow: VisualFlowDefinition): Visua
   for (const node of visualFlow.nodes) {
     if (node.type === "START") {
       const target =
-        node.config.messageNextNodeId ??
-        (node.config.startBehavior === "language_first"
+        node.config.startBehavior === "language_first"
           ? visualFlow.nodes.find((entry) => entry.type === "LANGUAGE_SELECTION")?.id
           : node.config.startBehavior === "main_menu"
             ? visualFlow.nodes.find((entry) => entry.type === "MAIN_MENU")?.id
-            : undefined);
+            : node.config.messageNextNodeId;
       if (target) {
         edges.push({
           id: `${node.id}_entry_to_${target}`,
