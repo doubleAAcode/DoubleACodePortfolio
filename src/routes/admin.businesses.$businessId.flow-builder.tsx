@@ -26,19 +26,25 @@ function BusinessFlowBuilderPage() {
   const [visualFlow, setVisualFlow] = useState<VisualFlowDefinition>();
   const [selectedBlockId, setSelectedBlockId] = useState("");
   const [saving, setSaving] = useState("");
+  const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(
-    async (preferredVersionId?: string) => {
+    async (preferredVersionId?: string, label = "loading") => {
+      setLoading(label);
       setError("");
-      const nextDetails = await getBusinessFlowDetails(businessId);
-      const selectedVersion = selectVersion(nextDetails, preferredVersionId || selectedVersionId);
-      setDetails(nextDetails);
-      setSelectedVersionId(selectedVersion?.id ?? "");
-      setVisualFlow(selectedVersion ? getVisualFlow(selectedVersion.flow_json) : undefined);
-      setSelectedBlockId("");
+      try {
+        const nextDetails = await getBusinessFlowDetails(businessId);
+        const selectedVersion = selectVersion(nextDetails, preferredVersionId || "");
+        setDetails(nextDetails);
+        setSelectedVersionId(selectedVersion?.id ?? "");
+        setVisualFlow(selectedVersion ? getVisualFlow(selectedVersion.flow_json) : undefined);
+        setSelectedBlockId("");
+      } finally {
+        setLoading("");
+      }
     },
-    [businessId, selectedVersionId],
+    [businessId],
   );
 
   useEffect(() => {
@@ -47,8 +53,9 @@ function BusinessFlowBuilderPage() {
 
   const selectedVersion = details ? selectVersion(details, selectedVersionId) : undefined;
   const visualValidation = visualFlow ? validateVisualFlow(visualFlow) : undefined;
+  const busy = Boolean(saving || loading);
   const compiled =
-    selectedVersion && visualFlow
+    !loading && selectedVersion && visualFlow
       ? compileVisualFlowToRuntimeFlow(visualFlow, selectedVersion.flow_json)
       : undefined;
 
@@ -56,7 +63,7 @@ function BusinessFlowBuilderPage() {
     setSaving(label);
     setError("");
     try {
-      await load(await action());
+      await load(await action(), "loading");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Flow builder action failed.");
     } finally {
@@ -93,8 +100,13 @@ function BusinessFlowBuilderPage() {
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedVersionId}
-            onChange={(event) => void load(event.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            disabled={busy}
+            onChange={(event) => {
+              const nextVersionId = event.target.value;
+              setSelectedVersionId(nextVersionId);
+              void load(nextVersionId, "version");
+            }}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
           >
             {details?.versions.map((version) => (
               <option key={version.id} value={version.id}>
@@ -102,13 +114,23 @@ function BusinessFlowBuilderPage() {
               </option>
             ))}
           </select>
-          <button type="button" className="studio-button-secondary" onClick={() => void load()}>
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+          {loading ? (
+            <span className="text-xs text-muted-foreground">
+              {loading === "version" ? "Loading selected version..." : "Loading..."}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            disabled={busy}
+            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
+            onClick={() => void load(selectedVersionId, "refresh")}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading === "refresh" ? "Refreshing..." : "Refresh"}
           </button>
           <button
             type="button"
-            disabled={!compiled?.flow || saving === "draft"}
+            disabled={!compiled?.flow || busy}
             className="studio-button-secondary"
             onClick={() => void run("draft", saveDraft)}
           >
@@ -116,7 +138,7 @@ function BusinessFlowBuilderPage() {
           </button>
           <button
             type="button"
-            disabled={!compiled?.ok || saving === "publish"}
+            disabled={!compiled?.ok || busy}
             className="studio-button-primary"
             onClick={() =>
               void run("publish", async () => {
@@ -143,11 +165,20 @@ function BusinessFlowBuilderPage() {
 
       {!visualFlow ? (
         <div className="rounded-md border border-border bg-surface/60 p-6 text-sm text-muted-foreground">
-          No business flow exists yet. Go back to the business page and clone a published template
-          first.
+          {loading
+            ? "Loading flow..."
+            : "No business flow exists yet. Go back to the business page and clone a published template first."}
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {loading ? (
+            <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-3 text-sm text-muted-foreground shadow-lg">
+                <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                {loading === "version" ? "Loading selected version..." : "Loading flow..."}
+              </div>
+            </div>
+          ) : null}
           <VisualFlowBuilderEditor
             fullHeight
             visualFlow={visualFlow}

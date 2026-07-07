@@ -1242,6 +1242,20 @@ function disconnectGeneratedEdge(
   return node;
 }
 
+function replaceSingleVisualConnection(
+  visualFlow: VisualFlowDefinition,
+  sourceNodeId: string,
+  targetNodeId: string,
+): VisualFlowDefinition {
+  const withoutExisting = {
+    ...visualFlow,
+    edges: visualFlow.edges.filter((edge) => edge.sourceNodeId !== sourceNodeId),
+  };
+  return targetNodeId
+    ? connectVisualNodes(withoutExisting, sourceNodeId, targetNodeId)
+    : withoutExisting;
+}
+
 function BuilderModeTabs({
   value,
   onChange,
@@ -2018,6 +2032,10 @@ function BusinessBlockSettings({
   if (block.type === "SEND_MESSAGE" || block.config.messageBehavior) {
     return <MessageStepSettings block={block} nodes={nodes} onChange={onChange} />;
   }
+  const outgoing = getEffectiveVisualEdges(visualFlow).find(
+    (edge) => edge.sourceNodeId === block.id,
+  );
+  const nextNode = nodes.find((node) => node.id === outgoing?.targetNodeId);
   return (
     <>
       <TextAreaField
@@ -2044,14 +2062,12 @@ function BusinessBlockSettings({
       <NextBlockSelect
         label="Next block"
         nodes={nodes}
-        value={
-          getEffectiveVisualEdges(visualFlow).find((edge) => edge.sourceNodeId === block.id)
-            ?.targetNodeId ?? ""
-        }
+        value={outgoing?.targetNodeId ?? ""}
         onChange={(targetNodeId) =>
-          onFlowChange(connectVisualNodes(visualFlow, block.id, targetNodeId))
+          onFlowChange(replaceSingleVisualConnection(visualFlow, block.id, targetNodeId))
         }
       />
+      <NextStepHint node={nextNode} />
     </>
   );
 }
@@ -3405,6 +3421,19 @@ function NextBlockSelect({
         ))}
       </select>
     </label>
+  );
+}
+
+function NextStepHint({ node }: { node?: VisualFlowNode }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Current next:{" "}
+      <span className={node ? "text-foreground" : ""}>
+        {node
+          ? `${node.title || friendlyBlockName(node.type)} (${friendlyBlockName(node.type)})`
+          : "Not set"}
+      </span>
+    </p>
   );
 }
 
