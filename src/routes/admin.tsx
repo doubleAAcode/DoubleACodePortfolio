@@ -173,7 +173,8 @@ function AdminLogin({
         <p className="mt-2 text-sm text-muted-foreground">Restricted manual onboarding console.</p>
         {!configured ? (
           <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            Configure WA_INTERNAL_ADMIN_PASSWORD and WA_INTERNAL_ADMIN_SESSION_SECRET.
+            Configure WA_INTERNAL_ADMIN_PASSWORD or WA_INTERNAL_REVIEWER_PASSWORD, plus
+            WA_INTERNAL_ADMIN_SESSION_SECRET.
           </p>
         ) : null}
         {formError ? (

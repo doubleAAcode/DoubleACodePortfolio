@@ -15,17 +15,17 @@ export type InternalAdminSession = {
 };
 
 export function isInternalAdminConfigured() {
-  return Boolean(getAdminPassword() && getAdminSecret());
+  return Boolean(getAdminSecret() && getConfiguredAdminAccounts().length);
 }
 
 export function validateInternalAdminCredentials(username: string, password: string) {
-  const expectedUsername = process.env.WA_INTERNAL_ADMIN_USERNAME || "admin";
-  const expectedPassword = getAdminPassword();
-  if (!expectedPassword || !getAdminSecret()) return false;
+  if (!password || !getAdminSecret()) return false;
 
-  return (
-    timingSafeStringEqual(username.trim(), expectedUsername) &&
-    timingSafeStringEqual(password, expectedPassword)
+  const normalizedUsername = username.trim();
+  return getConfiguredAdminAccounts().some(
+    (account) =>
+      timingSafeStringEqual(normalizedUsername, account.username) &&
+      timingSafeStringEqual(password, account.password),
   );
 }
 
@@ -79,8 +79,19 @@ export function requireInternalAdminSession(request: Request) {
   return session;
 }
 
-function getAdminPassword() {
-  return process.env.WA_INTERNAL_ADMIN_PASSWORD || "";
+function getConfiguredAdminAccounts() {
+  const accounts = [
+    {
+      username: process.env.WA_INTERNAL_ADMIN_USERNAME || "admin",
+      password: process.env.WA_INTERNAL_ADMIN_PASSWORD || "",
+    },
+    {
+      username: process.env.WA_INTERNAL_REVIEWER_USERNAME || "",
+      password: process.env.WA_INTERNAL_REVIEWER_PASSWORD || "",
+    },
+  ];
+
+  return accounts.filter((account) => account.username && account.password);
 }
 
 function getAdminSecret() {

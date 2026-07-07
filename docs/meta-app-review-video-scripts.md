@@ -54,7 +54,28 @@ This demonstrates that our SaaS manages WhatsApp Business Platform assets for co
 - `SUPABASE_URL` is configured.
 - `SUPABASE_SERVICE_ROLE_KEY` is configured.
 - `WA_INTERNAL_ADMIN_PASSWORD` is configured.
+- Optional reviewer credentials are configured for Meta App Review:
+  - `WA_INTERNAL_REVIEWER_USERNAME`
+  - `WA_INTERNAL_REVIEWER_PASSWORD`
 - `WA_INTERNAL_ADMIN_SESSION_SECRET` is configured.
 - `supabase/wa_meta_app_review_schema.sql` has been applied.
 - The selected connection status is `ACTIVE`.
 - The selected business is active.
+
+## Meta Reviewer Access
+
+No payment is required. A temporary reviewer account can be added in Vercel using:
+
+```txt
+WA_INTERNAL_REVIEWER_USERNAME=[REVIEWER_USERNAME]
+WA_INTERNAL_REVIEWER_PASSWORD=[TEMPORARY_REVIEWER_PASSWORD]
+```
+
+The reviewer signs in at:
+
+```txt
+https://www.doubleacode.com/admin
+```
+
+This account uses the same internal demo area shown in the screencasts, including App Review Demo /
+Messaging and WhatsApp Templates.
