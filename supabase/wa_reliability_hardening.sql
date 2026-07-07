@@ -21,6 +21,14 @@ end $$;
 
 do $$
 begin
+  alter table public.wa_products
+    add constraint wa_products_code_not_blank_check check (length(trim(code)) > 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
   alter table public.wa_product_variants
     add constraint wa_product_variants_stock_non_negative_check check (stock_quantity >= 0);
 exception
@@ -31,6 +39,23 @@ do $$
 begin
   alter table public.wa_product_variants
     add constraint wa_product_variants_price_non_negative_check check (price >= 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_product_variants
+    add constraint wa_product_variants_sku_not_blank_check check (length(trim(sku)) > 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.wa_order_items
+    add constraint wa_order_items_totals_non_negative_check
+    check (unit_price >= 0 and line_total >= 0);
 exception
   when duplicate_object then null;
 end $$;
@@ -83,6 +108,12 @@ end $$;
 create index if not exists wa_stock_reservations_business_stock_active_idx
   on public.wa_stock_reservations (business_id, product_variant_id, status, expires_at);
 
+create unique index if not exists wa_product_variants_unique_option_combo_idx
+  on public.wa_product_variants (business_id, product_id, selected_option_value_ids);
+
+create index if not exists wa_processed_messages_business_customer_idx
+  on public.wa_processed_messages (business_id, customer_phone, created_at desc);
+
 create or replace function public.wa_create_pending_order(
   p_business_id text,
   p_idempotency_key text,
@@ -110,6 +141,8 @@ declare
   v_stock_quantity integer;
   v_active_reserved integer;
 begin
+  perform pg_advisory_xact_lock(hashtext('wa_create_pending_order'), hashtext(p_idempotency_key));
+
   select *
     into v_existing
     from public.wa_orders as o

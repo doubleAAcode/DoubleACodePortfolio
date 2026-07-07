@@ -3,6 +3,7 @@ import "@tanstack/react-start/server-only";
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
 import { getMissingWhatsAppConfigKeys, getWhatsAppServerConfig } from "./config.server";
+import { getOwnerNotificationHealth } from "./owner-notifications.server";
 
 export type WaDiagnosticsReport = {
   ok: boolean;
@@ -22,6 +23,16 @@ export type WaDiagnosticsReport = {
   failedNotifications: number;
   retryableNotifications: number;
   templateRequiredNotifications: number;
+  ownerNotifications: {
+    pending: number;
+    failed: number;
+    latestNewOrderAt: string | null;
+    lastReminderCheckAt: string | null;
+    ordersPendingLongerThanFirstReminder: number;
+    ordersPendingLongerThanSecondReminder: number;
+    emailProviderConfigured: boolean;
+    browserNotifications: string;
+  };
   expiredActiveReservations: number;
   integrityWarnings: Array<{ code: string; count: number; message: string }>;
   appVersion: string;
@@ -54,6 +65,16 @@ export async function getWaDiagnostics({
     failedNotifications: 0,
     retryableNotifications: 0,
     templateRequiredNotifications: 0,
+    ownerNotifications: {
+      pending: 0,
+      failed: 0,
+      latestNewOrderAt: null,
+      lastReminderCheckAt: null,
+      ordersPendingLongerThanFirstReminder: 0,
+      ordersPendingLongerThanSecondReminder: 0,
+      emailProviderConfigured: false,
+      browserNotifications: "client-side only",
+    },
     expiredActiveReservations: 0,
     integrityWarnings: [],
     appVersion: process.env.VERCEL_GIT_COMMIT_SHA || process.env.npm_package_version || "local",
@@ -72,6 +93,7 @@ export async function getWaDiagnostics({
       templateRequiredNotifications,
       expiredReservations,
       integrityWarnings,
+      ownerNotificationHealth,
     ] = await Promise.all([
       getLatestWebhookAt(),
       getLatestSuccessfulOutgoingMessageAt(businessId),
@@ -96,6 +118,7 @@ export async function getWaDiagnostics({
         )}&status=eq.ACTIVE&expires_at=lt.${encodeURIComponent(checkedAt)}&limit=51`,
       ),
       getIntegrityWarnings(businessId),
+      getOwnerNotificationHealth({ businessId }),
     ]);
 
     const report: WaDiagnosticsReport = {
@@ -107,6 +130,18 @@ export async function getWaDiagnostics({
       failedNotifications,
       retryableNotifications,
       templateRequiredNotifications,
+      ownerNotifications: {
+        pending: ownerNotificationHealth.pendingOwnerNotifications,
+        failed: ownerNotificationHealth.failedOwnerNotifications,
+        latestNewOrderAt: ownerNotificationHealth.latestNewOrderNotificationAt,
+        lastReminderCheckAt: ownerNotificationHealth.lastReminderCheckAt,
+        ordersPendingLongerThanFirstReminder:
+          ownerNotificationHealth.ordersPendingLongerThanFirstReminder,
+        ordersPendingLongerThanSecondReminder:
+          ownerNotificationHealth.ordersPendingLongerThanSecondReminder,
+        emailProviderConfigured: ownerNotificationHealth.emailProviderConfigured,
+        browserNotifications: ownerNotificationHealth.browserNotifications,
+      },
       expiredActiveReservations: expiredReservations,
       integrityWarnings,
     };
@@ -155,6 +190,8 @@ async function getIntegrityWarnings(businessId: string) {
     orphanItems,
     orphanReservations,
     duplicateVariantCombinations,
+    duplicateProductCodes,
+    duplicateVariantSkus,
   ] = await Promise.all([
     countRows(
       `/wa_products?select=id&business_id=eq.${encodeURIComponent(
@@ -176,6 +213,8 @@ async function getIntegrityWarnings(businessId: string) {
     countOrphanOrderItems(),
     countOrphanReservations(businessId),
     countDuplicateVariantCombinations(businessId),
+    countDuplicateProductCodes(businessId),
+    countDuplicateVariantSkus(businessId),
   ]);
 
   return [
@@ -203,6 +242,8 @@ async function getIntegrityWarnings(businessId: string) {
       duplicateVariantCombinations,
       "Duplicate option combinations within one product.",
     ),
+    warning("DUPLICATE_PRODUCT_CODES", duplicateProductCodes, "Duplicate product codes."),
+    warning("DUPLICATE_VARIANT_SKUS", duplicateVariantSkus, "Duplicate variant SKUs."),
   ].filter((item): item is { code: string; count: number; message: string } => Boolean(item));
 }
 
@@ -276,6 +317,31 @@ async function countDuplicateVariantCombinations(businessId: string) {
     const key = `${variant.product_id}:${[...variant.selected_option_value_ids].sort().join("|")}`;
     if (seen.has(key)) duplicates += 1;
     seen.add(key);
+  }
+  return duplicates;
+}
+
+async function countDuplicateProductCodes(businessId: string) {
+  const products = await supabaseServerRest<Array<{ code: string }>>(
+    `/wa_products?select=code&business_id=eq.${encodeURIComponent(businessId)}&limit=1000`,
+  );
+  return countDuplicates(products.map((product) => product.code.trim().toLowerCase()));
+}
+
+async function countDuplicateVariantSkus(businessId: string) {
+  const variants = await supabaseServerRest<Array<{ sku: string }>>(
+    `/wa_product_variants?select=sku&business_id=eq.${encodeURIComponent(businessId)}&limit=1000`,
+  );
+  return countDuplicates(variants.map((variant) => variant.sku.trim().toLowerCase()));
+}
+
+function countDuplicates(values: string[]) {
+  const seen = new Set<string>();
+  let duplicates = 0;
+  for (const value of values) {
+    if (!value) continue;
+    if (seen.has(value)) duplicates += 1;
+    seen.add(value);
   }
   return duplicates;
 }

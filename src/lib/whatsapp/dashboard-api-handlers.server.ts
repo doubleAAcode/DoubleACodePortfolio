@@ -23,6 +23,12 @@ import {
   type DashboardLifecycleAction,
   type DashboardOrderStatus,
 } from "./order-dashboard-store.server";
+import {
+  getOwnerNotificationsDashboard,
+  markAllOwnerNotificationsRead,
+  markOwnerNotificationRead,
+  runOwnerReminderCheck,
+} from "./owner-notifications.server";
 
 export function createDashboardSessionHandlers(envSuffix = "") {
   return {
@@ -185,6 +191,58 @@ export function createDashboardDiagnosticsHandlers(envSuffix = "") {
           configSuffix: envSuffix,
         });
 
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
+    },
+  };
+}
+
+export function createDashboardNotificationHandlers(envSuffix = "") {
+  return {
+    GET: async ({ request }: { request: Request }) => {
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const data = await getOwnerNotificationsDashboard({ businessId: session.businessId });
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
+    },
+    POST: async ({ request }: { request: Request }) => {
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const body = (await request.json().catch(() => null)) as {
+          action?: string;
+          notificationId?: string;
+        } | null;
+
+        if (body?.action === "mark_read" && body.notificationId) {
+          await markOwnerNotificationRead({
+            businessId: session.businessId,
+            notificationId: body.notificationId,
+          });
+        } else if (body?.action === "mark_all_read") {
+          await markAllOwnerNotificationsRead({ businessId: session.businessId });
+        } else if (body?.action === "run_reminders") {
+          await runOwnerReminderCheck({ businessId: session.businessId });
+        } else {
+          return Response.json(
+            { ok: false, error: "Unsupported notification action." },
+            { status: 400 },
+          );
+        }
+
+        const data = await getOwnerNotificationsDashboard({ businessId: session.businessId });
         return Response.json({ ok: true, data });
       } catch (error) {
         return dashboardApiError(error);

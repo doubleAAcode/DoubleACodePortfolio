@@ -183,31 +183,29 @@ export function ProductsPage() {
   }
 
   async function submitField() {
-    await runSave("field", async () => {
-      await applyAction(
-        {
-          type: "saveCustomField",
-          payload: {
-            id: fieldForm.id || undefined,
-            product_id: selectedId,
-            type: fieldForm.type,
-            label_english: fieldForm.label_english,
-            label_arabic: fieldForm.label_arabic,
-            placeholder_english: fieldForm.placeholder_english || null,
-            placeholder_arabic: fieldForm.placeholder_arabic || null,
-            is_required: fieldForm.is_required,
-            minimum_length: fieldForm.minimum_length,
-            maximum_length: fieldForm.maximum_length,
-            minimum_value: fieldForm.minimum_value,
-            maximum_value: fieldForm.maximum_value,
-            choices: parseChoices(fieldForm.choicesText),
-            sort_order: fieldForm.sort_order,
-          },
+    await applyAction(
+      {
+        type: "saveCustomField",
+        payload: {
+          id: fieldForm.id || undefined,
+          product_id: selectedId,
+          type: fieldForm.type,
+          label_english: fieldForm.label_english,
+          label_arabic: fieldForm.label_arabic,
+          placeholder_english: fieldForm.placeholder_english || null,
+          placeholder_arabic: fieldForm.placeholder_arabic || null,
+          is_required: fieldForm.is_required,
+          minimum_length: fieldForm.minimum_length,
+          maximum_length: fieldForm.maximum_length,
+          minimum_value: fieldForm.minimum_value,
+          maximum_value: fieldForm.maximum_value,
+          choices: parseChoices(fieldForm.choicesText),
+          sort_order: fieldForm.sort_order,
         },
-        "Product question saved.",
-      );
-      setFieldForm(emptyField);
-    });
+      },
+      "Product question saved.",
+    );
+    setFieldForm(emptyField);
   }
 
   if (loading) return <Status loading={loading} error="" notice="" />;
@@ -638,7 +636,7 @@ export function ProductsPage() {
                     value={fieldForm.sort_order}
                     onChange={(value) => setFieldForm({ ...fieldForm, sort_order: value })}
                   />
-                  {fieldForm.type === "short_text" || fieldForm.type === "long_text" ? (
+                  {(fieldForm.type === "short_text" || fieldForm.type === "long_text") ? (
                     <>
                       <TextInput
                         label="English helper text"
@@ -702,8 +700,9 @@ export function ProductsPage() {
                   icon={<Plus className="h-4 w-4" />}
                   onClick={() => void submitField()}
                 >
+                  <Plus className="h-4 w-4" />
                   Save question
-                </SaveButton>
+                </button>
                 <PillList
                   items={productFields}
                   label={(field) =>
@@ -1137,16 +1136,16 @@ function parseChoices(value: string) {
   return choices.length ? choices : null;
 }
 
-function formatChoicesForEditing(choices: WaProductCustomFieldRow["choices"]) {
-  return (
-    choices
-      ?.map((choice) =>
-        choice.labelArabic && choice.labelArabic !== choice.labelEnglish
-          ? `${choice.labelEnglish} | ${choice.labelArabic}`
-          : choice.labelEnglish,
-      )
-      .join("\n") ?? ""
-  );
+function formatChoicesForEditing(
+  choices: WaProductCustomFieldRow["choices"],
+) {
+  return choices
+    ?.map((choice) =>
+      choice.labelArabic && choice.labelArabic !== choice.labelEnglish
+        ? `${choice.labelEnglish} | ${choice.labelArabic}`
+        : choice.labelEnglish,
+    )
+    .join("\n") ?? "";
 }
 
 function questionTypeLabel(type: WaProductCustomFieldRow["type"]) {

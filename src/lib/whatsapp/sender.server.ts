@@ -1,6 +1,8 @@
 import "@tanstack/react-start/server-only";
 
 import { getWhatsAppServerConfig, type WhatsAppServerConfig } from "./config.server";
+import { recordWaMessageEvent, type WaMessageSenderType } from "./message-events.server";
+import { isRetryableHttpStatus, sanitizeExternalErrorMessage } from "./reliability";
 
 const WHATSAPP_SEND_TIMEOUT_MS = 8000;
 const RETRY_DELAY_MS = 300;
@@ -10,6 +12,7 @@ export type SendWhatsAppTextInput = {
   recipient: string;
   message: string;
   config?: WhatsAppServerConfig;
+  logContext?: OutboundLogContext;
 };
 
 export type SendWhatsAppButtonsInput = {
@@ -21,6 +24,7 @@ export type SendWhatsAppButtonsInput = {
     title: string;
   }>;
   config?: WhatsAppServerConfig;
+  logContext?: OutboundLogContext;
 };
 
 export type SendWhatsAppListInput = {
@@ -37,6 +41,13 @@ export type SendWhatsAppListInput = {
     }>;
   }>;
   config?: WhatsAppServerConfig;
+  logContext?: OutboundLogContext;
+};
+
+type OutboundLogContext = {
+  businessId?: string;
+  connectionId?: string;
+  senderType?: Extract<WaMessageSenderType, "BOT" | "HUMAN" | "SYSTEM">;
 };
 
 export type SendResult =
@@ -67,8 +78,9 @@ export async function sendWhatsAppText({
   recipient,
   message,
   config,
+  logContext,
 }: SendWhatsAppTextInput): Promise<SendResult> {
-  return sendWhatsAppPayload({
+  const result = await sendWhatsAppPayload({
     phoneNumberId,
     config,
     payload: {
@@ -82,6 +94,16 @@ export async function sendWhatsAppText({
       },
     },
   });
+  await logOutboundMessage({
+    result,
+    phoneNumberId,
+    recipient,
+    messageType: "text",
+    body: message,
+    summary: message,
+    logContext,
+  });
+  return result;
 }
 
 export async function sendWhatsAppButtons({
@@ -90,8 +112,9 @@ export async function sendWhatsAppButtons({
   body,
   buttons,
   config,
+  logContext,
 }: SendWhatsAppButtonsInput): Promise<SendResult> {
-  return sendWhatsAppPayload({
+  const result = await sendWhatsAppPayload({
     phoneNumberId,
     config,
     payload: {
@@ -116,6 +139,16 @@ export async function sendWhatsAppButtons({
       },
     },
   });
+  await logOutboundMessage({
+    result,
+    phoneNumberId,
+    recipient,
+    messageType: "button",
+    body,
+    summary: `${body} Buttons: ${buttons.map((button) => button.title).join(", ")}`,
+    logContext,
+  });
+  return result;
 }
 
 export async function sendWhatsAppList({
@@ -125,8 +158,9 @@ export async function sendWhatsAppList({
   buttonText,
   sections,
   config,
+  logContext,
 }: SendWhatsAppListInput): Promise<SendResult> {
-  return sendWhatsAppPayload({
+  const result = await sendWhatsAppPayload({
     phoneNumberId,
     config,
     payload: {
@@ -153,6 +187,16 @@ export async function sendWhatsAppList({
       },
     },
   });
+  await logOutboundMessage({
+    result,
+    phoneNumberId,
+    recipient,
+    messageType: "list",
+    body,
+    summary: `${body} List button: ${buttonText}`,
+    logContext,
+  });
+  return result;
 }
 
 async function sendWhatsAppPayload({
@@ -188,7 +232,7 @@ async function sendWhatsAppPayload({
 
   await delay(RETRY_DELAY_MS);
   const second = await sendGraphRequest({ url, accessToken: config.accessToken, payload });
-  return second.ok ? second : { ...second, retryable: isRetryableStatus(second.status) };
+  return second.ok ? second : { ...second, retryable: isRetryableHttpStatus(second.status) };
 }
 
 async function sendGraphRequest({
@@ -224,7 +268,7 @@ async function sendGraphRequest({
         status: response.status,
         errorCode,
         errorMessage: sanitizeMetaError(graphPayload),
-        retryable: isRetryableStatus(response.status),
+        retryable: isRetryableHttpStatus(response.status),
       };
     }
 
@@ -249,16 +293,44 @@ async function sendGraphRequest({
 }
 
 function sanitizeMetaError(payload: GraphSendResponse) {
-  const message = payload.error?.message?.trim();
-  return message
-    ? `WhatsApp message send failed: ${message.slice(0, 180)}`
-    : "WhatsApp message send failed.";
-}
-
-function isRetryableStatus(status: number) {
-  return status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
+  return sanitizeExternalErrorMessage(payload.error?.message, "WhatsApp message send failed");
 }
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function logOutboundMessage({
+  result,
+  phoneNumberId,
+  recipient,
+  messageType,
+  body,
+  summary,
+  logContext,
+}: {
+  result: SendResult;
+  phoneNumberId: string;
+  recipient: string;
+  messageType: "text" | "button" | "list";
+  body: string;
+  summary: string;
+  logContext?: OutboundLogContext;
+}) {
+  if (!logContext) return;
+  await recordWaMessageEvent({
+    businessId: logContext.businessId,
+    connectionId: logContext.connectionId,
+    phoneNumberId,
+    customerPhone: recipient,
+    direction: "OUTBOUND",
+    senderType: logContext.senderType ?? "BOT",
+    messageType,
+    body,
+    summary,
+    metaMessageId: result.ok ? result.messageId : undefined,
+    status: result.ok ? "sent" : "failed",
+    errorCode: result.ok ? undefined : result.errorCode,
+    errorMessage: result.ok ? undefined : result.errorMessage,
+  });
 }

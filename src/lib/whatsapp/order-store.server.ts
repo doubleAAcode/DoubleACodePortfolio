@@ -10,6 +10,7 @@ import type {
   PaymentMethod,
 } from "./checkout-settings.server";
 import type { ConversationLanguage } from "./conversation-store.server";
+import { calculateAvailableStock } from "./reliability";
 
 export type CheckoutDraft = {
   customerName?: string;
@@ -282,7 +283,9 @@ export async function validateCartForOrder({
 
   for (const item of cart) {
     const product = await findVisibleProductById(businessId, item.productId);
-    const variant = item.variantId ? await findProductVariant(item.variantId) : undefined;
+    const variant = item.variantId
+      ? await findProductVariant({ businessId, variantId: item.variantId })
+      : undefined;
     const stockLimit = await getStockLimit({
       businessId,
       productId: item.productId,
@@ -292,7 +295,10 @@ export async function validateCartForOrder({
     const activeReserved = isServerSupabaseConfigured()
       ? await getActiveReservedQuantityFromSupabase(reservationStockId)
       : getActiveReservedQuantity(reservationStockId);
-    const available = Math.max(0, stockLimit - activeReserved);
+    const available = calculateAvailableStock({
+      stockQuantity: stockLimit,
+      activeReservedQuantity: activeReserved,
+    });
 
     if (
       !product ||

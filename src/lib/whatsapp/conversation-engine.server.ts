@@ -65,6 +65,11 @@ import {
   type CheckoutDraft,
   type WhatsAppOrder,
 } from "./order-store.server";
+import { createOwnerNewOrderNotifications } from "./owner-notifications.server";
+import {
+  getActiveBusinessFlow,
+  getBusinessFlowRuntimeSettings,
+} from "./flow-template-store.server";
 
 export { DOUBLE_A_TEST_BUSINESS_ID };
 
@@ -107,11 +112,20 @@ export async function processIncomingMessage({
   input: ConversationInput;
 }): Promise<BotResponse[]> {
   const now = new Date();
-  const flowSettings = await getBusinessBotFlowSettings(businessId);
+  const activeFlow = await getActiveBusinessFlow(businessId);
+  const runtimeFlowSettings = await getBusinessFlowRuntimeSettings(businessId);
+  const flowSettings = runtimeFlowSettings ?? (await getBusinessBotFlowSettings(businessId));
   let session = await getActiveConversationSession({ businessId, customerPhone, now });
 
   if (!session) {
-    session = await createConversationSession({ businessId, customerPhone, now });
+    session = await createConversationSession({
+      businessId,
+      customerPhone,
+      businessFlowId: activeFlow?.businessFlowId,
+      flowVersionId: activeFlow?.flowVersionId,
+      currentNodeId: activeFlow?.flow.startNodeId,
+      now,
+    });
     if (!flowSettings.languageSelectionEnabled) {
       session = await saveConversationSession(
         {
@@ -129,7 +143,14 @@ export async function processIncomingMessage({
 
   if (command === "restart") {
     await deleteConversationSession({ businessId, customerPhone });
-    session = await createConversationSession({ businessId, customerPhone, now });
+    session = await createConversationSession({
+      businessId,
+      customerPhone,
+      businessFlowId: activeFlow?.businessFlowId,
+      flowVersionId: activeFlow?.flowVersionId,
+      currentNodeId: activeFlow?.flow.startNodeId,
+      now,
+    });
     if (!flowSettings.languageSelectionEnabled) {
       await saveConversationSession(
         {
@@ -141,12 +162,12 @@ export async function processIncomingMessage({
       );
       return [mainMenuResponse(flowSettings.defaultLanguage, flowSettings)];
     }
-    return [languageSelectionResponse()];
+    return [languageSelectionResponse(flowSettings)];
   }
 
   if (command === "menu") {
     if (!session.language && flowSettings.languageSelectionEnabled)
-      return [languageSelectionResponse()];
+      return [languageSelectionResponse(flowSettings)];
     const language = session.language ?? flowSettings.defaultLanguage;
     await saveConversationSession(
       {
@@ -167,7 +188,7 @@ export async function processIncomingMessage({
   }
 
   if (command === "cart") {
-    if (!session.language) return [languageSelectionResponse()];
+    if (!session.language) return [languageSelectionResponse(flowSettings)];
     const nextSession = await saveConversationSession(
       { ...session, currentStep: "CART_MENU" },
       now,
@@ -176,7 +197,7 @@ export async function processIncomingMessage({
   }
 
   if (command === "cancel") {
-    if (!session.language) return [languageSelectionResponse()];
+    if (!session.language) return [languageSelectionResponse(flowSettings)];
     if (session.currentStep === "ORDER_CREATED") {
       await saveConversationSession(session, now);
       return [
@@ -272,7 +293,7 @@ async function handleLanguageSelection(
   const language = parseLanguage(input.value);
   if (!language) {
     await saveConversationSession(session, now);
-    return [languageSelectionResponse()];
+    return [languageSelectionResponse(flowSettings)];
   }
 
   await saveConversationSession({ ...session, language, currentStep: "MAIN_MENU" }, now);
@@ -323,6 +344,11 @@ async function handleMainMenu(
       menuBranchResponse(option, language, flowSettings),
       mainMenuResponse(language, flowSettings),
     ];
+  }
+
+  if (option) {
+    const response = customMenuBranchResponse(option, language, flowSettings);
+    if (response) return [response, mainMenuResponse(language, flowSettings)];
   }
 
   return [mainMenuResponse(language, flowSettings)];
@@ -1223,7 +1249,9 @@ async function continueCheckoutAfterCustomerName(
       {
         ...session,
         currentStep:
-          singleFulfillmentMethod === "delivery" ? "SELECT_DELIVERY_AREA" : "SELECT_PICKUP_LOCATION",
+          singleFulfillmentMethod === "delivery"
+            ? "SELECT_DELIVERY_AREA"
+            : "SELECT_PICKUP_LOCATION",
         context: {
           ...session.context,
           checkout: {
@@ -1684,6 +1712,9 @@ async function confirmOrder(
   }
 
   await saveWhatsAppCustomerProfileFromOrder(result.order);
+  if (!result.duplicate) {
+    void createOwnerNewOrderNotifications(result.order);
+  }
 
   const nextSession = await saveConversationSession(
     {
@@ -1776,10 +1807,14 @@ async function moveToProductDetails(
   return [productDetailsResponse(product, language)];
 }
 
-function languageSelectionResponse(): BotResponse {
+function languageSelectionResponse(flowSettings = getDefaultBotFlowSettings("")): BotResponse {
+  const body =
+    flowSettings.defaultLanguage === "ar"
+      ? flowSettings.languagePromptArabic || flowSettings.languagePromptEnglish
+      : flowSettings.languagePromptEnglish || flowSettings.languagePromptArabic;
   return {
     type: "buttons",
-    body: "Choose your language:",
+    body: body || "Choose your language:",
     buttons: [
       { id: "language_en", title: "English" },
       { id: "language_ar", title: "العربية" },
@@ -1804,38 +1839,83 @@ function menuBranchResponse(
   return { type: "text", text };
 }
 
+function customMenuBranchResponse(
+  optionKey: string,
+  language: ConversationLanguage,
+  flowSettings: BusinessBotFlowSettings,
+): BotResponse | undefined {
+  const option = flowSettings.mainMenuOptions?.find((entry) => entry.key === optionKey);
+  if (!option?.targetNodeId) return undefined;
+  if (["category_select", "products", "product_select"].includes(option.targetNodeId)) {
+    return undefined;
+  }
+  if (option.targetNodeId === "human_handoff") {
+    return {
+      type: "text",
+      text:
+        language === "ar"
+          ? flowSettings.questionResponseArabic
+          : flowSettings.questionResponseEnglish,
+    };
+  }
+  if (option.targetNodeId === "store_info") {
+    return {
+      type: "text",
+      text: language === "ar" ? flowSettings.infoResponseArabic : flowSettings.infoResponseEnglish,
+    };
+  }
+  if (option.response?.en || option.response?.ar) {
+    return {
+      type: "text",
+      text: option.response[language] || option.response.en || "",
+    };
+  }
+  return {
+    type: "text",
+    text: option.label[language] || option.label.en,
+  };
+}
+
 function mainMenuResponse(
   language: ConversationLanguage,
   flowSettings = getDefaultBotFlowSettings(""),
 ): BotResponse {
+  const configuredOptions = flowSettings.mainMenuOptions
+    ?.filter((option) => option.active)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .slice(0, 3);
+  const buttons = configuredOptions?.length
+    ? configuredOptions.map((option) => ({
+        id: `main_${option.key}`,
+        title: truncateButtonTitle(option.label[language] || option.label.en),
+      }))
+    : [
+        {
+          id: "main_order",
+          title: truncateButtonTitle(
+            language === "ar" ? flowSettings.orderButtonArabic : flowSettings.orderButtonEnglish,
+          ),
+        },
+        {
+          id: "main_question",
+          title: truncateButtonTitle(
+            language === "ar"
+              ? flowSettings.questionButtonArabic
+              : flowSettings.questionButtonEnglish,
+          ),
+        },
+        {
+          id: "main_info",
+          title: truncateButtonTitle(
+            language === "ar" ? flowSettings.infoButtonArabic : flowSettings.infoButtonEnglish,
+          ),
+        },
+      ];
   return {
     type: "buttons",
     body:
-      language === "ar"
-        ? flowSettings.welcomeMessageArabic
-        : flowSettings.welcomeMessageEnglish,
-    buttons: [
-      {
-        id: "main_order",
-        title: truncateButtonTitle(
-          language === "ar" ? flowSettings.orderButtonArabic : flowSettings.orderButtonEnglish,
-        ),
-      },
-      {
-        id: "main_question",
-        title: truncateButtonTitle(
-          language === "ar"
-            ? flowSettings.questionButtonArabic
-            : flowSettings.questionButtonEnglish,
-        ),
-      },
-      {
-        id: "main_info",
-        title: truncateButtonTitle(
-          language === "ar" ? flowSettings.infoButtonArabic : flowSettings.infoButtonEnglish,
-        ),
-      },
-    ],
+      language === "ar" ? flowSettings.welcomeMessageArabic : flowSettings.welcomeMessageEnglish,
+    buttons,
   };
 }
 async function categorySelectionResponse(session: ConversationSession): Promise<BotResponse[]> {
@@ -1987,7 +2067,10 @@ function customFieldQuestionResponse(
         ? [{ id: "skip", title: t(language, "Skip", "\u062a\u062e\u0637\u064a") }]
         : []),
       { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
-      { id: "main_menu", title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629") },
+      {
+        id: "main_menu",
+        title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629"),
+      },
     ];
 
     return {
@@ -2009,10 +2092,7 @@ function customFieldQuestionResponse(
   };
 }
 
-function customFieldPromptText(
-  field: StoreProductCustomField,
-  language: ConversationLanguage,
-) {
+function customFieldPromptText(field: StoreProductCustomField, language: ConversationLanguage) {
   const placeholder = getCustomFieldPlaceholder(field, language);
   const skipHint = field.isRequired
     ? undefined
@@ -2185,7 +2265,9 @@ function fulfillmentMethodQuestion(
   return {
     type: "buttons",
     body:
-      language === "ar" ? flowSettings.fulfillmentPromptArabic : flowSettings.fulfillmentPromptEnglish,
+      language === "ar"
+        ? flowSettings.fulfillmentPromptArabic
+        : flowSettings.fulfillmentPromptEnglish,
     buttons: [
       { id: "checkout_delivery", title: t(language, "Delivery", "\u062a\u0648\u0635\u064a\u0644") },
       {
@@ -2284,7 +2366,9 @@ function deliveryAreaQuestion(
   return {
     type: "list",
     body:
-      language === "ar" ? flowSettings.deliveryAreaPromptArabic : flowSettings.deliveryAreaPromptEnglish,
+      language === "ar"
+        ? flowSettings.deliveryAreaPromptArabic
+        : flowSettings.deliveryAreaPromptEnglish,
     buttonText: t(language, "Areas", "\u0627\u0644\u0645\u0646\u0627\u0637\u0642"),
     sections: [
       {
@@ -2362,7 +2446,9 @@ function paymentMethodQuestion(
   return {
     type: "list",
     body:
-      language === "ar" ? flowSettings.paymentMethodPromptArabic : flowSettings.paymentMethodPromptEnglish,
+      language === "ar"
+        ? flowSettings.paymentMethodPromptArabic
+        : flowSettings.paymentMethodPromptEnglish,
     buttonText: t(language, "Payment", "\u0627\u0644\u062f\u0641\u0639"),
     sections: [
       {
@@ -2384,7 +2470,9 @@ function orderNotesQuestion(
   return {
     type: "buttons",
     body:
-      language === "ar" ? flowSettings.orderNotesPromptArabic : flowSettings.orderNotesPromptEnglish,
+      language === "ar"
+        ? flowSettings.orderNotesPromptArabic
+        : flowSettings.orderNotesPromptEnglish,
     buttons: [
       {
         id: "no_notes",
@@ -2652,7 +2740,11 @@ function validateCustomField(
   if (field.isRequired && !value) {
     return {
       ok: false,
-      error: t(language, "This field is required.", "\u0647\u0630\u0627 \u0627\u0644\u062d\u0642\u0644 \u0645\u0637\u0644\u0648\u0628."),
+      error: t(
+        language,
+        "This field is required.",
+        "\u0647\u0630\u0627 \u0627\u0644\u062d\u0642\u0644 \u0645\u0637\u0644\u0648\u0628.",
+      ),
     };
   }
   if (!field.isRequired && !value) return { ok: true };
@@ -2693,7 +2785,11 @@ function validateCustomField(
     if (!Number.isFinite(number)) {
       return {
         ok: false,
-        error: t(language, "Enter a valid number.", "\u0623\u062f\u062e\u0644 \u0631\u0642\u0645\u0627 \u0635\u062d\u064a\u062d\u0627."),
+        error: t(
+          language,
+          "Enter a valid number.",
+          "\u0623\u062f\u062e\u0644 \u0631\u0642\u0645\u0627 \u0635\u062d\u064a\u062d\u0627.",
+        ),
       };
     }
     if (field.minimumValue != null && number < field.minimumValue) {
@@ -2725,7 +2821,11 @@ function validateCustomField(
     if (!field.isRequired && skipValues.includes(normalized)) return { ok: true };
     return {
       ok: false,
-      error: t(language, "Choose yes or no.", "\u0627\u062e\u062a\u0631 \u0646\u0639\u0645 \u0623\u0648 \u0644\u0627."),
+      error: t(
+        language,
+        "Choose yes or no.",
+        "\u0627\u062e\u062a\u0631 \u0646\u0639\u0645 \u0623\u0648 \u0644\u0627.",
+      ),
     };
   }
   if (field.type === "single_choice" && field.choices?.length) {
@@ -2738,7 +2838,11 @@ function validateCustomField(
     if (!choice)
       return {
         ok: false,
-        error: t(language, "Choose one of the listed options.", "\u0627\u062e\u062a\u0631 \u0623\u062d\u062f \u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a."),
+        error: t(
+          language,
+          "Choose one of the listed options.",
+          "\u0627\u062e\u062a\u0631 \u0623\u062d\u062f \u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a.",
+        ),
       };
     return { ok: true, value: language === "ar" ? choice.labelArabic : choice.labelEnglish };
   }
@@ -2772,11 +2876,42 @@ function parseLanguage(value: string): ConversationLanguage | undefined {
 
 function parseMainMenuOption(value: string, flowSettings?: BusinessBotFlowSettings) {
   const normalized = normalize(value);
-  const orderValues = ["1", "main_order", "place an order", "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628"];
-  const questionValues = ["2", "main_question", "ask a question", "\u0637\u0631\u062d \u0633\u0624\u0627\u0644"];
-  const infoValues = ["3", "main_info", "store information", "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631"];
+  const orderValues = [
+    "1",
+    "main_order",
+    "place an order",
+    "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
+  ];
+  const questionValues = [
+    "2",
+    "main_question",
+    "ask a question",
+    "\u0637\u0631\u062d \u0633\u0624\u0627\u0644",
+  ];
+  const infoValues = [
+    "3",
+    "main_info",
+    "store information",
+    "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  ];
 
   if (flowSettings) {
+    const customOption = flowSettings.mainMenuOptions
+      ?.filter((option) => option.active)
+      .find((option) => {
+        const values = [option.key, `main_${option.key}`, option.label.en, option.label.ar].map(
+          normalize,
+        );
+        return values.includes(normalized);
+      });
+    if (customOption) {
+      if (customOption.targetNodeId === "category_select" || customOption.key === "order") {
+        return "order";
+      }
+      if (customOption.key === "question") return "question";
+      if (customOption.key === "info") return "info";
+      return customOption.key;
+    }
     orderValues.push(flowSettings.orderButtonEnglish, flowSettings.orderButtonArabic);
     questionValues.push(flowSettings.questionButtonEnglish, flowSettings.questionButtonArabic);
     infoValues.push(flowSettings.infoButtonEnglish, flowSettings.infoButtonArabic);
@@ -2787,7 +2922,6 @@ function parseMainMenuOption(value: string, flowSettings?: BusinessBotFlowSettin
   if (infoValues.map(normalize).includes(normalized)) return "info";
   return undefined;
 }
-
 
 function parseNavigation(value: string) {
   const normalized = normalize(value);

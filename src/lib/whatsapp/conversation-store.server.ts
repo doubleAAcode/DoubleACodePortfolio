@@ -2,6 +2,8 @@ import "@tanstack/react-start/server-only";
 
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
+import { maskCustomerIdentifier, validateStoredConversationSession } from "./reliability";
+
 export type ConversationStep =
   | "SELECT_LANGUAGE"
   | "MAIN_MENU"
@@ -34,6 +36,10 @@ export type ConversationSession = {
   currentStep: ConversationStep;
   language?: ConversationLanguage;
   context: Record<string, unknown>;
+  businessFlowId?: string;
+  flowVersionId?: string;
+  currentNodeId?: string;
+  flowVariables: Record<string, unknown>;
   lastCustomerMessageAt: string;
   expiresAt: string;
   createdAt: string;
@@ -49,6 +55,10 @@ type ConversationSessionRow = {
   current_step: ConversationStep;
   language: ConversationLanguage | null;
   context: Record<string, unknown>;
+  business_flow_id?: string | null;
+  flow_version_id?: string | null;
+  current_node_id?: string | null;
+  flow_variables?: Record<string, unknown> | null;
   last_customer_message_at: string;
   expires_at: string;
   created_at: string;
@@ -80,6 +90,7 @@ const validSteps: ReadonlySet<ConversationStep> = new Set([
   "CONFIRM_ORDER",
   "ORDER_CREATED",
 ]);
+const validLanguages: ReadonlySet<ConversationLanguage> = new Set(["en", "ar"]);
 
 export async function getActiveConversationSession({
   businessId,
@@ -107,10 +118,16 @@ export async function getActiveConversationSession({
 export async function createConversationSession({
   businessId,
   customerPhone,
+  businessFlowId,
+  flowVersionId,
+  currentNodeId,
   now = new Date(),
 }: {
   businessId: string;
   customerPhone: string;
+  businessFlowId?: string;
+  flowVersionId?: string;
+  currentNodeId?: string;
   now?: Date;
 }) {
   const timestamp = now.toISOString();
@@ -119,6 +136,10 @@ export async function createConversationSession({
     customerPhone,
     currentStep: "SELECT_LANGUAGE",
     context: {},
+    businessFlowId,
+    flowVersionId,
+    currentNodeId,
+    flowVariables: {},
     lastCustomerMessageAt: timestamp,
     expiresAt: getExpiresAt(now),
     createdAt: timestamp,
@@ -205,6 +226,15 @@ function fromRow(row: ConversationSessionRow): ConversationSession {
     currentStep: validated.currentStep,
     language: validated.language,
     context: validated.context,
+    businessFlowId: row.business_flow_id ?? undefined,
+    flowVersionId: row.flow_version_id ?? undefined,
+    currentNodeId: row.current_node_id ?? undefined,
+    flowVariables:
+      row.flow_variables &&
+      typeof row.flow_variables === "object" &&
+      !Array.isArray(row.flow_variables)
+        ? row.flow_variables
+        : {},
     lastCustomerMessageAt: row.last_customer_message_at,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
@@ -213,33 +243,25 @@ function fromRow(row: ConversationSessionRow): ConversationSession {
 }
 
 function validateStoredSessionRow(row: ConversationSessionRow) {
-  const language = row.language === "en" || row.language === "ar" ? row.language : undefined;
-  const context =
-    row.context && typeof row.context === "object" && !Array.isArray(row.context)
-      ? row.context
-      : {};
-  let currentStep: ConversationStep = validSteps.has(row.current_step)
-    ? row.current_step
-    : language
-      ? "MAIN_MENU"
-      : "SELECT_LANGUAGE";
+  const validated = validateStoredConversationSession<ConversationStep, ConversationLanguage>({
+    row,
+    validSteps,
+    validLanguages,
+    defaultStep: "SELECT_LANGUAGE",
+    defaultStepWithLanguage: "MAIN_MENU",
+  });
 
-  if (currentStep !== row.current_step || context !== row.context || language !== row.language) {
+  if (validated.recovered) {
     console.warn("[whatsapp:session] recovered malformed stored session", {
       businessId: row.business_id,
-      customer: maskPhone(row.customer_phone),
+      customer: maskCustomerIdentifier(row.customer_phone),
       storedStep: row.current_step,
-      recoveredStep: currentStep,
-      hadValidContext: context === row.context,
-      hadValidLanguage: language === row.language,
+      recoveredStep: validated.currentStep,
+      issues: validated.issues,
     });
   }
 
-  if (!language && currentStep !== "SELECT_LANGUAGE") {
-    currentStep = "SELECT_LANGUAGE";
-  }
-
-  return { currentStep, language, context };
+  return validated;
 }
 
 function toRow(session: ConversationSession): ConversationSessionRow {
@@ -249,14 +271,13 @@ function toRow(session: ConversationSession): ConversationSessionRow {
     current_step: session.currentStep,
     language: session.language ?? null,
     context: session.context,
+    business_flow_id: session.businessFlowId ?? null,
+    flow_version_id: session.flowVersionId ?? null,
+    current_node_id: session.currentNodeId ?? null,
+    flow_variables: session.flowVariables ?? {},
     last_customer_message_at: session.lastCustomerMessageAt,
     expires_at: session.expiresAt,
     created_at: session.createdAt,
     updated_at: session.updatedAt,
   };
-}
-
-function maskPhone(phone: string) {
-  if (phone.length <= 4) return "****";
-  return `${"*".repeat(Math.max(0, phone.length - 4))}${phone.slice(-4)}`;
 }

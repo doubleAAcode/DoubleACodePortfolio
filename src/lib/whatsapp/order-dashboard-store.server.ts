@@ -7,6 +7,10 @@ import { supabaseServerRest } from "@/lib/supabase/server-rest.server";
 import { getWhatsAppServerConfig } from "./config.server";
 import { getBusinessCheckoutSettings } from "./checkout-settings.server";
 import { getActiveConversationSession } from "./conversation-store.server";
+import {
+  listOwnerNotificationsForOrder,
+  type OwnerNotificationRow,
+} from "./owner-notifications.server";
 import { sendWhatsAppText, type SendResult } from "./sender.server";
 
 const PARTNER_TEST_BUSINESS_ID = "double-a-partner-test-business";
@@ -146,6 +150,7 @@ export type DashboardOrderDetails = DashboardOrderRow & {
   reservations: DashboardReservationRow[];
   history: DashboardOrderStatusHistoryRow[];
   notifications: DashboardOrderNotificationRow[];
+  ownerNotifications: OwnerNotificationRow[];
   delivery_area_label?: string;
   pickup_location_label?: string;
   payment_method_label?: string;
@@ -232,27 +237,29 @@ export async function getDashboardOrderDetails({
   const order = rows[0];
   if (!order) throw new Error("Order was not found.");
 
-  const [items, reservations, history, notifications, settings] = await Promise.all([
-    supabaseServerRest<DashboardOrderItemRow[]>(
-      `/wa_order_items?select=*&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
-    ),
-    supabaseServerRest<DashboardReservationRow[]>(
-      `/wa_stock_reservations?select=*&business_id=eq.${encodeURIComponent(
-        businessId,
-      )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
-    ),
-    supabaseServerRest<DashboardOrderStatusHistoryRow[]>(
-      `/wa_order_status_history?select=*&business_id=eq.${encodeURIComponent(
-        businessId,
-      )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
-    ),
-    supabaseServerRest<DashboardOrderNotificationRow[]>(
-      `/wa_order_notifications?select=*&business_id=eq.${encodeURIComponent(
-        businessId,
-      )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc`,
-    ),
-    getBusinessCheckoutSettings(businessId),
-  ]);
+  const [items, reservations, history, notifications, ownerNotifications, settings] =
+    await Promise.all([
+      supabaseServerRest<DashboardOrderItemRow[]>(
+        `/wa_order_items?select=*&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
+      ),
+      supabaseServerRest<DashboardReservationRow[]>(
+        `/wa_stock_reservations?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
+      ),
+      supabaseServerRest<DashboardOrderStatusHistoryRow[]>(
+        `/wa_order_status_history?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc`,
+      ),
+      supabaseServerRest<DashboardOrderNotificationRow[]>(
+        `/wa_order_notifications?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc`,
+      ),
+      listOwnerNotificationsForOrder({ businessId, orderId }),
+      getBusinessCheckoutSettings(businessId),
+    ]);
 
   const deliveryArea = settings?.deliveryAreas.find((area) => area.id === order.delivery_area_id);
   const pickupLocation = settings?.pickupLocations.find(
@@ -268,6 +275,7 @@ export async function getDashboardOrderDetails({
     reservations,
     history,
     notifications,
+    ownerNotifications,
     delivery_area_label: deliveryArea?.nameEnglish,
     pickup_location_label: pickupLocation?.nameEnglish,
     payment_method_label: paymentMethod?.labelEnglish,

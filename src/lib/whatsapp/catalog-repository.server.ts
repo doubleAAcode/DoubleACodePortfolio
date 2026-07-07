@@ -654,15 +654,25 @@ export async function resolveProductVariant({
   );
 }
 
-export async function findProductVariant(variantId: string) {
+export async function findProductVariant({
+  businessId,
+  variantId,
+}: {
+  businessId: string;
+  variantId: string;
+}) {
   if (isServerSupabaseConfigured()) {
     const rows = await supabaseServerRest<ProductVariantRow[]>(
-      `/wa_product_variants?select=*&id=eq.${encodeURIComponent(variantId)}&limit=1`,
+      `/wa_product_variants?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&id=eq.${encodeURIComponent(variantId)}&limit=1`,
     );
     return rows[0] ? toProductVariant(rows[0]) : undefined;
   }
 
-  return productVariants.find((variant) => variant.id === variantId);
+  return productVariants.find(
+    (variant) => variant.businessId === businessId && variant.id === variantId,
+  );
 }
 
 export async function listProductCustomFields(businessId: string, productId: string) {

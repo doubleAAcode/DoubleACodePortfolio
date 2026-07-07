@@ -3,11 +3,14 @@ import "@tanstack/react-start/server-only";
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
 import type { ConversationLanguage } from "./conversation-store.server";
+import type { FlowMainMenuOption } from "./flow-template-types";
 
 export type BusinessBotFlowSettings = {
   businessId: string;
   languageSelectionEnabled: boolean;
   defaultLanguage: ConversationLanguage;
+  languagePromptEnglish?: string;
+  languagePromptArabic?: string;
   welcomeMessageEnglish: string;
   welcomeMessageArabic: string;
   orderButtonEnglish: string;
@@ -18,6 +21,7 @@ export type BusinessBotFlowSettings = {
   questionResponseArabic: string;
   infoButtonEnglish: string;
   infoButtonArabic: string;
+  mainMenuOptions?: FlowMainMenuOption[];
   infoResponseEnglish: string;
   infoResponseArabic: string;
   customerNamePromptEnglish: string;
@@ -100,6 +104,8 @@ type CheckoutPromptSettings = Pick<
 const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   languageSelectionEnabled: true,
   defaultLanguage: "en",
+  languagePromptEnglish: "Choose your language:",
+  languagePromptArabic: "\u0627\u062e\u062a\u0631 \u0644\u063a\u062a\u0643:",
   welcomeMessageEnglish: "How can we help?",
   welcomeMessageArabic:
     "\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0646\u0627 \u0645\u0633\u0627\u0639\u062f\u062a\u0643\u061f",
@@ -139,8 +145,7 @@ const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   orderNotesPromptArabic:
     "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
   noNotesButtonEnglish: "No notes",
-  noNotesButtonArabic:
-    "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+  noNotesButtonArabic: "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -173,10 +178,7 @@ export async function getBusinessBotFlowSettings(businessId: string) {
   return inMemorySettings.get(businessId) ?? getDefaultBotFlowSettings(businessId);
 }
 
-export async function saveBusinessBotFlowSettings(
-  businessId: string,
-  input: BotFlowSettingsInput,
-) {
+export async function saveBusinessBotFlowSettings(businessId: string, input: BotFlowSettingsInput) {
   const settings = normalizeSettings(businessId, input);
 
   if (!isServerSupabaseConfigured()) {
@@ -192,7 +194,9 @@ export async function saveBusinessBotFlowSettings(
     });
   } catch (error) {
     if (isMissingBotFlowSettingsTableError(error)) {
-      throw new Error("Run supabase/wa_bot_flow_settings_schema.sql before saving bot flow settings.");
+      throw new Error(
+        "Run supabase/wa_bot_flow_settings_schema.sql before saving bot flow settings.",
+      );
     }
     throw error;
   }
@@ -208,13 +212,18 @@ function normalizeSettings(
     businessId,
     languageSelectionEnabled: Boolean(input.languageSelectionEnabled),
     defaultLanguage: input.defaultLanguage === "ar" ? "ar" : "en",
+    languagePromptEnglish:
+      input.languagePromptEnglish?.trim() || DEFAULT_SETTINGS.languagePromptEnglish,
+    languagePromptArabic:
+      input.languagePromptArabic?.trim() || DEFAULT_SETTINGS.languagePromptArabic,
     welcomeMessageEnglish: requiredText(input.welcomeMessageEnglish, "English welcome message"),
     welcomeMessageArabic:
       input.welcomeMessageArabic.trim() || DEFAULT_SETTINGS.welcomeMessageArabic,
     orderButtonEnglish: requiredText(input.orderButtonEnglish, "English order button"),
     orderButtonArabic: input.orderButtonArabic.trim() || DEFAULT_SETTINGS.orderButtonArabic,
     questionButtonEnglish: requiredText(input.questionButtonEnglish, "English question button"),
-    questionButtonArabic: input.questionButtonArabic.trim() || DEFAULT_SETTINGS.questionButtonArabic,
+    questionButtonArabic:
+      input.questionButtonArabic.trim() || DEFAULT_SETTINGS.questionButtonArabic,
     questionResponseEnglish: requiredText(
       input.questionResponseEnglish,
       "English question response",
@@ -245,7 +254,10 @@ function normalizeCheckoutPrompts(input: BotFlowSettingsInput): CheckoutPromptSe
     ),
     customerNamePromptArabic:
       input.customerNamePromptArabic.trim() || DEFAULT_SETTINGS.customerNamePromptArabic,
-    fulfillmentPromptEnglish: requiredText(input.fulfillmentPromptEnglish, "English delivery prompt"),
+    fulfillmentPromptEnglish: requiredText(
+      input.fulfillmentPromptEnglish,
+      "English delivery prompt",
+    ),
     fulfillmentPromptArabic:
       input.fulfillmentPromptArabic.trim() || DEFAULT_SETTINGS.fulfillmentPromptArabic,
     deliveryAreaPromptEnglish: requiredText(input.deliveryAreaPromptEnglish, "English area prompt"),
@@ -394,7 +406,8 @@ function fromRow(row: BotFlowSettingsRow): BusinessBotFlowSettings {
     orderButtonArabic: row.order_button_arabic,
     questionButtonEnglish: row.question_button_english,
     questionButtonArabic: row.question_button_arabic,
-    questionResponseEnglish: row.question_response_english ?? DEFAULT_SETTINGS.questionResponseEnglish,
+    questionResponseEnglish:
+      row.question_response_english ?? DEFAULT_SETTINGS.questionResponseEnglish,
     questionResponseArabic: row.question_response_arabic ?? DEFAULT_SETTINGS.questionResponseArabic,
     infoButtonEnglish: row.info_button_english,
     infoButtonArabic: row.info_button_arabic,

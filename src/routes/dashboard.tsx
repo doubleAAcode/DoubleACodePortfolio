@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanst
 import {
   Bot,
   Boxes,
+  Bell,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -9,13 +10,18 @@ import {
   MessageSquareText,
   Settings,
   ShoppingCart,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  applyWaOwnerNotificationAction,
   getWaDashboardSession,
+  getWaOwnerNotifications,
   loginWaDashboard,
   logoutWaDashboard,
+  type OwnerNotificationDashboardSnapshot,
   type WaDashboardSessionResult,
 } from "@/lib/whatsapp/dashboard-client";
 
@@ -63,7 +69,7 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
 
   if (!sessionResult && !error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <div className="dark flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Loading dashboard...
       </div>
     );
@@ -84,7 +90,7 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="dark min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
         <aside className="hidden w-64 shrink-0 border-r border-border bg-surface/70 md:flex md:flex-col">
           <div className="border-b border-border px-5 py-5">
@@ -104,7 +110,8 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
             {navItems.map((item) => {
               const Icon = item.icon;
               const to = `${basePath}${item.path}`;
-              const active = item.exact ? pathname === basePath : pathname.startsWith(to);
+              const active =
+                "exact" in item && item.exact ? pathname === basePath : pathname.startsWith(to);
               return (
                 <Link
                   key={to}
@@ -144,7 +151,8 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const to = `${basePath}${item.path}`;
-                  const active = item.exact ? pathname === basePath : pathname.startsWith(to);
+                  const active =
+                    "exact" in item && item.exact ? pathname === basePath : pathname.startsWith(to);
                   return (
                     <Link
                       key={to}
@@ -169,12 +177,192 @@ export function DashboardLayout({ basePath, title }: { basePath: string; title: 
           </header>
 
           <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
+            <OwnerNotificationCenter basePath={basePath} />
             <Outlet />
           </main>
         </div>
       </div>
     </div>
   );
+}
+
+function OwnerNotificationCenter({ basePath }: { basePath: string }) {
+  const [snapshot, setSnapshot] = useState<OwnerNotificationDashboardSnapshot>();
+  const [muted, setMuted] = useState(false);
+  const [browserStatus, setBrowserStatus] = useState<NotificationPermission | "unsupported">(
+    typeof window !== "undefined" && "Notification" in window
+      ? Notification.permission
+      : "unsupported",
+  );
+  const seenNotificationIds = useRef(new Set<string>());
+  const interacted = useRef(false);
+
+  const loadNotifications = useCallback(async () => {
+    const nextSnapshot = await getWaOwnerNotifications();
+    const newestUnread = nextSnapshot.notifications.find((notification) => !notification.read_at);
+    const isNew = newestUnread ? !seenNotificationIds.current.has(newestUnread.id) : false;
+
+    for (const notification of nextSnapshot.notifications) {
+      seenNotificationIds.current.add(notification.id);
+    }
+
+    if (isNew && newestUnread) {
+      if (nextSnapshot.settings.enableSound && !muted && interacted.current) {
+        playNotificationSound();
+      }
+      if (
+        nextSnapshot.settings.enableBrowserPush &&
+        browserStatus === "granted" &&
+        newestUnread.type === "NEW_ORDER"
+      ) {
+        showBrowserNotification(newestUnread.title, newestUnread.message, {
+          orderId: newestUnread.order_id,
+          basePath,
+        });
+      }
+    }
+
+    setSnapshot(nextSnapshot);
+  }, [basePath, browserStatus, muted]);
+
+  useEffect(() => {
+    void loadNotifications();
+    const interval = window.setInterval(() => void loadNotifications(), 15000);
+    return () => window.clearInterval(interval);
+  }, [loadNotifications]);
+
+  async function enableBrowserNotifications() {
+    interacted.current = true;
+    if (!("Notification" in window)) {
+      setBrowserStatus("unsupported");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setBrowserStatus(permission);
+  }
+
+  async function markAllRead() {
+    interacted.current = true;
+    setSnapshot(await applyWaOwnerNotificationAction({ action: "mark_all_read" }));
+  }
+
+  async function markRead(notificationId: string) {
+    interacted.current = true;
+    setSnapshot(await applyWaOwnerNotificationAction({ action: "mark_read", notificationId }));
+  }
+
+  const unreadCount = snapshot?.unreadCount ?? 0;
+  const recent = snapshot?.notifications.slice(0, 3) ?? [];
+
+  if (!snapshot) return null;
+
+  return (
+    <section className="mb-5 rounded-lg border border-border bg-surface/70 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+            <Bell className="h-5 w-5" />
+            {unreadCount ? (
+              <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-destructive px-1.5 py-0.5 text-center text-[10px] font-semibold text-white">
+                {unreadCount}
+              </span>
+            ) : null}
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Owner alerts</h2>
+            <p className="text-sm text-muted-foreground">
+              {unreadCount ? `${unreadCount} unread notification(s)` : "No unread notifications"}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              interacted.current = true;
+              setMuted((value) => !value);
+            }}
+            className="studio-button"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {muted ? "Muted" : "Sound on"}
+          </button>
+          {browserStatus !== "granted" ? (
+            <button
+              type="button"
+              onClick={() => void enableBrowserNotifications()}
+              className="studio-button"
+            >
+              <Bell className="h-4 w-4" />
+              Enable browser notifications
+            </button>
+          ) : null}
+          {unreadCount ? (
+            <button type="button" onClick={() => void markAllRead()} className="studio-button">
+              Mark all read
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {browserStatus === "denied" ? (
+        <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+          Browser notifications are blocked. Enable them from your browser site settings.
+        </p>
+      ) : null}
+
+      {recent.length ? (
+        <div className="mt-4 grid gap-2 lg:grid-cols-3">
+          {recent.map((notification) => (
+            <a
+              key={notification.id}
+              href={`${basePath}/orders/${notification.order_id}`}
+              onClick={() => void markRead(notification.id)}
+              className={`rounded-md border p-3 text-sm transition hover:border-primary ${
+                notification.read_at
+                  ? "border-border bg-background/40 text-muted-foreground"
+                  : "border-primary/35 bg-primary/10 text-foreground"
+              }`}
+            >
+              <div className="font-medium">{notification.title}</div>
+              <p className="mt-1 line-clamp-2 text-muted-foreground">{notification.message}</p>
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function playNotificationSound() {
+  const AudioContextCtor =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextCtor) return;
+  const context = new AudioContextCtor();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(880, context.currentTime);
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.24);
+}
+
+function showBrowserNotification(
+  title: string,
+  body: string,
+  { orderId, basePath }: { orderId: string; basePath: string },
+) {
+  const notification = new Notification(title, { body, tag: orderId });
+  notification.onclick = () => {
+    window.focus();
+    window.location.assign(`${basePath}/orders/${orderId}`);
+  };
 }
 
 function DashboardLogin({
@@ -207,7 +395,7 @@ function DashboardLogin({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+    <main className="dark flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-md rounded-lg border border-border bg-surface/70 p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-background">

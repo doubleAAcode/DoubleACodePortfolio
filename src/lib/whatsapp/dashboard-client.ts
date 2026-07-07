@@ -5,6 +5,7 @@ import type {
   DashboardOrderStatus,
   DashboardOrderSummary,
 } from "./order-dashboard-store.server";
+import type { OwnerNotificationRow, OwnerNotificationSettings } from "./owner-notifications.server";
 
 export type WaDashboardSessionResult = {
   ok: boolean;
@@ -14,6 +15,11 @@ export type WaDashboardSessionResult = {
 };
 
 type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type OwnerNotificationDashboardSnapshot = {
+  settings: OwnerNotificationSettings;
+  notifications: OwnerNotificationRow[];
+  unreadCount: number;
+};
 
 export async function getWaDashboardSession() {
   return apiFetch<WaDashboardSessionResult>(dashboardApiPath("/session"));
@@ -90,6 +96,31 @@ export async function decideWaDashboardOrder(
     method: "POST",
     body: JSON.stringify({ action, reason }),
   });
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function getWaOwnerNotifications() {
+  const result = await apiFetch<ApiResult<OwnerNotificationDashboardSnapshot>>(
+    dashboardApiPath("/notifications"),
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function applyWaOwnerNotificationAction(
+  action:
+    | { action: "mark_read"; notificationId: string }
+    | { action: "mark_all_read" }
+    | { action: "run_reminders" },
+) {
+  const result = await apiFetch<ApiResult<OwnerNotificationDashboardSnapshot>>(
+    dashboardApiPath("/notifications"),
+    {
+      method: "POST",
+      body: JSON.stringify(action),
+    },
+  );
   if (!result.ok) throw new Error(result.error);
   return result.data;
 }

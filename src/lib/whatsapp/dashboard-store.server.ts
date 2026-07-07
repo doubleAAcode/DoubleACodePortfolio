@@ -781,10 +781,11 @@ function normalizeQuestionChoices(choices: SaveCustomFieldInput["choices"]) {
         labelArabic,
       };
     })
-    .filter((choice, index, all) =>
-      all.findIndex(
-        (entry) => entry.labelEnglish.toLowerCase() === choice.labelEnglish.toLowerCase(),
-      ) === index,
+    .filter(
+      (choice, index, all) =>
+        all.findIndex(
+          (entry) => entry.labelEnglish.toLowerCase() === choice.labelEnglish.toLowerCase(),
+        ) === index,
     );
 
   return normalized.length ? normalized : null;

@@ -23,7 +23,8 @@ const defaultFlowForm: BotFlowSettingsInput = {
   languageSelectionEnabled: true,
   defaultLanguage: "en",
   welcomeMessageEnglish: "How can we help?",
-  welcomeMessageArabic: "\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0646\u0627 \u0645\u0633\u0627\u0639\u062f\u062a\u0643\u061f",
+  welcomeMessageArabic:
+    "\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0646\u0627 \u0645\u0633\u0627\u0639\u062f\u062a\u0643\u061f",
   orderButtonEnglish: "Place an order",
   orderButtonArabic: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628",
   questionButtonEnglish: "Ask a question",
@@ -32,7 +33,8 @@ const defaultFlowForm: BotFlowSettingsInput = {
   questionResponseArabic:
     "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
   infoButtonEnglish: "Store information",
-  infoButtonArabic: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+  infoButtonArabic:
+    "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
   infoResponseEnglish: "We are open daily. Send a message here if you need help.",
   infoResponseArabic:
     "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
@@ -59,8 +61,7 @@ const defaultFlowForm: BotFlowSettingsInput = {
   orderNotesPromptArabic:
     "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
   noNotesButtonEnglish: "No notes",
-  noNotesButtonArabic:
-    "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+  noNotesButtonArabic: "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
   showProductDetailsBeforeOrdering: true,
   autoUseSavedCheckoutDetails: false,
   skipFulfillmentWhenSingleOption: true,
@@ -72,7 +73,7 @@ const defaultFlowForm: BotFlowSettingsInput = {
 
 export function SettingsPage() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const showBotFlowSettings = pathname.startsWith("/dashboard-2");
+  const showBotFlowSettings = pathname.startsWith("/dashboard");
   const { data, loading, saving, error, notice, applyAction } = useWaDashboardData();
   const [businessForm, setBusinessForm] = useState({
     name: "",
@@ -151,7 +152,6 @@ export function SettingsPage() {
     await applyAction({ type: "saveBotFlowSettings", payload: flowForm }, "Bot flow saved.");
   }
 
-
   async function savePayment() {
     await applyAction(
       { type: "savePaymentMethod", payload: { ...paymentForm, id: paymentForm.id || undefined } },
@@ -198,9 +198,7 @@ export function SettingsPage() {
             <Toggle
               label="Auto-use saved checkout"
               checked={flowForm.autoUseSavedCheckoutDetails}
-              onChange={(value) =>
-                setFlowForm({ ...flowForm, autoUseSavedCheckoutDetails: value })
-              }
+              onChange={(value) => setFlowForm({ ...flowForm, autoUseSavedCheckoutDetails: value })}
             />
             <Toggle
               label="Skip one delivery choice"
@@ -346,7 +344,9 @@ export function SettingsPage() {
             <TextArea
               label="English delivery address prompt"
               value={flowForm.deliveryAddressPromptEnglish}
-              onChange={(value) => setFlowForm({ ...flowForm, deliveryAddressPromptEnglish: value })}
+              onChange={(value) =>
+                setFlowForm({ ...flowForm, deliveryAddressPromptEnglish: value })
+              }
             />
             <TextArea
               label="Arabic delivery address prompt"

@@ -129,7 +129,7 @@ export async function getStockLimit({
   variantId?: string;
 }) {
   if (variantId) {
-    const variant = await findProductVariant(variantId);
+    const variant = await findProductVariant({ businessId, variantId });
     return variant?.isAvailable ? variant.stockQuantity : 0;
   }
 

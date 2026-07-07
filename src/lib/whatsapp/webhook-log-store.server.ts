@@ -17,6 +17,8 @@ export type WhatsAppWebhookLogRow = {
   message_ids: string[];
   sender_mask: string | null;
   phone_number_id: string | null;
+  connection_id: string | null;
+  business_id: string | null;
   input_types: string[];
   result: string;
   error_summary: string | null;
@@ -32,6 +34,8 @@ export type WhatsAppWebhookLogInput = {
   messageIds?: string[];
   senderMask?: string;
   phoneNumberId?: string;
+  connectionId?: string;
+  businessId?: string;
   inputTypes?: string[];
   result: string;
   errorSummary?: string;
@@ -61,6 +65,8 @@ export async function recordWhatsAppWebhookLog(input: WhatsAppWebhookLogInput) {
         message_ids: input.messageIds?.slice(0, 20) ?? [],
         sender_mask: input.senderMask ?? null,
         phone_number_id: input.phoneNumberId ?? null,
+        connection_id: input.connectionId ?? null,
+        business_id: input.businessId ?? null,
         input_types: input.inputTypes?.slice(0, 20) ?? [],
         result: input.result,
         error_summary: input.errorSummary ?? null,

@@ -346,6 +346,31 @@ export function OrderDetailsPage({ orderId }: { orderId: string }) {
           ) : (
             <p className="text-sm text-muted-foreground">No notification records yet.</p>
           )}
+          {order.ownerNotifications.length ? (
+            <div className="space-y-2 pt-3">
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Owner alerts
+              </div>
+              {order.ownerNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="border-b border-border pb-2 text-sm last:border-0"
+                >
+                  <div className="font-medium">
+                    {notification.type} / {notification.channel} / {notification.status}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {notification.sent_at
+                      ? `Sent ${formatDate(notification.sent_at)}`
+                      : `Created ${formatDate(notification.created_at)}`}
+                  </div>
+                  {notification.error_message ? (
+                    <div className="text-destructive">{notification.error_message}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </Panel>
       </section>
 

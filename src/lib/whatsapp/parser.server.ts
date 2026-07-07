@@ -13,6 +13,16 @@ export type IncomingWhatsAppMessage = {
   };
 };
 
+export type IncomingWhatsAppStatus = {
+  messageId: string;
+  recipient: string;
+  phoneNumberId: string;
+  timestamp: string;
+  status: "sent" | "delivered" | "read" | "failed" | "unknown";
+  errorCode?: string;
+  errorMessage?: string;
+};
+
 type WhatsAppWebhookPayload = {
   entry?: Array<{
     changes?: Array<{
@@ -20,6 +30,20 @@ type WhatsAppWebhookPayload = {
         metadata?: {
           phone_number_id?: string;
         };
+        statuses?: Array<{
+          id?: string;
+          status?: string;
+          timestamp?: string;
+          recipient_id?: string;
+          errors?: Array<{
+            code?: number | string;
+            title?: string;
+            message?: string;
+            error_data?: {
+              details?: string;
+            };
+          }>;
+        }>;
         messages?: Array<{
           from?: string;
           id?: string;
@@ -85,6 +109,40 @@ export function parseIncomingWhatsAppMessages(payload: unknown): IncomingWhatsAp
   }
 
   return messages;
+}
+
+export function parseWhatsAppMessageStatuses(payload: unknown): IncomingWhatsAppStatus[] {
+  if (!isWebhookPayload(payload)) return [];
+
+  const statuses: IncomingWhatsAppStatus[] = [];
+
+  for (const entry of payload.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      const phoneNumberId = change.value?.metadata?.phone_number_id;
+      if (!phoneNumberId) continue;
+
+      for (const item of change.value?.statuses ?? []) {
+        if (!item.id || !item.timestamp) continue;
+
+        const firstError = item.errors?.[0];
+        statuses.push({
+          messageId: item.id,
+          recipient: item.recipient_id ?? "",
+          phoneNumberId,
+          timestamp: item.timestamp,
+          status: normalizeStatus(item.status),
+          errorCode: firstError?.code == null ? undefined : String(firstError.code),
+          errorMessage:
+            firstError?.message ||
+            firstError?.title ||
+            firstError?.error_data?.details ||
+            undefined,
+        });
+      }
+    }
+  }
+
+  return statuses;
 }
 
 function parseMessageInput(message: {
@@ -160,6 +218,13 @@ function parseMessageInput(message: {
     type: "unknown",
     value: message.type ?? "unknown",
   };
+}
+
+function normalizeStatus(status?: string): IncomingWhatsAppStatus["status"] {
+  if (status === "sent" || status === "delivered" || status === "read" || status === "failed") {
+    return status;
+  }
+  return "unknown";
 }
 
 function isWebhookPayload(payload: unknown): payload is WhatsAppWebhookPayload {
