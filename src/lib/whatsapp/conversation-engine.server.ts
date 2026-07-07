@@ -58,6 +58,7 @@ import {
   saveConversationSession,
   type ConversationLanguage,
   type ConversationSession,
+  type ConversationStep,
 } from "./conversation-store.server";
 import {
   createPendingOrder,
@@ -70,6 +71,7 @@ import {
   getActiveBusinessFlow,
   getBusinessFlowRuntimeSettings,
 } from "./flow-template-store.server";
+import type { FlowDefinition, FlowNode } from "./flow-template-types";
 
 export { DOUBLE_A_TEST_BUSINESS_ID };
 
@@ -99,6 +101,13 @@ export type BotResponse =
 
 const PAGE_SIZE = 6;
 const MAX_QUANTITY_PER_ITEM = 10;
+const visualRuntimeNodeTypes = new Set<FlowNode["type"]>([
+  "MESSAGE",
+  "LANGUAGE_SELECT",
+  "MAIN_MENU",
+  "HUMAN_HANDOFF",
+  "END",
+]);
 
 export async function processIncomingMessage({
   businessId,
@@ -126,6 +135,9 @@ export async function processIncomingMessage({
       currentNodeId: activeFlow?.flow.startNodeId,
       now,
     });
+    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+      return enterVisualNode(session, activeFlow.flow, activeFlow.flow.startNodeId, now);
+    }
     if (!flowSettings.languageSelectionEnabled) {
       session = await saveConversationSession(
         {
@@ -151,6 +163,9 @@ export async function processIncomingMessage({
       currentNodeId: activeFlow?.flow.startNodeId,
       now,
     });
+    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+      return enterVisualNode(session, activeFlow.flow, activeFlow.flow.startNodeId, now);
+    }
     if (!flowSettings.languageSelectionEnabled) {
       await saveConversationSession(
         {
@@ -166,6 +181,29 @@ export async function processIncomingMessage({
   }
 
   if (command === "menu") {
+    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+      const language = session.language ?? flowSettings.defaultLanguage;
+      const mainMenu = activeFlow.flow.nodes.find((node) => node.type === "MAIN_MENU");
+      if (mainMenu) {
+        const nextSession = await saveConversationSession(
+          {
+            ...session,
+            language,
+            currentStep: "MAIN_MENU",
+            currentNodeId: mainMenu.id,
+            context: {
+              ...session.context,
+              pendingItem: undefined,
+              selectedCategoryId: undefined,
+              selectedProductId: undefined,
+              editingCartItemId: undefined,
+            },
+          },
+          now,
+        );
+        return enterVisualNode(nextSession, activeFlow.flow, mainMenu.id, now);
+      }
+    }
     if (!session.language && flowSettings.languageSelectionEnabled)
       return [languageSelectionResponse(flowSettings)];
     const language = session.language ?? flowSettings.defaultLanguage;
@@ -228,6 +266,14 @@ export async function processIncomingMessage({
     ];
   }
 
+  if (
+    activeFlow?.flow &&
+    usesVisualRuntime(activeFlow.flow) &&
+    shouldHandleVisualNode(session, activeFlow.flow)
+  ) {
+    return handleVisualRuntimeMessage(session, input, now, activeFlow.flow);
+  }
+
   if (session.currentStep === "SELECT_LANGUAGE")
     return handleLanguageSelection(session, input, now, flowSettings);
   if (session.currentStep === "SELECT_CATEGORY")
@@ -282,6 +328,270 @@ export async function processIncomingMessage({
   }
 
   return handleMainMenu(session, input, now, flowSettings);
+}
+
+function usesVisualRuntime(flow: FlowDefinition) {
+  return Boolean(flow.visualFlow) && flow.nodes.length > 0 && flow.edges.length > 0;
+}
+
+function shouldHandleVisualNode(session: ConversationSession, flow: FlowDefinition) {
+  const node = findRuntimeNode(flow, session.currentNodeId ?? flow.startNodeId);
+  return Boolean(node && visualRuntimeNodeTypes.has(node.type));
+}
+
+async function handleVisualRuntimeMessage(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+  flow: FlowDefinition,
+): Promise<BotResponse[]> {
+  const node = findRuntimeNode(flow, session.currentNodeId ?? flow.startNodeId);
+  if (!node) return [];
+
+  if (node.type === "LANGUAGE_SELECT") {
+    const language = parseLanguage(input.value);
+    if (!language) {
+      await saveConversationSession({ ...session, currentStep: "SELECT_LANGUAGE" }, now);
+      return [runtimeLanguageResponse(flow, session.language ?? flow.settings.defaultLanguage)];
+    }
+    const nextSession = await saveConversationSession(
+      { ...session, language, currentStep: "SELECT_LANGUAGE", currentNodeId: node.id },
+      now,
+    );
+    return continueFromRuntimeNode(nextSession, flow, node.id, now);
+  }
+
+  if (node.type === "MAIN_MENU") {
+    const optionKey = normalizeRuntimeOption(input.value);
+    const edge = runtimeOutgoingEdges(flow, node.id).find(
+      (entry) => normalizeRuntimeOption(entry.condition ?? "") === optionKey,
+    );
+    if (!edge) {
+      await saveConversationSession(
+        { ...session, currentStep: "MAIN_MENU", currentNodeId: node.id },
+        now,
+      );
+      return [
+        runtimeMainMenuResponse(flow, node, session.language ?? flow.settings.defaultLanguage),
+      ];
+    }
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "MAIN_MENU", currentNodeId: node.id },
+      now,
+    );
+    return enterVisualNode(nextSession, flow, edge.to, now);
+  }
+
+  if (node.type === "HUMAN_HANDOFF") {
+    await saveConversationSession({ ...session, currentNodeId: node.id }, now);
+    return [runtimeTextResponse(flow, node, session.language ?? flow.settings.defaultLanguage)];
+  }
+
+  if (node.type === "END") {
+    await saveConversationSession({ ...session, currentNodeId: node.id }, now);
+    return [runtimeTextResponse(flow, node, session.language ?? flow.settings.defaultLanguage)];
+  }
+
+  return continueFromRuntimeNode(session, flow, node.id, now);
+}
+
+async function enterVisualNode(
+  session: ConversationSession,
+  flow: FlowDefinition,
+  nodeId: string,
+  now: Date,
+  carriedResponses: BotResponse[] = [],
+): Promise<BotResponse[]> {
+  const node = findRuntimeNode(flow, nodeId);
+  if (!node) {
+    await saveConversationSession(session, now);
+    return carriedResponses;
+  }
+
+  const language = session.language ?? flow.settings.defaultLanguage;
+  const baseSession = await saveConversationSession(
+    {
+      ...session,
+      currentNodeId: node.id,
+      currentStep: runtimeStepForNode(node) ?? session.currentStep,
+    },
+    now,
+  );
+
+  if (node.type === "MESSAGE") {
+    const response = runtimeTextResponse(flow, node, language);
+    const next = firstRuntimeTarget(flow, node.id);
+    if (next) return enterVisualNode(baseSession, flow, next, now, [...carriedResponses, response]);
+    return [...carriedResponses, response];
+  }
+
+  if (node.type === "LANGUAGE_SELECT") {
+    return [...carriedResponses, runtimeLanguageResponse(flow, language)];
+  }
+
+  if (node.type === "MAIN_MENU") {
+    return [...carriedResponses, runtimeMainMenuResponse(flow, node, language)];
+  }
+
+  if (node.type === "HUMAN_HANDOFF" || node.type === "END") {
+    return [...carriedResponses, runtimeTextResponse(flow, node, language)];
+  }
+
+  return enterProtectedRuntimeNode(baseSession, flow, node, now, carriedResponses);
+}
+
+async function continueFromRuntimeNode(
+  session: ConversationSession,
+  flow: FlowDefinition,
+  nodeId: string,
+  now: Date,
+) {
+  const next = firstRuntimeTarget(flow, nodeId);
+  if (!next) {
+    await saveConversationSession(session, now);
+    return [] as BotResponse[];
+  }
+  return enterVisualNode(session, flow, next, now);
+}
+
+async function enterProtectedRuntimeNode(
+  session: ConversationSession,
+  flow: FlowDefinition,
+  node: FlowNode,
+  now: Date,
+  carriedResponses: BotResponse[],
+): Promise<BotResponse[]> {
+  const currentStep = runtimeStepForNode(node);
+  const nextSession = await saveConversationSession(
+    { ...session, currentNodeId: node.id, currentStep: currentStep ?? session.currentStep },
+    now,
+  );
+
+  if (node.type === "CATEGORY_SELECT") {
+    return [...carriedResponses, ...(await categorySelectionResponse(nextSession))];
+  }
+  if (node.type === "PRODUCT_SELECT") {
+    return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
+  }
+  if (node.type === "CART_MENU") {
+    return [...carriedResponses, ...(await cartMenuResponse(nextSession))];
+  }
+  if (node.type === "CHECKOUT") {
+    return [...carriedResponses, ...(await startCheckout(nextSession, now))];
+  }
+  if (node.type === "ORDER_REVIEW") {
+    return [...carriedResponses, ...(await reviewOrderResponse(nextSession))];
+  }
+
+  const fallback = runtimeTextResponse(
+    flow,
+    node,
+    nextSession.language ?? flow.settings.defaultLanguage,
+  );
+  return fallback.text ? [...carriedResponses, fallback] : carriedResponses;
+}
+
+function findRuntimeNode(flow: FlowDefinition, nodeId?: string) {
+  return flow.nodes.find((node) => node.id === nodeId);
+}
+
+function runtimeOutgoingEdges(flow: FlowDefinition, nodeId: string) {
+  return flow.edges.filter((edge) => edge.from === nodeId);
+}
+
+function firstRuntimeTarget(flow: FlowDefinition, nodeId: string) {
+  return runtimeOutgoingEdges(flow, nodeId)[0]?.to;
+}
+
+function runtimeStepForNode(node: FlowNode): ConversationStep | undefined {
+  if (node.type === "LANGUAGE_SELECT") return "SELECT_LANGUAGE";
+  if (node.type === "MAIN_MENU") return "MAIN_MENU";
+  if (node.type === "CATEGORY_SELECT") return "SELECT_CATEGORY";
+  if (node.type === "PRODUCT_SELECT") return "SELECT_PRODUCT";
+  if (node.type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
+  if (node.type === "PRODUCT_OPTIONS") return "SELECT_PRODUCT_OPTION";
+  if (node.type === "CUSTOM_FIELDS") return "COLLECT_CUSTOM_FIELD";
+  if (node.type === "QUANTITY") return "SELECT_QUANTITY";
+  if (node.type === "CART_MENU") return "CART_MENU";
+  if (node.type === "CHECKOUT") return "COLLECT_CUSTOMER_NAME";
+  if (node.type === "ORDER_REVIEW") return "REVIEW_ORDER";
+  if (node.type === "ORDER_CONFIRMATION") return "CONFIRM_ORDER";
+  return undefined;
+}
+
+function runtimeTextResponse(
+  flow: FlowDefinition,
+  node: FlowNode,
+  language: ConversationLanguage,
+): Extract<BotResponse, { type: "text" }> {
+  return {
+    type: "text",
+    text:
+      node.messages?.[language]?.trim() ||
+      node.messages?.en?.trim() ||
+      node.labels?.[language]?.trim() ||
+      node.labels?.en?.trim() ||
+      flow.copy.welcome[language] ||
+      flow.copy.welcome.en,
+  };
+}
+
+function runtimeLanguageResponse(
+  flow: FlowDefinition,
+  language: ConversationLanguage,
+): BotResponse {
+  const node = flow.nodes.find((entry) => entry.type === "LANGUAGE_SELECT");
+  return {
+    type: "buttons",
+    body:
+      node?.messages?.[language]?.trim() ||
+      node?.messages?.en?.trim() ||
+      t(language, "Choose your language:", "اختر لغتك:"),
+    buttons: [
+      { id: "language_en", title: "English" },
+      { id: "language_ar", title: "العربية" },
+    ],
+  };
+}
+
+function runtimeMainMenuResponse(
+  flow: FlowDefinition,
+  node: FlowNode,
+  language: ConversationLanguage,
+): BotResponse {
+  const buttons = runtimeOutgoingEdges(flow, node.id)
+    .slice(0, 3)
+    .map((edge, index) => {
+      const target = findRuntimeNode(flow, edge.to);
+      const option = flow.editor?.mainMenuOptions?.find((entry) => entry.key === edge.condition);
+      const id = edge.condition ? `main_${edge.condition}` : `main_option_${index + 1}`;
+      return {
+        id,
+        title: truncateButtonTitle(
+          option?.label[language]?.trim() ||
+            option?.label.en?.trim() ||
+            target?.labels?.[language]?.trim() ||
+            target?.labels?.en?.trim() ||
+            target?.messages?.[language]?.trim() ||
+            target?.messages?.en?.trim() ||
+            edge.condition ||
+            `Option ${index + 1}`,
+        ),
+      };
+    });
+  return {
+    type: "buttons",
+    body:
+      node.messages?.[language]?.trim() ||
+      node.messages?.en?.trim() ||
+      flow.copy.welcome[language] ||
+      flow.copy.welcome.en,
+    buttons,
+  };
+}
+
+function normalizeRuntimeOption(value: string) {
+  return normalize(value).replace(/^main_/, "");
 }
 
 async function handleLanguageSelection(
@@ -2031,17 +2341,23 @@ async function optionQuestionResponse(
 
       const name = getOptionValueName(value, language);
       const price = variant ? ` - ${formatPrice(variant.price)}` : "";
-      return {
+      const row = {
         id: value.id,
         title: truncateListTitle(`${name}${price}`),
-        description: variant
-          ? t(language, `${variant.stockQuantity} available`, `\u0627\u0644\u0645\u062a\u0648\u0641\u0631: ${variant.stockQuantity}`)
-          : undefined,
+      };
+      if (!variant) return row;
+      return {
+        ...row,
+        description: t(
+          language,
+          `${variant.stockQuantity} available`,
+          `\u0627\u0644\u0645\u062a\u0648\u0641\u0631: ${variant.stockQuantity}`,
+        ),
       };
     }),
   );
-  const rows = valueRows.filter(
-    (row): row is { id: string; title: string; description?: string } => Boolean(row),
+  const rows = valueRows.filter((row): row is { id: string; title: string; description?: string } =>
+    Boolean(row),
   );
 
   return [
@@ -2059,7 +2375,10 @@ async function optionQuestionResponse(
           rows: [
             ...rows,
             { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
-            { id: "main_menu", title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629") },
+            {
+              id: "main_menu",
+              title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629"),
+            },
           ],
         },
       ],
