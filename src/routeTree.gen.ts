@@ -9,13 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LogsWABotRouteImport } from './routes/logsWABot'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as Dashboard2RouteImport } from './routes/dashboard-2'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
@@ -103,6 +106,11 @@ import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './rout
 import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
 
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -111,6 +119,11 @@ const StoresRoute = StoresRouteImport.update({
 const SpreadsheetRoute = SpreadsheetRouteImport.update({
   id: '/spreadsheet',
   path: '/spreadsheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -136,6 +149,11 @@ const Dashboard2Route = Dashboard2RouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -592,13 +610,16 @@ const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/app-review-demo': typeof AdminAppReviewDemoRoute
   '/admin/businesses': typeof AdminBusinessesRouteWithChildren
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
@@ -686,10 +707,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/data-deletion': typeof DataDeletionRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/spreadsheet': typeof SpreadsheetRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/app-review-demo': typeof AdminAppReviewDemoRoute
   '/admin/businesses': typeof AdminBusinessesRouteWithChildren
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
@@ -777,13 +801,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/spreadsheet': typeof SpreadsheetRoute
   '/stores': typeof StoresRouteWithChildren
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/app-review-demo': typeof AdminAppReviewDemoRoute
   '/admin/businesses': typeof AdminBusinessesRouteWithChildren
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
@@ -874,13 +901,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/contact'
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
     | '/logsWABot'
     | '/privacy'
+    | '/privacy-policy'
     | '/spreadsheet'
     | '/stores'
+    | '/terms-and-conditions'
     | '/admin/app-review-demo'
     | '/admin/businesses'
     | '/admin/flow-templates'
@@ -968,10 +998,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contact'
     | '/data-deletion'
     | '/logsWABot'
     | '/privacy'
+    | '/privacy-policy'
     | '/spreadsheet'
+    | '/terms-and-conditions'
     | '/admin/app-review-demo'
     | '/admin/businesses'
     | '/admin/flow-templates'
@@ -1058,13 +1091,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/contact'
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
     | '/logsWABot'
     | '/privacy'
+    | '/privacy-policy'
     | '/spreadsheet'
     | '/stores'
+    | '/terms-and-conditions'
     | '/admin/app-review-demo'
     | '/admin/businesses'
     | '/admin/flow-templates'
@@ -1154,13 +1190,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   Dashboard2Route: typeof Dashboard2RouteWithChildren
   DataDeletionRoute: typeof DataDeletionRoute
   LogsWABotRoute: typeof LogsWABotRoute
   PrivacyRoute: typeof PrivacyRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   MenusMarleysRoute: typeof MenusMarleysRoute
   QuotationsKhadamatiRoute: typeof QuotationsKhadamatiRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
@@ -1201,6 +1240,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stores': {
       id: '/stores'
       path: '/stores'
@@ -1213,6 +1259,13 @@ declare module '@tanstack/react-router' {
       path: '/spreadsheet'
       fullPath: '/spreadsheet'
       preLoaderRoute: typeof SpreadsheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1248,6 +1301,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -2131,13 +2191,16 @@ const ApiWaDashboardOrdersRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ContactRoute: ContactRoute,
   DashboardRoute: DashboardRouteWithChildren,
   Dashboard2Route: Dashboard2RouteWithChildren,
   DataDeletionRoute: DataDeletionRoute,
   LogsWABotRoute: LogsWABotRoute,
   PrivacyRoute: PrivacyRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   MenusMarleysRoute: MenusMarleysRoute,
   QuotationsKhadamatiRoute: QuotationsKhadamatiRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
