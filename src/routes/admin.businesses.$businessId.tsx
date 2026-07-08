@@ -3009,7 +3009,12 @@ function OptionsMessageSettings({
         nodes={nodes}
         onChange={onChange}
       />
-      <MenuOptionsEditor block={block} nodes={nodes} onChange={onChange} title="Options" />
+      <MenuOptionsEditor
+        block={block}
+        nodes={nodes}
+        onChange={onChange}
+        title="WhatsApp options customers see"
+      />
       <SettingsSection title="Invalid input">
         <TextAreaField
           label="Fallback message EN"
@@ -3083,7 +3088,7 @@ function MainMenuBlockSettings({
         block={block}
         nodes={nodes}
         onChange={onChange}
-        title="Main menu options"
+        title="WhatsApp options customers see"
       />
     </div>
   );
@@ -3118,6 +3123,10 @@ function MenuOptionsEditor({
   };
   return (
     <SettingsSection title={title}>
+      <p className="text-xs text-muted-foreground">
+        Edit the button/list text the customer sees in WhatsApp, then choose where each option sends
+        them.
+      </p>
       <div className="space-y-3">
         {options.map((option, index) => (
           <div
@@ -3125,7 +3134,7 @@ function MenuOptionsEditor({
             className="space-y-3 rounded-md border border-border p-3"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-medium">Option {index + 1}</div>
+              <div className="text-sm font-medium">{option.label.en || `Option ${index + 1}`}</div>
               <div className="flex gap-1">
                 <button
                   type="button"
@@ -3160,14 +3169,14 @@ function MenuOptionsEditor({
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <TextField
-                label="Label EN"
+                label="WhatsApp button text EN"
                 value={option.label.en}
                 onChange={(value) =>
                   updateOption(index, { ...option, label: { ...option.label, en: value } })
                 }
               />
               <TextField
-                label="Label AR"
+                label="WhatsApp button text AR"
                 value={option.label.ar}
                 dir="rtl"
                 onChange={(value) =>
@@ -3181,7 +3190,7 @@ function MenuOptionsEditor({
               onChange={(value) => updateOption(index, { ...option, key: value })}
             />
             <NextBlockSelect
-              label="Where this option goes"
+              label="After customer taps this option"
               nodes={nodes}
               value={option.targetNodeId ?? ""}
               onChange={(value) => updateOption(index, { ...option, targetNodeId: value })}
@@ -3215,7 +3224,7 @@ function MenuOptionsEditor({
           })
         }
       >
-        Add option
+        Add WhatsApp option
       </button>
     </SettingsSection>
   );

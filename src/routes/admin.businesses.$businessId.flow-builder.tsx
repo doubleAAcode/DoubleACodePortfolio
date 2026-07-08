@@ -60,6 +60,8 @@ function BusinessFlowBuilderPage() {
         setSelectedVersionId(selectedVersion?.id ?? "");
         setVisualFlow(selectedVersion ? getVisualFlow(selectedVersion.flow_json) : undefined);
         setSelectedBlockId("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not load flow builder data.");
       } finally {
         setLoading("");
       }
@@ -91,11 +93,30 @@ function BusinessFlowBuilderPage() {
     }
   }
 
+  function flowActionError(actionLabel: string) {
+    if (!visualFlow) return `${actionLabel} cannot continue because no flow is loaded.`;
+    if (!selectedVersion)
+      return `${actionLabel} cannot continue because no flow version is selected.`;
+    if (!compiled?.ok || !compiled.flow) {
+      const issues = (compiled?.validation ?? visualValidation)?.issues ?? [];
+      const issueList = issues.length
+        ? `\n\n${issues
+            .map((issue, index) => `${index + 1}. ${humanizeValidationIssue(issue.message)}`)
+            .join("\n")}`
+        : "";
+      return `${actionLabel} cannot continue. Fix these flow errors first:${issueList}`;
+    }
+    return "";
+  }
+
   async function saveDraft() {
-    if (!compiled?.flow) throw new Error("Fix visual flow errors before saving.");
+    const blockingError = flowActionError("Save draft");
+    if (blockingError) throw new Error(blockingError);
+    const flow = compiled?.flow;
+    if (!flow) throw new Error("Save draft failed because the compiled flow was empty.");
     await applyAdminBusinessAction(businessId, {
       action: "save_business_flow_draft",
-      flowJson: compiled.flow,
+      flowJson: flow,
     });
     const latest = await getBusinessFlowDetails(businessId);
     return latest.versions.find((version) => version.status === "DRAFT")?.id;
@@ -175,18 +196,20 @@ function BusinessFlowBuilderPage() {
           </button>
           <button
             type="button"
-            disabled={!compiled?.flow || busy}
-            className="studio-button-secondary"
+            disabled={busy}
+            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
             onClick={() => void run("draft", saveDraft)}
           >
             {saving === "draft" ? "Saving..." : "Save draft"}
           </button>
           <button
             type="button"
-            disabled={!compiled?.ok || busy}
-            className="studio-button-primary"
+            disabled={busy}
+            className="studio-button-primary disabled:cursor-wait disabled:opacity-60"
             onClick={() =>
               void run("publish", async () => {
+                const blockingError = flowActionError("Publish");
+                if (blockingError) throw new Error(blockingError);
                 const draftId = await saveDraft();
                 if (!draftId) throw new Error("No draft version was available to publish.");
                 await applyAdminBusinessAction(businessId, {
@@ -203,9 +226,9 @@ function BusinessFlowBuilderPage() {
       </header>
 
       {error ? (
-        <p className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="shrink-0 whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
-        </p>
+        </div>
       ) : null}
 
       {!visualFlow ? (
@@ -293,4 +316,20 @@ function selectVersion(
     details.activeVersion ??
     details.versions[0]
   );
+}
+
+function humanizeValidationIssue(message: string) {
+  if (message.includes("Human handoff") && message.includes("not reachable")) {
+    return "The Talk to human step exists, but no menu option leads to it. Add a Talk to human option in Main Menu or another options step.";
+  }
+  if (message.includes("not reachable from START")) {
+    return `${message.replace("START", "Entry point")} Connect this step from the conversation map or choose it as a target in an options list.`;
+  }
+  if (message.includes("has no outgoing connection")) {
+    return `${message} Choose what happens after this step in the settings panel.`;
+  }
+  return message
+    .replaceAll("START", "Entry point")
+    .replaceAll("MAIN_MENU", "Main menu")
+    .replaceAll("HUMAN_HANDOFF", "Talk to human");
 }
