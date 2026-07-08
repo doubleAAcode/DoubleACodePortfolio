@@ -471,6 +471,9 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
       if (new Set(optionKeys).size !== optionKeys.length) {
         issues.push(error("VISUAL_MENU_KEY_DUPLICATE", "Main menu option keys must be unique."));
       }
+      for (const duplicate of duplicateOptionLabels(activeOptions)) {
+        issues.push(error("VISUAL_MENU_LABEL_DUPLICATE", duplicate));
+      }
       for (const option of options) {
         if (option.active === false) continue;
         if (!option.label.en.trim()) {
@@ -728,6 +731,9 @@ function validateOptionsNode(node: VisualFlowNode, issues: FlowValidationIssue[]
       ),
     );
   }
+  for (const duplicate of duplicateOptionLabels(options, friendlyValidationStepName(node))) {
+    issues.push(error("VISUAL_OPTIONS_LABEL_DUPLICATE", duplicate));
+  }
   for (const option of options) {
     if (!option.label.en.trim()) {
       issues.push(
@@ -746,6 +752,31 @@ function validateOptionsNode(node: VisualFlowNode, issues: FlowValidationIssue[]
       );
     }
   }
+}
+
+function duplicateOptionLabels(
+  options: NonNullable<VisualFlowNode["config"]["menuOptions"]>,
+  blockName = "Main menu",
+) {
+  const messages: string[] = [];
+  const languages = ["en", "ar"] as const;
+  for (const language of languages) {
+    const seen = new Map<string, number[]>();
+    options.forEach((option, index) => {
+      const label = option.label[language]?.trim();
+      if (!label) return;
+      const key = label.toLowerCase();
+      seen.set(key, [...(seen.get(key) ?? []), index + 1]);
+    });
+    for (const [normalizedLabel, optionNumbers] of seen) {
+      if (optionNumbers.length < 2) continue;
+      const label = options[optionNumbers[0] - 1]?.label[language]?.trim() || normalizedLabel;
+      messages.push(
+        `${blockName} has duplicate ${language.toUpperCase()} WhatsApp option label "${label}" in options ${optionNumbers.join(", ")}. Rename or delete one of them.`,
+      );
+    }
+  }
+  return messages;
 }
 
 function buildMainMenuOptions(mainMenu: VisualFlowNode | undefined): FlowMainMenuOption[] {

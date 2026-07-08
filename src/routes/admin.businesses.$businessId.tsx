@@ -1352,6 +1352,7 @@ function ConfigureFlowMode({
           effectiveEdges={getEffectiveVisualEdges(visualFlow)}
           selectedBlockId={selectedBlockId}
           onSelectBlock={onSelectBlock}
+          onChange={onChange}
           onCreateStep={(next, createdNodeId) => {
             onAddStep(next);
             onSelectBlock(createdNodeId);
@@ -1375,12 +1376,14 @@ function ConversationMap({
   effectiveEdges,
   selectedBlockId,
   onSelectBlock,
+  onChange,
   onCreateStep,
 }: {
   visualFlow: VisualFlowDefinition;
   effectiveEdges: ReturnType<typeof getEffectiveVisualEdges>;
   selectedBlockId: string;
   onSelectBlock: (blockId: string) => void;
+  onChange: (flow: VisualFlowDefinition) => void;
   onCreateStep: (flow: VisualFlowDefinition, createdNodeId: string) => void;
 }) {
   const [addTarget, setAddTarget] = useState<{
@@ -1408,6 +1411,47 @@ function ConversationMap({
   }
 
   const unvisitedNodes = visualFlow.nodes.filter((node) => !visited.has(node.id));
+  const updateFocusedOption = (
+    sourceNodeId: string,
+    optionKey: string,
+    updater: (option: VisualMenuOption) => VisualMenuOption,
+  ) => {
+    onChange({
+      ...visualFlow,
+      nodes: visualFlow.nodes.map((node) =>
+        node.id === sourceNodeId
+          ? {
+              ...node,
+              config: {
+                ...node.config,
+                menuOptions: (node.config.menuOptions ?? []).map((option) =>
+                  option.key === optionKey ? updater(option) : option,
+                ),
+              },
+            }
+          : node,
+      ),
+    });
+  };
+  const deleteFocusedOption = (sourceNodeId: string, optionKey: string) => {
+    onChange({
+      ...visualFlow,
+      nodes: visualFlow.nodes.map((node) =>
+        node.id === sourceNodeId
+          ? {
+              ...node,
+              config: {
+                ...node.config,
+                menuOptions: (node.config.menuOptions ?? []).filter(
+                  (option) => option.key !== optionKey,
+                ),
+              },
+            }
+          : node,
+      ),
+    });
+    setFocusedOption(undefined);
+  };
 
   if (focusedOption) {
     return (
@@ -1432,6 +1476,8 @@ function ConversationMap({
               optionLabel,
             })
           }
+          onUpdateOption={updateFocusedOption}
+          onDeleteOption={deleteFocusedOption}
         />
         {addTarget ? (
           <InlineAddStepCard
@@ -1672,6 +1718,8 @@ function FocusedBranchCanvas({
   onAddAfterNode,
   onAddOption,
   onAddOptionTarget,
+  onUpdateOption,
+  onDeleteOption,
 }: {
   visualFlow: VisualFlowDefinition;
   edges: ReturnType<typeof getEffectiveVisualEdges>;
@@ -1683,8 +1731,17 @@ function FocusedBranchCanvas({
   onAddAfterNode: (sourceNodeId: string, nextNodeId?: string) => void;
   onAddOption: (sourceNodeId: string) => void;
   onAddOptionTarget: (sourceNodeId: string, optionKey: string, optionLabel: string) => void;
+  onUpdateOption: (
+    sourceNodeId: string,
+    optionKey: string,
+    updater: (option: VisualMenuOption) => VisualMenuOption,
+  ) => void;
+  onDeleteOption: (sourceNodeId: string, optionKey: string) => void;
 }) {
   const sourceNode = visualFlow.nodes.find((node) => node.id === focusedOption.sourceNodeId);
+  const sourceOption = sourceNode?.config.menuOptions?.find(
+    (option) => option.key === focusedOption.optionKey,
+  );
   const route = sourceNode
     ? optionRoutesForNode(
         sourceNode,
@@ -1704,7 +1761,7 @@ function FocusedBranchCanvas({
         ),
       ]
     : [];
-  const branchTitle = route?.label || "Branch";
+  const branchTitle = sourceOption?.label.en || route?.label || "Branch";
   const sourceTitle =
     sourceNode?.title || (sourceNode ? friendlyBlockName(sourceNode.type) : "option block");
 
@@ -1723,6 +1780,75 @@ function FocusedBranchCanvas({
           <div className="mt-1 text-sm text-muted-foreground">From {sourceTitle}</div>
         </div>
       </div>
+
+      {sourceOption ? (
+        <div className="mb-4 max-w-3xl rounded-md border border-primary/30 bg-primary/5 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="font-medium">This WhatsApp option</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Edit the button/list text customers see before this branch opens.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="studio-button-secondary border-destructive/50 px-3 py-1.5 text-destructive hover:bg-destructive/10"
+              onClick={() => onDeleteOption(focusedOption.sourceNodeId, focusedOption.optionKey)}
+            >
+              Delete option
+            </button>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <TextField
+              label="WhatsApp button text EN"
+              value={sourceOption.label.en}
+              onChange={(value) =>
+                onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
+                  ...option,
+                  label: { ...option.label, en: value },
+                }))
+              }
+            />
+            <TextField
+              label="WhatsApp button text AR"
+              value={sourceOption.label.ar}
+              dir="rtl"
+              onChange={(value) =>
+                onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
+                  ...option,
+                  label: { ...option.label, ar: value },
+                }))
+              }
+            />
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <NextBlockSelect
+              label="After customer taps this option"
+              nodes={visualFlow.nodes}
+              value={sourceOption.targetNodeId ?? ""}
+              onChange={(value) =>
+                onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
+                  ...option,
+                  targetNodeId: value,
+                }))
+              }
+            />
+            <label className="mt-6 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={sourceOption.active !== false}
+                onChange={(event) =>
+                  onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
+                    ...option,
+                    active: event.target.checked,
+                  }))
+                }
+              />
+              Active
+            </label>
+          </div>
+        </div>
+      ) : null}
 
       {!route?.target ? (
         <div className="max-w-xl rounded-md border border-dashed border-primary/60 bg-background p-5 text-sm">
