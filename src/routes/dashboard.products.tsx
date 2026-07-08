@@ -110,6 +110,31 @@ export function ProductsPage() {
   const productVariants =
     data?.variants.filter((variant) => variant.product_id === selectedId) ?? [];
   const productFields = data?.customFields.filter((field) => field.product_id === selectedId) ?? [];
+  const variantGroups = productOptions
+    .map((option) => ({
+      option,
+      values: productValues
+        .filter((value) => value.option_id === option.id)
+        .sort(
+          (a, b) =>
+            a.sort_order - b.sort_order || a.value_english.localeCompare(b.value_english),
+        ),
+    }))
+    .filter((group) => group.values.length);
+  const existingVariantKeys = new Set(
+    productVariants.map((variant) => combinationKey(variant.selected_option_value_ids)),
+  );
+  const missingVariantCombinations = buildVariantCombinations(variantGroups).filter(
+    (combination) =>
+      !existingVariantKeys.has(combinationKey(combination.map((value) => value.id))),
+  );
+  const availableVariantCount = productVariants.filter(
+    (variant) => variant.is_available && variant.stock_quantity > 0,
+  ).length;
+  const totalVariantStock = productVariants.reduce(
+    (total, variant) => total + Math.max(0, Number(variant.stock_quantity) || 0),
+    0,
+  );
 
   async function runSave<T>(action: Exclude<SavingAction, null>, task: () => Promise<T>) {
     setSavingAction(action);
