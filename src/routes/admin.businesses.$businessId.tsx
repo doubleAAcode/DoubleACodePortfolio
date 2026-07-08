@@ -1386,6 +1386,8 @@ function ConversationMap({
   const [addTarget, setAddTarget] = useState<{
     sourceNodeId: string;
     mode: "next" | "option";
+    optionKey?: string;
+    optionLabel?: string;
   }>();
   const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
@@ -1412,9 +1414,19 @@ function ConversationMap({
                 node={node}
                 nodes={visualFlow.nodes}
                 edges={effectiveEdges}
+                selectedBlockId={selectedBlockId}
                 selected={selectedBlockId === node.id}
                 onSelectBlock={onSelectBlock}
                 onAddOption={() => setAddTarget({ sourceNodeId: node.id, mode: "option" })}
+                onAddAfterNode={(nodeId) => setAddTarget({ sourceNodeId: nodeId, mode: "next" })}
+                onAddOptionTarget={(optionKey, optionLabel) =>
+                  setAddTarget({
+                    sourceNodeId: node.id,
+                    mode: "option",
+                    optionKey,
+                    optionLabel,
+                  })
+                }
               />
               <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
                 <button
@@ -1438,6 +1450,8 @@ function ConversationMap({
             visualFlow={visualFlow}
             sourceNodeId={addTarget.sourceNodeId}
             mode={addTarget.mode}
+            optionKey={addTarget.optionKey}
+            optionLabel={addTarget.optionLabel}
             onCancel={() => setAddTarget(undefined)}
             onCreate={(next, createdNodeId) => {
               setAddTarget(undefined);
@@ -1482,21 +1496,27 @@ function ConversationMapBlock({
   node,
   nodes,
   edges,
+  selectedBlockId,
   selected,
   onSelectBlock,
   onAddOption,
+  onAddAfterNode,
+  onAddOptionTarget,
 }: {
   node: VisualFlowNode;
   nodes: VisualFlowNode[];
   edges: ReturnType<typeof getEffectiveVisualEdges>;
+  selectedBlockId: string;
   selected: boolean;
   onSelectBlock: (blockId: string) => void;
   onAddOption: () => void;
+  onAddAfterNode: (nodeId: string) => void;
+  onAddOptionTarget: (optionKey: string, optionLabel: string) => void;
 }) {
   const outgoing = edges
     .filter((edge) => edge.sourceNodeId === node.id)
     .sort((a, b) => a.sortOrder - b.sortOrder);
-  const branchEdges = outgoing.filter((edge) => edge !== primaryNextEdge(node.id, edges));
+  const branchRoutes = optionRoutesForNode(node, nodes, outgoing);
 
   return (
     <div className="w-[260px]">
@@ -1517,27 +1537,20 @@ function ConversationMapBlock({
           {stepPrimaryText(node) || visualBlockSummary(node)}
         </span>
       </button>
-      {branchEdges.length ? (
-        <div className="mt-2 space-y-2 border-l border-border pl-3">
-          {branchEdges.map((edge) => {
-            const target = nodes.find((candidate) => candidate.id === edge.targetNodeId);
-            return (
-              <button
-                key={edge.id}
-                type="button"
-                disabled={!target}
-                onClick={() => target && onSelectBlock(target.id)}
-                className="block w-full rounded-md border border-border bg-surface/40 px-3 py-2 text-left text-xs transition hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span className="block text-muted-foreground">
-                  {humanRouteLabel(edge.condition ?? edge.label) || "Option"}
-                </span>
-                <span className="mt-1 block font-medium">
-                  {target ? target.title || friendlyBlockName(target.type) : "Missing target"}
-                </span>
-              </button>
-            );
-          })}
+      {branchRoutes.length ? (
+        <div className="mt-3 space-y-3 border-l border-border pl-3">
+          {branchRoutes.map((route) => (
+            <OptionBranchLane
+              key={route.key}
+              route={route}
+              nodes={nodes}
+              edges={edges}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={onSelectBlock}
+              onAddAfterNode={onAddAfterNode}
+              onAddTarget={() => onAddOptionTarget(route.key, route.label)}
+            />
+          ))}
         </div>
       ) : null}
       {node.type === "MAIN_MENU" || node.config.messageBehavior === "options" ? (
@@ -1554,16 +1567,171 @@ function ConversationMapBlock({
   );
 }
 
+type ConversationOptionRoute = {
+  key: string;
+  label: string;
+  target?: VisualFlowNode;
+};
+
+function OptionBranchLane({
+  route,
+  nodes,
+  edges,
+  selectedBlockId,
+  onSelectBlock,
+  onAddAfterNode,
+  onAddTarget,
+}: {
+  route: ConversationOptionRoute;
+  nodes: VisualFlowNode[];
+  edges: ReturnType<typeof getEffectiveVisualEdges>;
+  selectedBlockId: string;
+  onSelectBlock: (blockId: string) => void;
+  onAddAfterNode: (nodeId: string) => void;
+  onAddTarget: () => void;
+}) {
+  const continuation = route.target
+    ? nextConversationPath(route.target, nodes, edges, new Set([route.target.id]), 2)
+    : [];
+
+  return (
+    <div className="rounded-md border border-border bg-surface/30 p-2">
+      <div className="mb-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        Option: <span className="normal-case tracking-normal text-foreground">{route.label}</span>
+      </div>
+      {route.target ? (
+        <div className="flex min-w-max items-start gap-2">
+          <MiniConversationBlock
+            node={route.target}
+            selected={selectedBlockId === route.target.id}
+            onSelectBlock={onSelectBlock}
+          />
+          {continuation.map((node) => (
+            <div key={node.id} className="flex items-center gap-2">
+              <div className="pt-9 text-muted-foreground">→</div>
+              <MiniConversationBlock
+                node={node}
+                selected={selectedBlockId === node.id}
+                onSelectBlock={onSelectBlock}
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            title="Add next block for this branch"
+            aria-label="Add next block for this branch"
+            onClick={() => onAddAfterNode(continuation.at(-1)?.id ?? route.target!.id)}
+            className="mt-8 grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-primary/10 text-base font-semibold text-primary transition hover:bg-primary hover:text-background"
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onAddTarget}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10"
+        >
+          <span className="text-lg leading-none">+</span>
+          Add target block
+        </button>
+      )}
+    </div>
+  );
+}
+
+function MiniConversationBlock({
+  node,
+  selected,
+  onSelectBlock,
+}: {
+  node: VisualFlowNode;
+  selected: boolean;
+  onSelectBlock: (blockId: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectBlock(node.id)}
+      className={`w-[170px] rounded-md border px-3 py-2 text-left text-xs transition ${
+        selected
+          ? "border-primary bg-primary/10"
+          : "border-border bg-background hover:border-primary/70"
+      }`}
+    >
+      <span className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+        {customerStepKind(node)}
+      </span>
+      <span className="mt-1 block font-medium">{node.title || friendlyBlockName(node.type)}</span>
+      <span className="mt-1 block line-clamp-2 text-muted-foreground">
+        {stepPrimaryText(node) || visualBlockSummary(node)}
+      </span>
+    </button>
+  );
+}
+
+function optionRoutesForNode(
+  node: VisualFlowNode,
+  nodes: VisualFlowNode[],
+  outgoing: ReturnType<typeof getEffectiveVisualEdges>,
+): ConversationOptionRoute[] {
+  const byId = new Map(nodes.map((entry) => [entry.id, entry]));
+  if (node.config.menuOptions?.length) {
+    return node.config.menuOptions
+      .filter((option) => option.active !== false)
+      .map((option) => ({
+        key: option.key,
+        label: option.label.en || option.key,
+        target: option.targetNodeId ? byId.get(option.targetNodeId) : undefined,
+      }));
+  }
+
+  return outgoing
+    .filter((edge) => edge !== primaryNextEdge(node.id, outgoing))
+    .map((edge) => ({
+      key: edge.condition ?? edge.id,
+      label: humanRouteLabel(edge.condition ?? edge.label) || "Option",
+      target: byId.get(edge.targetNodeId),
+    }));
+}
+
+function nextConversationPath(
+  startNode: VisualFlowNode,
+  nodes: VisualFlowNode[],
+  edges: ReturnType<typeof getEffectiveVisualEdges>,
+  visited: Set<string>,
+  limit: number,
+) {
+  const path: VisualFlowNode[] = [];
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  let current = startNode;
+
+  while (path.length < limit) {
+    const edge = primaryNextEdge(current.id, edges);
+    const next = edge ? byId.get(edge.targetNodeId) : undefined;
+    if (!next || visited.has(next.id)) break;
+    path.push(next);
+    visited.add(next.id);
+    current = next;
+  }
+
+  return path;
+}
+
 function InlineAddStepCard({
   visualFlow,
   sourceNodeId,
   mode,
+  optionKey,
+  optionLabel,
   onCreate,
   onCancel,
 }: {
   visualFlow: VisualFlowDefinition;
   sourceNodeId: string;
   mode: "next" | "option";
+  optionKey?: string;
+  optionLabel?: string;
   onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
   onCancel: () => void;
 }) {
@@ -1575,9 +1743,10 @@ function InlineAddStepCard({
     const next = createInlineVisualStep(visualFlow, {
       sourceNodeId,
       mode,
+      optionKey,
       type: selectedKind.type,
       title: selectedKind.label,
-      optionLabel: selectedKind.label,
+      optionLabel: optionLabel || selectedKind.label,
       makeOptions: kind === "options",
     });
     const created = next.nodes[next.nodes.length - 1];
@@ -1587,7 +1756,11 @@ function InlineAddStepCard({
   return (
     <div className="mt-4 max-w-xl rounded-md border border-primary/40 bg-background p-4 shadow-lg">
       <div className="font-medium">
-        {mode === "option" ? "Add a branch option" : "Add the next block"}
+        {mode === "option" && optionKey
+          ? "Add what happens after this option"
+          : mode === "option"
+            ? "Add a branch option"
+            : "Add the next block"}
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {sourceNode
@@ -1622,6 +1795,7 @@ function createInlineVisualStep(
   options: {
     sourceNodeId: string;
     mode: "next" | "option";
+    optionKey?: string;
     type: VisualFlowBlockType;
     title: string;
     optionLabel: string;
@@ -1659,9 +1833,21 @@ function createInlineVisualStep(
 function connectSourceNodeToCreatedStep(
   source: VisualFlowNode,
   targetNodeId: string,
-  options: { mode: "next" | "option"; optionLabel: string },
+  options: { mode: "next" | "option"; optionKey?: string; optionLabel: string },
 ): VisualFlowNode {
   if (options.mode === "option") {
+    if (options.optionKey) {
+      return {
+        ...source,
+        config: {
+          ...source.config,
+          messageBehavior: source.type === "MAIN_MENU" ? source.config.messageBehavior : "options",
+          menuOptions: (source.config.menuOptions ?? []).map((option) =>
+            option.key === options.optionKey ? { ...option, targetNodeId } : option,
+          ),
+        },
+      };
+    }
     const optionKey = `option_${(source.config.menuOptions ?? []).length + 1}`;
     return {
       ...source,
