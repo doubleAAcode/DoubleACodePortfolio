@@ -316,6 +316,27 @@ function FlowSection({
   saving: string;
   setSaving: (value: string) => void;
 }) {
+  void saving;
+  void setSaving;
+
+  return (
+    <section className="rounded-lg border border-border bg-surface/60 p-5">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+        <div>
+          <h2 className="font-display text-xl font-semibold">Conversation flow</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Build and publish this business&apos;s WhatsApp conversation in the dedicated flow
+            builder. Start from a saved admin template or create a flow from scratch inside the
+            builder.
+          </p>
+        </div>
+        <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
+          Open Flow builder
+        </a>
+      </div>
+    </section>
+  );
+
   const [templates, setTemplates] = useState<FlowTemplateRow[]>([]);
   const [templateId, setTemplateId] = useState("");
   const [flowDetails, setFlowDetails] = useState<BusinessFlowDetails>();
@@ -658,7 +679,7 @@ const flowEditorTabs: Array<{ id: FlowEditorTab; label: string }> = [
   { id: "advanced", label: "Advanced JSON" },
 ];
 
-type BuilderMode = "configure" | "build" | "test" | "advanced";
+type BuilderMode = "conversation" | "test" | "advanced";
 
 const builderModes: Array<{
   id: BuilderMode;
@@ -666,14 +687,9 @@ const builderModes: Array<{
   description: string;
 }> = [
   {
-    id: "configure",
-    label: "Configure",
-    description: "Edit the customer journey in plain sections.",
-  },
-  {
-    id: "build",
-    label: "Build canvas",
-    description: "Move blocks and make custom connections.",
+    id: "conversation",
+    label: "Conversation map",
+    description: "Edit the WhatsApp path customers follow.",
   },
   {
     id: "test",
@@ -683,7 +699,7 @@ const builderModes: Array<{
   {
     id: "advanced",
     label: "Advanced",
-    description: "Inspect visual flow JSON.",
+    description: "Developer canvas and raw JSON.",
   },
 ];
 
@@ -709,7 +725,7 @@ export function VisualFlowBuilderEditor({
   const effectiveEdges = getEffectiveVisualEdges(visualFlow);
   const [showAddStep, setShowAddStep] = useState(false);
   const [panelWidths, setPanelWidths] = useState({ outline: 300, settings: 380 });
-  const [builderMode, setBuilderMode] = useState<BuilderMode>("configure");
+  const [builderMode, setBuilderMode] = useState<BuilderMode>("conversation");
 
   function updateNode(node: VisualFlowNode) {
     onChange({
@@ -935,12 +951,31 @@ export function VisualFlowBuilderEditor({
     </div>
   );
 
-  if (!fullHeight) return buildModeGrid;
+  if (!fullHeight) {
+    return (
+      <ConfigureFlowMode
+        visualFlow={visualFlow}
+        selectedBlock={selectedBlock}
+        selectedBlockId={selectedBlockId}
+        showAddStep={showAddStep}
+        validation={validation}
+        onToggleAddStep={() => setShowAddStep((value) => !value)}
+        onAddStep={(next) => {
+          onChange(next);
+          setShowAddStep(false);
+        }}
+        onCancelAddStep={() => setShowAddStep(false)}
+        onSelectBlock={onSelectBlock}
+        onUpdateNode={updateNode}
+        onChange={onChange}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <BuilderModeTabs value={builderMode} onChange={setBuilderMode} />
-      {builderMode === "configure" ? (
+      {builderMode === "conversation" ? (
         <ConfigureFlowMode
           visualFlow={visualFlow}
           selectedBlock={selectedBlock}
@@ -958,7 +993,6 @@ export function VisualFlowBuilderEditor({
           onChange={onChange}
         />
       ) : null}
-      {builderMode === "build" ? buildModeGrid : null}
       {builderMode === "test" ? (
         <TestFlowMode
           visualFlow={visualFlow}
@@ -967,7 +1001,11 @@ export function VisualFlowBuilderEditor({
         />
       ) : null}
       {builderMode === "advanced" ? (
-        <AdvancedVisualFlowMode visualFlow={visualFlow} validation={validation} />
+        <AdvancedVisualFlowMode
+          graphTools={buildModeGrid}
+          visualFlow={visualFlow}
+          validation={validation}
+        />
       ) : null}
     </div>
   );
@@ -1265,7 +1303,7 @@ function BuilderModeTabs({
 }) {
   return (
     <div className="shrink-0 rounded-md border border-border bg-background p-2">
-      <div className="grid gap-2 md:grid-cols-4">
+      <div className="grid gap-2 md:grid-cols-3">
         {builderModes.map((mode) => (
           <button
             key={mode.id}
@@ -1312,13 +1350,14 @@ function ConfigureFlowMode({
   onChange: (flow: VisualFlowDefinition) => void;
 }) {
   return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_460px]">
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
       <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-medium">Journey outline</div>
+            <div className="font-medium">WhatsApp conversation map</div>
             <div className="mt-1 text-sm text-muted-foreground">
-              Pick a section, then edit what the customer sees.
+              Read the customer journey from left to right. Branches appear under option and menu
+              steps.
             </div>
           </div>
           <button
@@ -1346,22 +1385,9 @@ function ConfigureFlowMode({
           selectedBlockId={selectedBlockId}
           onSelect={onSelectBlock}
         />
-      </div>
-
-      <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="font-medium">Customer journey</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              These are the main store moments. Use Build canvas only for custom branching.
-            </p>
-          </div>
-          <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
-            Guided editing
-          </div>
-        </div>
-        <JourneySectionGrid
+        <ConversationMap
           visualFlow={visualFlow}
+          effectiveEdges={getEffectiveVisualEdges(visualFlow)}
           selectedBlockId={selectedBlockId}
           onSelectBlock={onSelectBlock}
         />
@@ -1376,6 +1402,168 @@ function ConfigureFlowMode({
       />
     </div>
   );
+}
+
+function ConversationMap({
+  visualFlow,
+  effectiveEdges,
+  selectedBlockId,
+  onSelectBlock,
+}: {
+  visualFlow: VisualFlowDefinition;
+  effectiveEdges: ReturnType<typeof getEffectiveVisualEdges>;
+  selectedBlockId: string;
+  onSelectBlock: (blockId: string) => void;
+}) {
+  const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
+  const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
+  const visited = new Set<string>();
+  const primaryPath: VisualFlowNode[] = [];
+  let current = startNode;
+
+  while (current && !visited.has(current.id)) {
+    primaryPath.push(current);
+    visited.add(current.id);
+    const nextEdge = primaryNextEdge(current.id, effectiveEdges);
+    current = nextEdge ? nodeById.get(nextEdge.targetNodeId) : undefined;
+  }
+
+  const unvisitedNodes = visualFlow.nodes.filter((node) => !visited.has(node.id));
+
+  return (
+    <div className="mt-4 min-w-0">
+      <div className="overflow-x-auto pb-3">
+        <div className="flex min-w-max items-start gap-3">
+          {primaryPath.map((node, index) => (
+            <div key={node.id} className="flex items-start gap-3">
+              <ConversationMapBlock
+                node={node}
+                nodes={visualFlow.nodes}
+                edges={effectiveEdges}
+                selected={selectedBlockId === node.id}
+                onSelectBlock={onSelectBlock}
+              />
+              {index < primaryPath.length - 1 ? (
+                <div className="pt-12 text-2xl text-muted-foreground">→</div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+      {unvisitedNodes.length ? (
+        <details className="mt-3 rounded-md border border-border bg-surface/30 p-3">
+          <summary className="cursor-pointer text-sm font-medium">
+            Other available steps ({unvisitedNodes.length})
+          </summary>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {unvisitedNodes.map((node) => (
+              <button
+                key={node.id}
+                type="button"
+                onClick={() => onSelectBlock(node.id)}
+                className={`rounded-md border p-3 text-left text-sm transition ${
+                  selectedBlockId === node.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/70"
+                }`}
+              >
+                <span className="block font-medium">
+                  {node.title || friendlyBlockName(node.type)}
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {visualBlockSummary(node)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+function ConversationMapBlock({
+  node,
+  nodes,
+  edges,
+  selected,
+  onSelectBlock,
+}: {
+  node: VisualFlowNode;
+  nodes: VisualFlowNode[];
+  edges: ReturnType<typeof getEffectiveVisualEdges>;
+  selected: boolean;
+  onSelectBlock: (blockId: string) => void;
+}) {
+  const outgoing = edges
+    .filter((edge) => edge.sourceNodeId === node.id)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const branchEdges = outgoing.filter((edge) => edge !== primaryNextEdge(node.id, edges));
+
+  return (
+    <div className="w-[260px]">
+      <button
+        type="button"
+        onClick={() => onSelectBlock(node.id)}
+        className={`block min-h-[130px] w-full rounded-md border p-4 text-left text-sm shadow-sm transition ${
+          selected
+            ? "border-primary bg-primary/10"
+            : "border-border bg-background hover:border-primary/70"
+        }`}
+      >
+        <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+          {customerStepKind(node)}
+        </span>
+        <span className="mt-2 block font-medium">{node.title || friendlyBlockName(node.type)}</span>
+        <span className="mt-2 block line-clamp-3 text-muted-foreground">
+          {stepPrimaryText(node) || visualBlockSummary(node)}
+        </span>
+      </button>
+      {branchEdges.length ? (
+        <div className="mt-2 space-y-2 border-l border-border pl-3">
+          {branchEdges.map((edge) => {
+            const target = nodes.find((candidate) => candidate.id === edge.targetNodeId);
+            return (
+              <button
+                key={edge.id}
+                type="button"
+                disabled={!target}
+                onClick={() => target && onSelectBlock(target.id)}
+                className="block w-full rounded-md border border-border bg-surface/40 px-3 py-2 text-left text-xs transition hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="block text-muted-foreground">
+                  {humanRouteLabel(edge.condition ?? edge.label) || "Option"}
+                </span>
+                <span className="mt-1 block font-medium">
+                  {target ? target.title || friendlyBlockName(target.type) : "Missing target"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function primaryNextEdge(sourceNodeId: string, edges: ReturnType<typeof getEffectiveVisualEdges>) {
+  const outgoing = edges
+    .filter((edge) => edge.sourceNodeId === sourceNodeId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  return (
+    outgoing.find(
+      (edge) => !edge.condition || edge.condition === "next" || edge.condition === "answer",
+    ) ?? (outgoing.length === 1 ? outgoing[0] : undefined)
+  );
+}
+
+function customerStepKind(node: VisualFlowNode) {
+  if (node.type === "START") return "Start";
+  if (node.type === "MAIN_MENU" || node.config.messageBehavior === "options") return "Options";
+  if (node.type === "QUESTION") return "Question";
+  if (node.type === "HUMAN_HANDOFF") return "Human handoff";
+  if (node.type === "END") return "End";
+  return "Message";
 }
 
 function JourneySectionGrid({
@@ -1544,14 +1732,17 @@ function TestFlowMode({
 }
 
 function AdvancedVisualFlowMode({
+  graphTools,
   visualFlow,
   validation,
 }: {
+  graphTools: React.ReactNode;
   visualFlow: VisualFlowDefinition;
   validation?: ReturnType<typeof validateVisualFlow>;
 }) {
   return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="min-h-0 overflow-hidden">{graphTools}</div>
       <div className="min-h-0 overflow-hidden rounded-md border border-border bg-background p-4">
         <div className="font-medium">Advanced JSON - for developers only</div>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -1564,7 +1755,7 @@ function AdvancedVisualFlowMode({
           className="mt-3 h-[calc(100vh-260px)] w-full resize-none rounded-md border border-input bg-background p-3 font-mono text-xs"
         />
       </div>
-      <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4">
+      <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4 xl:col-start-2">
         <div className="font-medium">Inspector</div>
         <div className="mt-3 space-y-2 text-sm text-muted-foreground">
           <div>Steps: {visualFlow.nodes.length}</div>
@@ -3105,7 +3296,6 @@ function StepExplanation({ block }: { block: VisualFlowNode }) {
     <div className="rounded-md border border-border bg-surface/40 p-3 text-sm">
       <div className="font-medium">{friendlyBlockName(block.type)}</div>
       <p className="mt-1 text-muted-foreground">{stepDescription(block)}</p>
-      <div className="mt-2 text-xs text-muted-foreground">Internal type: {block.type}</div>
     </div>
   );
 }

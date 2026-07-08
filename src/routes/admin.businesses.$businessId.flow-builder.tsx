@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import { applyAdminBusinessAction, getBusinessFlowDetails } from "@/lib/whatsapp/admin-client";
+import {
+  applyAdminBusinessAction,
+  getBusinessFlowDetails,
+  getFlowTemplates,
+} from "@/lib/whatsapp/admin-client";
 import {
   compileVisualFlowToRuntimeFlow,
   getVisualFlow,
@@ -11,8 +15,10 @@ import {
 } from "@/lib/whatsapp/visual-flow-builder";
 import type {
   BusinessFlowDetails,
+  FlowTemplateRow,
   BusinessFlowVersionRow,
 } from "@/lib/whatsapp/flow-template-store.server";
+import { createDefaultFlowDefinition } from "@/lib/whatsapp/flow-template-types";
 import { VisualFlowBuilderEditor } from "./admin.businesses.$businessId";
 
 export const Route = createFileRoute("/admin/businesses/$businessId/flow-builder")({
@@ -25,6 +31,8 @@ function BusinessFlowBuilderPage() {
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [visualFlow, setVisualFlow] = useState<VisualFlowDefinition>();
   const [selectedBlockId, setSelectedBlockId] = useState("");
+  const [templates, setTemplates] = useState<FlowTemplateRow[]>([]);
+  const [templateId, setTemplateId] = useState("");
   const [saving, setSaving] = useState("");
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +42,19 @@ function BusinessFlowBuilderPage() {
       setLoading(label);
       setError("");
       try {
-        const nextDetails = await getBusinessFlowDetails(businessId);
+        const [nextDetails, templateRows] = await Promise.all([
+          getBusinessFlowDetails(businessId),
+          getFlowTemplates(),
+        ]);
+        const publishedTemplates = templateRows.filter(
+          (template) => template.status === "PUBLISHED",
+        );
+        setTemplates(publishedTemplates);
+        setTemplateId((current) =>
+          publishedTemplates.some((template) => template.id === current)
+            ? current
+            : publishedTemplates[0]?.id || "",
+        );
         const selectedVersion = selectVersion(nextDetails, preferredVersionId || "");
         setDetails(nextDetails);
         setSelectedVersionId(selectedVersion?.id ?? "");
@@ -76,6 +96,31 @@ function BusinessFlowBuilderPage() {
     await applyAdminBusinessAction(businessId, {
       action: "save_business_flow_draft",
       flowJson: compiled.flow,
+    });
+    const latest = await getBusinessFlowDetails(businessId);
+    return latest.versions.find((version) => version.status === "DRAFT")?.id;
+  }
+
+  async function cloneSelectedTemplate() {
+    if (!templateId) throw new Error("Choose a published template first.");
+    await applyAdminBusinessAction(businessId, {
+      action: "clone_flow_template",
+      templateId,
+    });
+    const latest = await getBusinessFlowDetails(businessId);
+    return selectVersion(latest, "")?.id;
+  }
+
+  async function startFromScratch() {
+    const flowJson = {
+      ...createDefaultFlowDefinition("CUSTOM_PRODUCTS"),
+      id: `${businessId}_custom_flow`,
+      name: "Custom WhatsApp conversation",
+      description: "Business-specific WhatsApp flow created from scratch.",
+    };
+    await applyAdminBusinessAction(businessId, {
+      action: "save_business_flow_draft",
+      flowJson,
     });
     const latest = await getBusinessFlowDetails(businessId);
     return latest.versions.find((version) => version.status === "DRAFT")?.id;
@@ -164,10 +209,56 @@ function BusinessFlowBuilderPage() {
       ) : null}
 
       {!visualFlow ? (
-        <div className="rounded-md border border-border bg-surface/60 p-6 text-sm text-muted-foreground">
-          {loading
-            ? "Loading flow..."
-            : "No business flow exists yet. Go back to the business page and clone a published template first."}
+        <div className="rounded-md border border-border bg-surface/60 p-6 text-sm">
+          {loading ? (
+            <p className="text-muted-foreground">Loading flow...</p>
+          ) : (
+            <div className="max-w-3xl">
+              <h2 className="font-display text-xl font-semibold">Start this WhatsApp flow</h2>
+              <p className="mt-2 text-muted-foreground">
+                Use a saved admin template for a reusable store journey, or start from scratch and
+                build the conversation map step by step.
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                <select
+                  value={templateId}
+                  onChange={(event) => setTemplateId(event.target.value)}
+                  disabled={!templates.length || busy}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  {templates.length ? (
+                    templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No published templates</option>
+                  )}
+                </select>
+                <button
+                  type="button"
+                  disabled={!templateId || busy}
+                  className="studio-button-secondary"
+                  onClick={() => void run("template", cloneSelectedTemplate)}
+                >
+                  {saving === "template" ? "Creating..." : "Start from template"}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="studio-button-primary"
+                  onClick={() => void run("scratch", startFromScratch)}
+                >
+                  {saving === "scratch" ? "Creating..." : "Start from scratch"}
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Templates created by admins remain reusable and can be assigned to different
+                businesses from this setup step.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="relative min-h-0 flex-1 overflow-hidden">
