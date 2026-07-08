@@ -47,6 +47,7 @@ import {
   getVisualFlow,
   validateVisualFlow,
   visualBlockPalette,
+  WHATSAPP_MAX_VISIBLE_OPTIONS,
   type VisualFlowBlockType,
   type VisualFlowDefinition,
   type VisualFlowNode,
@@ -1618,6 +1619,7 @@ function ConversationMapBlock({
     .filter((edge) => edge.sourceNodeId === node.id)
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const branchRoutes = optionRoutesForNode(node, nodes, outgoing);
+  const canAddOptionBranch = branchRoutes.length < WHATSAPP_MAX_VISIBLE_OPTIONS;
 
   return (
     <div className="w-[260px]">
@@ -1653,11 +1655,12 @@ function ConversationMapBlock({
       {node.type === "MAIN_MENU" || node.config.messageBehavior === "options" ? (
         <button
           type="button"
+          disabled={!canAddOptionBranch}
           onClick={onAddOption}
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="text-lg leading-none">+</span>
-          Add option branch
+          {canAddOptionBranch ? "Add option branch" : "Maximum 3 options"}
         </button>
       ) : null}
     </div>
@@ -1837,6 +1840,11 @@ function FocusedBranchCanvas({
               <input
                 type="checkbox"
                 checked={sourceOption.active !== false}
+                disabled={
+                  sourceOption.active === false &&
+                  (sourceNode?.config.menuOptions ?? []).filter((option) => option.active !== false)
+                    .length >= WHATSAPP_MAX_VISIBLE_OPTIONS
+                }
                 onChange={(event) =>
                   onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
                     ...option,
@@ -3232,6 +3240,8 @@ function MenuOptionsEditor({
   onChange: (node: VisualFlowNode) => void;
 }) {
   const options = block.config.menuOptions ?? [];
+  const activeOptionCount = options.filter((option) => option.active !== false).length;
+  const canAddActiveOption = activeOptionCount < WHATSAPP_MAX_VISIBLE_OPTIONS;
   const updateOption = (index: number, option: VisualMenuOption) =>
     onChange({
       ...block,
@@ -3252,6 +3262,17 @@ function MenuOptionsEditor({
       <p className="text-xs text-muted-foreground">
         Edit the button/list text the customer sees in WhatsApp, then choose where each option sends
         them.
+      </p>
+      <p
+        className={
+          activeOptionCount > WHATSAPP_MAX_VISIBLE_OPTIONS
+            ? "text-xs text-destructive"
+            : "text-xs text-muted-foreground"
+        }
+      >
+        WhatsApp can show only {WHATSAPP_MAX_VISIBLE_OPTIONS} active options under one message. This
+        block currently has {activeOptionCount} active option
+        {activeOptionCount === 1 ? "" : "s"}.
       </p>
       <div className="space-y-3">
         {options.map((option, index) => (
@@ -3324,14 +3345,27 @@ function MenuOptionsEditor({
             <ToggleField
               label="Active"
               checked={option.active !== false}
-              onChange={(checked) => updateOption(index, { ...option, active: checked })}
+              disabled={
+                option.active === false && activeOptionCount >= WHATSAPP_MAX_VISIBLE_OPTIONS
+              }
+              onChange={(checked) => {
+                if (
+                  checked &&
+                  option.active === false &&
+                  activeOptionCount >= WHATSAPP_MAX_VISIBLE_OPTIONS
+                ) {
+                  return;
+                }
+                updateOption(index, { ...option, active: checked });
+              }}
             />
           </div>
         ))}
       </div>
       <button
         type="button"
-        className="studio-button-secondary"
+        disabled={!canAddActiveOption}
+        className="studio-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() =>
           onChange({
             ...block,
@@ -3350,7 +3384,7 @@ function MenuOptionsEditor({
           })
         }
       >
-        Add WhatsApp option
+        {canAddActiveOption ? "Add WhatsApp option" : "Maximum 3 active options"}
       </button>
     </SettingsSection>
   );

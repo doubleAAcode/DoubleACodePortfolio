@@ -103,6 +103,8 @@ export type VisualCompileResult = {
   validation: FlowValidationResult;
 };
 
+export const WHATSAPP_MAX_VISIBLE_OPTIONS = 3;
+
 const protectedActions: Partial<Record<FlowNodeType, string>> = {
   CATEGORY_SELECT: "catalog.categories",
   PRODUCT_SELECT: "catalog.products",
@@ -467,6 +469,14 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
       const activeOptions = options.filter((option) => option.active !== false);
       if (!activeOptions.length)
         issues.push(error("VISUAL_MENU_OPTIONS", "Main menu needs at least one active option."));
+      if (activeOptions.length > WHATSAPP_MAX_VISIBLE_OPTIONS) {
+        issues.push(
+          error(
+            "VISUAL_MENU_OPTION_LIMIT",
+            `Main menu has ${activeOptions.length} active WhatsApp options. WhatsApp can show only ${WHATSAPP_MAX_VISIBLE_OPTIONS} options under one message. Delete or deactivate ${activeOptions.length - WHATSAPP_MAX_VISIBLE_OPTIONS} option(s).`,
+          ),
+        );
+      }
       const optionKeys = activeOptions.map((option) => (option.key || "").trim().toLowerCase());
       if (new Set(optionKeys).size !== optionKeys.length) {
         issues.push(error("VISUAL_MENU_KEY_DUPLICATE", "Main menu option keys must be unique."));
@@ -720,6 +730,14 @@ function validateOptionsNode(node: VisualFlowNode, issues: FlowValidationIssue[]
   if (!options.length) {
     issues.push(
       error("VISUAL_OPTIONS_REQUIRED", `${friendlyValidationStepName(node)} needs active options.`),
+    );
+  }
+  if (options.length > WHATSAPP_MAX_VISIBLE_OPTIONS) {
+    issues.push(
+      error(
+        "VISUAL_OPTIONS_LIMIT",
+        `${friendlyValidationStepName(node)} has ${options.length} active WhatsApp options. WhatsApp can show only ${WHATSAPP_MAX_VISIBLE_OPTIONS} options under one message. Delete or deactivate ${options.length - WHATSAPP_MAX_VISIBLE_OPTIONS} option(s).`,
+      ),
     );
   }
   const keys = options.map((option) => (option.key || "").trim().toLowerCase());
