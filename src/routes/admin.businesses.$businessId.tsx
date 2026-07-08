@@ -1388,6 +1388,11 @@ function ConversationMap({
     mode: "next" | "option";
     optionKey?: string;
     optionLabel?: string;
+    nextNodeId?: string;
+  }>();
+  const [focusedOption, setFocusedOption] = useState<{
+    sourceNodeId: string;
+    optionKey: string;
   }>();
   const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
@@ -1404,6 +1409,49 @@ function ConversationMap({
 
   const unvisitedNodes = visualFlow.nodes.filter((node) => !visited.has(node.id));
 
+  if (focusedOption) {
+    return (
+      <div className="mt-5 min-w-0">
+        <FocusedBranchCanvas
+          visualFlow={visualFlow}
+          edges={effectiveEdges}
+          selectedBlockId={selectedBlockId}
+          focusedOption={focusedOption}
+          onBack={() => setFocusedOption(undefined)}
+          onSelectBlock={onSelectBlock}
+          onOpenOption={(sourceNodeId, optionKey) => setFocusedOption({ sourceNodeId, optionKey })}
+          onAddAfterNode={(sourceNodeId, nextNodeId) =>
+            setAddTarget({ sourceNodeId, mode: "next", nextNodeId })
+          }
+          onAddOption={(sourceNodeId) => setAddTarget({ sourceNodeId, mode: "option" })}
+          onAddOptionTarget={(sourceNodeId, optionKey, optionLabel) =>
+            setAddTarget({
+              sourceNodeId,
+              mode: "option",
+              optionKey,
+              optionLabel,
+            })
+          }
+        />
+        {addTarget ? (
+          <InlineAddStepCard
+            visualFlow={visualFlow}
+            sourceNodeId={addTarget.sourceNodeId}
+            mode={addTarget.mode}
+            optionKey={addTarget.optionKey}
+            optionLabel={addTarget.optionLabel}
+            nextNodeId={addTarget.nextNodeId}
+            onCancel={() => setAddTarget(undefined)}
+            onCreate={(next, createdNodeId) => {
+              setAddTarget(undefined);
+              onCreateStep(next, createdNodeId);
+            }}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5 min-w-0">
       <div className="overflow-x-auto rounded-md border border-border bg-surface/20 p-4 pb-5">
@@ -1418,7 +1466,6 @@ function ConversationMap({
                 selected={selectedBlockId === node.id}
                 onSelectBlock={onSelectBlock}
                 onAddOption={() => setAddTarget({ sourceNodeId: node.id, mode: "option" })}
-                onAddAfterNode={(nodeId) => setAddTarget({ sourceNodeId: nodeId, mode: "next" })}
                 onAddOptionTarget={(optionKey, optionLabel) =>
                   setAddTarget({
                     sourceNodeId: node.id,
@@ -1427,13 +1474,20 @@ function ConversationMap({
                     optionLabel,
                   })
                 }
+                onOpenOption={(optionKey) => setFocusedOption({ sourceNodeId: node.id, optionKey })}
               />
               <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
                 <button
                   type="button"
                   title="Add a step here"
                   aria-label="Add a step here"
-                  onClick={() => setAddTarget({ sourceNodeId: node.id, mode: "next" })}
+                  onClick={() =>
+                    setAddTarget({
+                      sourceNodeId: node.id,
+                      mode: "next",
+                      nextNodeId: primaryPath[index + 1]?.id,
+                    })
+                  }
                   className="grid h-9 w-9 place-items-center rounded-full border border-primary/60 bg-primary/15 text-lg font-semibold text-primary transition hover:bg-primary hover:text-background"
                 >
                   +
@@ -1452,6 +1506,7 @@ function ConversationMap({
             mode={addTarget.mode}
             optionKey={addTarget.optionKey}
             optionLabel={addTarget.optionLabel}
+            nextNodeId={addTarget.nextNodeId}
             onCancel={() => setAddTarget(undefined)}
             onCreate={(next, createdNodeId) => {
               setAddTarget(undefined);
@@ -1500,8 +1555,8 @@ function ConversationMapBlock({
   selected,
   onSelectBlock,
   onAddOption,
-  onAddAfterNode,
   onAddOptionTarget,
+  onOpenOption,
 }: {
   node: VisualFlowNode;
   nodes: VisualFlowNode[];
@@ -1510,8 +1565,8 @@ function ConversationMapBlock({
   selected: boolean;
   onSelectBlock: (blockId: string) => void;
   onAddOption: () => void;
-  onAddAfterNode: (nodeId: string) => void;
   onAddOptionTarget: (optionKey: string, optionLabel: string) => void;
+  onOpenOption: (optionKey: string) => void;
 }) {
   const outgoing = edges
     .filter((edge) => edge.sourceNodeId === node.id)
@@ -1538,16 +1593,12 @@ function ConversationMapBlock({
         </span>
       </button>
       {branchRoutes.length ? (
-        <div className="mt-3 space-y-3 border-l border-border pl-3">
+        <div className="mt-3 space-y-2 border-l border-border pl-3">
           {branchRoutes.map((route) => (
-            <OptionBranchLane
+            <OptionBranchCard
               key={route.key}
               route={route}
-              nodes={nodes}
-              edges={edges}
-              selectedBlockId={selectedBlockId}
-              onSelectBlock={onSelectBlock}
-              onAddAfterNode={onAddAfterNode}
+              onOpen={() => onOpenOption(route.key)}
               onAddTarget={() => onAddOptionTarget(route.key, route.label)}
             />
           ))}
@@ -1573,68 +1624,158 @@ type ConversationOptionRoute = {
   target?: VisualFlowNode;
 };
 
-function OptionBranchLane({
+function OptionBranchCard({
   route,
-  nodes,
-  edges,
-  selectedBlockId,
-  onSelectBlock,
-  onAddAfterNode,
+  onOpen,
   onAddTarget,
 }: {
   route: ConversationOptionRoute;
-  nodes: VisualFlowNode[];
-  edges: ReturnType<typeof getEffectiveVisualEdges>;
-  selectedBlockId: string;
-  onSelectBlock: (blockId: string) => void;
-  onAddAfterNode: (nodeId: string) => void;
+  onOpen: () => void;
   onAddTarget: () => void;
 }) {
-  const continuation = route.target
-    ? nextConversationPath(route.target, nodes, edges, new Set([route.target.id]), 2)
-    : [];
-
   return (
-    <div className="rounded-md border border-border bg-surface/30 p-2">
-      <div className="mb-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-        Option: <span className="normal-case tracking-normal text-foreground">{route.label}</span>
-      </div>
+    <div className="rounded-md border border-border bg-surface/30 p-2 text-xs">
       {route.target ? (
-        <div className="flex min-w-max items-start gap-2">
-          <MiniConversationBlock
-            node={route.target}
-            selected={selectedBlockId === route.target.id}
-            onSelectBlock={onSelectBlock}
-          />
-          {continuation.map((node) => (
-            <div key={node.id} className="flex items-center gap-2">
-              <div className="pt-9 text-muted-foreground">→</div>
-              <MiniConversationBlock
-                node={node}
-                selected={selectedBlockId === node.id}
-                onSelectBlock={onSelectBlock}
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            title="Add next block for this branch"
-            aria-label="Add next block for this branch"
-            onClick={() => onAddAfterNode(continuation.at(-1)?.id ?? route.target!.id)}
-            className="mt-8 grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-primary/10 text-base font-semibold text-primary transition hover:bg-primary hover:text-background"
-          >
-            +
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="block w-full rounded-md px-2 py-1.5 text-left transition hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span className="block text-muted-foreground">Option</span>
+          <span className="mt-0.5 block font-medium">{route.label}</span>
+          <span className="mt-1 block text-muted-foreground">
+            Opens {route.target.title || friendlyBlockName(route.target.type)}
+          </span>
+        </button>
       ) : (
         <button
           type="button"
           onClick={onAddTarget}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-primary transition hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <span className="text-lg leading-none">+</span>
           Add target block
         </button>
+      )}
+    </div>
+  );
+}
+
+function FocusedBranchCanvas({
+  visualFlow,
+  edges,
+  selectedBlockId,
+  focusedOption,
+  onBack,
+  onSelectBlock,
+  onOpenOption,
+  onAddAfterNode,
+  onAddOption,
+  onAddOptionTarget,
+}: {
+  visualFlow: VisualFlowDefinition;
+  edges: ReturnType<typeof getEffectiveVisualEdges>;
+  selectedBlockId: string;
+  focusedOption: { sourceNodeId: string; optionKey: string };
+  onBack: () => void;
+  onSelectBlock: (blockId: string) => void;
+  onOpenOption: (sourceNodeId: string, optionKey: string) => void;
+  onAddAfterNode: (sourceNodeId: string, nextNodeId?: string) => void;
+  onAddOption: (sourceNodeId: string) => void;
+  onAddOptionTarget: (sourceNodeId: string, optionKey: string, optionLabel: string) => void;
+}) {
+  const sourceNode = visualFlow.nodes.find((node) => node.id === focusedOption.sourceNodeId);
+  const route = sourceNode
+    ? optionRoutesForNode(
+        sourceNode,
+        visualFlow.nodes,
+        edges.filter((edge) => edge.sourceNodeId === sourceNode.id),
+      ).find((entry) => entry.key === focusedOption.optionKey)
+    : undefined;
+  const branchPath = route?.target
+    ? [
+        route.target,
+        ...nextConversationPath(
+          route.target,
+          visualFlow.nodes,
+          edges,
+          new Set([route.target.id]),
+          40,
+        ),
+      ]
+    : [];
+  const branchTitle = route?.label || "Branch";
+  const sourceTitle =
+    sourceNode?.title || (sourceNode ? friendlyBlockName(sourceNode.type) : "option block");
+
+  return (
+    <div className="rounded-md border border-border bg-surface/20 p-4 pb-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Back to main canvas
+          </button>
+          <div className="mt-2 font-medium">Branch: {branchTitle}</div>
+          <div className="mt-1 text-sm text-muted-foreground">From {sourceTitle}</div>
+        </div>
+      </div>
+
+      {!route?.target ? (
+        <div className="max-w-xl rounded-md border border-dashed border-primary/60 bg-background p-5 text-sm">
+          <div className="font-medium">No target block yet</div>
+          <p className="mt-1 text-muted-foreground">
+            Create the first block that runs when this option is clicked.
+          </p>
+          <button
+            type="button"
+            className="studio-button-primary mt-4"
+            onClick={() =>
+              onAddOptionTarget(focusedOption.sourceNodeId, focusedOption.optionKey, branchTitle)
+            }
+          >
+            Add target block
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max items-start gap-4">
+            {branchPath.map((node, index) => (
+              <div key={node.id} className="flex items-start gap-4">
+                <ConversationMapBlock
+                  node={node}
+                  nodes={visualFlow.nodes}
+                  edges={edges}
+                  selectedBlockId={selectedBlockId}
+                  selected={selectedBlockId === node.id}
+                  onSelectBlock={onSelectBlock}
+                  onAddOption={() => onAddOption(node.id)}
+                  onAddOptionTarget={(optionKey, optionLabel) =>
+                    onAddOptionTarget(node.id, optionKey, optionLabel)
+                  }
+                  onOpenOption={(optionKey) => onOpenOption(node.id, optionKey)}
+                />
+                <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    title="Add a step here"
+                    aria-label="Add a step here"
+                    onClick={() => onAddAfterNode(node.id, branchPath[index + 1]?.id)}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-primary/60 bg-primary/15 text-lg font-semibold text-primary transition hover:bg-primary hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    +
+                  </button>
+                  {index === branchPath.length - 1 ? (
+                    <span className="text-xs font-medium text-primary">Add next</span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1724,6 +1865,7 @@ function InlineAddStepCard({
   mode,
   optionKey,
   optionLabel,
+  nextNodeId,
   onCreate,
   onCancel,
 }: {
@@ -1732,6 +1874,7 @@ function InlineAddStepCard({
   mode: "next" | "option";
   optionKey?: string;
   optionLabel?: string;
+  nextNodeId?: string;
   onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
   onCancel: () => void;
 }) {
@@ -1748,6 +1891,7 @@ function InlineAddStepCard({
       title: selectedKind.label,
       optionLabel: optionLabel || selectedKind.label,
       makeOptions: kind === "options",
+      nextNodeId,
     });
     const created = next.nodes[next.nodes.length - 1];
     onCreate(next, created.id);
@@ -1800,10 +1944,12 @@ function createInlineVisualStep(
     title: string;
     optionLabel: string;
     makeOptions: boolean;
+    nextNodeId?: string;
   },
 ) {
   const withNode = addConfiguredVisualNode(visualFlow, options.type, {
     title: options.title,
+    nextNodeId: options.nextNodeId,
   });
   const created = withNode.nodes[withNode.nodes.length - 1];
   const createdConfig: VisualFlowNode["config"] = {
