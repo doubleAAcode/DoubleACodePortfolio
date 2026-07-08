@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Check, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -14,6 +14,7 @@ import { formatMoney, useWaDashboardData } from "@/lib/whatsapp/use-wa-dashboard
 
 export const Route = createFileRoute("/dashboard/products")({
   component: ProductsPage,
+  errorComponent: ProductsRouteError,
 });
 
 const emptyProduct = {
@@ -75,6 +76,100 @@ const emptyField = {
 };
 
 type SavingAction = "product" | "option" | "value" | "variant" | "field" | null;
+
+function ProductsRouteError({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  const diagnostics = buildRouteErrorDiagnostics(error);
+
+  return (
+    <div className="dark min-h-screen bg-background px-4 py-8 text-foreground">
+      <main className="mx-auto max-w-5xl space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+            Dashboard products
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-semibold text-destructive">
+            Products page failed to load
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            The full error is shown below so we can fix the exact failing line instead of guessing.
+          </p>
+        </div>
+
+        <section className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+          <h2 className="font-display text-lg font-semibold text-destructive">Error message</h2>
+          <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-destructive/30 bg-background p-3 text-sm text-destructive">
+            {diagnostics.message}
+          </pre>
+        </section>
+
+        <details open className="rounded-lg border border-border bg-surface/60 p-4">
+          <summary className="cursor-pointer font-display text-lg font-semibold">
+            Expandable diagnostic log
+          </summary>
+          <pre className="mt-3 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs text-muted-foreground">
+            {diagnostics.fullText}
+          </pre>
+        </details>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="studio-button-primary"
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+          >
+            Try again
+          </button>
+          <button
+            type="button"
+            className="studio-button"
+            onClick={() => void navigator.clipboard?.writeText(diagnostics.fullText)}
+          >
+            Copy log
+          </button>
+          <a href="/dashboard" className="studio-button">
+            Back to dashboard
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function buildRouteErrorDiagnostics(error: Error) {
+  const locationDetails =
+    typeof window === "undefined"
+      ? "URL: unavailable during server render"
+      : [`URL: ${window.location.href}`, `User agent: ${window.navigator.userAgent}`].join("\n");
+  const cause = "cause" in error ? formatUnknownError((error as Error & { cause?: unknown }).cause) : "";
+  const parts = [
+    `Time: ${new Date().toISOString()}`,
+    locationDetails,
+    `Name: ${error.name || "Error"}`,
+    `Message: ${error.message || "No error message was provided."}`,
+    cause ? `Cause: ${cause}` : "",
+    "Stack:",
+    error.stack || "No stack trace was provided.",
+  ].filter(Boolean);
+
+  return {
+    message: error.message || "No error message was provided.",
+    fullText: parts.join("\n\n"),
+  };
+}
+
+function formatUnknownError(value: unknown) {
+  if (value instanceof Error) return `${value.name}: ${value.message}\n${value.stack ?? ""}`.trim();
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
 
 export function ProductsPage() {
   const { data, loading, saving, error, notice, setError, applyAction } = useWaDashboardData();
