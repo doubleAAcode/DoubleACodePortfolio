@@ -957,14 +957,10 @@ export function VisualFlowBuilderEditor({
         visualFlow={visualFlow}
         selectedBlock={selectedBlock}
         selectedBlockId={selectedBlockId}
-        showAddStep={showAddStep}
         validation={validation}
-        onToggleAddStep={() => setShowAddStep((value) => !value)}
         onAddStep={(next) => {
           onChange(next);
-          setShowAddStep(false);
         }}
-        onCancelAddStep={() => setShowAddStep(false)}
         onSelectBlock={onSelectBlock}
         onUpdateNode={updateNode}
         onChange={onChange}
@@ -980,14 +976,10 @@ export function VisualFlowBuilderEditor({
           visualFlow={visualFlow}
           selectedBlock={selectedBlock}
           selectedBlockId={selectedBlockId}
-          showAddStep={showAddStep}
           validation={validation}
-          onToggleAddStep={() => setShowAddStep((value) => !value)}
           onAddStep={(next) => {
             onChange(next);
-            setShowAddStep(false);
           }}
-          onCancelAddStep={() => setShowAddStep(false)}
           onSelectBlock={onSelectBlock}
           onUpdateNode={updateNode}
           onChange={onChange}
@@ -1328,11 +1320,8 @@ function ConfigureFlowMode({
   visualFlow,
   selectedBlock,
   selectedBlockId,
-  showAddStep,
   validation,
-  onToggleAddStep,
   onAddStep,
-  onCancelAddStep,
   onSelectBlock,
   onUpdateNode,
   onChange,
@@ -1340,11 +1329,8 @@ function ConfigureFlowMode({
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
   selectedBlockId: string;
-  showAddStep: boolean;
   validation?: ReturnType<typeof validateVisualFlow>;
-  onToggleAddStep: () => void;
   onAddStep: (flow: VisualFlowDefinition) => void;
-  onCancelAddStep: () => void;
   onSelectBlock: (blockId: string) => void;
   onUpdateNode: (node: VisualFlowNode) => void;
   onChange: (flow: VisualFlowDefinition) => void;
@@ -1360,36 +1346,16 @@ function ConfigureFlowMode({
               steps.
             </div>
           </div>
-          <button
-            type="button"
-            className="studio-button-primary px-3 py-1.5"
-            onClick={onToggleAddStep}
-          >
-            Add step
-          </button>
         </div>
-        {showAddStep ? (
-          <GuidedAddStepWizard
-            visualFlow={visualFlow}
-            selectedBlockId={selectedBlock?.id ?? selectedBlockId}
-            onCreate={(next, createdNodeId) => {
-              onAddStep(next);
-              onSelectBlock(createdNodeId);
-            }}
-            onCancel={onCancelAddStep}
-          />
-        ) : null}
-        <ConversationOutline
-          nodes={visualFlow.nodes}
-          validation={validation}
-          selectedBlockId={selectedBlockId}
-          onSelect={onSelectBlock}
-        />
         <ConversationMap
           visualFlow={visualFlow}
           effectiveEdges={getEffectiveVisualEdges(visualFlow)}
           selectedBlockId={selectedBlockId}
           onSelectBlock={onSelectBlock}
+          onCreateStep={(next, createdNodeId) => {
+            onAddStep(next);
+            onSelectBlock(createdNodeId);
+          }}
         />
       </div>
 
@@ -1409,12 +1375,18 @@ function ConversationMap({
   effectiveEdges,
   selectedBlockId,
   onSelectBlock,
+  onCreateStep,
 }: {
   visualFlow: VisualFlowDefinition;
   effectiveEdges: ReturnType<typeof getEffectiveVisualEdges>;
   selectedBlockId: string;
   onSelectBlock: (blockId: string) => void;
+  onCreateStep: (flow: VisualFlowDefinition, createdNodeId: string) => void;
 }) {
+  const [addTarget, setAddTarget] = useState<{
+    sourceNodeId: string;
+    mode: "next" | "option";
+  }>();
   const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
   const visited = new Set<string>();
@@ -1431,24 +1403,48 @@ function ConversationMap({
   const unvisitedNodes = visualFlow.nodes.filter((node) => !visited.has(node.id));
 
   return (
-    <div className="mt-4 min-w-0">
-      <div className="overflow-x-auto pb-3">
-        <div className="flex min-w-max items-start gap-3">
+    <div className="mt-5 min-w-0">
+      <div className="overflow-x-auto rounded-md border border-border bg-surface/20 p-4 pb-5">
+        <div className="flex min-w-max items-start gap-4">
           {primaryPath.map((node, index) => (
-            <div key={node.id} className="flex items-start gap-3">
+            <div key={node.id} className="flex items-start gap-4">
               <ConversationMapBlock
                 node={node}
                 nodes={visualFlow.nodes}
                 edges={effectiveEdges}
                 selected={selectedBlockId === node.id}
                 onSelectBlock={onSelectBlock}
+                onAddOption={() => setAddTarget({ sourceNodeId: node.id, mode: "option" })}
               />
-              {index < primaryPath.length - 1 ? (
-                <div className="pt-12 text-2xl text-muted-foreground">→</div>
-              ) : null}
+              <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
+                <button
+                  type="button"
+                  title="Add a step here"
+                  aria-label="Add a step here"
+                  onClick={() => setAddTarget({ sourceNodeId: node.id, mode: "next" })}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-primary/60 bg-primary/15 text-lg font-semibold text-primary transition hover:bg-primary hover:text-background"
+                >
+                  +
+                </button>
+                {index === primaryPath.length - 1 ? (
+                  <span className="text-xs font-medium text-primary">Add next</span>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
+        {addTarget ? (
+          <InlineAddStepCard
+            visualFlow={visualFlow}
+            sourceNodeId={addTarget.sourceNodeId}
+            mode={addTarget.mode}
+            onCancel={() => setAddTarget(undefined)}
+            onCreate={(next, createdNodeId) => {
+              setAddTarget(undefined);
+              onCreateStep(next, createdNodeId);
+            }}
+          />
+        ) : null}
       </div>
       {unvisitedNodes.length ? (
         <details className="mt-3 rounded-md border border-border bg-surface/30 p-3">
@@ -1488,12 +1484,14 @@ function ConversationMapBlock({
   edges,
   selected,
   onSelectBlock,
+  onAddOption,
 }: {
   node: VisualFlowNode;
   nodes: VisualFlowNode[];
   edges: ReturnType<typeof getEffectiveVisualEdges>;
   selected: boolean;
   onSelectBlock: (blockId: string) => void;
+  onAddOption: () => void;
 }) {
   const outgoing = edges
     .filter((edge) => edge.sourceNodeId === node.id)
@@ -1542,8 +1540,180 @@ function ConversationMapBlock({
           })}
         </div>
       ) : null}
+      {node.type === "MAIN_MENU" || node.config.messageBehavior === "options" ? (
+        <button
+          type="button"
+          onClick={onAddOption}
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10"
+        >
+          <span className="text-lg leading-none">+</span>
+          Add option branch
+        </button>
+      ) : null}
     </div>
   );
+}
+
+function InlineAddStepCard({
+  visualFlow,
+  sourceNodeId,
+  mode,
+  onCreate,
+  onCancel,
+}: {
+  visualFlow: VisualFlowDefinition;
+  sourceNodeId: string;
+  mode: "next" | "option";
+  onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
+  onCancel: () => void;
+}) {
+  const [kind, setKind] = useState<AddStepKind>("message");
+  const selectedKind = addStepKinds.find((entry) => entry.id === kind) ?? addStepKinds[0];
+  const sourceNode = visualFlow.nodes.find((node) => node.id === sourceNodeId);
+
+  function createStep() {
+    const next = createInlineVisualStep(visualFlow, {
+      sourceNodeId,
+      mode,
+      type: selectedKind.type,
+      title: selectedKind.label,
+      optionLabel: selectedKind.label,
+      makeOptions: kind === "options",
+    });
+    const created = next.nodes[next.nodes.length - 1];
+    onCreate(next, created.id);
+  }
+
+  return (
+    <div className="mt-4 max-w-xl rounded-md border border-primary/40 bg-background p-4 shadow-lg">
+      <div className="font-medium">
+        {mode === "option" ? "Add a branch option" : "Add the next block"}
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {sourceNode
+          ? `This will connect after ${sourceNode.title || friendlyBlockName(sourceNode.type)}.`
+          : "This will connect to the selected place in the flow."}
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <select
+          value={kind}
+          onChange={(event) => setKind(event.target.value as AddStepKind)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          {addStepKinds.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {entry.label}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="studio-button-primary" onClick={createStep}>
+          Create block
+        </button>
+        <button type="button" className="studio-button-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function createInlineVisualStep(
+  visualFlow: VisualFlowDefinition,
+  options: {
+    sourceNodeId: string;
+    mode: "next" | "option";
+    type: VisualFlowBlockType;
+    title: string;
+    optionLabel: string;
+    makeOptions: boolean;
+  },
+) {
+  const withNode = addConfiguredVisualNode(visualFlow, options.type, {
+    title: options.title,
+  });
+  const created = withNode.nodes[withNode.nodes.length - 1];
+  const createdConfig: VisualFlowNode["config"] = {
+    ...created.config,
+    messageBehavior: options.makeOptions ? "options" : created.config.messageBehavior,
+    menuOptions: options.makeOptions
+      ? [
+          {
+            key: "option_1",
+            label: { en: "First option", ar: "" },
+            active: true,
+          },
+        ]
+      : created.config.menuOptions,
+  };
+
+  return {
+    ...withNode,
+    nodes: withNode.nodes.map((node) => {
+      if (node.id === created.id) return { ...node, config: createdConfig };
+      if (node.id !== options.sourceNodeId) return node;
+      return connectSourceNodeToCreatedStep(node, created.id, options);
+    }),
+  };
+}
+
+function connectSourceNodeToCreatedStep(
+  source: VisualFlowNode,
+  targetNodeId: string,
+  options: { mode: "next" | "option"; optionLabel: string },
+): VisualFlowNode {
+  if (options.mode === "option") {
+    const optionKey = `option_${(source.config.menuOptions ?? []).length + 1}`;
+    return {
+      ...source,
+      config: {
+        ...source.config,
+        messageBehavior: source.type === "MAIN_MENU" ? source.config.messageBehavior : "options",
+        menuOptions: [
+          ...(source.config.menuOptions ?? []),
+          {
+            key: optionKey,
+            label: { en: options.optionLabel, ar: "" },
+            targetNodeId,
+            active: true,
+          },
+        ],
+      },
+    };
+  }
+
+  if (source.type === "START") {
+    return {
+      ...source,
+      config: {
+        ...source.config,
+        startBehavior: "custom_step",
+        messageNextNodeId: targetNodeId,
+      },
+    };
+  }
+
+  if (source.type === "QUESTION") {
+    return {
+      ...source,
+      config: { ...source.config, questionNextNodeId: targetNodeId },
+    };
+  }
+
+  if (source.type === "CONDITION") {
+    return {
+      ...source,
+      config: { ...source.config, conditionFallbackNodeId: targetNodeId },
+    };
+  }
+
+  return {
+    ...source,
+    config: {
+      ...source.config,
+      messageBehavior: "next",
+      messageNextNodeId: targetNodeId,
+    },
+  };
 }
 
 function primaryNextEdge(sourceNodeId: string, edges: ReturnType<typeof getEffectiveVisualEdges>) {
