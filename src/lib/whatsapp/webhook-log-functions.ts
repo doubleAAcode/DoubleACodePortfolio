@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import type { WhatsAppWebhookLogRow } from "./webhook-log-store.server";
+
+export type WhatsAppWebhookLogsResult =
+  | { ok: true; logs: WhatsAppWebhookLogRow[] }
+  | { ok: false; error: string; logs: WhatsAppWebhookLogRow[] };
+
 export const getWhatsAppWebhookLogs = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
@@ -8,7 +14,7 @@ export const getWhatsAppWebhookLogs = createServerFn({ method: "GET" })
       limit: z.number().int().min(1).max(100).optional(),
     }),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<WhatsAppWebhookLogsResult> => {
     const requiredKey = process.env.WA_BOT_LOGS_KEY;
 
     if (!requiredKey) {

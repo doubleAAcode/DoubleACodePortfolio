@@ -2,9 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getWhatsAppWebhookLogs } from "@/lib/whatsapp/webhook-log-functions";
+import {
+  getWhatsAppWebhookLogs,
+  type WhatsAppWebhookLogsResult,
+} from "@/lib/whatsapp/webhook-log-functions";
 
-type WebhookLog = Awaited<ReturnType<typeof getWhatsAppWebhookLogs>>["logs"][number];
+type WebhookLog = WhatsAppWebhookLogsResult["logs"][number];
 
 export const Route = createFileRoute("/logsWABot")({
   head: () => ({
@@ -32,7 +35,9 @@ function LogsWABotPage() {
     setLoading(true);
     setError(undefined);
 
-    const result = await getWhatsAppWebhookLogs({ data: { key, limit: 75 } });
+    const result = (await getWhatsAppWebhookLogs({
+      data: { key, limit: 75 },
+    })) as WhatsAppWebhookLogsResult;
 
     if (result.ok) {
       setLogs(result.logs);

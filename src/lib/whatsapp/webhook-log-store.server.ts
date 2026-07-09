@@ -7,7 +7,7 @@ export type WhatsAppWebhookLogRow = {
   created_at: string;
   method: string;
   path: string;
-  query: Record<string, unknown>;
+  query: Record<string, string>;
   status: number;
   source: string;
   host: string | null;
@@ -105,7 +105,7 @@ export async function listWhatsAppWebhookLogs(limit = MAX_LOGS) {
 }
 
 function sanitizeQuery(searchParams: URLSearchParams) {
-  const query: Record<string, unknown> = {};
+  const query: Record<string, string> = {};
 
   for (const [key, value] of searchParams.entries()) {
     if (key === "hub.verify_token") {

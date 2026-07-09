@@ -105,6 +105,11 @@ export type VisualCompileResult = {
 
 export const WHATSAPP_MAX_VISIBLE_OPTIONS = 3;
 
+const protectedCommerceVisualTypes = new Set<VisualFlowBlockType>([
+  "PRODUCT_SELECTION",
+  "PRODUCT_DETAILS",
+]);
+
 const protectedActions: Partial<Record<FlowNodeType, string>> = {
   CATEGORY_SELECT: "catalog.categories",
   PRODUCT_SELECT: "catalog.products",
@@ -128,7 +133,7 @@ export const visualBlockPalette: Array<{
   { type: "MAIN_MENU", title: "Main menu", category: "Core" },
   { type: "STORE_INFO", title: "Store info", category: "Core" },
   { type: "CATEGORY_SELECTION", title: "Categories", category: "Catalog" },
-  { type: "PRODUCT_SELECTION", title: "Products", category: "Catalog" },
+  { type: "PRODUCT_SELECTION", title: "Product purchase", category: "Catalog" },
   { type: "PRODUCT_DETAILS", title: "Product details", category: "Catalog" },
   { type: "QUESTION", title: "Question", category: "Logic" },
   { type: "CONDITION", title: "Condition", category: "Logic" },
@@ -455,8 +460,9 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
         ),
       );
     }
-    const outgoing = effectiveEdges.some((edge) => edge.sourceNodeId === node.id);
-    if (!outgoing && node.type !== "END") {
+    const outgoingEdges = effectiveEdges.filter((edge) => edge.sourceNodeId === node.id);
+    const outgoing = outgoingEdges.length > 0;
+    if (!outgoing && node.type !== "END" && !protectedCommerceVisualTypes.has(node.type)) {
       issues.push(
         warning(
           "VISUAL_DEAD_END",
@@ -493,7 +499,61 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
           issues.push(
             warning("VISUAL_MENU_TARGET", `${node.title} has an option without a target.`),
           );
+        } else if (option.action === "PLACE_ORDER") {
+          const target = visualFlow.nodes.find((entry) => entry.id === option.targetNodeId);
+          if (target?.type !== "CATEGORY_SELECTION") {
+            issues.push(
+              error(
+                "VISUAL_ORDER_TARGET_PROTECTED",
+                `${node.title} option "${option.label.en || option.key || "Place order"}" must open Show categories. Product variants, required product questions, quantity, and add-to-cart are protected after that.`,
+              ),
+            );
+          }
         }
+      }
+    }
+    if (node.type === "CATEGORY_SELECTION") {
+      const target = outgoingEdges[0]
+        ? visualFlow.nodes.find((entry) => entry.id === outgoingEdges[0].targetNodeId)
+        : undefined;
+      if (target?.type !== "PRODUCT_SELECTION") {
+        issues.push(
+          error(
+            "VISUAL_CATEGORY_TO_PRODUCTS_REQUIRED",
+            `${friendlyValidationStepName(node)} must continue to Product purchase. Customers choose a category first, then the protected product purchase pipeline takes over.`,
+          ),
+        );
+      }
+    }
+    if (node.type === "PRODUCT_SELECTION") {
+      const invalidTarget = outgoingEdges
+        .map((edge) => visualFlow.nodes.find((entry) => entry.id === edge.targetNodeId))
+        .find((target) => target && target.type !== "PRODUCT_DETAILS");
+      if (invalidTarget) {
+        issues.push(
+          error(
+            "VISUAL_PRODUCT_SELECTION_PROTECTED",
+            `${friendlyValidationStepName(node)} can only continue to Product details. Product options, required questions, quantity, and cart are controlled by the protected purchase pipeline.`,
+          ),
+        );
+      }
+    }
+    if (node.type === "PRODUCT_DETAILS") {
+      const invalidTarget = outgoingEdges
+        .map((edge) => visualFlow.nodes.find((entry) => entry.id === edge.targetNodeId))
+        .find(
+          (target) =>
+            target &&
+            target.type !== "CART_REVIEW" &&
+            !isLegacyProtectedCommerceNode(target),
+        );
+      if (invalidTarget) {
+        issues.push(
+          error(
+            "VISUAL_PRODUCT_DETAILS_PROTECTED",
+            `${friendlyValidationStepName(node)} cannot branch directly to ${friendlyValidationStepName(invalidTarget)}. After a product is selected, variants, required product questions, quantity, and add-to-cart must finish before the customer reaches the cart.`,
+          ),
+        );
       }
     }
     if (node.config.messageBehavior === "options") validateOptionsNode(node, issues);
@@ -1001,6 +1061,10 @@ function visualTitle(type: VisualFlowBlockType) {
 
 function friendlyValidationStepName(node: VisualFlowNode) {
   return node.title || visualTitle(node.type);
+}
+
+function isLegacyProtectedCommerceNode(node: VisualFlowNode) {
+  return ["product_options", "custom_fields", "quantity"].includes(node.id);
 }
 
 function languageCopy(

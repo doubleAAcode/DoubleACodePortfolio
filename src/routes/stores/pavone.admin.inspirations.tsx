@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
+import type { Product } from "@/stores/pavone/data/products";
 import { deleteOutfitInspiration, upsertOutfitInspiration, type OutfitInspiration } from "@/stores/pavone/lib/pavone-api";
 import { usePavoneCatalog, usePavoneOutfits } from "@/stores/pavone/lib/use-pavone-data";
 
@@ -87,7 +88,9 @@ function AdminInspirations() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {outfits.data.map((outfit) => {
-          const items = outfit.productIds.map((id) => productById.get(id)).filter(Boolean);
+          const items = outfit.productIds
+            .map((id) => productById.get(id))
+            .filter((item): item is Product => Boolean(item));
           return (
             <article key={outfit.id} className="rounded-2xl border border-border bg-background p-4">
               <div className="grid grid-cols-5 gap-2">

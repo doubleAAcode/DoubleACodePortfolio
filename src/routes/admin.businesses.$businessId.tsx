@@ -337,7 +337,9 @@ function FlowSection({
       </div>
     </section>
   );
+}
 
+/*
   const [templates, setTemplates] = useState<FlowTemplateRow[]>([]);
   const [templateId, setTemplateId] = useState("");
   const [flowDetails, setFlowDetails] = useState<BusinessFlowDetails>();
@@ -650,6 +652,7 @@ function FlowSection({
     </section>
   );
 }
+*/
 
 type FlowEditorTab =
   | "general"
@@ -1337,7 +1340,7 @@ function ConfigureFlowMode({
   onChange: (flow: VisualFlowDefinition) => void;
 }) {
   return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_390px_360px]">
       <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1367,7 +1370,9 @@ function ConfigureFlowMode({
         validation={validation}
         onUpdateNode={onUpdateNode}
         onChange={onChange}
+        onSelectBlock={onSelectBlock}
       />
+      <LivePreviewColumn visualFlow={visualFlow} selectedBlock={selectedBlock} />
     </div>
   );
 }
@@ -1402,7 +1407,7 @@ function ConversationMap({
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
   const visited = new Set<string>();
   const primaryPath: VisualFlowNode[] = [];
-  let current = startNode;
+  let current: VisualFlowNode | undefined = startNode;
 
   while (current && !visited.has(current.id)) {
     primaryPath.push(current);
@@ -1411,7 +1416,9 @@ function ConversationMap({
     current = nextEdge ? nodeById.get(nextEdge.targetNodeId) : undefined;
   }
 
-  const unvisitedNodes = visualFlow.nodes.filter((node) => !visited.has(node.id));
+  const unvisitedNodes = visualFlow.nodes.filter(
+    (node) => !visited.has(node.id) && !isLegacyCommerceInternalNode(node),
+  );
   const updateFocusedOption = (
     sourceNodeId: string,
     optionKey: string,
@@ -1954,9 +1961,9 @@ function optionRoutesForNode(
   if (node.config.menuOptions?.length) {
     return node.config.menuOptions
       .filter((option) => option.active !== false)
-      .map((option) => ({
-        key: option.key,
-        label: option.label.en || option.key,
+      .map((option, index) => ({
+        key: option.key || `option_${index + 1}`,
+        label: option.label.en || option.key || `Option ${index + 1}`,
         target: option.targetNodeId ? byId.get(option.targetNodeId) : undefined,
       }));
   }
@@ -2211,6 +2218,7 @@ function JourneySectionGrid({
   selectedBlockId: string;
   onSelectBlock: (blockId: string) => void;
 }) {
+  const visibleNodes = visualFlow.nodes.filter((node) => !isLegacyCommerceInternalNode(node));
   const sections = [
     { title: "Start", types: ["START", "LANGUAGE_SELECTION", "MAIN_MENU"] },
     { title: "Browse", types: ["CATEGORY_SELECTION", "PRODUCT_SELECTION", "PRODUCT_DETAILS"] },
@@ -2232,7 +2240,7 @@ function JourneySectionGrid({
   return (
     <div className="mt-4 grid gap-3 2xl:grid-cols-2">
       {sections.map((section) => {
-        const nodes = visualFlow.nodes.filter((node) => section.types.includes(node.type));
+        const nodes = visibleNodes.filter((node) => section.types.includes(node.type));
         return (
           <div key={section.title} className="rounded-md border border-border p-3">
             <div className="text-sm font-medium">{section.title}</div>
@@ -2280,12 +2288,14 @@ function StepSettingsColumn({
   validation,
   onUpdateNode,
   onChange,
+  onSelectBlock,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
   validation?: ReturnType<typeof validateVisualFlow>;
   onUpdateNode: (node: VisualFlowNode) => void;
   onChange: (flow: VisualFlowDefinition) => void;
+  onSelectBlock: (blockId: string) => void;
 }) {
   const selectedIssues = selectedBlock ? issuesForStep(validation, selectedBlock) : [];
   return (
@@ -2306,8 +2316,9 @@ function StepSettingsColumn({
             onChange={onUpdateNode}
             onFlowChange={onChange}
           />
-          {selectedIssues.length ? <StepIssueList issues={selectedIssues} /> : null}
-          <WhatsAppStepPreview block={selectedBlock} />
+          {selectedIssues.length ? (
+            <StepIssueList issues={selectedIssues} visualFlow={visualFlow} onSelectBlock={onSelectBlock} />
+          ) : null}
         </div>
       ) : (
         <p className="mt-3 text-sm text-muted-foreground">Select a step to edit.</p>
@@ -2420,7 +2431,7 @@ const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBloc
   { id: "options", label: "Send a message with options", type: "SEND_MESSAGE" },
   { id: "question", label: "Ask a question", type: "QUESTION" },
   { id: "categories", label: "Show categories", type: "CATEGORY_SELECTION" },
-  { id: "products", label: "Show products", type: "PRODUCT_SELECTION" },
+  { id: "products", label: "Product purchase", type: "PRODUCT_SELECTION" },
   { id: "cart", label: "Show cart", type: "CART_REVIEW" },
   { id: "checkout", label: "Start checkout", type: "CHECKOUT_FULFILLMENT" },
   { id: "condition", label: "Add condition", type: "CONDITION" },
@@ -2686,6 +2697,7 @@ function ConversationOutline({
   selectedBlockId: string;
   onSelect: (nodeId: string) => void;
 }) {
+  const visibleNodes = nodes.filter((node) => !isLegacyCommerceInternalNode(node));
   const groups = [
     {
       title: "Entry",
@@ -2720,7 +2732,7 @@ function ConversationOutline({
   return (
     <div className="mt-4 space-y-4">
       {groups.map((group) => {
-        const groupNodes = nodes.filter((node) => group.types.includes(node.type));
+        const groupNodes = visibleNodes.filter((node) => group.types.includes(node.type));
         groupNodes.forEach((node) => used.add(node.id));
         if (!groupNodes.length) return null;
         return (
@@ -2742,13 +2754,13 @@ function ConversationOutline({
           </div>
         );
       })}
-      {nodes.some((node) => !used.has(node.id)) ? (
+      {visibleNodes.some((node) => !used.has(node.id)) ? (
         <div>
           <div className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Other steps
           </div>
           <div className="space-y-1">
-            {nodes
+            {visibleNodes
               .filter((node) => !used.has(node.id))
               .map((node) => (
                 <OutlineStepButton
@@ -3971,18 +3983,38 @@ function StepExplanation({ block }: { block: VisualFlowNode }) {
   );
 }
 
-function StepIssueList({ issues }: { issues: ReturnType<typeof validateVisualFlow>["issues"] }) {
+function StepIssueList({
+  issues,
+  visualFlow,
+  onSelectBlock,
+}: {
+  issues: ReturnType<typeof validateVisualFlow>["issues"];
+  visualFlow?: VisualFlowDefinition;
+  onSelectBlock?: (blockId: string) => void;
+}) {
   return (
     <div className="space-y-2 rounded-md border border-border bg-surface/40 p-3">
       <div className="text-sm font-medium">Fixes for this step</div>
-      {issues.map((issue, index) => (
-        <div key={`${issue.code}-${index}`} className="text-sm">
-          <span className={issue.severity === "ERROR" ? "text-destructive" : "text-amber-200"}>
-            {issue.severity === "ERROR" ? "Error" : "Warning"}:
-          </span>{" "}
-          <span className="text-muted-foreground">{humanizeValidationIssue(issue.message)}</span>
-        </div>
-      ))}
+      {issues.map((issue, index) => {
+        const target = visualFlow ? nodeForValidationIssue(visualFlow, issue.message) : undefined;
+        return (
+          <div key={`${issue.code}-${index}`} className="text-sm">
+            <span className={issue.severity === "ERROR" ? "text-destructive" : "text-amber-200"}>
+              {issue.severity === "ERROR" ? "Error" : "Warning"}:
+            </span>{" "}
+            <span className="text-muted-foreground">{humanizeValidationIssue(issue.message)}</span>
+            {target && onSelectBlock ? (
+              <button
+                type="button"
+                className="ml-2 text-primary underline-offset-4 hover:underline"
+                onClick={() => onSelectBlock(target.id)}
+              >
+                Open {target.title || friendlyBlockName(target.type)}
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -4033,6 +4065,106 @@ function WhatsAppStepPreview({ block }: { block: VisualFlowNode }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function LivePreviewColumn({
+  visualFlow,
+  selectedBlock,
+}: {
+  visualFlow: VisualFlowDefinition;
+  selectedBlock?: VisualFlowNode;
+}) {
+  const [language, setLanguage] = useState<"en" | "ar">("en");
+  const [sampleReply, setSampleReply] = useState("");
+  const block = selectedBlock;
+  const previous = block ? previousBlockForPreview(visualFlow, block.id) : undefined;
+  const userReply = sampleReply.trim() || sampleReplyForBlock(block, previous, language);
+  const botMessage = block ? previewMessageForBlock(block, language) : "Select a block to preview.";
+  const options = block ? previewOptionsForBlock(block, language) : [];
+  const nextBlock = block ? nextBlockForPreview(visualFlow, block.id) : undefined;
+
+  return (
+    <aside className="min-h-0 min-w-0 overflow-y-auto rounded-md border border-border bg-background p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium">Live preview</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Mock the customer reply and see how this WhatsApp step will appear.
+          </p>
+        </div>
+        <div className="flex rounded-md border border-border p-0.5 text-xs">
+          {(["en", "ar"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`rounded px-2 py-1 ${language === item ? "bg-surface-2 text-foreground" : "text-muted-foreground"}`}
+              onClick={() => setLanguage(item)}
+            >
+              {item.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="mt-4 block text-sm">
+        <span className="mb-1 block text-muted-foreground">Sample customer reply</span>
+        <input
+          value={sampleReply}
+          onChange={(event) => setSampleReply(event.target.value)}
+          placeholder={sampleReplyForBlock(block, previous, language)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        />
+      </label>
+
+      <div className="mt-4 rounded-lg border border-border bg-[#0b141a] p-3 text-sm text-white">
+        <div className="mb-3 text-xs uppercase tracking-[0.14em] text-white/50">
+          WhatsApp chat mockup
+        </div>
+        {previous ? (
+          <div className="mb-2 max-w-[86%] rounded-lg bg-[#1f2c34] px-3 py-2">
+            <div className="text-[11px] text-white/45">Previous bot message</div>
+            <div className="mt-1 whitespace-pre-wrap">
+              {previewMessageForBlock(previous, language)}
+            </div>
+          </div>
+        ) : null}
+        {block ? (
+          <div className="mb-2 flex justify-end">
+            <div className="max-w-[86%] rounded-lg bg-[#005c4b] px-3 py-2">
+              <div className="text-[11px] text-white/45">Customer reply</div>
+              <div className="mt-1 whitespace-pre-wrap">{userReply}</div>
+            </div>
+          </div>
+        ) : null}
+        <div className="max-w-[86%] rounded-lg bg-[#1f2c34] px-3 py-2">
+          <div className="text-[11px] text-white/45">
+            {block ? block.title || friendlyBlockName(block.type) : "Preview"}
+          </div>
+          <div className="mt-1 whitespace-pre-wrap">{botMessage}</div>
+        </div>
+        {options.length ? (
+          <div className="mt-2 max-w-[86%] space-y-1">
+            {options.map((option) => (
+              <div key={option} className="rounded-md border border-[#2a3942] px-3 py-2 text-[#53bdeb]">
+                {option}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-4 rounded-md border border-border bg-surface/30 p-3 text-xs text-muted-foreground">
+        <div className="font-medium text-foreground">What happens next</div>
+        <div className="mt-1">
+          {nextBlock
+            ? `Continues to ${nextBlock.title || friendlyBlockName(nextBlock.type)}.`
+            : block && isProtectedCommerceBlock(block)
+              ? "Protected commerce logic continues internally until variants, required product questions, quantity, and add-to-cart are complete."
+              : "No next block is configured yet."}
+        </div>
+      </div>
+    </aside>
   );
 }
 
@@ -4338,7 +4470,7 @@ function friendlyBlockName(type: VisualFlowBlockType) {
     MAIN_MENU: "Main menu",
     STORE_INFO: "Store info",
     CATEGORY_SELECTION: "Show categories",
-    PRODUCT_SELECTION: "Show products",
+    PRODUCT_SELECTION: "Product purchase",
     PRODUCT_DETAILS: "Product details",
     QUESTION: "Question",
     CONDITION: "Condition",
@@ -4391,6 +4523,81 @@ function previewMessageForBlock(block: VisualFlowNode, language: "en" | "ar" = "
         "No message configured yet.";
 }
 
+function previewOptionsForBlock(block: VisualFlowNode, language: "en" | "ar") {
+  if (block.config.menuOptions?.length) {
+    return block.config.menuOptions
+      .filter((option) => option.active !== false)
+      .map((option) => option.label[language] || option.label.en || option.key)
+      .slice(0, WHATSAPP_MAX_VISIBLE_OPTIONS);
+  }
+  if (block.type === "QUESTION" && block.config.question?.type === "single_choice") {
+    return (block.config.question.choices ?? [])
+      .filter((choice) => choice.active !== false)
+      .map((choice) => choice.label[language] || choice.label.en || choice.value)
+      .slice(0, 10);
+  }
+  if (block.type === "LANGUAGE_SELECTION") return ["English", "العربية"];
+  if (block.type === "PRODUCT_DETAILS") return ["Order this item", "Back to products", "Main menu"];
+  return [];
+}
+
+function previousBlockForPreview(visualFlow: VisualFlowDefinition, blockId: string) {
+  const edge = getEffectiveVisualEdges(visualFlow).find((entry) => entry.targetNodeId === blockId);
+  return edge ? visualFlow.nodes.find((node) => node.id === edge.sourceNodeId) : undefined;
+}
+
+function nextBlockForPreview(visualFlow: VisualFlowDefinition, blockId: string) {
+  const edge = primaryNextEdge(blockId, getEffectiveVisualEdges(visualFlow));
+  return edge ? visualFlow.nodes.find((node) => node.id === edge.targetNodeId) : undefined;
+}
+
+function sampleReplyForBlock(
+  block: VisualFlowNode | undefined,
+  previous: VisualFlowNode | undefined,
+  language: "en" | "ar",
+) {
+  if (!block) return "";
+  if (previous?.config.menuOptions?.length) {
+    const option = previous.config.menuOptions.find((entry) => entry.targetNodeId === block.id);
+    if (option) return option.label[language] || option.label.en || option.key;
+  }
+  if (block.type === "LANGUAGE_SELECTION") return "Hi";
+  if (block.type === "MAIN_MENU") return language === "ar" ? "العربية" : "English";
+  if (block.type === "CATEGORY_SELECTION") return "Place an order";
+  if (block.type === "PRODUCT_SELECTION") return "Selected category";
+  if (block.type === "PRODUCT_DETAILS") return "Selected product";
+  if (block.type === "CART_REVIEW") return "2";
+  if (block.type === "CHECKOUT_FULFILLMENT") return "Checkout";
+  if (block.type === "ORDER_REVIEW") return "Delivery details";
+  if (block.type === "ORDER_CONFIRMATION") return "1";
+  return "Customer reply";
+}
+
+function isProtectedCommerceBlock(block: VisualFlowNode) {
+  return block.type === "PRODUCT_SELECTION" || block.type === "PRODUCT_DETAILS";
+}
+
+function isLegacyCommerceInternalNode(node: VisualFlowNode) {
+  return ["product_options", "custom_fields", "quantity"].includes(node.id);
+}
+
+function nodeForValidationIssue(visualFlow: VisualFlowDefinition, message: string) {
+  const normalized = message.toLowerCase();
+  return visualFlow.nodes.find((node) => {
+    const labels = [
+      node.id,
+      node.title,
+      friendlyBlockName(node.type),
+      node.type,
+      node.type === "PRODUCT_SELECTION" ? "Product purchase" : "",
+      node.type === "CATEGORY_SELECTION" ? "Show categories" : "",
+    ];
+    return labels
+      .filter(Boolean)
+      .some((label) => normalized.includes(String(label).toLowerCase()));
+  });
+}
+
 function stepTargetLabel(node?: VisualFlowNode) {
   if (!node) return "Not selected";
   return `${node.title || friendlyBlockName(node.type)} (${friendlyBlockName(node.type)})`;
@@ -4411,6 +4618,12 @@ function humanRouteLabel(label?: string | null) {
 function stepDescription(block: VisualFlowNode) {
   if (block.type === "START")
     return "Controls what happens when a customer first messages the bot.";
+  if (block.type === "CATEGORY_SELECTION")
+    return "Starts the protected product purchase path. Customers choose a category, then a product.";
+  if (block.type === "PRODUCT_SELECTION")
+    return "Lets customers choose a product. Variants, required product questions, quantity, and add-to-cart are enforced automatically.";
+  if (block.type === "PRODUCT_DETAILS")
+    return "Shows the selected product. Ordering this item always runs required variants, product questions, quantity, and add-to-cart before cart.";
   if (block.config.menuOptions?.length)
     return "Shows a message and lets the customer choose an option.";
   if (block.type === "QUESTION")

@@ -201,7 +201,7 @@ function ProductDialog({
 
   function toggleNewArrival(checked: boolean) {
     const tags = product.tags ?? [];
-    const nextTags = checked
+    const nextTags: Product["tags"] = checked
       ? Array.from(new Set([...tags, "new"]))
       : tags.filter((tag) => tag !== "new");
     onChange({ ...product, tags: nextTags });

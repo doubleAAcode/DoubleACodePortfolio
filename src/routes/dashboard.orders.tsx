@@ -124,7 +124,8 @@ function OrderCard({ order }: { order: DashboardOrderSummary }) {
 
   return (
     <Link
-      to={`${basePath}/orders/${order.id}`}
+      to={basePath === "/dashboard-2" ? "/dashboard-2/orders/$orderId" : "/dashboard/orders/$orderId"}
+      params={{ orderId: order.id }}
       className="block rounded-lg border border-border bg-surface/60 p-4 transition hover:border-primary"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

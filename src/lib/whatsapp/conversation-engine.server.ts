@@ -473,6 +473,19 @@ async function enterProtectedRuntimeNode(
   if (node.type === "PRODUCT_SELECT") {
     return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
   }
+  if (node.type === "PRODUCT_DETAILS") {
+    const product = await findVisibleProductById(
+      nextSession.businessId,
+      getContextString(nextSession.context.selectedProductId) ?? "",
+    );
+    if (product) {
+      return [
+        ...carriedResponses,
+        productDetailsResponse(product, nextSession.language ?? flow.settings.defaultLanguage),
+      ];
+    }
+    return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
+  }
   if (node.type === "CART_MENU") {
     return [...carriedResponses, ...(await cartMenuResponse(nextSession))];
   }

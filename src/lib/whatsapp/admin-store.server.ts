@@ -611,7 +611,7 @@ export async function getBusinessHealthReport(businessId: string): Promise<Busin
     .filter((version) => version.status === "DRAFT")
     .map((version) => validateFlowForEditor(version.flow_json));
   const invalidDraftCount = draftFlowValidation.filter((result) => !result.ok).length;
-  const checks = [
+  const checks: BusinessHealthReport["checks"] = [
     check(
       "BUSINESS_ACTIVE",
       "Business is active",

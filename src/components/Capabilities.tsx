@@ -61,7 +61,6 @@ export function Capabilities() {
                 onMouseEnter={() => setActive(g.key)}
                 onClick={() => setActive((current) => (current === g.key ? null : g.key))}
                 onFocus={() => setActive(g.key)}
-                onClick={() => setActive((current) => (current === g.key ? null : g.key))}
                 className={`group relative overflow-hidden bg-background p-8 text-left transition-colors ${isActive ? "bg-surface" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">

@@ -18,6 +18,13 @@ type EngineResult = {
   response: BotResponse;
 };
 
+type StepResult = {
+  session: ConversationSession;
+  messages: string[];
+  quickReplies: string[];
+  order?: Order;
+};
+
 const BACK_STEPS: Partial<Record<ConversationStep, ConversationStep>> = {
   SELECT_PRODUCT: "SELECT_CATEGORY",
   SELECT_VARIANTS: "SELECT_PRODUCT",
@@ -120,7 +127,11 @@ function runStateMachine(state: StoreBotState, input: ProcessIncomingMessageInpu
   };
 }
 
-function advanceSession(state: StoreBotState, session: ConversationSession, message: string) {
+function advanceSession(
+  state: StoreBotState,
+  session: ConversationSession,
+  message: string,
+): StepResult {
   switch (session.step) {
     case "START":
     case "SELECT_LANGUAGE":
