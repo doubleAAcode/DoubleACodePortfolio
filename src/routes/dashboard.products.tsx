@@ -41,6 +41,7 @@ const emptyProduct = {
   is_active: true,
   is_available: true,
   stock_quantity: 0,
+  variant_selection_mode: "step_by_step" as "step_by_step" | "variant_list",
   sort_order: 10,
 };
 
@@ -633,6 +634,24 @@ export function ProductsPage() {
                     value={productForm.stock_quantity}
                     onChange={(value) => setProductForm({ ...productForm, stock_quantity: value })}
                   />
+                  <SelectInput
+                    label="How customers choose variants"
+                    value={productForm.variant_selection_mode}
+                    onChange={(value) =>
+                      setProductForm({
+                        ...productForm,
+                        variant_selection_mode:
+                          value === "variant_list" ? "variant_list" : "step_by_step",
+                      })
+                    }
+                  >
+                    <option value="step_by_step">Ask each option one by one</option>
+                    <option value="variant_list">Show one list of final variants</option>
+                  </SelectInput>
+                  <p className="self-end rounded-md border border-border bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                    Variant list example: Large / Red - $25.00. Extra required questions still
+                    come after the variant choice.
+                  </p>
                   <TextArea
                     label="Description EN"
                     value={productForm.description_english}
@@ -1427,6 +1446,12 @@ function ProductSummary({
         />
         <MetricTile label="Options" value={`${optionCount}`} />
         <MetricTile label="Questions" value={`${questionCount}`} />
+        <MetricTile
+          label="Variant flow"
+          value={
+            product.variant_selection_mode === "variant_list" ? "Variant list" : "Step by step"
+          }
+        />
       </div>
     </section>
   );
@@ -1940,7 +1965,7 @@ function Toggle({
   );
 }
 
-function productToForm(product: WaProductRow) {
+function productToForm(product: WaProductRow): typeof emptyProduct {
   return {
     id: product.id,
     category_id: product.category_id,
@@ -1954,6 +1979,8 @@ function productToForm(product: WaProductRow) {
     is_active: product.is_active,
     is_available: product.is_available,
     stock_quantity: product.stock_quantity,
+    variant_selection_mode:
+      product.variant_selection_mode === "variant_list" ? "variant_list" : "step_by_step",
     sort_order: product.sort_order,
   };
 }

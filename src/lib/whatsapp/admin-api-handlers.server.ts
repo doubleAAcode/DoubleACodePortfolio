@@ -26,9 +26,11 @@ import {
   getAdminLogs,
   getAdminOverview,
   seedDefaultBusinessData,
+  saveAdminCheckoutSettings,
   setAdminBusinessStatus,
   upsertAdminConnection,
   recordAdminAuditLog,
+  type AdminCheckoutSettingsInput,
   type AdminBusinessStatus,
   type AdminBusinessTemplate,
   type CreateAdminBusinessInput,
@@ -155,6 +157,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
           email?: string;
           role?: "OWNER" | "MANAGER" | "STAFF";
           connection?: CreateAdminBusinessInput["connection"];
+          settings?: AdminCheckoutSettingsInput;
           templateId?: string;
           flowJson?: unknown;
           versionId?: string;
@@ -205,6 +208,16 @@ export function createInternalAdminBusinessDetailsHandlers() {
             ok: true,
             data: await getAdminBusinessDetails(params.businessId),
           });
+        }
+
+        if (body?.action === "save_checkout_settings" && body.settings) {
+          const data = await saveAdminCheckoutSettings({
+            businessId: params.businessId,
+            input: body.settings,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
         }
 
         if (body?.action === "clone_flow_template" && body.templateId) {

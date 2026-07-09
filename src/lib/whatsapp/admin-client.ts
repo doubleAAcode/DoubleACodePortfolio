@@ -6,6 +6,7 @@ import type {
   AdminBusinessStatus,
   AdminBusinessSummary,
   AdminBusinessTemplate,
+  AdminCheckoutSettingsInput,
   CreateAdminBusinessInput,
 } from "./admin-store.server";
 import type {
@@ -95,6 +96,7 @@ export async function applyAdminBusinessAction(
     | { action: "seed_defaults"; templateType: AdminBusinessTemplate }
     | { action: "assign_user"; email: string; role: "OWNER" | "MANAGER" | "STAFF" }
     | { action: "save_connection"; connection: CreateAdminBusinessInput["connection"] }
+    | { action: "save_checkout_settings"; settings: AdminCheckoutSettingsInput }
     | { action: "clone_flow_template"; templateId: string }
     | { action: "save_business_flow_draft"; flowJson: FlowDefinition }
     | { action: "publish_business_flow"; versionId: string },

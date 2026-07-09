@@ -2,6 +2,7 @@ import "@tanstack/react-start/server-only";
 import {
   DOUBLE_A_TEST_BUSINESS_ID,
   findActiveCategoryById,
+  findProductOptionValue,
   findVisibleProductByCode,
   findVisibleProductById,
   getCategoryName,
@@ -15,12 +16,14 @@ import {
   listProductCustomFields,
   listProductOptions,
   listProductOptionValues,
+  listProductVariants,
   listVisibleProductsByCategory,
   resolveProductVariant,
   type StoreCategory,
   type StoreProduct,
   type StoreProductCustomField,
   type StoreProductOption,
+  type StoreProductVariant,
 } from "./catalog-repository.server";
 import {
   getBusinessBotFlowSettings,
@@ -858,14 +861,23 @@ async function continuePendingItem(
   if (!pendingItem) return [mainMenuResponse(session.language ?? "en")];
 
   const options = await listProductOptions(session.businessId, pendingItem.productId);
+  const product = await findVisibleProductById(session.businessId, pendingItem.productId);
+  if (!product) return [mainMenuResponse(session.language ?? "en")];
+
+  if (
+    options.length &&
+    product.variantSelectionMode === "variant_list" &&
+    !pendingItem.resolvedVariantId
+  ) {
+    await saveConversationSession({ ...session, currentStep: "SELECT_PRODUCT_OPTION" }, now);
+    return variantListResponse(session, product);
+  }
+
   const optionIndex = getPageNumber(session.context.optionIndex);
   if (optionIndex < options.length) {
     await saveConversationSession({ ...session, currentStep: "SELECT_PRODUCT_OPTION" }, now);
     return optionQuestionResponse(session, options[optionIndex]);
   }
-
-  const product = await findVisibleProductById(session.businessId, pendingItem.productId);
-  if (!product) return [mainMenuResponse(session.language ?? "en")];
 
   const variant = options.length
     ? await resolveProductVariant({
@@ -955,7 +967,32 @@ async function handleProductOptionSelection(
   const pendingItem = getPendingItemFromContext(session.context);
   if (!pendingItem) return [mainMenuResponse(session.language ?? "en")];
 
+  const product = await findVisibleProductById(session.businessId, pendingItem.productId);
+  if (!product) return [mainMenuResponse(session.language ?? "en")];
+
   const options = await listProductOptions(session.businessId, pendingItem.productId);
+  if (options.length && product.variantSelectionMode === "variant_list") {
+    const variant = await pickProductVariantFromList(session, input.value, product.id);
+    if (!variant) return variantListResponse(session, product);
+
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        context: {
+          ...session.context,
+          optionIndex: options.length,
+          pendingItem: {
+            ...pendingItem,
+            selectedOptionValueIds: variant.selectedOptionValueIds,
+            resolvedVariantId: variant.id,
+          },
+        },
+      },
+      now,
+    );
+    return continuePendingItem(nextSession, now);
+  }
+
   const optionIndex = getPageNumber(session.context.optionIndex);
   const option = options[optionIndex];
   if (!option) return continuePendingItem(session, now);
@@ -2397,6 +2434,98 @@ async function optionQuestionResponse(
       ],
     },
   ];
+}
+
+async function variantListResponse(
+  session: ConversationSession,
+  product: StoreProduct,
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const variants = await availableProductVariants(session.businessId, product.id);
+  const rows = await Promise.all(
+    variants.map(async (variant) => {
+      const label = await variantChoiceLabel(variant, language);
+      return {
+        id: variant.id,
+        title: truncateListTitle(`${label} - ${formatPrice(variant.price)}`),
+        description: t(
+          language,
+          `${variant.stockQuantity} available`,
+          `\u0627\u0644\u0645\u062a\u0648\u0641\u0631: ${variant.stockQuantity}`,
+        ),
+      };
+    }),
+  );
+
+  if (!rows.length) {
+    return [unavailableCombinationResponse(language)];
+  }
+
+  return [
+    {
+      type: "list",
+      body: t(
+        language,
+        `Choose the exact ${getProductName(product, language)} option you want:`,
+        `\u0627\u062e\u062a\u0631 \u062e\u064a\u0627\u0631 ${getProductName(product, language)} \u0627\u0644\u0645\u0637\u0644\u0648\u0628:`,
+      ),
+      buttonText: t(language, "Variants", "\u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a"),
+      sections: [
+        {
+          title: t(language, "Available options", "\u0627\u0644\u062e\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u062a\u0648\u0641\u0631\u0629"),
+          rows: [
+            ...rows,
+            { id: "back", title: t(language, "Back", "\u0631\u062c\u0648\u0639") },
+            {
+              id: "main_menu",
+              title: t(language, "Main menu", "\u0627\u0644\u0642\u0627\u0626\u0645\u0629"),
+            },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
+async function pickProductVariantFromList(
+  session: ConversationSession,
+  value: string,
+  productId: string,
+) {
+  const language = session.language ?? "en";
+  const normalized = normalize(value);
+  const variants = await availableProductVariants(session.businessId, productId);
+
+  for (const variant of variants) {
+    const label = await variantChoiceLabel(variant, language);
+    const values = [
+      variant.id,
+      variant.sku,
+      label,
+      `${label} - ${formatPrice(variant.price)}`,
+    ].map(normalize);
+    if (values.includes(normalized)) return variant;
+  }
+
+  return undefined;
+}
+
+async function availableProductVariants(businessId: string, productId: string) {
+  const variants = await listProductVariants(businessId, productId);
+  return variants.filter((variant) => variant.isAvailable && variant.stockQuantity > 0);
+}
+
+async function variantChoiceLabel(
+  variant: StoreProductVariant,
+  language: ConversationLanguage,
+) {
+  const values = await Promise.all(
+    variant.selectedOptionValueIds.map(async (valueId) => {
+      const value = await findProductOptionValue(valueId);
+      return value ? getOptionValueName(value, language) : valueId;
+    }),
+  );
+  return values.filter(Boolean).join(" / ") || variant.sku;
 }
 
 function customFieldQuestionResponse(

@@ -4,8 +4,6 @@ import { getServerSupabaseConfig, supabaseServerRest } from "@/lib/supabase/serv
 
 import {
   getBusinessBotFlowSettings,
-  saveBusinessBotFlowSettings,
-  type BotFlowSettingsInput,
   type BusinessBotFlowSettings,
 } from "./bot-flow-settings.server";
 
@@ -48,6 +46,7 @@ export type WaProductRow = {
   is_active: boolean;
   is_available: boolean;
   stock_quantity: number;
+  variant_selection_mode?: "step_by_step" | "variant_list";
   sort_order: number;
   updated_at: string;
 };
@@ -173,6 +172,7 @@ type SaveProductInput = {
   is_active: boolean;
   is_available: boolean;
   stock_quantity: number;
+  variant_selection_mode?: "step_by_step" | "variant_list";
   sort_order: number;
 };
 
@@ -216,8 +216,6 @@ type SaveBusinessInput = Pick<
   | "allow_delivery"
   | "allow_pickup"
   | "minimum_order_amount"
-  | "order_confirmation_message_english"
-  | "order_confirmation_message_arabic"
   | "require_owner_approval"
   | "is_active"
 >;
@@ -251,7 +249,6 @@ type SavePaymentMethodInput = {
 };
 
 export type DashboardCatalogAction =
-  | { type: "saveBotFlowSettings"; payload: BotFlowSettingsInput }
   | { type: "saveCategory"; payload: SaveCategoryInput }
   | { type: "deleteCategory"; payload: { id: string } }
   | { type: "saveProduct"; payload: SaveProductInput }
@@ -364,10 +361,6 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
   const data = await getWaDashboardData(businessId);
 
   switch (action.type) {
-    case "saveBotFlowSettings":
-      await saveBusinessBotFlowSettings(businessId, action.payload);
-      break;
-
     case "saveCategory":
       validateLanguagePair(
         action.payload.name_english,
@@ -421,6 +414,10 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
         is_active: action.payload.is_active,
         is_available: action.payload.is_available,
         stock_quantity: nonNegativeInt(action.payload.stock_quantity, "Stock"),
+        variant_selection_mode:
+          action.payload.variant_selection_mode === "variant_list"
+            ? "variant_list"
+            : "step_by_step",
         sort_order: nonNegativeInt(action.payload.sort_order, "Sort order"),
         updated_at: new Date().toISOString(),
       });
@@ -547,11 +544,6 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
       break;
 
     case "saveBusiness":
-      validateLanguagePair(
-        action.payload.order_confirmation_message_english,
-        action.payload.order_confirmation_message_arabic,
-        "confirmation message",
-      );
       await updateRow("/wa_businesses", businessId, {
         name: requiredText(action.payload.name, "Business name"),
         default_language: action.payload.default_language === "ar" ? "ar" : "en",
@@ -562,9 +554,6 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
           Number(action.payload.minimum_order_amount),
           "Minimum order",
         ),
-        order_confirmation_message_english:
-          action.payload.order_confirmation_message_english.trim(),
-        order_confirmation_message_arabic: action.payload.order_confirmation_message_arabic.trim(),
         require_owner_approval: action.payload.require_owner_approval,
         is_active: action.payload.is_active,
         updated_at: new Date().toISOString(),

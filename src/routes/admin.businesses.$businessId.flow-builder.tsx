@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   applyAdminBusinessAction,
+  getAdminBusinessDetails,
   getBusinessFlowDetails,
   getFlowTemplates,
 } from "@/lib/whatsapp/admin-client";
@@ -19,6 +20,7 @@ import type {
   BusinessFlowVersionRow,
 } from "@/lib/whatsapp/flow-template-store.server";
 import { createDefaultFlowDefinition } from "@/lib/whatsapp/flow-template-types";
+import type { BotFlowSettingsInput, BusinessBotFlowSettings } from "@/lib/whatsapp/bot-flow-settings.server";
 import { VisualFlowBuilderEditor } from "./admin.businesses.$businessId";
 
 export const Route = createFileRoute("/admin/businesses/$businessId/flow-builder")({
@@ -28,6 +30,9 @@ export const Route = createFileRoute("/admin/businesses/$businessId/flow-builder
 function BusinessFlowBuilderPage() {
   const { businessId } = Route.useParams();
   const [details, setDetails] = useState<BusinessFlowDetails>();
+  const [botFlowSettings, setBotFlowSettings] = useState<BusinessBotFlowSettings>();
+  const [orderConfirmationEnglish, setOrderConfirmationEnglish] = useState("");
+  const [orderConfirmationArabic, setOrderConfirmationArabic] = useState("");
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [visualFlow, setVisualFlow] = useState<VisualFlowDefinition>();
   const [selectedBlockId, setSelectedBlockId] = useState("");
@@ -42,8 +47,9 @@ function BusinessFlowBuilderPage() {
       setLoading(label);
       setError("");
       try {
-        const [nextDetails, templateRows] = await Promise.all([
+        const [nextDetails, nextAdminDetails, templateRows] = await Promise.all([
           getBusinessFlowDetails(businessId),
+          getAdminBusinessDetails(businessId),
           getFlowTemplates(),
         ]);
         const publishedTemplates = templateRows.filter(
@@ -57,6 +63,12 @@ function BusinessFlowBuilderPage() {
         );
         const selectedVersion = selectVersion(nextDetails, preferredVersionId || "");
         setDetails(nextDetails);
+        setBotFlowSettings(nextAdminDetails.botFlowSettings);
+        setOrderConfirmationEnglish(
+          nextAdminDetails.business.order_confirmation_message_english ||
+            "Your order has been received and is waiting for confirmation.",
+        );
+        setOrderConfirmationArabic(nextAdminDetails.business.order_confirmation_message_arabic || "");
         setSelectedVersionId(selectedVersion?.id ?? "");
         setVisualFlow(selectedVersion ? getVisualFlow(selectedVersion.flow_json) : undefined);
         setSelectedBlockId("");
@@ -130,6 +142,24 @@ function BusinessFlowBuilderPage() {
     });
     const latest = await getBusinessFlowDetails(businessId);
     return selectVersion(latest, "")?.id;
+  }
+
+  async function saveCheckoutSettings() {
+    if (!botFlowSettings) throw new Error("Checkout settings are not loaded yet.");
+    const nextDetails = await applyAdminBusinessAction(businessId, {
+      action: "save_checkout_settings",
+      settings: {
+        botFlowSettings: toBotFlowSettingsInput(botFlowSettings),
+        orderConfirmationMessageEnglish: orderConfirmationEnglish,
+        orderConfirmationMessageArabic: orderConfirmationArabic,
+      },
+    });
+    setBotFlowSettings(nextDetails.botFlowSettings);
+    setOrderConfirmationEnglish(
+      nextDetails.business.order_confirmation_message_english ||
+        "Your order has been received and is waiting for confirmation.",
+    );
+    setOrderConfirmationArabic(nextDetails.business.order_confirmation_message_arabic || "");
   }
 
   async function startFromScratch() {
@@ -298,13 +328,29 @@ function BusinessFlowBuilderPage() {
             visualFlow={visualFlow}
             selectedBlockId={selectedBlockId}
             validation={visualValidation}
+            botFlowSettings={botFlowSettings}
+            checkoutSaving={saving === "checkout"}
+            orderConfirmationEnglish={orderConfirmationEnglish}
+            orderConfirmationArabic={orderConfirmationArabic}
             onSelectBlock={setSelectedBlockId}
             onChange={setVisualFlow}
+            onBotFlowSettingsChange={setBotFlowSettings}
+            onOrderConfirmationEnglishChange={setOrderConfirmationEnglish}
+            onOrderConfirmationArabicChange={setOrderConfirmationArabic}
+            onSaveCheckoutSettings={() => void run("checkout", async () => {
+              await saveCheckoutSettings();
+              return selectedVersionId;
+            })}
           />
         </div>
       )}
     </div>
   );
+}
+
+function toBotFlowSettingsInput(settings: BusinessBotFlowSettings): BotFlowSettingsInput {
+  const { businessId: _businessId, updatedAt: _updatedAt, ...input } = settings;
+  return input;
 }
 
 function selectVersion(

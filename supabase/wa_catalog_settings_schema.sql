@@ -44,6 +44,7 @@ create table if not exists public.wa_products (
   is_active boolean not null default true,
   is_available boolean not null default true,
   stock_quantity integer not null default 0,
+  variant_selection_mode text not null default 'step_by_step',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -52,6 +53,9 @@ create table if not exists public.wa_products (
 
 create index if not exists wa_products_category_sort_idx
   on public.wa_products (business_id, category_id, sort_order);
+
+alter table public.wa_products
+  add column if not exists variant_selection_mode text not null default 'step_by_step';
 
 create table if not exists public.wa_product_options (
   id text primary key,
@@ -170,6 +174,15 @@ create table if not exists public.wa_payment_methods (
 
 create index if not exists wa_payment_methods_business_sort_idx
   on public.wa_payment_methods (business_id, sort_order);
+
+do $$
+begin
+  alter table public.wa_products
+    add constraint wa_products_variant_selection_mode_check
+    check (variant_selection_mode in ('step_by_step', 'variant_list'));
+exception
+  when duplicate_object then null;
+end $$;
 
 do $$
 begin

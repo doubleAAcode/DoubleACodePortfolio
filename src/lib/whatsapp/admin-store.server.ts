@@ -5,6 +5,12 @@ import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/s
 import { canBusinessProcessMessages, type BusinessOperationalStatus } from "./reliability";
 import { getBusinessFlowDetails } from "./flow-template-store.server";
 import { validateFlowForEditor } from "./flow-editor";
+import {
+  getBusinessBotFlowSettings,
+  saveBusinessBotFlowSettings,
+  type BotFlowSettingsInput,
+  type BusinessBotFlowSettings,
+} from "./bot-flow-settings.server";
 
 export type AdminBusinessStatus = BusinessOperationalStatus;
 export type AdminBusinessTemplate =
@@ -20,6 +26,12 @@ export type AdminBusinessRow = {
   legal_name: string | null;
   default_language: "en" | "ar";
   currency: string;
+  allow_delivery?: boolean;
+  allow_pickup?: boolean;
+  minimum_order_amount?: number | string;
+  order_confirmation_message_english?: string;
+  order_confirmation_message_arabic?: string;
+  require_owner_approval?: boolean;
   is_active: boolean;
   status?: AdminBusinessStatus;
   timezone?: string;
@@ -110,8 +122,15 @@ export type AdminBusinessDetails = {
     failedNotifications: number;
   };
   health: BusinessHealthReport;
+  botFlowSettings: BusinessBotFlowSettings;
   checklist: Array<{ label: string; complete: boolean }>;
   recentAudit: AdminAuditRow[];
+};
+
+export type AdminCheckoutSettingsInput = {
+  botFlowSettings: BotFlowSettingsInput;
+  orderConfirmationMessageEnglish: string;
+  orderConfirmationMessageArabic: string;
 };
 
 export type BusinessHealthReport = {
@@ -222,7 +241,17 @@ export async function getAdminBusinesses(): Promise<AdminBusinessSummary[]> {
 
 export async function getAdminBusinessDetails(businessId: string): Promise<AdminBusinessDetails> {
   ensureSupabase();
-  const [businesses, users, connections, categories, products, orders, notifications, audit] =
+  const [
+    businesses,
+    users,
+    connections,
+    categories,
+    products,
+    orders,
+    notifications,
+    audit,
+    botFlowSettings,
+  ] =
     await Promise.all([
       listBusinesses(`id=eq.${encodeURIComponent(businessId)}`),
       listBusinessUsers(businessId),
@@ -240,6 +269,7 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
         )}&status=eq.FAILED&limit=1000`,
       ),
       listAuditLogs(12, businessId),
+      getBusinessBotFlowSettings(businessId),
     ]);
   const business = businesses[0];
   if (!business) throw new Error("Business was not found.");
@@ -257,9 +287,56 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
       failedNotifications: notifications,
     },
     health,
+    botFlowSettings,
     checklist: buildChecklist({ business, users, connections, categories, products, orders }),
     recentAudit: audit,
   };
+}
+
+export async function saveAdminCheckoutSettings({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminCheckoutSettingsInput;
+  adminUser: string;
+  request: Request;
+}) {
+  const previous = await getAdminBusinessDetails(businessId);
+  await saveBusinessBotFlowSettings(businessId, input.botFlowSettings);
+  await supabaseServerRest(`/wa_businesses?id=eq.${encodeURIComponent(businessId)}`, {
+    method: "PATCH",
+    prefer: "return=minimal",
+    body: JSON.stringify({
+      order_confirmation_message_english: requiredText(
+        input.orderConfirmationMessageEnglish,
+        "English confirmation message",
+      ),
+      order_confirmation_message_arabic: input.orderConfirmationMessageArabic.trim(),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CHECKOUT_SETTINGS_SAVED",
+    targetType: "BUSINESS",
+    targetId: businessId,
+    previousValue: {
+      botFlowUpdatedAt: previous.botFlowSettings.updatedAt,
+      orderConfirmationMessageEnglish: previous.business.order_confirmation_message_english,
+      orderConfirmationMessageArabic: previous.business.order_confirmation_message_arabic,
+    },
+    newValue: {
+      botFlowSettings: input.botFlowSettings,
+      orderConfirmationMessageEnglish: input.orderConfirmationMessageEnglish,
+      orderConfirmationMessageArabic: input.orderConfirmationMessageArabic,
+    },
+  });
+  return getAdminBusinessDetails(businessId);
 }
 
 export async function createAdminBusiness({

@@ -29,6 +29,7 @@ export type StoreProduct = {
   isActive: boolean;
   isAvailable: boolean;
   stockQuantity: number;
+  variantSelectionMode: "step_by_step" | "variant_list";
   sortOrder: number;
 };
 
@@ -106,6 +107,7 @@ type ProductRow = {
   is_active: boolean;
   is_available: boolean;
   stock_quantity: number;
+  variant_selection_mode?: "step_by_step" | "variant_list" | null;
   sort_order: number;
 };
 
@@ -197,6 +199,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: true,
     stockQuantity: 6,
+    variantSelectionMode: "step_by_step",
     sortOrder: 1,
   },
   {
@@ -212,6 +215,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: false,
     stockQuantity: 0,
+    variantSelectionMode: "step_by_step",
     sortOrder: 2,
   },
   {
@@ -227,6 +231,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: true,
     stockQuantity: 8,
+    variantSelectionMode: "variant_list",
     sortOrder: 1,
   },
   {
@@ -242,6 +247,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: true,
     stockQuantity: 3,
+    variantSelectionMode: "step_by_step",
     sortOrder: 2,
   },
   {
@@ -257,6 +263,7 @@ const products: StoreProduct[] = [
     isActive: false,
     isAvailable: true,
     stockQuantity: 2,
+    variantSelectionMode: "step_by_step",
     sortOrder: 3,
   },
   {
@@ -272,6 +279,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: true,
     stockQuantity: 10,
+    variantSelectionMode: "step_by_step",
     sortOrder: 1,
   },
   {
@@ -287,6 +295,7 @@ const products: StoreProduct[] = [
     isActive: true,
     isAvailable: true,
     stockQuantity: 4,
+    variantSelectionMode: "step_by_step",
     sortOrder: 2,
   },
 ];
@@ -650,7 +659,22 @@ export async function resolveProductVariant({
     (variant) =>
       variant.businessId === businessId &&
       variant.productId === productId &&
-      [...variant.selectedOptionValueIds].sort().join("|") === selected,
+    [...variant.selectedOptionValueIds].sort().join("|") === selected,
+  );
+}
+
+export async function listProductVariants(businessId: string, productId: string) {
+  if (isServerSupabaseConfigured()) {
+    const rows = await supabaseServerRest<ProductVariantRow[]>(
+      `/wa_product_variants?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_id=eq.${encodeURIComponent(productId)}`,
+    );
+    return rows.map(toProductVariant);
+  }
+
+  return productVariants.filter(
+    (variant) => variant.businessId === businessId && variant.productId === productId,
   );
 }
 
@@ -750,6 +774,8 @@ function toProduct(row: ProductRow): StoreProduct {
     isActive: row.is_active,
     isAvailable: row.is_available,
     stockQuantity: row.stock_quantity,
+    variantSelectionMode:
+      row.variant_selection_mode === "variant_list" ? "variant_list" : "step_by_step",
     sortOrder: row.sort_order,
   };
 }

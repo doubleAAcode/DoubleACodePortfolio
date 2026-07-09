@@ -56,6 +56,7 @@ import type {
   BusinessFlowDetails,
   FlowTemplateRow,
 } from "@/lib/whatsapp/flow-template-store.server";
+import type { BusinessBotFlowSettings } from "@/lib/whatsapp/bot-flow-settings.server";
 
 export const Route = createFileRoute("/admin/businesses/$businessId")({
   component: AdminBusinessDetailPage,
@@ -712,15 +713,31 @@ export function VisualFlowBuilderEditor({
   selectedBlockId,
   validation,
   fullHeight = false,
+  botFlowSettings,
+  checkoutSaving = false,
+  orderConfirmationEnglish,
+  orderConfirmationArabic,
   onSelectBlock,
   onChange,
+  onBotFlowSettingsChange,
+  onOrderConfirmationEnglishChange,
+  onOrderConfirmationArabicChange,
+  onSaveCheckoutSettings,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlockId: string;
   validation?: ReturnType<typeof validateVisualFlow>;
   fullHeight?: boolean;
+  botFlowSettings?: BusinessBotFlowSettings;
+  checkoutSaving?: boolean;
+  orderConfirmationEnglish?: string;
+  orderConfirmationArabic?: string;
   onSelectBlock: (blockId: string) => void;
   onChange: (visualFlow: VisualFlowDefinition) => void;
+  onBotFlowSettingsChange?: (settings: BusinessBotFlowSettings) => void;
+  onOrderConfirmationEnglishChange?: (value: string) => void;
+  onOrderConfirmationArabicChange?: (value: string) => void;
+  onSaveCheckoutSettings?: () => void;
 }) {
   const selectedBlock =
     visualFlow.nodes.find((node) => node.id === selectedBlockId) ??
@@ -987,6 +1004,14 @@ export function VisualFlowBuilderEditor({
           onSelectBlock={onSelectBlock}
           onUpdateNode={updateNode}
           onChange={onChange}
+          botFlowSettings={botFlowSettings}
+          checkoutSaving={checkoutSaving}
+          orderConfirmationEnglish={orderConfirmationEnglish}
+          orderConfirmationArabic={orderConfirmationArabic}
+          onBotFlowSettingsChange={onBotFlowSettingsChange}
+          onOrderConfirmationEnglishChange={onOrderConfirmationEnglishChange}
+          onOrderConfirmationArabicChange={onOrderConfirmationArabicChange}
+          onSaveCheckoutSettings={onSaveCheckoutSettings}
         />
       ) : null}
       {builderMode === "test" ? (
@@ -1325,19 +1350,35 @@ function ConfigureFlowMode({
   selectedBlock,
   selectedBlockId,
   validation,
+  botFlowSettings,
+  checkoutSaving,
+  orderConfirmationEnglish,
+  orderConfirmationArabic,
   onAddStep,
   onSelectBlock,
   onUpdateNode,
   onChange,
+  onBotFlowSettingsChange,
+  onOrderConfirmationEnglishChange,
+  onOrderConfirmationArabicChange,
+  onSaveCheckoutSettings,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
   selectedBlockId: string;
   validation?: ReturnType<typeof validateVisualFlow>;
+  botFlowSettings?: BusinessBotFlowSettings;
+  checkoutSaving?: boolean;
+  orderConfirmationEnglish?: string;
+  orderConfirmationArabic?: string;
   onAddStep: (flow: VisualFlowDefinition) => void;
   onSelectBlock: (blockId: string) => void;
   onUpdateNode: (node: VisualFlowNode) => void;
   onChange: (flow: VisualFlowDefinition) => void;
+  onBotFlowSettingsChange?: (settings: BusinessBotFlowSettings) => void;
+  onOrderConfirmationEnglishChange?: (value: string) => void;
+  onOrderConfirmationArabicChange?: (value: string) => void;
+  onSaveCheckoutSettings?: () => void;
 }) {
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_390px_360px]">
@@ -1368,11 +1409,25 @@ function ConfigureFlowMode({
         visualFlow={visualFlow}
         selectedBlock={selectedBlock}
         validation={validation}
+        botFlowSettings={botFlowSettings}
+        checkoutSaving={checkoutSaving}
+        orderConfirmationEnglish={orderConfirmationEnglish}
+        orderConfirmationArabic={orderConfirmationArabic}
         onUpdateNode={onUpdateNode}
         onChange={onChange}
         onSelectBlock={onSelectBlock}
+        onBotFlowSettingsChange={onBotFlowSettingsChange}
+        onOrderConfirmationEnglishChange={onOrderConfirmationEnglishChange}
+        onOrderConfirmationArabicChange={onOrderConfirmationArabicChange}
+        onSaveCheckoutSettings={onSaveCheckoutSettings}
       />
-      <LivePreviewColumn visualFlow={visualFlow} selectedBlock={selectedBlock} />
+      <LivePreviewColumn
+        visualFlow={visualFlow}
+        selectedBlock={selectedBlock}
+        botFlowSettings={botFlowSettings}
+        orderConfirmationEnglish={orderConfirmationEnglish}
+        orderConfirmationArabic={orderConfirmationArabic}
+      />
     </div>
   );
 }
@@ -2286,18 +2341,37 @@ function StepSettingsColumn({
   visualFlow,
   selectedBlock,
   validation,
+  botFlowSettings,
+  checkoutSaving,
+  orderConfirmationEnglish,
+  orderConfirmationArabic,
   onUpdateNode,
   onChange,
   onSelectBlock,
+  onBotFlowSettingsChange,
+  onOrderConfirmationEnglishChange,
+  onOrderConfirmationArabicChange,
+  onSaveCheckoutSettings,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
   validation?: ReturnType<typeof validateVisualFlow>;
+  botFlowSettings?: BusinessBotFlowSettings;
+  checkoutSaving?: boolean;
+  orderConfirmationEnglish?: string;
+  orderConfirmationArabic?: string;
   onUpdateNode: (node: VisualFlowNode) => void;
   onChange: (flow: VisualFlowDefinition) => void;
   onSelectBlock: (blockId: string) => void;
+  onBotFlowSettingsChange?: (settings: BusinessBotFlowSettings) => void;
+  onOrderConfirmationEnglishChange?: (value: string) => void;
+  onOrderConfirmationArabicChange?: (value: string) => void;
+  onSaveCheckoutSettings?: () => void;
 }) {
   const selectedIssues = selectedBlock ? issuesForStep(validation, selectedBlock) : [];
+  const showCheckoutRuntimeSettings = Boolean(
+    selectedBlock && isCheckoutRuntimeBlock(selectedBlock),
+  );
   return (
     <div className="min-h-0 min-w-0 overflow-y-auto rounded-md border border-border bg-background p-4">
       <div className="font-medium">Selected step</div>
@@ -2309,13 +2383,27 @@ function StepSettingsColumn({
             value={selectedBlock.title}
             onChange={(value) => onUpdateNode({ ...selectedBlock, title: value })}
           />
-          <BusinessBlockSettings
-            block={selectedBlock}
-            nodes={visualFlow.nodes}
-            visualFlow={visualFlow}
-            onChange={onUpdateNode}
-            onFlowChange={onChange}
-          />
+          {showCheckoutRuntimeSettings ? (
+            <CheckoutRuntimeSettings
+              selectedBlock={selectedBlock}
+              settings={botFlowSettings}
+              saving={checkoutSaving}
+              orderConfirmationEnglish={orderConfirmationEnglish ?? ""}
+              orderConfirmationArabic={orderConfirmationArabic ?? ""}
+              onSettingsChange={onBotFlowSettingsChange}
+              onOrderConfirmationEnglishChange={onOrderConfirmationEnglishChange}
+              onOrderConfirmationArabicChange={onOrderConfirmationArabicChange}
+              onSave={onSaveCheckoutSettings}
+            />
+          ) : (
+            <BusinessBlockSettings
+              block={selectedBlock}
+              nodes={visualFlow.nodes}
+              visualFlow={visualFlow}
+              onChange={onUpdateNode}
+              onFlowChange={onChange}
+            />
+          )}
           {selectedIssues.length ? (
             <StepIssueList issues={selectedIssues} visualFlow={visualFlow} onSelectBlock={onSelectBlock} />
           ) : null}
@@ -2323,6 +2411,230 @@ function StepSettingsColumn({
       ) : (
         <p className="mt-3 text-sm text-muted-foreground">Select a step to edit.</p>
       )}
+    </div>
+  );
+}
+
+function CheckoutRuntimeSettings({
+  selectedBlock,
+  settings,
+  saving,
+  orderConfirmationEnglish,
+  orderConfirmationArabic,
+  onSettingsChange,
+  onOrderConfirmationEnglishChange,
+  onOrderConfirmationArabicChange,
+  onSave,
+}: {
+  selectedBlock: VisualFlowNode;
+  settings?: BusinessBotFlowSettings;
+  saving?: boolean;
+  orderConfirmationEnglish: string;
+  orderConfirmationArabic: string;
+  onSettingsChange?: (settings: BusinessBotFlowSettings) => void;
+  onOrderConfirmationEnglishChange?: (value: string) => void;
+  onOrderConfirmationArabicChange?: (value: string) => void;
+  onSave?: () => void;
+}) {
+  if (!settings || !onSettingsChange) {
+    return (
+      <div className="rounded-md border border-border bg-surface/40 p-3 text-sm text-muted-foreground">
+        Runtime checkout settings are still loading. Refresh if this message stays visible.
+      </div>
+    );
+  }
+
+  const update = (patch: Partial<BusinessBotFlowSettings>) =>
+    onSettingsChange({ ...settings, ...patch });
+  const selectedPrompt = checkoutPromptForBlock(selectedBlock, settings, orderConfirmationEnglish);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+        <div className="font-medium text-amber-100">Runtime checkout block</div>
+        <p className="mt-1 text-muted-foreground">
+          This step is controlled by the protected checkout engine. Edit the real prompts and
+          behavior below; generic message fields are hidden because they do not drive this part of
+          the live bot.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Current visible prompt: {selectedPrompt || "This block may auto-continue depending on the settings."}
+        </p>
+      </div>
+
+      <SettingsSection title="Entry and product behavior">
+        <ToggleField
+          label="Ask language first"
+          checked={settings.languageSelectionEnabled}
+          onChange={(value) => update({ languageSelectionEnabled: value })}
+        />
+        <label className="block text-sm">
+          <span className="mb-1 block text-muted-foreground">Default language</span>
+          <select
+            value={settings.defaultLanguage}
+            onChange={(event) =>
+              update({ defaultLanguage: event.target.value === "ar" ? "ar" : "en" })
+            }
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          >
+            <option value="en">English</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </label>
+        <ToggleField
+          label="Show product details before ordering"
+          checked={settings.showProductDetailsBeforeOrdering}
+          onChange={(value) => update({ showProductDetailsBeforeOrdering: value })}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Checkout behavior">
+        <ToggleField
+          label="Auto-use saved customer checkout details"
+          checked={settings.autoUseSavedCheckoutDetails}
+          onChange={(value) => update({ autoUseSavedCheckoutDetails: value })}
+        />
+        <ToggleField
+          label="Skip fulfillment if only delivery or pickup is available"
+          checked={settings.skipFulfillmentWhenSingleOption}
+          onChange={(value) => update({ skipFulfillmentWhenSingleOption: value })}
+        />
+        <ToggleField
+          label="Skip delivery area if only one area exists"
+          checked={settings.skipDeliveryAreaWhenSingleOption}
+          onChange={(value) => update({ skipDeliveryAreaWhenSingleOption: value })}
+        />
+        <ToggleField
+          label="Skip pickup location if only one place exists"
+          checked={settings.skipPickupLocationWhenSingleOption}
+          onChange={(value) => update({ skipPickupLocationWhenSingleOption: value })}
+        />
+        <ToggleField
+          label="Skip payment if only one payment method exists"
+          checked={settings.skipPaymentWhenSingleOption}
+          onChange={(value) => update({ skipPaymentWhenSingleOption: value })}
+        />
+        <ToggleField
+          label="Ask for order notes"
+          checked={settings.orderNotesEnabled}
+          onChange={(value) => update({ orderNotesEnabled: value })}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Checkout prompt text">
+        <CheckoutPromptFields
+          englishLabel="Customer name prompt EN"
+          arabicLabel="Customer name prompt AR"
+          english={settings.customerNamePromptEnglish}
+          arabic={settings.customerNamePromptArabic}
+          onEnglish={(value) => update({ customerNamePromptEnglish: value })}
+          onArabic={(value) => update({ customerNamePromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Fulfillment prompt EN"
+          arabicLabel="Fulfillment prompt AR"
+          english={settings.fulfillmentPromptEnglish}
+          arabic={settings.fulfillmentPromptArabic}
+          onEnglish={(value) => update({ fulfillmentPromptEnglish: value })}
+          onArabic={(value) => update({ fulfillmentPromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Delivery area prompt EN"
+          arabicLabel="Delivery area prompt AR"
+          english={settings.deliveryAreaPromptEnglish}
+          arabic={settings.deliveryAreaPromptArabic}
+          onEnglish={(value) => update({ deliveryAreaPromptEnglish: value })}
+          onArabic={(value) => update({ deliveryAreaPromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Pickup location prompt EN"
+          arabicLabel="Pickup location prompt AR"
+          english={settings.pickupLocationPromptEnglish}
+          arabic={settings.pickupLocationPromptArabic}
+          onEnglish={(value) => update({ pickupLocationPromptEnglish: value })}
+          onArabic={(value) => update({ pickupLocationPromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Delivery address prompt EN"
+          arabicLabel="Delivery address prompt AR"
+          english={settings.deliveryAddressPromptEnglish}
+          arabic={settings.deliveryAddressPromptArabic}
+          onEnglish={(value) => update({ deliveryAddressPromptEnglish: value })}
+          onArabic={(value) => update({ deliveryAddressPromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Payment method prompt EN"
+          arabicLabel="Payment method prompt AR"
+          english={settings.paymentMethodPromptEnglish}
+          arabic={settings.paymentMethodPromptArabic}
+          onEnglish={(value) => update({ paymentMethodPromptEnglish: value })}
+          onArabic={(value) => update({ paymentMethodPromptArabic: value })}
+        />
+        <CheckoutPromptFields
+          englishLabel="Order notes prompt EN"
+          arabicLabel="Order notes prompt AR"
+          english={settings.orderNotesPromptEnglish}
+          arabic={settings.orderNotesPromptArabic}
+          onEnglish={(value) => update({ orderNotesPromptEnglish: value })}
+          onArabic={(value) => update({ orderNotesPromptArabic: value })}
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField
+            label="No-notes button EN"
+            value={settings.noNotesButtonEnglish}
+            onChange={(value) => update({ noNotesButtonEnglish: value })}
+          />
+          <TextField
+            label="No-notes button AR"
+            value={settings.noNotesButtonArabic}
+            dir="rtl"
+            onChange={(value) => update({ noNotesButtonArabic: value })}
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Order confirmation">
+        <CheckoutPromptFields
+          englishLabel="Confirmation message EN"
+          arabicLabel="Confirmation message AR"
+          english={orderConfirmationEnglish}
+          arabic={orderConfirmationArabic}
+          onEnglish={(value) => onOrderConfirmationEnglishChange?.(value)}
+          onArabic={(value) => onOrderConfirmationArabicChange?.(value)}
+        />
+      </SettingsSection>
+
+      <button
+        type="button"
+        disabled={saving || !onSave}
+        className="studio-button-primary w-full justify-center disabled:cursor-wait disabled:opacity-60"
+        onClick={onSave}
+      >
+        {saving ? "Saving checkout settings..." : "Save checkout settings"}
+      </button>
+    </div>
+  );
+}
+
+function CheckoutPromptFields({
+  englishLabel,
+  arabicLabel,
+  english,
+  arabic,
+  onEnglish,
+  onArabic,
+}: {
+  englishLabel: string;
+  arabicLabel: string;
+  english: string;
+  arabic: string;
+  onEnglish: (value: string) => void;
+  onArabic: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-3">
+      <TextAreaField label={englishLabel} value={english} onChange={onEnglish} />
+      <TextAreaField label={arabicLabel} value={arabic} dir="rtl" onChange={onArabic} />
     </div>
   );
 }
@@ -4071,16 +4383,31 @@ function WhatsAppStepPreview({ block }: { block: VisualFlowNode }) {
 function LivePreviewColumn({
   visualFlow,
   selectedBlock,
+  botFlowSettings,
+  orderConfirmationEnglish,
+  orderConfirmationArabic,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
+  botFlowSettings?: BusinessBotFlowSettings;
+  orderConfirmationEnglish?: string;
+  orderConfirmationArabic?: string;
 }) {
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [sampleReply, setSampleReply] = useState("");
   const block = selectedBlock;
   const previous = block ? previousBlockForPreview(visualFlow, block.id) : undefined;
+  const shouldShowCustomerReply = Boolean(block && block.type !== "START");
   const userReply = sampleReply.trim() || sampleReplyForBlock(block, previous, language);
-  const botMessage = block ? previewMessageForBlock(block, language) : "Select a block to preview.";
+  const botMessage = block
+    ? previewMessageForBlockWithRuntime(
+        block,
+        language,
+        botFlowSettings,
+        orderConfirmationEnglish,
+        orderConfirmationArabic,
+      )
+    : "Select a block to preview.";
   const options = block ? previewOptionsForBlock(block, language) : [];
   const nextBlock = block ? nextBlockForPreview(visualFlow, block.id) : undefined;
 
@@ -4107,15 +4434,17 @@ function LivePreviewColumn({
         </div>
       </div>
 
-      <label className="mt-4 block text-sm">
-        <span className="mb-1 block text-muted-foreground">Sample customer reply</span>
-        <input
-          value={sampleReply}
-          onChange={(event) => setSampleReply(event.target.value)}
-          placeholder={sampleReplyForBlock(block, previous, language)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2"
-        />
-      </label>
+      {shouldShowCustomerReply ? (
+        <label className="mt-4 block text-sm">
+          <span className="mb-1 block text-muted-foreground">Sample customer reply</span>
+          <input
+            value={sampleReply}
+            onChange={(event) => setSampleReply(event.target.value)}
+            placeholder={sampleReplyForBlock(block, previous, language)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          />
+        </label>
+      ) : null}
 
       <div className="mt-4 rounded-lg border border-border bg-[#0b141a] p-3 text-sm text-white">
         <div className="mb-3 text-xs uppercase tracking-[0.14em] text-white/50">
@@ -4125,11 +4454,17 @@ function LivePreviewColumn({
           <div className="mb-2 max-w-[86%] rounded-lg bg-[#1f2c34] px-3 py-2">
             <div className="text-[11px] text-white/45">Previous bot message</div>
             <div className="mt-1 whitespace-pre-wrap">
-              {previewMessageForBlock(previous, language)}
+              {previewMessageForBlockWithRuntime(
+                previous,
+                language,
+                botFlowSettings,
+                orderConfirmationEnglish,
+                orderConfirmationArabic,
+              )}
             </div>
           </div>
         ) : null}
-        {block ? (
+        {shouldShowCustomerReply ? (
           <div className="mb-2 flex justify-end">
             <div className="max-w-[86%] rounded-lg bg-[#005c4b] px-3 py-2">
               <div className="text-[11px] text-white/45">Customer reply</div>
@@ -4506,21 +4841,95 @@ function stepPrimaryText(node: VisualFlowNode) {
 }
 
 function previewMessageForBlock(block: VisualFlowNode, language: "en" | "ar" = "en") {
+  const configuredCopy =
+    block.config.messages?.[language]?.trim() ||
+    block.config.labels?.[language]?.trim() ||
+    block.config.messages?.en?.trim() ||
+    block.config.labels?.en?.trim();
+  if (configuredCopy) return configuredCopy;
+
   if (block.type === "START") {
     if (block.config.startBehavior === "language_first") return "Choose your language:";
     if (block.config.startBehavior === "main_menu")
       return "Next visible message comes from Main Menu.";
     return "Entry point controls routing. Edit visible copy on the next message step.";
   }
-  return block.type === "QUESTION"
-    ? block.config.question?.label[language] ||
+  if (block.type === "QUESTION") {
+    return (
+      block.config.question?.label[language] ||
         block.config.question?.label.en ||
         "No question configured yet."
-    : block.config.messages?.[language] ||
-        block.config.labels?.[language] ||
-        block.config.messages?.en ||
-        block.config.labels?.en ||
-        "No message configured yet.";
+    );
+  }
+  if (block.type === "MAIN_MENU" || block.config.menuOptions?.length) {
+    return "No menu message configured yet.";
+  }
+  return "No message configured yet.";
+}
+
+function previewMessageForBlockWithRuntime(
+  block: VisualFlowNode,
+  language: "en" | "ar",
+  settings?: BusinessBotFlowSettings,
+  orderConfirmationEnglish?: string,
+  orderConfirmationArabic?: string,
+) {
+  const runtimeMessage = checkoutPromptForBlock(
+    block,
+    settings,
+    language === "ar" ? orderConfirmationArabic : orderConfirmationEnglish,
+    language,
+  );
+  return runtimeMessage || previewMessageForBlock(block, language);
+}
+
+function checkoutPromptForBlock(
+  block: VisualFlowNode,
+  settings?: BusinessBotFlowSettings,
+  orderConfirmationMessage?: string,
+  language: "en" | "ar" = "en",
+) {
+  if (!settings) return "";
+  const pick = (english: string, arabic: string) =>
+    language === "ar" ? arabic.trim() || english : english;
+  if (block.type === "CHECKOUT_CUSTOMER_NAME") {
+    return pick(settings.customerNamePromptEnglish, settings.customerNamePromptArabic);
+  }
+  if (block.type === "CHECKOUT_FULFILLMENT") {
+    return pick(settings.fulfillmentPromptEnglish, settings.fulfillmentPromptArabic);
+  }
+  if (block.type === "CHECKOUT_DELIVERY_DETAILS") {
+    const addressPrompt = pick(
+      settings.deliveryAddressPromptEnglish,
+      settings.deliveryAddressPromptArabic,
+    );
+    const areaPrompt = pick(settings.deliveryAreaPromptEnglish, settings.deliveryAreaPromptArabic);
+    const pickupPrompt = pick(
+      settings.pickupLocationPromptEnglish,
+      settings.pickupLocationPromptArabic,
+    );
+    return `${areaPrompt}\n${pickupPrompt}\n${addressPrompt}`;
+  }
+  if (block.type === "CHECKOUT_PAYMENT_METHOD") {
+    return pick(settings.paymentMethodPromptEnglish, settings.paymentMethodPromptArabic);
+  }
+  if (block.type === "CHECKOUT_NOTES") {
+    return pick(settings.orderNotesPromptEnglish, settings.orderNotesPromptArabic);
+  }
+  if (block.type === "ORDER_REVIEW") {
+    return language === "ar"
+      ? "يعرض ملخص الطلب ثم يطلب من العميل التأكيد."
+      : "Shows the order summary, then asks the customer to confirm.";
+  }
+  if (block.type === "ORDER_CONFIRMATION") {
+    return (
+      orderConfirmationMessage?.trim() ||
+      (language === "ar"
+        ? "تم استلام طلبك وهو بانتظار التأكيد."
+        : "Your order has been received and is waiting for confirmation.")
+    );
+  }
+  return "";
 }
 
 function previewOptionsForBlock(block: VisualFlowNode, language: "en" | "ar") {
@@ -4575,6 +4984,18 @@ function sampleReplyForBlock(
 
 function isProtectedCommerceBlock(block: VisualFlowNode) {
   return block.type === "PRODUCT_SELECTION" || block.type === "PRODUCT_DETAILS";
+}
+
+function isCheckoutRuntimeBlock(block: VisualFlowNode) {
+  return (
+    block.type === "CHECKOUT_CUSTOMER_NAME" ||
+    block.type === "CHECKOUT_FULFILLMENT" ||
+    block.type === "CHECKOUT_DELIVERY_DETAILS" ||
+    block.type === "CHECKOUT_PAYMENT_METHOD" ||
+    block.type === "CHECKOUT_NOTES" ||
+    block.type === "ORDER_REVIEW" ||
+    block.type === "ORDER_CONFIRMATION"
+  );
 }
 
 function isLegacyCommerceInternalNode(node: VisualFlowNode) {
