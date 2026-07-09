@@ -3,7 +3,7 @@ import "@tanstack/react-start/server-only";
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
 import type { ConversationLanguage } from "./conversation-store.server";
-import type { FlowMainMenuOption } from "./flow-template-types";
+import type { FlowBrowseRoute, FlowMainMenuOption } from "./flow-template-types";
 
 export type BusinessBotFlowSettings = {
   businessId: string;
@@ -22,6 +22,7 @@ export type BusinessBotFlowSettings = {
   infoButtonEnglish: string;
   infoButtonArabic: string;
   mainMenuOptions?: FlowMainMenuOption[];
+  browseRoutes?: FlowBrowseRoute[];
   infoResponseEnglish: string;
   infoResponseArabic: string;
   customerNamePromptEnglish: string;
@@ -68,6 +69,7 @@ type BotFlowSettingsRow = {
   info_button_arabic: string;
   info_response_english?: string | null;
   info_response_arabic?: string | null;
+  browse_routes?: FlowBrowseRoute[] | null;
   checkout_prompt_overrides?: Partial<CheckoutPromptSettings> | null;
   show_product_details_before_ordering: boolean;
   auto_use_saved_checkout_details: boolean;
@@ -122,6 +124,15 @@ const DEFAULT_SETTINGS: BotFlowSettingsInput = {
   infoResponseEnglish: "We are open daily. Send a message here if you need help.",
   infoResponseArabic:
     "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
+  browseRoutes: [
+    {
+      key: "categories",
+      source: "categories",
+      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      active: true,
+      sortOrder: 1,
+    },
+  ],
   customerNamePromptEnglish: "What name should we put on the order?",
   customerNamePromptArabic:
     "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
@@ -234,6 +245,7 @@ function normalizeSettings(
     infoButtonArabic: input.infoButtonArabic.trim() || DEFAULT_SETTINGS.infoButtonArabic,
     infoResponseEnglish: requiredText(input.infoResponseEnglish, "English info response"),
     infoResponseArabic: input.infoResponseArabic.trim() || DEFAULT_SETTINGS.infoResponseArabic,
+    browseRoutes: normalizeBrowseRoutes(input.browseRoutes),
     ...normalizeCheckoutPrompts(input),
     showProductDetailsBeforeOrdering: Boolean(input.showProductDetailsBeforeOrdering),
     autoUseSavedCheckoutDetails: Boolean(input.autoUseSavedCheckoutDetails),
@@ -384,6 +396,23 @@ function pickCheckoutPromptSettings(settings: BusinessBotFlowSettings): Checkout
 function textOrFallback(value: string | null | undefined, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
+
+function normalizeBrowseRoutes(routes: FlowBrowseRoute[] | null | undefined): FlowBrowseRoute[] {
+  const source = routes?.length ? routes : DEFAULT_SETTINGS.browseRoutes;
+  return (source ?? []).map((route, index) => ({
+    key: route.key.trim() || `browse_route_${index + 1}`,
+    source: route.source === "catalog_group" ? "catalog_group" : "categories",
+    groupSlug:
+      route.source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+    label: {
+      en: route.label.en.trim() || (route.source === "catalog_group" ? "Browse" : "Categories"),
+      ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
+    },
+    active: route.active !== false,
+    sortOrder: route.sortOrder || index + 1,
+  }));
+}
+
 function requiredText(value: string, label: string) {
   const next = value.trim();
   if (!next) throw new Error(`${label} is required.`);
@@ -413,6 +442,7 @@ function fromRow(row: BotFlowSettingsRow): BusinessBotFlowSettings {
     infoButtonArabic: row.info_button_arabic,
     infoResponseEnglish: row.info_response_english ?? DEFAULT_SETTINGS.infoResponseEnglish,
     infoResponseArabic: row.info_response_arabic ?? DEFAULT_SETTINGS.infoResponseArabic,
+    browseRoutes: normalizeBrowseRoutes(row.browse_routes ?? DEFAULT_SETTINGS.browseRoutes),
     ...checkoutPromptsFromRow(row.checkout_prompt_overrides),
     showProductDetailsBeforeOrdering: row.show_product_details_before_ordering,
     autoUseSavedCheckoutDetails: row.auto_use_saved_checkout_details,
@@ -442,6 +472,7 @@ function toRow(settings: BusinessBotFlowSettings): BotFlowSettingsRow {
     info_button_arabic: settings.infoButtonArabic,
     info_response_english: settings.infoResponseEnglish,
     info_response_arabic: settings.infoResponseArabic,
+    browse_routes: settings.browseRoutes,
     checkout_prompt_overrides: pickCheckoutPromptSettings(settings),
     show_product_details_before_ordering: settings.showProductDetailsBeforeOrdering,
     auto_use_saved_checkout_details: settings.autoUseSavedCheckoutDetails,

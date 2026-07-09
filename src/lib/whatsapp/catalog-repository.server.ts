@@ -15,6 +15,29 @@ export type StoreCategory = {
   sortOrder: number;
 };
 
+export type StoreCatalogGroup = {
+  id: string;
+  businessId: string;
+  nameEnglish: string;
+  nameArabic: string;
+  slug: string;
+  source: "category" | "custom";
+  isActive: boolean;
+  sortOrder: number;
+};
+
+export type StoreCatalogGroupValue = {
+  id: string;
+  businessId: string;
+  groupId: string;
+  nameEnglish: string;
+  nameArabic: string;
+  slug: string;
+  source: "category" | "custom";
+  isActive: boolean;
+  sortOrder: number;
+};
+
 export type StoreProduct = {
   id: string;
   businessId: string;
@@ -109,6 +132,35 @@ type ProductRow = {
   stock_quantity: number;
   variant_selection_mode?: "step_by_step" | "variant_list" | null;
   sort_order: number;
+};
+
+type CatalogGroupRow = {
+  id: string;
+  business_id: string;
+  name_english: string;
+  name_arabic: string;
+  slug: string;
+  source?: "category" | "custom" | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+type CatalogGroupValueRow = {
+  id: string;
+  business_id: string;
+  group_id: string;
+  name_english: string;
+  name_arabic: string;
+  slug: string;
+  source?: "category" | "custom" | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+type ProductGroupValueRow = {
+  business_id: string;
+  product_id: string;
+  group_value_id: string;
 };
 
 type ProductOptionRow = {
@@ -523,6 +575,94 @@ export async function listActiveCategories(businessId: string) {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+export async function listActiveCatalogGroups(businessId: string) {
+  const activeCategories = await listActiveCategories(businessId);
+  const customGroups = await listCustomCatalogGroups(businessId);
+  const categoryGroup = activeCategories.length ? [defaultCategoryGroup(businessId)] : [];
+  return [...categoryGroup, ...customGroups];
+}
+
+export async function findActiveCatalogGroupById(businessId: string, groupId: string) {
+  if (groupId === defaultCategoryGroupId(businessId)) {
+    const activeCategories = await listActiveCategories(businessId);
+    return activeCategories.length ? defaultCategoryGroup(businessId) : undefined;
+  }
+
+  const groups = await listCustomCatalogGroups(businessId);
+  return groups.find((group) => group.id === groupId);
+}
+
+export async function listActiveCatalogGroupValues(businessId: string, groupId: string) {
+  if (groupId === defaultCategoryGroupId(businessId)) {
+    const activeCategories = await listActiveCategories(businessId);
+    return activeCategories.map(categoryToGroupValue);
+  }
+
+  if (isServerSupabaseConfigured()) {
+    try {
+      const rows = await supabaseServerRest<CatalogGroupValueRow[]>(
+        `/wa_catalog_group_values?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&group_id=eq.${encodeURIComponent(groupId)}&is_active=eq.true&order=sort_order.asc`,
+      );
+      return rows.map(toCatalogGroupValue);
+    } catch (error) {
+      if (isMissingCatalogGroupTableError(error)) return [];
+      throw error;
+    }
+  }
+
+  return [];
+}
+
+export async function listVisibleProductsByGroupValue(
+  businessId: string,
+  groupId: string,
+  groupValueId: string,
+) {
+  if (groupId === defaultCategoryGroupId(businessId)) {
+    return listVisibleProductsByCategory(businessId, groupValueId);
+  }
+
+  if (isServerSupabaseConfigured()) {
+    try {
+      const links = await supabaseServerRest<ProductGroupValueRow[]>(
+        `/wa_product_group_values?select=business_id,product_id,group_value_id&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&group_value_id=eq.${encodeURIComponent(groupValueId)}`,
+      );
+      const ids = [...new Set(links.map((link) => link.product_id))];
+      if (!ids.length) return [];
+      const rows = await supabaseServerRest<ProductRow[]>(
+        `/wa_products?select=*&business_id=eq.${encodeURIComponent(
+          businessId,
+        )}&id=in.(${ids.map((id) => `"${encodeURIComponent(id)}"`).join(",")})&is_active=eq.true&order=sort_order.asc`,
+      );
+      return rows.map(toProduct);
+    } catch (error) {
+      if (isMissingCatalogGroupTableError(error)) return [];
+      throw error;
+    }
+  }
+
+  return [];
+}
+
+async function listCustomCatalogGroups(businessId: string) {
+  if (!isServerSupabaseConfigured()) return [];
+  try {
+    const rows = await supabaseServerRest<CatalogGroupRow[]>(
+      `/wa_catalog_groups?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&is_active=eq.true&order=sort_order.asc`,
+    );
+    return rows.map(toCatalogGroup);
+  } catch (error) {
+    if (isMissingCatalogGroupTableError(error)) return [];
+    throw error;
+  }
+}
+
 export async function listVisibleProductsByCategory(businessId: string, categoryId: string) {
   if (isServerSupabaseConfigured()) {
     const rows = await supabaseServerRest<ProductRow[]>(
@@ -718,6 +858,20 @@ export function getCategoryName(category: StoreCategory, language: ConversationL
   return language === "ar" ? category.nameArabic : category.nameEnglish;
 }
 
+export function getCatalogGroupName(
+  group: StoreCatalogGroup,
+  language: ConversationLanguage,
+) {
+  return language === "ar" ? group.nameArabic || group.nameEnglish : group.nameEnglish;
+}
+
+export function getCatalogGroupValueName(
+  value: StoreCatalogGroupValue,
+  language: ConversationLanguage,
+) {
+  return language === "ar" ? value.nameArabic || value.nameEnglish : value.nameEnglish;
+}
+
 export function getProductName(product: StoreProduct, language: ConversationLanguage) {
   return language === "ar" ? product.nameArabic : product.nameEnglish;
 }
@@ -757,6 +911,64 @@ function toCategory(row: CategoryRow): StoreCategory {
     isActive: row.is_active,
     sortOrder: row.sort_order,
   };
+}
+
+function toCatalogGroup(row: CatalogGroupRow): StoreCatalogGroup {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    slug: row.slug,
+    source: row.source === "category" ? "category" : "custom",
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toCatalogGroupValue(row: CatalogGroupValueRow): StoreCatalogGroupValue {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    groupId: row.group_id,
+    nameEnglish: row.name_english,
+    nameArabic: row.name_arabic,
+    slug: row.slug,
+    source: row.source === "category" ? "category" : "custom",
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
+  };
+}
+
+function categoryToGroupValue(category: StoreCategory): StoreCatalogGroupValue {
+  return {
+    id: category.id,
+    businessId: category.businessId,
+    groupId: defaultCategoryGroupId(category.businessId),
+    nameEnglish: category.nameEnglish,
+    nameArabic: category.nameArabic,
+    slug: category.id,
+    source: "category",
+    isActive: category.isActive,
+    sortOrder: category.sortOrder,
+  };
+}
+
+function defaultCategoryGroup(businessId: string): StoreCatalogGroup {
+  return {
+    id: defaultCategoryGroupId(businessId),
+    businessId,
+    nameEnglish: "Categories",
+    nameArabic: "الفئات",
+    slug: "categories",
+    source: "category",
+    isActive: true,
+    sortOrder: 1,
+  };
+}
+
+function defaultCategoryGroupId(businessId: string) {
+  return `${businessId}-group-categories`;
 }
 
 function toProduct(row: ProductRow): StoreProduct {
@@ -837,4 +1049,14 @@ function toProductCustomField(row: ProductCustomFieldRow): StoreProductCustomFie
 
 function toNumber(value: number | string) {
   return typeof value === "number" ? value : Number(value);
+}
+
+function isMissingCatalogGroupTableError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    (message.includes("wa_catalog_groups") ||
+      message.includes("wa_catalog_group_values") ||
+      message.includes("wa_product_group_values")) &&
+    (message.includes("does not exist") || message.includes("schema cache"))
+  );
 }

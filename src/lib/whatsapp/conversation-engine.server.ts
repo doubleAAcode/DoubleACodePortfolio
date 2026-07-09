@@ -5,6 +5,8 @@ import {
   findProductOptionValue,
   findVisibleProductByCode,
   findVisibleProductById,
+  getCatalogGroupName,
+  getCatalogGroupValueName,
   getCategoryName,
   getCustomFieldLabel,
   getCustomFieldPlaceholder,
@@ -13,12 +15,17 @@ import {
   getProductDescription,
   getProductName,
   listActiveCategories,
+  listActiveCatalogGroups,
+  listActiveCatalogGroupValues,
   listProductCustomFields,
   listProductOptions,
   listProductOptionValues,
   listProductVariants,
   listVisibleProductsByCategory,
+  listVisibleProductsByGroupValue,
   resolveProductVariant,
+  type StoreCatalogGroup,
+  type StoreCatalogGroupValue,
   type StoreCategory,
   type StoreProduct,
   type StoreProductCustomField,
@@ -74,7 +81,7 @@ import {
   getActiveBusinessFlow,
   getBusinessFlowRuntimeSettings,
 } from "./flow-template-store.server";
-import type { FlowDefinition, FlowNode } from "./flow-template-types";
+import { flowToBotFlowSettings, type FlowDefinition, type FlowNode } from "./flow-template-types";
 
 export { DOUBLE_A_TEST_BUSINESS_ID };
 
@@ -279,9 +286,14 @@ export async function processIncomingMessage({
 
   if (session.currentStep === "SELECT_LANGUAGE")
     return handleLanguageSelection(session, input, now, flowSettings);
+  if (session.currentStep === "SELECT_BROWSE_GROUP")
+    return handleBrowseGroupSelection(session, input, now, flowSettings);
+  if (session.currentStep === "SELECT_GROUP_VALUE")
+    return handleGroupValueSelection(session, input, now, flowSettings);
   if (session.currentStep === "SELECT_CATEGORY")
     return handleCategorySelection(session, input, now);
-  if (session.currentStep === "SELECT_PRODUCT") return handleProductSelection(session, input, now);
+  if (session.currentStep === "SELECT_PRODUCT")
+    return handleProductSelection(session, input, now, flowSettings);
   if (session.currentStep === "PRODUCT_DETAILS") return handleProductDetails(session, input, now);
   if (session.currentStep === "SELECT_PRODUCT_OPTION") {
     return handleProductOptionSelection(session, input, now);
@@ -471,7 +483,13 @@ async function enterProtectedRuntimeNode(
   );
 
   if (node.type === "CATEGORY_SELECT") {
-    return [...carriedResponses, ...(await categorySelectionResponse(nextSession))];
+    return [
+      ...carriedResponses,
+      ...(await browseGroupSelectionResponse(
+        nextSession,
+        flowToBotFlowSettings(session.businessId, flow),
+      )),
+    ];
   }
   if (node.type === "PRODUCT_SELECT") {
     return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
@@ -522,7 +540,7 @@ function firstRuntimeTarget(flow: FlowDefinition, nodeId: string) {
 function runtimeStepForNode(node: FlowNode): ConversationStep | undefined {
   if (node.type === "LANGUAGE_SELECT") return "SELECT_LANGUAGE";
   if (node.type === "MAIN_MENU") return "MAIN_MENU";
-  if (node.type === "CATEGORY_SELECT") return "SELECT_CATEGORY";
+  if (node.type === "CATEGORY_SELECT") return "SELECT_BROWSE_GROUP";
   if (node.type === "PRODUCT_SELECT") return "SELECT_PRODUCT";
   if (node.type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
   if (node.type === "PRODUCT_OPTIONS") return "SELECT_PRODUCT_OPTION";
@@ -640,10 +658,14 @@ async function handleMainMenu(
       {
         ...session,
         language,
-        currentStep: "SELECT_CATEGORY",
+        currentStep: "SELECT_BROWSE_GROUP",
         context: {
           ...session.context,
+          browseGroupPage: 0,
+          groupValuePage: 0,
           categoryPage: 0,
+          selectedCatalogGroupId: undefined,
+          selectedCatalogGroupValueId: undefined,
           selectedCategoryId: undefined,
           selectedProductId: undefined,
           createdOrderId: undefined,
@@ -652,7 +674,7 @@ async function handleMainMenu(
       },
       now,
     );
-    return categorySelectionResponse(nextSession);
+    return browseGroupSelectionResponse(nextSession, flowSettings);
   }
 
   const nextSession = await saveConversationSession(
@@ -678,6 +700,129 @@ async function handleMainMenu(
   }
 
   return [mainMenuResponse(language, flowSettings)];
+}
+
+async function handleBrowseGroupSelection(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const navigation = parseNavigation(input.value);
+
+  if (navigation === "back") {
+    await saveConversationSession({ ...session, currentStep: "MAIN_MENU" }, now);
+    return [mainMenuResponse(language, flowSettings)];
+  }
+
+  if (navigation === "next" || navigation === "previous") {
+    const page = getPageNumber(session.context.browseGroupPage);
+    const nextPage = Math.max(0, page + (navigation === "next" ? 1 : -1));
+    const nextSession = await saveConversationSession(
+      { ...session, context: { ...session.context, browseGroupPage: nextPage } },
+      now,
+    );
+    return browseGroupSelectionResponse(nextSession, flowSettings);
+  }
+
+  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings);
+  const selectedGroup = pickCatalogGroup(groups, input.value, language);
+  if (!selectedGroup) {
+    await saveConversationSession(session, now);
+    return browseGroupSelectionResponse(session, flowSettings);
+  }
+
+  const nextSession = await saveConversationSession(
+    {
+      ...session,
+      currentStep: "SELECT_GROUP_VALUE",
+      context: {
+        ...session.context,
+        selectedCatalogGroupId: selectedGroup.id,
+        selectedCatalogGroupValueId: undefined,
+        selectedCategoryId: undefined,
+        selectedProductId: undefined,
+        groupValuePage: 0,
+        productPage: 0,
+      },
+    },
+    now,
+  );
+  return groupValueSelectionResponse(nextSession, flowSettings);
+}
+
+async function handleGroupValueSelection(
+  session: ConversationSession,
+  input: ConversationInput,
+  now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const navigation = parseNavigation(input.value);
+
+  if (navigation === "back") {
+    const nextSession = await saveConversationSession(
+      {
+        ...session,
+        currentStep: "SELECT_BROWSE_GROUP",
+        context: {
+          ...session.context,
+          selectedCatalogGroupId: undefined,
+          selectedCatalogGroupValueId: undefined,
+          selectedCategoryId: undefined,
+          groupValuePage: 0,
+        },
+      },
+      now,
+    );
+    return browseGroupSelectionResponse(nextSession, flowSettings);
+  }
+
+  if (navigation === "next" || navigation === "previous") {
+    const page = getPageNumber(session.context.groupValuePage);
+    const nextPage = Math.max(0, page + (navigation === "next" ? 1 : -1));
+    const nextSession = await saveConversationSession(
+      { ...session, context: { ...session.context, groupValuePage: nextPage } },
+      now,
+    );
+    return groupValueSelectionResponse(nextSession, flowSettings);
+  }
+
+  const groupId = getContextString(session.context.selectedCatalogGroupId);
+  if (!groupId) {
+    const nextSession = await saveConversationSession(
+      { ...session, currentStep: "SELECT_BROWSE_GROUP" },
+      now,
+    );
+    return browseGroupSelectionResponse(nextSession, flowSettings);
+  }
+
+  const manualProduct = await findVisibleProductByCode(session.businessId, input.value);
+  if (manualProduct) return moveToProductDetails(session, manualProduct, now);
+
+  const values = await listActiveCatalogGroupValues(session.businessId, groupId);
+  const selectedValue = pickCatalogGroupValue(values, input.value, language);
+  if (!selectedValue) {
+    await saveConversationSession(session, now);
+    return groupValueSelectionResponse(session, flowSettings);
+  }
+
+  const nextSession = await saveConversationSession(
+    {
+      ...session,
+      currentStep: "SELECT_PRODUCT",
+      context: {
+        ...session.context,
+        selectedCatalogGroupValueId: selectedValue.id,
+        selectedCategoryId: selectedValue.source === "category" ? selectedValue.id : undefined,
+        selectedProductId: undefined,
+        productPage: 0,
+      },
+    },
+    now,
+  );
+  return productSelectionResponse(nextSession);
 }
 
 async function handleCategorySelection(
@@ -733,6 +878,7 @@ async function handleProductSelection(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): Promise<BotResponse[]> {
   const navigation = parseNavigation(input.value);
 
@@ -740,12 +886,16 @@ async function handleProductSelection(
     const nextSession = await saveConversationSession(
       {
         ...session,
-        currentStep: "SELECT_CATEGORY",
-        context: { ...session.context, categoryPage: 0, selectedProductId: undefined },
+        currentStep: getContextString(session.context.selectedCatalogGroupId)
+          ? "SELECT_GROUP_VALUE"
+          : "SELECT_CATEGORY",
+        context: { ...session.context, categoryPage: 0, productPage: 0, selectedProductId: undefined },
       },
       now,
     );
-    return categorySelectionResponse(nextSession);
+    return getContextString(session.context.selectedCatalogGroupId)
+      ? groupValueSelectionResponse(nextSession, flowSettings)
+      : categorySelectionResponse(nextSession);
   }
 
   if (navigation === "next" || navigation === "previous") {
@@ -759,13 +909,21 @@ async function handleProductSelection(
   }
 
   const language = session.language ?? "en";
+  const groupId = getContextString(session.context.selectedCatalogGroupId);
+  const groupValueId = getContextString(session.context.selectedCatalogGroupValueId);
   const categoryId = getContextString(session.context.selectedCategoryId);
   const productByCode = await findVisibleProductByCode(session.businessId, input.value);
-  const products = categoryId
-    ? await listVisibleProductsByCategory(session.businessId, categoryId)
-    : [];
+  const products =
+    groupId && groupValueId
+      ? await listVisibleProductsByGroupValue(session.businessId, groupId, groupValueId)
+      : categoryId
+        ? await listVisibleProductsByCategory(session.businessId, categoryId)
+        : [];
   const selectedProduct =
-    productByCode && (!categoryId || productByCode.categoryId === categoryId)
+    productByCode &&
+    (groupId && groupValueId
+      ? products.some((product) => product.id === productByCode.id)
+      : !categoryId || productByCode.categoryId === categoryId)
       ? productByCode
       : pickProduct(products, input.value, language);
 
@@ -2302,15 +2460,134 @@ async function categorySelectionResponse(session: ConversationSession): Promise<
   ];
 }
 
+async function listConfiguredCatalogGroups(
+  businessId: string,
+  flowSettings: BusinessBotFlowSettings,
+): Promise<StoreCatalogGroup[]> {
+  const groups = await listActiveCatalogGroups(businessId);
+  const configuredRoutes = (flowSettings.browseRoutes ?? [])
+    .filter((route) => route.active !== false)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  if (!configuredRoutes.length) return groups;
+
+  const configuredGroups: StoreCatalogGroup[] = [];
+  for (const route of configuredRoutes) {
+    const group =
+      route.source === "categories"
+        ? groups.find((entry) => entry.source === "category")
+        : groups.find(
+            (entry) =>
+              entry.source === "custom" &&
+              (entry.slug === route.groupSlug || entry.slug === route.key || entry.id === route.key),
+          );
+    if (!group) continue;
+    configuredGroups.push({
+      ...group,
+      nameEnglish: route.label.en.trim() || group.nameEnglish,
+      nameArabic: route.label.ar.trim() || route.label.en.trim() || group.nameArabic,
+      sortOrder: route.sortOrder,
+    });
+  }
+
+  return configuredGroups.length ? configuredGroups : groups;
+}
+
+async function browseGroupSelectionResponse(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings);
+  if (groups.length <= 1) {
+    const group = groups[0];
+    if (!group) return categorySelectionResponse(session);
+    const nextSession = await saveConversationSession({
+      ...session,
+      currentStep: "SELECT_GROUP_VALUE",
+      context: { ...session.context, selectedCatalogGroupId: group.id, groupValuePage: 0 },
+    });
+    return groupValueSelectionResponse(nextSession, flowSettings);
+  }
+
+  const page = getValidPage(getPageNumber(session.context.browseGroupPage), groups.length);
+  const rows = groups.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((group) => ({
+    id: group.id,
+    title: truncateListTitle(getCatalogGroupName(group, language)),
+  }));
+
+  return [
+    {
+      type: "list",
+      body: t(language, "How would you like to browse?", "كيف تريد التصفح؟"),
+      buttonText: t(language, "Browse", "تصفح"),
+      sections: [
+        {
+          title: t(language, "Browse by", "تصفح حسب"),
+          rows: [...rows, ...getNavigationRows(page, groups.length, language)],
+        },
+      ],
+    },
+  ];
+}
+
+async function groupValueSelectionResponse(
+  session: ConversationSession,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
+): Promise<BotResponse[]> {
+  const language = session.language ?? "en";
+  const groupId = getContextString(session.context.selectedCatalogGroupId);
+  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings);
+  const group = groupId ? groups.find((entry) => entry.id === groupId) : undefined;
+  if (!groupId || !group) return browseGroupSelectionResponse(session, flowSettings);
+
+  const values = await listActiveCatalogGroupValues(session.businessId, groupId);
+  const page = getValidPage(getPageNumber(session.context.groupValuePage), values.length);
+  const rows = values.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((value) => ({
+    id: value.id,
+    title: truncateListTitle(getCatalogGroupValueName(value, language)),
+  }));
+  const groupName = getCatalogGroupName(group, language);
+
+  return [
+    {
+      type: "list",
+      body: t(language, `Choose ${groupName}:`, `اختر ${groupName}:`),
+      buttonText: truncateButtonTitle(groupName),
+      sections: [
+        {
+          title: truncateListTitle(groupName),
+          rows: [...rows, ...getNavigationRows(page, values.length, language)],
+        },
+      ],
+    },
+  ];
+}
+
 async function productSelectionResponse(session: ConversationSession): Promise<BotResponse[]> {
   const language = session.language ?? "en";
+  const groupId = getContextString(session.context.selectedCatalogGroupId);
+  const groupValueId = getContextString(session.context.selectedCatalogGroupValueId);
+  const groupValue =
+    groupId && groupValueId
+      ? (await listActiveCatalogGroupValues(session.businessId, groupId)).find(
+          (value) => value.id === groupValueId,
+        )
+      : undefined;
   const categoryId = getContextString(session.context.selectedCategoryId);
   const category = categoryId
     ? await findActiveCategoryById(session.businessId, categoryId)
     : undefined;
-  const products = categoryId
-    ? await listVisibleProductsByCategory(session.businessId, categoryId)
-    : [];
+  const products =
+    groupId && groupValueId
+      ? await listVisibleProductsByGroupValue(session.businessId, groupId, groupValueId)
+      : categoryId
+        ? await listVisibleProductsByCategory(session.businessId, categoryId)
+        : [];
+  const browseName = groupValue
+    ? getCatalogGroupValueName(groupValue, language)
+    : category
+      ? getCategoryName(category, language)
+      : "";
   const page = getValidPage(getPageNumber(session.context.productPage), products.length);
   const rows = products.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((product) => ({
     id: product.id,
@@ -2323,8 +2600,8 @@ async function productSelectionResponse(session: ConversationSession): Promise<B
       type: "list",
       body: t(
         language,
-        `Choose a product from ${category ? getCategoryName(category, language) : ""}:`,
-        `اختر منتجا من ${category ? getCategoryName(category, language) : ""}:`,
+        `Choose a product from ${browseName}:`,
+        `اختر منتجا من ${browseName}:`,
       ),
       buttonText: t(language, "Products", "المنتجات"),
       sections: [
@@ -3448,6 +3725,38 @@ function pickCategory(categories: StoreCategory[], value: string, language: Conv
       normalize(getCategoryName(category, language)) === normalized ||
       normalize(category.nameEnglish) === normalized ||
       normalize(category.nameArabic) === normalized,
+  );
+}
+
+function pickCatalogGroup(
+  groups: StoreCatalogGroup[],
+  value: string,
+  language: ConversationLanguage,
+) {
+  const normalized = normalize(value);
+  return groups.find(
+    (group) =>
+      group.id === value ||
+      normalize(group.slug) === normalized ||
+      normalize(getCatalogGroupName(group, language)) === normalized ||
+      normalize(group.nameEnglish) === normalized ||
+      normalize(group.nameArabic) === normalized,
+  );
+}
+
+function pickCatalogGroupValue(
+  values: StoreCatalogGroupValue[],
+  value: string,
+  language: ConversationLanguage,
+) {
+  const normalized = normalize(value);
+  return values.find(
+    (groupValue) =>
+      groupValue.id === value ||
+      normalize(groupValue.slug) === normalized ||
+      normalize(getCatalogGroupValueName(groupValue, language)) === normalized ||
+      normalize(groupValue.nameEnglish) === normalized ||
+      normalize(groupValue.nameArabic) === normalized,
   );
 }
 

@@ -120,12 +120,22 @@ export type FlowMainMenuOption = {
   sortOrder: number;
 };
 
+export type FlowBrowseRoute = {
+  key: string;
+  source: "categories" | "catalog_group";
+  label: Record<FlowLanguage, string>;
+  groupSlug?: string;
+  active: boolean;
+  sortOrder: number;
+};
+
 export type FlowEditorConfig = {
   commands?: {
     allowMenu: boolean;
     allowCart: boolean;
   };
   mainMenuOptions?: FlowMainMenuOption[];
+  browseRoutes?: FlowBrowseRoute[];
   storeInfo?: {
     openingHours: string;
     location: string;
@@ -474,6 +484,7 @@ export function flowToBotFlowSettings(
     infoButtonEnglish: copy(flow, "infoButton", "en"),
     infoButtonArabic: copy(flow, "infoButton", "ar"),
     mainMenuOptions: getMainMenuOptions(flow),
+    browseRoutes: getBrowseRoutes(flow),
     infoResponseEnglish: copy(flow, "infoResponse", "en"),
     infoResponseArabic: copy(flow, "infoResponse", "ar"),
     customerNamePromptEnglish: copy(flow, "customerNamePrompt", "en"),
@@ -539,6 +550,42 @@ function getMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
       targetNodeId: "store_info",
       active: true,
       sortOrder: 3,
+    },
+  ];
+}
+
+function getBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
+  const configured = flow.editor?.browseRoutes;
+  const routes = configured?.length ? configured : defaultBrowseRoutes();
+  return routes
+    .filter((route) => route.active !== false)
+    .map((route, index): FlowBrowseRoute => {
+      const source: FlowBrowseRoute["source"] =
+        route.source === "catalog_group" ? "catalog_group" : "categories";
+      return {
+        ...route,
+        key: route.key.trim() || `browse_route_${index + 1}`,
+        source,
+        groupSlug: source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+        label: {
+          en: route.label.en.trim() || (source === "catalog_group" ? "Browse" : "Categories"),
+          ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
+        },
+        active: true,
+        sortOrder: route.sortOrder || index + 1,
+      };
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function defaultBrowseRoutes(): FlowBrowseRoute[] {
+  return [
+    {
+      key: "categories",
+      source: "categories",
+      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      active: true,
+      sortOrder: 1,
     },
   ];
 }

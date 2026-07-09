@@ -35,6 +35,7 @@ import type {
   AdminBusinessTemplate,
 } from "@/lib/whatsapp/admin-store.server";
 import type {
+  FlowBrowseRoute,
   FlowCustomQuestion,
   FlowDefinition,
   FlowQuestionType,
@@ -3177,6 +3178,17 @@ function BusinessBlockSettings({
   if (block.type === "HUMAN_HANDOFF") {
     return <HandoffBlockSettings block={block} onChange={onChange} />;
   }
+  if (block.type === "CATEGORY_SELECTION") {
+    return (
+      <BrowseRoutesBlockSettings
+        block={block}
+        nodes={nodes}
+        visualFlow={visualFlow}
+        onChange={onChange}
+        onFlowChange={onFlowChange}
+      />
+    );
+  }
   if (block.config.menuOptions?.length || block.config.messageBehavior === "options") {
     return <OptionsMessageSettings block={block} nodes={nodes} onChange={onChange} />;
   }
@@ -3347,6 +3359,147 @@ function EntryPointSettings({
       ) : null}
     </div>
   );
+}
+
+function BrowseRoutesBlockSettings({
+  block,
+  nodes,
+  visualFlow,
+  onChange,
+  onFlowChange,
+}: {
+  block: VisualFlowNode;
+  nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  onChange: (node: VisualFlowNode) => void;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
+}) {
+  const routes = block.config.browseRoutes?.length
+    ? block.config.browseRoutes
+    : defaultBrowseRoutes();
+  const outgoing = getEffectiveVisualEdges(visualFlow).find(
+    (edge) => edge.sourceNodeId === block.id,
+  );
+  const updateRoutes = (nextRoutes: FlowBrowseRoute[]) =>
+    onChange({ ...block, config: { ...block.config, browseRoutes: nextRoutes } });
+  const updateRoute = (index: number, patch: Partial<FlowBrowseRoute>) =>
+    updateRoutes(routes.map((route, routeIndex) => (routeIndex === index ? { ...route, ...patch } : route)));
+
+  return (
+    <div className="space-y-4">
+      <SettingsSection title="Browse routes customers see">
+        <p className="text-xs text-muted-foreground">
+          This is the first catalog step after a customer chooses to order. Add scalable routes like
+          Categories, Brands, Offers, Occasions, or any catalog group the admin manages.
+        </p>
+        <div className="space-y-3">
+          {routes.map((route, index) => (
+            <div key={`${route.key}-${index}`} className="space-y-3 rounded-md border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-medium">{route.label.en || `Route ${index + 1}`}</div>
+                <button
+                  type="button"
+                  className="studio-button-secondary px-2 py-1"
+                  onClick={() => updateRoutes(routes.filter((_, routeIndex) => routeIndex !== index))}
+                >
+                  Delete
+                </button>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <TextField
+                  label="WhatsApp list label EN"
+                  value={route.label.en}
+                  onChange={(value) =>
+                    updateRoute(index, { label: { ...route.label, en: value } })
+                  }
+                />
+                <TextField
+                  label="WhatsApp list label AR"
+                  value={route.label.ar}
+                  dir="rtl"
+                  onChange={(value) =>
+                    updateRoute(index, { label: { ...route.label, ar: value } })
+                  }
+                />
+              </div>
+              <label className="block text-sm">
+                <span className="mb-1 block text-muted-foreground">Route source</span>
+                <select
+                  value={route.source}
+                  onChange={(event) =>
+                    updateRoute(index, {
+                      source:
+                        event.target.value === "catalog_group" ? "catalog_group" : "categories",
+                    })
+                  }
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                >
+                  <option value="categories">Product categories</option>
+                  <option value="catalog_group">Custom catalog group by slug</option>
+                </select>
+              </label>
+              <TextField
+                label={route.source === "catalog_group" ? "Catalog group slug" : "Route key"}
+                value={route.source === "catalog_group" ? route.groupSlug ?? route.key : route.key}
+                onChange={(value) =>
+                  updateRoute(
+                    index,
+                    route.source === "catalog_group"
+                      ? { key: value, groupSlug: value }
+                      : { key: value },
+                  )
+                }
+              />
+              <ToggleField
+                label="Active"
+                checked={route.active !== false}
+                onChange={(checked) => updateRoute(index, { active: checked })}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="studio-button-secondary"
+          onClick={() =>
+            updateRoutes([
+              ...routes,
+              {
+                key: `custom_route_${routes.length + 1}`,
+                source: "catalog_group",
+                groupSlug: "",
+                label: { en: "New route", ar: "\u0645\u0633\u0627\u0631 \u062c\u062f\u064a\u062f" },
+                active: true,
+                sortOrder: routes.length + 1,
+              },
+            ])
+          }
+        >
+          Add browse route
+        </button>
+      </SettingsSection>
+      <NextBlockSelect
+        label="After customer chooses a route value"
+        nodes={nodes}
+        value={outgoing?.targetNodeId ?? ""}
+        onChange={(targetNodeId) =>
+          onFlowChange(replaceSingleVisualConnection(visualFlow, block.id, targetNodeId))
+        }
+      />
+    </div>
+  );
+}
+
+function defaultBrowseRoutes(): FlowBrowseRoute[] {
+  return [
+    {
+      key: "categories",
+      source: "categories",
+      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      active: true,
+      sortOrder: 1,
+    },
+  ];
 }
 
 function MessageStepSettings({

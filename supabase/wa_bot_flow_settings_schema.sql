@@ -14,6 +14,7 @@ create table if not exists public.wa_bot_flow_settings (
   info_button_arabic text not null default U&'\0645\0639\0644\0648\0645\0627\062a \0627\0644\0645\062a\062c\0631',
   info_response_english text not null default 'We are open daily. Send a message here if you need help.',
   info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
+  browse_routes jsonb not null default '[{"key":"categories","source":"categories","label":{"en":"Categories","ar":"\u0627\u0644\u0641\u0626\u0627\u062a"},"active":true,"sortOrder":1}]'::jsonb,
   checkout_prompt_overrides jsonb not null default '{}'::jsonb,
   show_product_details_before_ordering boolean not null default true,
   auto_use_saved_checkout_details boolean not null default false,
@@ -31,6 +32,7 @@ alter table public.wa_bot_flow_settings
   add column if not exists question_response_arabic text not null default U&'\0627\0631\0633\0644 \0633\0624\0627\0644\0643 \0647\0646\0627 \0648\0633\064a\0631\062f \0641\0631\064a\0642\0646\0627 \0642\0631\064a\0628\0627.',
   add column if not exists info_response_english text not null default 'We are open daily. Send a message here if you need help.',
   add column if not exists info_response_arabic text not null default U&'\0646\062d\0646 \0645\062a\0627\062d\0648\0646 \064a\0648\0645\064a\0627. \0627\0631\0633\0644 \0631\0633\0627\0644\0629 \0647\0646\0627 \0625\0630\0627 \0627\062d\062a\062c\062a \0645\0633\0627\0639\062f\0629.',
+  add column if not exists browse_routes jsonb not null default '[{"key":"categories","source":"categories","label":{"en":"Categories","ar":"\u0627\u0644\u0641\u0626\u0627\u062a"},"active":true,"sortOrder":1}]'::jsonb,
   add column if not exists checkout_prompt_overrides jsonb not null default '{}'::jsonb;
 
 alter table public.wa_bot_flow_settings enable row level security;

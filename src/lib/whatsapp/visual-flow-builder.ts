@@ -1,5 +1,6 @@
 import { validateFlowForEditor } from "./flow-editor.ts";
 import type {
+  FlowBrowseRoute,
   FlowCustomQuestion,
   FlowDefinition,
   FlowEdge,
@@ -57,6 +58,7 @@ export type VisualFlowNode = {
       targetNodeId?: string;
       active?: boolean;
     }>;
+    browseRoutes?: FlowBrowseRoute[];
     conditionSource?: string;
     conditionRules?: Array<{
       id: string;
@@ -132,7 +134,7 @@ export const visualBlockPalette: Array<{
   { type: "LANGUAGE_SELECTION", title: "Language", category: "Core" },
   { type: "MAIN_MENU", title: "Main menu", category: "Core" },
   { type: "STORE_INFO", title: "Store info", category: "Core" },
-  { type: "CATEGORY_SELECTION", title: "Categories", category: "Catalog" },
+  { type: "CATEGORY_SELECTION", title: "Browse routes", category: "Catalog" },
   { type: "PRODUCT_SELECTION", title: "Product purchase", category: "Catalog" },
   { type: "PRODUCT_DETAILS", title: "Product details", category: "Catalog" },
   { type: "QUESTION", title: "Question", category: "Logic" },
@@ -348,6 +350,7 @@ export function compileVisualFlowToRuntimeFlow(
     condition: edge.condition,
   }));
   const mainMenu = normalizedVisualFlow.nodes.find((node) => node.type === "MAIN_MENU");
+  const browseEntry = normalizedVisualFlow.nodes.find((node) => node.type === "CATEGORY_SELECTION");
   const storeInfo = normalizedVisualFlow.nodes.find((node) => node.type === "STORE_INFO");
   const handoff = normalizedVisualFlow.nodes.find((node) => node.type === "HUMAN_HANDOFF");
   const start =
@@ -393,6 +396,7 @@ export function compileVisualFlowToRuntimeFlow(
     editor: {
       ...baseFlow.editor,
       mainMenuOptions,
+      browseRoutes: buildBrowseRoutes(browseEntry),
       customQuestions: questions,
       humanHandoff: handoff
         ? {
@@ -505,7 +509,7 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
             issues.push(
               error(
                 "VISUAL_ORDER_TARGET_PROTECTED",
-                `${node.title} option "${option.label.en || option.key || "Place order"}" must open Show categories. Product variants, required product questions, quantity, and add-to-cart are protected after that.`,
+                `${node.title} option "${option.label.en || option.key || "Place order"}" must open Browse routes. Product variants, required product questions, quantity, and add-to-cart are protected after that.`,
               ),
             );
           }
@@ -520,7 +524,7 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
         issues.push(
           error(
             "VISUAL_CATEGORY_TO_PRODUCTS_REQUIRED",
-            `${friendlyValidationStepName(node)} must continue to Product purchase. Customers choose a category first, then the protected product purchase pipeline takes over.`,
+            `${friendlyValidationStepName(node)} must continue to Product purchase. Customers choose a browse route and value first, then the protected product purchase pipeline takes over.`,
           ),
         );
       }
@@ -864,6 +868,34 @@ function buildMainMenuOptions(mainMenu: VisualFlowNode | undefined): FlowMainMen
       key: option.key || option.action?.toLowerCase() || `option_${index + 1}`,
       label: option.label,
       targetNodeId: option.targetNodeId,
+      active: true,
+      sortOrder: index + 1,
+    }));
+}
+
+function buildBrowseRoutes(browseEntry: VisualFlowNode | undefined): FlowBrowseRoute[] {
+  const routes = browseEntry?.config.browseRoutes?.length
+    ? browseEntry.config.browseRoutes
+    : [
+        {
+          key: "categories",
+          source: "categories" as const,
+          label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+          active: true,
+          sortOrder: 1,
+        },
+      ];
+  return routes
+    .filter((route) => route.active !== false)
+    .map((route, index) => ({
+      key: route.key.trim() || `browse_route_${index + 1}`,
+      source: route.source === "catalog_group" ? "catalog_group" : "categories",
+      groupSlug:
+        route.source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+      label: {
+        en: route.label.en.trim() || (route.source === "catalog_group" ? "Browse" : "Categories"),
+        ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
+      },
       active: true,
       sortOrder: index + 1,
     }));

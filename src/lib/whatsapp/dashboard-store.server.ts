@@ -84,6 +84,37 @@ export type WaProductVariantRow = {
   updated_at: string;
 };
 
+export type WaCatalogGroupRow = {
+  id: string;
+  business_id: string;
+  name_english: string;
+  name_arabic: string;
+  slug: string;
+  source: "category" | "custom";
+  is_active: boolean;
+  sort_order: number;
+  updated_at: string;
+};
+
+export type WaCatalogGroupValueRow = {
+  id: string;
+  business_id: string;
+  group_id: string;
+  name_english: string;
+  name_arabic: string;
+  slug: string;
+  source: "category" | "custom";
+  is_active: boolean;
+  sort_order: number;
+  updated_at: string;
+};
+
+export type WaProductGroupValueRow = {
+  business_id: string;
+  product_id: string;
+  group_value_id: string;
+};
+
 export type WaProductCustomFieldRow = {
   id: string;
   business_id: string;
@@ -145,6 +176,9 @@ export type WaDashboardData = {
   options: WaProductOptionRow[];
   optionValues: WaProductOptionValueRow[];
   variants: WaProductVariantRow[];
+  catalogGroups: WaCatalogGroupRow[];
+  catalogGroupValues: WaCatalogGroupValueRow[];
+  productGroupValues: WaProductGroupValueRow[];
   customFields: WaProductCustomFieldRow[];
   deliveryAreas: WaDeliveryAreaRow[];
   pickupLocations: WaPickupLocationRow[];
@@ -173,6 +207,26 @@ type SaveProductInput = {
   is_available: boolean;
   stock_quantity: number;
   variant_selection_mode?: "step_by_step" | "variant_list";
+  group_value_ids?: string[];
+  sort_order: number;
+};
+
+type SaveCatalogGroupInput = {
+  id?: string;
+  name_english: string;
+  name_arabic: string;
+  slug?: string;
+  is_active: boolean;
+  sort_order: number;
+};
+
+type SaveCatalogGroupValueInput = {
+  id?: string;
+  group_id: string;
+  name_english: string;
+  name_arabic: string;
+  slug?: string;
+  is_active: boolean;
   sort_order: number;
 };
 
@@ -253,6 +307,10 @@ export type DashboardCatalogAction =
   | { type: "deleteCategory"; payload: { id: string } }
   | { type: "saveProduct"; payload: SaveProductInput }
   | { type: "deleteProduct"; payload: { id: string } }
+  | { type: "saveCatalogGroup"; payload: SaveCatalogGroupInput }
+  | { type: "deleteCatalogGroup"; payload: { id: string } }
+  | { type: "saveCatalogGroupValue"; payload: SaveCatalogGroupValueInput }
+  | { type: "deleteCatalogGroupValue"; payload: { id: string } }
   | { type: "saveOption"; payload: SaveOptionInput }
   | { type: "deleteOption"; payload: { id: string } }
   | { type: "saveOptionValue"; payload: SaveOptionValueInput }
@@ -280,6 +338,9 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
     products,
     options,
     variants,
+    catalogGroups,
+    catalogGroupValues,
+    productGroupValues,
     customFields,
     deliveryAreas,
     pickupLocations,
@@ -304,6 +365,21 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
     ),
     supabaseServerRest<WaProductVariantRow[]>(
       `/wa_product_variants?select=*&business_id=eq.${encodeURIComponent(businessId)}`,
+    ),
+    safeOptionalTable<WaCatalogGroupRow[]>(
+      `/wa_catalog_groups?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&order=sort_order.asc`,
+    ),
+    safeOptionalTable<WaCatalogGroupValueRow[]>(
+      `/wa_catalog_group_values?select=*&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&order=sort_order.asc`,
+    ),
+    safeOptionalTable<WaProductGroupValueRow[]>(
+      `/wa_product_group_values?select=business_id,product_id,group_value_id&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}`,
     ),
     supabaseServerRest<WaProductCustomFieldRow[]>(
       `/wa_product_custom_fields?select=*&business_id=eq.${encodeURIComponent(
@@ -350,6 +426,9 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
     options,
     optionValues,
     variants,
+    catalogGroups,
+    catalogGroupValues,
+    productGroupValues,
     customFields,
     deliveryAreas,
     pickupLocations,
@@ -400,28 +479,92 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
         action.payload.id,
         "Product code already exists.",
       );
-      await upsertRow("/wa_products?on_conflict=id", {
-        id: action.payload.id || makeId("prod", action.payload.code || action.payload.name_english),
+      validateProductGroupValues(data, action.payload.group_value_ids ?? []);
+      {
+        const productId =
+          action.payload.id || makeId("prod", action.payload.code || action.payload.name_english);
+        await upsertRow("/wa_products?on_conflict=id", {
+          id: productId,
+          business_id: businessId,
+          category_id: action.payload.category_id,
+          code: requiredText(action.payload.code, "Product code").toUpperCase(),
+          name_english: action.payload.name_english.trim(),
+          name_arabic: action.payload.name_arabic.trim(),
+          description_english: action.payload.description_english.trim(),
+          description_arabic: action.payload.description_arabic.trim(),
+          price: nonNegativeNumber(action.payload.price, "Price"),
+          image_url: normalizeNullableText(action.payload.image_url),
+          is_active: action.payload.is_active,
+          is_available: action.payload.is_available,
+          stock_quantity: nonNegativeInt(action.payload.stock_quantity, "Stock"),
+          variant_selection_mode:
+            action.payload.variant_selection_mode === "variant_list"
+              ? "variant_list"
+              : "step_by_step",
+          sort_order: nonNegativeInt(action.payload.sort_order, "Sort order"),
+          updated_at: new Date().toISOString(),
+        });
+        await replaceProductGroupValues(businessId, productId, action.payload.group_value_ids ?? []);
+      }
+      break;
+
+    case "saveCatalogGroup":
+      validateLanguagePair(
+        action.payload.name_english,
+        action.payload.name_arabic,
+        "browse route name",
+      );
+      await upsertRow("/wa_catalog_groups?on_conflict=id", {
+        id: action.payload.id || makeId("group", action.payload.name_english),
         business_id: businessId,
-        category_id: action.payload.category_id,
-        code: requiredText(action.payload.code, "Product code").toUpperCase(),
         name_english: action.payload.name_english.trim(),
         name_arabic: action.payload.name_arabic.trim(),
-        description_english: action.payload.description_english.trim(),
-        description_arabic: action.payload.description_arabic.trim(),
-        price: nonNegativeNumber(action.payload.price, "Price"),
-        image_url: normalizeNullableText(action.payload.image_url),
+        slug: normalizeSlug(action.payload.slug || action.payload.name_english, "group"),
+        source: "custom",
         is_active: action.payload.is_active,
-        is_available: action.payload.is_available,
-        stock_quantity: nonNegativeInt(action.payload.stock_quantity, "Stock"),
-        variant_selection_mode:
-          action.payload.variant_selection_mode === "variant_list"
-            ? "variant_list"
-            : "step_by_step",
         sort_order: nonNegativeInt(action.payload.sort_order, "Sort order"),
         updated_at: new Date().toISOString(),
       });
       break;
+
+    case "deleteCatalogGroup": {
+      requireOwned(data.catalogGroups, action.payload.id, "Browse route");
+      await deleteRow("/wa_catalog_groups", action.payload.id);
+      break;
+    }
+
+    case "saveCatalogGroupValue":
+      requireOwned(data.catalogGroups, action.payload.group_id, "Browse route");
+      validateLanguagePair(
+        action.payload.name_english,
+        action.payload.name_arabic,
+        "browse option name",
+      );
+      await upsertRow("/wa_catalog_group_values?on_conflict=id", {
+        id: action.payload.id || makeId("group-value", action.payload.name_english),
+        business_id: businessId,
+        group_id: action.payload.group_id,
+        name_english: action.payload.name_english.trim(),
+        name_arabic: action.payload.name_arabic.trim(),
+        slug: normalizeSlug(action.payload.slug || action.payload.name_english, "value"),
+        source: "custom",
+        is_active: action.payload.is_active,
+        sort_order: nonNegativeInt(action.payload.sort_order, "Sort order"),
+        updated_at: new Date().toISOString(),
+      });
+      break;
+
+    case "deleteCatalogGroupValue": {
+      const value = requireOwned(data.catalogGroupValues, action.payload.id, "Browse option");
+      const productCount = data.productGroupValues.filter(
+        (link) => link.group_value_id === value.id,
+      ).length;
+      if (productCount > 0) {
+        throw new Error("Remove this browse option from products before deleting it.");
+      }
+      await deleteRow("/wa_catalog_group_values", action.payload.id);
+      break;
+    }
 
     case "deleteProduct":
       requireOwned(data.products, action.payload.id, "Product");
@@ -697,10 +840,62 @@ async function deleteRow(path: string, id: string) {
   });
 }
 
+async function safeOptionalTable<T>(path: string): Promise<T> {
+  try {
+    return await supabaseServerRest<T>(path);
+  } catch (error) {
+    if (isMissingCatalogGroupTableError(error)) return [] as T;
+    throw error;
+  }
+}
+
+async function replaceProductGroupValues(
+  businessId: string,
+  productId: string,
+  groupValueIds: string[],
+) {
+  await supabaseServerRest(
+    `/wa_product_group_values?business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&product_id=eq.${encodeURIComponent(productId)}`,
+    {
+      method: "DELETE",
+      prefer: "return=minimal",
+    },
+  ).catch((error) => {
+    if (!isMissingCatalogGroupTableError(error)) throw error;
+  });
+
+  const uniqueIds = [...new Set(groupValueIds.filter(Boolean))];
+  if (!uniqueIds.length) return;
+
+  await supabaseServerRest(
+    "/wa_product_group_values?on_conflict=business_id,product_id,group_value_id",
+    {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=minimal",
+      body: JSON.stringify(
+        uniqueIds.map((groupValueId) => ({
+          business_id: businessId,
+          product_id: productId,
+          group_value_id: groupValueId,
+        })),
+      ),
+    },
+  );
+}
+
 function requireOwned<T extends { id: string }>(rows: T[], id: string, label: string) {
   const row = rows.find((item) => item.id === id);
   if (!row) throw new Error(`${label} was not found for this business.`);
   return row;
+}
+
+function validateProductGroupValues(data: WaDashboardData, groupValueIds: string[]) {
+  const ids = [...new Set(groupValueIds.filter(Boolean))];
+  for (const id of ids) {
+    requireOwned(data.catalogGroupValues, id, "Browse option");
+  }
 }
 
 function requireOptionValueOwned(data: WaDashboardData, id: string) {
@@ -887,6 +1082,17 @@ function normalizeNullableText(value: string | null | undefined) {
   return next || null;
 }
 
+function normalizeSlug(value: string, fallback: string) {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || fallback
+  );
+}
+
 function makeId(prefix: string, value: string) {
   const slug =
     value
@@ -895,6 +1101,16 @@ function makeId(prefix: string, value: string) {
       .replace(/^-+|-+$/g, "")
       .slice(0, 48) || "item";
   return `${prefix}-${slug}-${Date.now().toString(36)}`;
+}
+
+function isMissingCatalogGroupTableError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    (message.includes("wa_catalog_groups") ||
+      message.includes("wa_catalog_group_values") ||
+      message.includes("wa_product_group_values")) &&
+    (message.includes("does not exist") || message.includes("schema cache"))
+  );
 }
 
 function extensionForType(type: string) {

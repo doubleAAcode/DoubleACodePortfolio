@@ -7,6 +7,8 @@ import { maskCustomerIdentifier, validateStoredConversationSession } from "./rel
 export type ConversationStep =
   | "SELECT_LANGUAGE"
   | "MAIN_MENU"
+  | "SELECT_BROWSE_GROUP"
+  | "SELECT_GROUP_VALUE"
   | "SELECT_CATEGORY"
   | "SELECT_PRODUCT"
   | "PRODUCT_DETAILS"
@@ -68,6 +70,8 @@ type ConversationSessionRow = {
 const validSteps: ReadonlySet<ConversationStep> = new Set([
   "SELECT_LANGUAGE",
   "MAIN_MENU",
+  "SELECT_BROWSE_GROUP",
+  "SELECT_GROUP_VALUE",
   "SELECT_CATEGORY",
   "SELECT_PRODUCT",
   "PRODUCT_DETAILS",

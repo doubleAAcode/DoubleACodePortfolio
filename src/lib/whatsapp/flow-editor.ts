@@ -1,5 +1,6 @@
 import {
   validateFlowDefinition,
+  type FlowBrowseRoute,
   type FlowCustomQuestion,
   type FlowDefinition,
   type FlowEditorConfig,
@@ -35,6 +36,7 @@ export type FlowEditorModel = {
     | "noNotesButton"
   >;
   mainMenuOptions: FlowMainMenuOption[];
+  browseRoutes: FlowBrowseRoute[];
   storeInfo: {
     openingHours: string;
     location: string;
@@ -87,6 +89,7 @@ export function createFlowEditorModel(flow: FlowDefinition): FlowEditorModel {
       noNotesButton: copyPair(flow, "noNotesButton"),
     },
     mainMenuOptions: getEditorMainMenuOptions(flow),
+    browseRoutes: getEditorBrowseRoutes(flow),
     storeInfo: {
       openingHours: editor.storeInfo?.openingHours ?? "",
       location: editor.storeInfo?.location ?? "",
@@ -146,6 +149,7 @@ export function applyFlowEditorModel(flow: FlowDefinition, model: FlowEditorMode
     active: option.active !== false,
     sortOrder: index + 1,
   }));
+  const browseRoutes = normalizeBrowseRoutes(model.browseRoutes);
   return {
     ...flow,
     name: model.name.trim(),
@@ -172,6 +176,7 @@ export function applyFlowEditorModel(flow: FlowDefinition, model: FlowEditorMode
         allowCart: model.commands.allowCart,
       },
       mainMenuOptions,
+      browseRoutes,
       storeInfo: model.storeInfo,
       ordering: model.ordering,
       checkout: model.checkout,
@@ -371,6 +376,35 @@ function getEditorMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
       sortOrder: 3,
     },
   ];
+}
+
+function getEditorBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
+  const configured = flow.editor?.browseRoutes;
+  if (configured?.length) return normalizeBrowseRoutes(configured);
+  return [
+    {
+      key: "categories",
+      source: "categories",
+      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      active: true,
+      sortOrder: 1,
+    },
+  ];
+}
+
+function normalizeBrowseRoutes(routes: FlowBrowseRoute[]): FlowBrowseRoute[] {
+  return routes.map((route, index) => ({
+    key: route.key.trim() || `browse_route_${index + 1}`,
+    source: route.source === "catalog_group" ? "catalog_group" : "categories",
+    groupSlug:
+      route.source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+    label: {
+      en: route.label.en.trim() || (route.source === "catalog_group" ? "Browse" : "Categories"),
+      ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
+    },
+    active: route.active !== false,
+    sortOrder: index + 1,
+  }));
 }
 
 function composeStoreInfo(model: FlowEditorModel, language: FlowLanguage) {
