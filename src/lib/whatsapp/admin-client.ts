@@ -6,6 +6,9 @@ import type {
   AdminBusinessStatus,
   AdminBusinessSummary,
   AdminBusinessTemplate,
+  AdminCatalogValueProductsInput,
+  AdminCatalogGroupInput,
+  AdminCatalogGroupValueInput,
   AdminCheckoutSettingsInput,
   CreateAdminBusinessInput,
 } from "./admin-store.server";
@@ -97,6 +100,9 @@ export async function applyAdminBusinessAction(
     | { action: "assign_user"; email: string; role: "OWNER" | "MANAGER" | "STAFF" }
     | { action: "save_connection"; connection: CreateAdminBusinessInput["connection"] }
     | { action: "save_checkout_settings"; settings: AdminCheckoutSettingsInput }
+    | { action: "save_catalog_group"; group: AdminCatalogGroupInput }
+    | { action: "save_catalog_group_value"; value: AdminCatalogGroupValueInput }
+    | { action: "save_catalog_value_products"; assignment: AdminCatalogValueProductsInput }
     | { action: "clone_flow_template"; templateId: string }
     | { action: "save_business_flow_draft"; flowJson: FlowDefinition }
     | { action: "publish_business_flow"; versionId: string },

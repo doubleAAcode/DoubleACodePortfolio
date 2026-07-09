@@ -14,6 +14,7 @@ import {
   validateVisualFlow,
   type VisualFlowDefinition,
 } from "@/lib/whatsapp/visual-flow-builder";
+import type { AdminBusinessDetails } from "@/lib/whatsapp/admin-store.server";
 import type {
   BusinessFlowDetails,
   FlowTemplateRow,
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/admin/businesses/$businessId/flow-builder
 function BusinessFlowBuilderPage() {
   const { businessId } = Route.useParams();
   const [details, setDetails] = useState<BusinessFlowDetails>();
+  const [adminDetails, setAdminDetails] = useState<AdminBusinessDetails>();
   const [botFlowSettings, setBotFlowSettings] = useState<BusinessBotFlowSettings>();
   const [orderConfirmationEnglish, setOrderConfirmationEnglish] = useState("");
   const [orderConfirmationArabic, setOrderConfirmationArabic] = useState("");
@@ -63,6 +65,7 @@ function BusinessFlowBuilderPage() {
         );
         const selectedVersion = selectVersion(nextDetails, preferredVersionId || "");
         setDetails(nextDetails);
+        setAdminDetails(nextAdminDetails);
         setBotFlowSettings(nextAdminDetails.botFlowSettings);
         setOrderConfirmationEnglish(
           nextAdminDetails.business.order_confirmation_message_english ||
@@ -324,11 +327,14 @@ function BusinessFlowBuilderPage() {
             </div>
           ) : null}
           <VisualFlowBuilderEditor
+            businessId={businessId}
             fullHeight
             visualFlow={visualFlow}
             selectedBlockId={selectedBlockId}
             validation={visualValidation}
             botFlowSettings={botFlowSettings}
+            catalogGroups={adminDetails?.catalogGroups ?? []}
+            catalogGroupValues={adminDetails?.catalogGroupValues ?? []}
             checkoutSaving={saving === "checkout"}
             orderConfirmationEnglish={orderConfirmationEnglish}
             orderConfirmationArabic={orderConfirmationArabic}

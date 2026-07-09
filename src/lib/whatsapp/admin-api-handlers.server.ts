@@ -26,11 +26,17 @@ import {
   getAdminLogs,
   getAdminOverview,
   seedDefaultBusinessData,
+  saveAdminCatalogGroup,
+  saveAdminCatalogGroupValue,
+  saveAdminCatalogValueProducts,
   saveAdminCheckoutSettings,
   setAdminBusinessStatus,
   upsertAdminConnection,
   recordAdminAuditLog,
   type AdminCheckoutSettingsInput,
+  type AdminCatalogValueProductsInput,
+  type AdminCatalogGroupInput,
+  type AdminCatalogGroupValueInput,
   type AdminBusinessStatus,
   type AdminBusinessTemplate,
   type CreateAdminBusinessInput,
@@ -158,6 +164,9 @@ export function createInternalAdminBusinessDetailsHandlers() {
           role?: "OWNER" | "MANAGER" | "STAFF";
           connection?: CreateAdminBusinessInput["connection"];
           settings?: AdminCheckoutSettingsInput;
+          group?: AdminCatalogGroupInput;
+          value?: AdminCatalogGroupValueInput;
+          assignment?: AdminCatalogValueProductsInput;
           templateId?: string;
           flowJson?: unknown;
           versionId?: string;
@@ -214,6 +223,36 @@ export function createInternalAdminBusinessDetailsHandlers() {
           const data = await saveAdminCheckoutSettings({
             businessId: params.businessId,
             input: body.settings,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_catalog_group" && body.group) {
+          const data = await saveAdminCatalogGroup({
+            businessId: params.businessId,
+            input: body.group as AdminCatalogGroupInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_catalog_group_value" && body.value) {
+          const data = await saveAdminCatalogGroupValue({
+            businessId: params.businessId,
+            input: body.value as AdminCatalogGroupValueInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_catalog_value_products" && body.assignment) {
+          const data = await saveAdminCatalogValueProducts({
+            businessId: params.businessId,
+            input: body.assignment as AdminCatalogValueProductsInput,
             adminUser: session.username,
             request,
           });

@@ -34,6 +34,7 @@ import type {
   AdminBusinessStatus,
   AdminBusinessTemplate,
 } from "@/lib/whatsapp/admin-store.server";
+import type { WaCatalogGroupRow, WaCatalogGroupValueRow } from "@/lib/whatsapp/dashboard-store.server";
 import type {
   FlowBrowseRoute,
   FlowCustomQuestion,
@@ -83,7 +84,7 @@ const templates: AdminBusinessTemplate[] = [
 function AdminBusinessDetailPage() {
   const { businessId } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const showingFlowBuilder = pathname.endsWith("/flow-builder");
+  const showingChildPage = pathname.endsWith("/flow-builder") || pathname.endsWith("/catalog-routes");
   const [details, setDetails] = useState<AdminBusinessDetails>();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
@@ -99,7 +100,7 @@ function AdminBusinessDetailPage() {
     load();
   }, [load]);
 
-  if (showingFlowBuilder) return <Outlet />;
+  if (showingChildPage) return <Outlet />;
 
   async function run(label: string, action: () => Promise<AdminBusinessDetails>) {
     setSaving(label);
@@ -326,16 +327,23 @@ function FlowSection({
     <section className="rounded-lg border border-border bg-surface/60 p-5">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div>
-          <h2 className="font-display text-xl font-semibold">Conversation flow</h2>
+          <h2 className="font-display text-xl font-semibold">Admin onboarding controls</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Build and publish this business&apos;s WhatsApp conversation in the dedicated flow
-            builder. Start from a saved admin template or create a flow from scratch inside the
-            builder.
+            Prepare the business catalog routes, then build and publish the WhatsApp conversation.
+            Owner dashboard permissions can stay secondary until the admin setup is stable.
           </p>
         </div>
-        <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
-          Open Flow builder
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/admin/businesses/${businessId}/catalog-routes`}
+            className="studio-button-secondary"
+          >
+            Manage catalog routes
+          </a>
+          <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
+            Open Flow builder
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -710,11 +718,14 @@ const builderModes: Array<{
 ];
 
 export function VisualFlowBuilderEditor({
+  businessId,
   visualFlow,
   selectedBlockId,
   validation,
   fullHeight = false,
   botFlowSettings,
+  catalogGroups = [],
+  catalogGroupValues = [],
   checkoutSaving = false,
   orderConfirmationEnglish,
   orderConfirmationArabic,
@@ -726,10 +737,13 @@ export function VisualFlowBuilderEditor({
   onSaveCheckoutSettings,
 }: {
   visualFlow: VisualFlowDefinition;
+  businessId?: string;
   selectedBlockId: string;
   validation?: ReturnType<typeof validateVisualFlow>;
   fullHeight?: boolean;
   botFlowSettings?: BusinessBotFlowSettings;
+  catalogGroups?: WaCatalogGroupRow[];
+  catalogGroupValues?: WaCatalogGroupValueRow[];
   checkoutSaving?: boolean;
   orderConfirmationEnglish?: string;
   orderConfirmationArabic?: string;
@@ -986,6 +1000,9 @@ export function VisualFlowBuilderEditor({
         onSelectBlock={onSelectBlock}
         onUpdateNode={updateNode}
         onChange={onChange}
+        catalogGroups={catalogGroups}
+        catalogGroupValues={catalogGroupValues}
+        businessId={businessId}
       />
     );
   }
@@ -1006,6 +1023,9 @@ export function VisualFlowBuilderEditor({
           onUpdateNode={updateNode}
           onChange={onChange}
           botFlowSettings={botFlowSettings}
+          catalogGroups={catalogGroups}
+          catalogGroupValues={catalogGroupValues}
+          businessId={businessId}
           checkoutSaving={checkoutSaving}
           orderConfirmationEnglish={orderConfirmationEnglish}
           orderConfirmationArabic={orderConfirmationArabic}
@@ -1351,7 +1371,10 @@ function ConfigureFlowMode({
   selectedBlock,
   selectedBlockId,
   validation,
+  businessId,
   botFlowSettings,
+  catalogGroups,
+  catalogGroupValues,
   checkoutSaving,
   orderConfirmationEnglish,
   orderConfirmationArabic,
@@ -1368,7 +1391,10 @@ function ConfigureFlowMode({
   selectedBlock?: VisualFlowNode;
   selectedBlockId: string;
   validation?: ReturnType<typeof validateVisualFlow>;
+  businessId?: string;
   botFlowSettings?: BusinessBotFlowSettings;
+  catalogGroups?: WaCatalogGroupRow[];
+  catalogGroupValues?: WaCatalogGroupValueRow[];
   checkoutSaving?: boolean;
   orderConfirmationEnglish?: string;
   orderConfirmationArabic?: string;
@@ -1411,6 +1437,9 @@ function ConfigureFlowMode({
         selectedBlock={selectedBlock}
         validation={validation}
         botFlowSettings={botFlowSettings}
+        catalogGroups={catalogGroups ?? []}
+        catalogGroupValues={catalogGroupValues ?? []}
+        businessId={businessId}
         checkoutSaving={checkoutSaving}
         orderConfirmationEnglish={orderConfirmationEnglish}
         orderConfirmationArabic={orderConfirmationArabic}
@@ -2342,7 +2371,10 @@ function StepSettingsColumn({
   visualFlow,
   selectedBlock,
   validation,
+  businessId,
   botFlowSettings,
+  catalogGroups,
+  catalogGroupValues,
   checkoutSaving,
   orderConfirmationEnglish,
   orderConfirmationArabic,
@@ -2357,7 +2389,10 @@ function StepSettingsColumn({
   visualFlow: VisualFlowDefinition;
   selectedBlock?: VisualFlowNode;
   validation?: ReturnType<typeof validateVisualFlow>;
+  businessId?: string;
   botFlowSettings?: BusinessBotFlowSettings;
+  catalogGroups: WaCatalogGroupRow[];
+  catalogGroupValues: WaCatalogGroupValueRow[];
   checkoutSaving?: boolean;
   orderConfirmationEnglish?: string;
   orderConfirmationArabic?: string;
@@ -2401,6 +2436,9 @@ function StepSettingsColumn({
               block={selectedBlock}
               nodes={visualFlow.nodes}
               visualFlow={visualFlow}
+              businessId={businessId}
+              catalogGroups={catalogGroups}
+              catalogGroupValues={catalogGroupValues}
               onChange={onUpdateNode}
               onFlowChange={onChange}
             />
@@ -3146,12 +3184,18 @@ function BusinessBlockSettings({
   block,
   nodes,
   visualFlow,
+  businessId,
+  catalogGroups = [],
+  catalogGroupValues = [],
   onChange,
   onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
   visualFlow: VisualFlowDefinition;
+  businessId?: string;
+  catalogGroups?: WaCatalogGroupRow[];
+  catalogGroupValues?: WaCatalogGroupValueRow[];
   onChange: (node: VisualFlowNode) => void;
   onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
@@ -3184,6 +3228,9 @@ function BusinessBlockSettings({
         block={block}
         nodes={nodes}
         visualFlow={visualFlow}
+        businessId={businessId}
+        catalogGroups={catalogGroups}
+        catalogGroupValues={catalogGroupValues}
         onChange={onChange}
         onFlowChange={onFlowChange}
       />
@@ -3365,12 +3412,18 @@ function BrowseRoutesBlockSettings({
   block,
   nodes,
   visualFlow,
+  businessId,
+  catalogGroups,
+  catalogGroupValues,
   onChange,
   onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
   visualFlow: VisualFlowDefinition;
+  businessId?: string;
+  catalogGroups: WaCatalogGroupRow[];
+  catalogGroupValues: WaCatalogGroupValueRow[];
   onChange: (node: VisualFlowNode) => void;
   onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
@@ -3383,7 +3436,9 @@ function BrowseRoutesBlockSettings({
   const updateRoutes = (nextRoutes: FlowBrowseRoute[]) =>
     onChange({ ...block, config: { ...block.config, browseRoutes: nextRoutes } });
   const updateRoute = (index: number, patch: Partial<FlowBrowseRoute>) =>
-    updateRoutes(routes.map((route, routeIndex) => (routeIndex === index ? { ...route, ...patch } : route)));
+    updateRoutes(
+      routes.map((route, routeIndex) => (routeIndex === index ? { ...route, ...patch } : route)),
+    );
 
   return (
     <div className="space-y-4">
@@ -3393,70 +3448,145 @@ function BrowseRoutesBlockSettings({
           Categories, Brands, Offers, Occasions, or any catalog group the admin manages.
         </p>
         <div className="space-y-3">
-          {routes.map((route, index) => (
-            <div key={`${route.key}-${index}`} className="space-y-3 rounded-md border border-border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium">{route.label.en || `Route ${index + 1}`}</div>
-                <button
-                  type="button"
-                  className="studio-button-secondary px-2 py-1"
-                  onClick={() => updateRoutes(routes.filter((_, routeIndex) => routeIndex !== index))}
-                >
-                  Delete
-                </button>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
+          {routes.map((route, index) => {
+            const routeSlug = normalizeClientSlug(route.groupSlug || route.key || route.label.en);
+            const catalogGroup = catalogGroups.find((group) => group.slug === routeSlug);
+            const values = catalogGroup
+              ? catalogGroupValues
+                  .filter((value) => value.group_id === catalogGroup.id)
+                  .sort((a, b) => a.sort_order - b.sort_order)
+              : [];
+            return (
+              <div
+                key={`${route.key}-${index}`}
+                className="space-y-3 rounded-md border border-border p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-medium">
+                      {route.label.en || `Route ${index + 1}`}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {route.source === "catalog_group"
+                        ? catalogGroup
+                          ? `${values.length} sub-option(s) available`
+                          : "No matching saved route data for this slug."
+                        : "Sub-options come from product Categories."}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="studio-button-secondary px-2 py-1"
+                    onClick={() =>
+                      updateRoutes(routes.filter((_, routeIndex) => routeIndex !== index))
+                    }
+                  >
+                    Delete
+                  </button>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <TextField
+                    label="WhatsApp list label EN"
+                    value={route.label.en}
+                    onChange={(value) =>
+                      updateRoute(index, { label: { ...route.label, en: value } })
+                    }
+                  />
+                  <TextField
+                    label="WhatsApp list label AR"
+                    value={route.label.ar}
+                    dir="rtl"
+                    onChange={(value) =>
+                      updateRoute(index, { label: { ...route.label, ar: value } })
+                    }
+                  />
+                </div>
+                <label className="block text-sm">
+                  <span className="mb-1 block text-muted-foreground">Route source</span>
+                  <select
+                    value={route.source}
+                    onChange={(event) =>
+                      updateRoute(index, {
+                        source:
+                          event.target.value === "catalog_group" ? "catalog_group" : "categories",
+                      })
+                    }
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  >
+                    <option value="categories">Product categories</option>
+                    <option value="catalog_group">Custom route with sub-options</option>
+                  </select>
+                </label>
                 <TextField
-                  label="WhatsApp list label EN"
-                  value={route.label.en}
-                  onChange={(value) =>
-                    updateRoute(index, { label: { ...route.label, en: value } })
-                  }
+                  label={route.source === "catalog_group" ? "Catalog group slug" : "Route key"}
+                  value={route.source === "catalog_group" ? routeSlug : route.key}
+                  onChange={(value) => {
+                    const nextSlug = normalizeClientSlug(value);
+                    updateRoute(
+                      index,
+                      route.source === "catalog_group"
+                        ? { key: nextSlug, groupSlug: nextSlug }
+                        : { key: nextSlug },
+                    );
+                  }}
                 />
-                <TextField
-                  label="WhatsApp list label AR"
-                  value={route.label.ar}
-                  dir="rtl"
-                  onChange={(value) =>
-                    updateRoute(index, { label: { ...route.label, ar: value } })
-                  }
+                <ToggleField
+                  label="Active"
+                  checked={route.active !== false}
+                  onChange={(checked) => updateRoute(index, { active: checked })}
                 />
+
+                {route.source === "catalog_group" ? (
+                  <div className="space-y-3 rounded-md border border-border bg-surface/40 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-medium">Route data status</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          The flow only decides that this route appears. Route values and product
+                          membership are managed in admin catalog route data.
+                        </div>
+                      </div>
+                      {businessId ? (
+                        <a
+                          href={`/admin/businesses/${businessId}/catalog-routes`}
+                          className="studio-button-secondary px-2 py-1"
+                        >
+                          Manage route data
+                        </a>
+                      ) : null}
+                    </div>
+
+                    {catalogGroup ? (
+                      <>
+                        {values.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {values.map((value) => (
+                              <span
+                                key={value.id}
+                                className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                              >
+                                {value.name_english}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            No route values yet. WhatsApp will not show this route until the route
+                            has active values with products assigned.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No admin route exists for slug <span className="font-mono">{routeSlug}</span>.
+                        Create it in Catalog route data, then add values and assign products.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
               </div>
-              <label className="block text-sm">
-                <span className="mb-1 block text-muted-foreground">Route source</span>
-                <select
-                  value={route.source}
-                  onChange={(event) =>
-                    updateRoute(index, {
-                      source:
-                        event.target.value === "catalog_group" ? "catalog_group" : "categories",
-                    })
-                  }
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                >
-                  <option value="categories">Product categories</option>
-                  <option value="catalog_group">Custom catalog group by slug</option>
-                </select>
-              </label>
-              <TextField
-                label={route.source === "catalog_group" ? "Catalog group slug" : "Route key"}
-                value={route.source === "catalog_group" ? route.groupSlug ?? route.key : route.key}
-                onChange={(value) =>
-                  updateRoute(
-                    index,
-                    route.source === "catalog_group"
-                      ? { key: value, groupSlug: value }
-                      : { key: value },
-                  )
-                }
-              />
-              <ToggleField
-                label="Active"
-                checked={route.active !== false}
-                onChange={(checked) => updateRoute(index, { active: checked })}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <button
           type="button"
@@ -3500,6 +3630,17 @@ function defaultBrowseRoutes(): FlowBrowseRoute[] {
       sortOrder: 1,
     },
   ];
+}
+
+function normalizeClientSlug(value: string) {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || "route"
+  );
 }
 
 function MessageStepSettings({
@@ -4957,7 +5098,7 @@ function friendlyBlockName(type: VisualFlowBlockType) {
     LANGUAGE_SELECTION: "Language selection",
     MAIN_MENU: "Main menu",
     STORE_INFO: "Store info",
-    CATEGORY_SELECTION: "Show categories",
+    CATEGORY_SELECTION: "Browse routes",
     PRODUCT_SELECTION: "Product purchase",
     PRODUCT_DETAILS: "Product details",
     QUESTION: "Question",
@@ -5016,6 +5157,11 @@ function previewMessageForBlock(block: VisualFlowNode, language: "en" | "ar" = "
   }
   if (block.type === "MAIN_MENU" || block.config.menuOptions?.length) {
     return "No menu message configured yet.";
+  }
+  if (block.type === "CATEGORY_SELECTION") {
+    return language === "ar"
+      ? "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0644\u062a\u0635\u0641\u062d\u061f"
+      : "How would you like to browse?";
   }
   return "No message configured yet.";
 }
@@ -5099,6 +5245,12 @@ function previewOptionsForBlock(block: VisualFlowNode, language: "en" | "ar") {
       .slice(0, 10);
   }
   if (block.type === "LANGUAGE_SELECTION") return ["English", "العربية"];
+  if (block.type === "CATEGORY_SELECTION") {
+    return (block.config.browseRoutes?.length ? block.config.browseRoutes : defaultBrowseRoutes())
+      .filter((route) => route.active !== false)
+      .map((route) => route.label[language] || route.label.en || route.key)
+      .slice(0, 10);
+  }
   if (block.type === "PRODUCT_DETAILS") return ["Order this item", "Back to products", "Main menu"];
   return [];
 }

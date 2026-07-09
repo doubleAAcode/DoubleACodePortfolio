@@ -11,6 +11,12 @@ import {
   type BotFlowSettingsInput,
   type BusinessBotFlowSettings,
 } from "./bot-flow-settings.server";
+import type {
+  WaCatalogGroupRow,
+  WaCatalogGroupValueRow,
+  WaProductGroupValueRow,
+  WaProductRow,
+} from "./dashboard-store.server";
 
 export type AdminBusinessStatus = BusinessOperationalStatus;
 export type AdminBusinessTemplate =
@@ -114,6 +120,10 @@ export type AdminBusinessDetails = {
   business: AdminBusinessRow;
   users: AdminBusinessUserRow[];
   connections: AdminConnectionRow[];
+  catalogGroups: WaCatalogGroupRow[];
+  catalogGroupValues: WaCatalogGroupValueRow[];
+  catalogProducts: WaProductRow[];
+  productGroupValues: WaProductGroupValueRow[];
   counts: {
     categories: number;
     products: number;
@@ -131,6 +141,30 @@ export type AdminCheckoutSettingsInput = {
   botFlowSettings: BotFlowSettingsInput;
   orderConfirmationMessageEnglish: string;
   orderConfirmationMessageArabic: string;
+};
+
+export type AdminCatalogGroupInput = {
+  id?: string;
+  nameEnglish: string;
+  nameArabic: string;
+  slug?: string;
+  isActive: boolean;
+  sortOrder: number;
+};
+
+export type AdminCatalogGroupValueInput = {
+  id?: string;
+  groupId: string;
+  nameEnglish: string;
+  nameArabic: string;
+  slug?: string;
+  isActive: boolean;
+  sortOrder: number;
+};
+
+export type AdminCatalogValueProductsInput = {
+  groupValueId: string;
+  productIds: string[];
 };
 
 export type BusinessHealthReport = {
@@ -251,6 +285,10 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     notifications,
     audit,
     botFlowSettings,
+    catalogGroups,
+    catalogGroupValues,
+    catalogProducts,
+    productGroupValues,
   ] =
     await Promise.all([
       listBusinesses(`id=eq.${encodeURIComponent(businessId)}`),
@@ -270,6 +308,10 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
       ),
       listAuditLogs(12, businessId),
       getBusinessBotFlowSettings(businessId),
+      listCatalogGroups(businessId),
+      listCatalogGroupValues(businessId),
+      listCatalogProducts(businessId),
+      listProductGroupValues(businessId),
     ]);
   const business = businesses[0];
   if (!business) throw new Error("Business was not found.");
@@ -279,6 +321,10 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     business,
     users,
     connections,
+    catalogGroups,
+    catalogGroupValues,
+    catalogProducts,
+    productGroupValues,
     counts: {
       categories,
       products,
@@ -291,6 +337,150 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     checklist: buildChecklist({ business, users, connections, categories, products, orders }),
     recentAudit: audit,
   };
+}
+
+export async function saveAdminCatalogGroup({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminCatalogGroupInput;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const slug = normalizeSlug(input.slug || input.nameEnglish, "group");
+  const groupId = input.id || makeId("group", slug);
+  await supabaseServerRest("/wa_catalog_groups?on_conflict=id", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates,return=minimal",
+    body: JSON.stringify({
+      id: groupId,
+      business_id: businessId,
+      name_english: requiredText(input.nameEnglish, "Route English name"),
+      name_arabic: input.nameArabic.trim() || input.nameEnglish.trim(),
+      slug,
+      source: "custom",
+      is_active: input.isActive,
+      sort_order: nonNegativeInt(input.sortOrder, "Sort order"),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATALOG_GROUP_SAVED",
+    targetType: "CATALOG_GROUP",
+    targetId: groupId,
+    newValue: { slug, nameEnglish: input.nameEnglish },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminCatalogGroupValue({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminCatalogGroupValueInput;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const group = (await listCatalogGroups(businessId)).find((entry) => entry.id === input.groupId);
+  if (!group) throw new Error("Create the route group before adding sub-options.");
+  const slug = normalizeSlug(input.slug || input.nameEnglish, "value");
+  const valueId = input.id || makeId("group-value", `${group.slug}-${slug}`);
+  await supabaseServerRest("/wa_catalog_group_values?on_conflict=id", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates,return=minimal",
+    body: JSON.stringify({
+      id: valueId,
+      business_id: businessId,
+      group_id: input.groupId,
+      name_english: requiredText(input.nameEnglish, "Sub-option English name"),
+      name_arabic: input.nameArabic.trim() || input.nameEnglish.trim(),
+      slug,
+      source: "custom",
+      is_active: input.isActive,
+      sort_order: nonNegativeInt(input.sortOrder, "Sort order"),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATALOG_GROUP_VALUE_SAVED",
+    targetType: "CATALOG_GROUP_VALUE",
+    targetId: valueId,
+    newValue: { groupId: input.groupId, slug, nameEnglish: input.nameEnglish },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminCatalogValueProducts({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminCatalogValueProductsInput;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const value = (await listCatalogGroupValues(businessId)).find(
+    (entry) => entry.id === input.groupValueId,
+  );
+  if (!value) throw new Error("Route value was not found.");
+
+  const products = await listCatalogProducts(businessId);
+  const productIds = Array.from(new Set(input.productIds));
+  const validProductIds = new Set(products.map((product) => product.id));
+  const unknownProductId = productIds.find((productId) => !validProductIds.has(productId));
+  if (unknownProductId) throw new Error(`Product ${unknownProductId} does not belong to this business.`);
+
+  await supabaseServerRest(
+    `/wa_product_group_values?business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&group_value_id=eq.${encodeURIComponent(input.groupValueId)}`,
+    {
+      method: "DELETE",
+      prefer: "return=minimal",
+    },
+  );
+
+  if (productIds.length) {
+    await supabaseServerRest("/wa_product_group_values", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: JSON.stringify(
+        productIds.map((productId) => ({
+          business_id: businessId,
+          product_id: productId,
+          group_value_id: input.groupValueId,
+        })),
+      ),
+    });
+  }
+
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATALOG_VALUE_PRODUCTS_SAVED",
+    targetType: "CATALOG_GROUP_VALUE",
+    targetId: input.groupValueId,
+    newValue: { productIds },
+  });
+  return getAdminBusinessDetails(businessId);
 }
 
 export async function saveAdminCheckoutSettings({
@@ -884,6 +1074,50 @@ async function listAuditLogs(limit: number, businessId?: string) {
   });
 }
 
+async function listCatalogGroups(businessId: string) {
+  return supabaseServerRest<WaCatalogGroupRow[]>(
+    `/wa_catalog_groups?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingCatalogGroupTable(error)) return [];
+    throw error;
+  });
+}
+
+async function listCatalogGroupValues(businessId: string) {
+  return supabaseServerRest<WaCatalogGroupValueRow[]>(
+    `/wa_catalog_group_values?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingCatalogGroupTable(error)) return [];
+    throw error;
+  });
+}
+
+async function listCatalogProducts(businessId: string) {
+  return supabaseServerRest<WaProductRow[]>(
+    `/wa_products?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_products")) return [];
+    throw error;
+  });
+}
+
+async function listProductGroupValues(businessId: string) {
+  return supabaseServerRest<WaProductGroupValueRow[]>(
+    `/wa_product_group_values?select=*&business_id=eq.${encodeURIComponent(businessId)}`,
+  ).catch((error) => {
+    if (isMissingCatalogGroupTable(error) || isMissingTable(error, "wa_product_group_values")) {
+      return [];
+    }
+    throw error;
+  });
+}
+
 async function countRows(path: string) {
   const rows = await supabaseServerRest<Array<{ id: string }>>(path);
   return rows.length;
@@ -1008,10 +1242,45 @@ function makeBusinessId(name: string) {
   return `biz-${slug || Date.now()}`;
 }
 
+function makeId(prefix: string, value: string) {
+  const slug =
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "item";
+  return `${prefix}-${slug}-${Date.now().toString(36)}`;
+}
+
+function normalizeSlug(value: string, fallback: string) {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || fallback
+  );
+}
+
+function nonNegativeInt(value: number, label: string) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) throw new Error(`${label} must be 0 or more.`);
+  return Math.floor(number);
+}
+
 function requiredText(value: string | undefined, label: string) {
   const clean = value?.trim();
   if (!clean) throw new Error(`${label} is required.`);
   return clean;
+}
+
+function isMissingCatalogGroupTable(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    (message.includes("wa_catalog_groups") || message.includes("wa_catalog_group_values")) &&
+    (message.includes("does not exist") || message.includes("schema cache"))
+  );
 }
 
 function maskSecretRef(value?: string) {
