@@ -149,9 +149,14 @@ function AdminCatalogRoutesPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {routes.length ? (
                 routes.map((route) => {
-                  const valueCount =
-                    details?.catalogGroupValues.filter((value) => value.group_id === route.id)
-                      .length ?? 0;
+                  const routeValues =
+                    details?.catalogGroupValues.filter((value) => value.group_id === route.id) ?? [];
+                  const valueCount = routeValues.length;
+                  const routeValueIds = new Set(routeValues.map((value) => value.id));
+                  const productCount =
+                    details?.productGroupValues.filter((entry) =>
+                      routeValueIds.has(entry.group_value_id),
+                    ).length ?? 0;
                   return (
                     <div key={route.id} className="rounded-md border border-border bg-background p-3">
                       <button
@@ -178,22 +183,29 @@ function AdminCatalogRoutesPage() {
                         <button
                           type="button"
                           className="studio-button-secondary px-3 py-1.5 text-xs text-destructive"
-                          disabled={valueCount > 0 || saving === `delete-route-${route.id}`}
-                          onClick={() =>
+                          disabled={productCount > 0 || saving === `delete-route-${route.id}`}
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `Delete ${route.name_english}? Unused values under this route will also be deleted.`,
+                              )
+                            ) {
+                              return;
+                            }
                             void run(`delete-route-${route.id}`, () =>
                               applyAdminBusinessAction(businessId, {
                                 action: "delete_catalog_group",
                                 groupId: route.id,
                               }),
-                            )
-                          }
+                            );
+                          }}
                         >
                           {saving === `delete-route-${route.id}` ? "Deleting..." : "Delete"}
                         </button>
                       </div>
-                      {valueCount > 0 ? (
+                      {productCount > 0 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                          Delete route values before deleting this route.
+                          Remove this route from products before deleting it.
                         </p>
                       ) : null}
                     </div>

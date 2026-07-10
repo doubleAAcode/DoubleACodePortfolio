@@ -560,15 +560,13 @@ function getBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
   return routes
     .filter((route) => route.active !== false)
     .map((route, index): FlowBrowseRoute => {
-      const source: FlowBrowseRoute["source"] =
-        route.source === "catalog_group" ? "catalog_group" : "categories";
       return {
         ...route,
         key: route.key.trim() || `browse_route_${index + 1}`,
-        source,
-        groupSlug: source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+        source: "catalog_group",
+        groupSlug: route.groupSlug?.trim() || route.key.trim(),
         label: {
-          en: route.label.en.trim() || (source === "catalog_group" ? "Browse" : "Categories"),
+          en: route.label.en.trim() || "Browse",
           ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
         },
         active: true,
@@ -581,9 +579,10 @@ function getBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
 function defaultBrowseRoutes(): FlowBrowseRoute[] {
   return [
     {
-      key: "categories",
-      source: "categories",
-      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      key: "collections",
+      source: "catalog_group",
+      groupSlug: "collections",
+      label: { en: "Collections", ar: "\u0645\u062c\u0645\u0648\u0639\u0627\u062a" },
       active: true,
       sortOrder: 1,
     },

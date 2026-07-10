@@ -346,9 +346,6 @@ function FlowSection({
           >
             Manage routes
           </a>
-          <a href={`/admin/businesses/${businessId}/categories`} className="studio-button-secondary">
-            Manage categories
-          </a>
           <a
             href={`/admin/businesses/${businessId}/catalog-route-values`}
             className="studio-button-secondary"
@@ -2787,7 +2784,6 @@ type AddStepKind =
   | "message"
   | "options"
   | "question"
-  | "categories"
   | "products"
   | "cart"
   | "checkout"
@@ -2799,7 +2795,6 @@ const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBloc
   { id: "message", label: "Send a message", type: "SEND_MESSAGE" },
   { id: "options", label: "Send a message with options", type: "SEND_MESSAGE" },
   { id: "question", label: "Ask a question", type: "QUESTION" },
-  { id: "categories", label: "Show categories", type: "CATEGORY_SELECTION" },
   { id: "products", label: "Product purchase", type: "PRODUCT_SELECTION" },
   { id: "cart", label: "Show cart", type: "CART_REVIEW" },
   { id: "checkout", label: "Start checkout", type: "CHECKOUT_FULFILLMENT" },
@@ -3522,30 +3517,23 @@ function BrowseRoutesBlockSettings({
                 <label className="block text-sm">
                   <span className="mb-1 block text-muted-foreground">Route source</span>
                   <select
-                    value={route.source}
-                    onChange={(event) =>
+                    value="catalog_group"
+                    onChange={() =>
                       updateRoute(index, {
-                        source:
-                          event.target.value === "catalog_group" ? "catalog_group" : "categories",
+                        source: "catalog_group",
                       })
                     }
                     className="w-full rounded-md border border-input bg-background px-3 py-2"
                   >
-                    <option value="categories">Product categories</option>
-                    <option value="catalog_group">Custom route with sub-options</option>
+                    <option value="catalog_group">Catalog route</option>
                   </select>
                 </label>
                 <TextField
-                  label={route.source === "catalog_group" ? "Catalog group slug" : "Route key"}
-                  value={route.source === "catalog_group" ? routeSlug : route.key}
+                  label="Catalog group slug"
+                  value={routeSlug}
                   onChange={(value) => {
                     const nextSlug = normalizeClientSlug(value);
-                    updateRoute(
-                      index,
-                      route.source === "catalog_group"
-                        ? { key: nextSlug, groupSlug: nextSlug }
-                        : { key: nextSlug },
-                    );
+                    updateRoute(index, { key: nextSlug, groupSlug: nextSlug });
                   }}
                 />
                 <ToggleField
@@ -3554,8 +3542,7 @@ function BrowseRoutesBlockSettings({
                   onChange={(checked) => updateRoute(index, { active: checked })}
                 />
 
-                {route.source === "catalog_group" ? (
-                  <div className="space-y-3 rounded-md border border-border bg-surface/40 p-3">
+                <div className="space-y-3 rounded-md border border-border bg-surface/40 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <div className="text-sm font-medium">Route data status</div>
@@ -3614,8 +3601,7 @@ function BrowseRoutesBlockSettings({
                         Create it in Catalog routes, then add route values and assign products.
                       </p>
                     )}
-                  </div>
-                ) : null}
+                </div>
               </div>
             );
           })}
@@ -3655,9 +3641,10 @@ function BrowseRoutesBlockSettings({
 function defaultBrowseRoutes(): FlowBrowseRoute[] {
   return [
     {
-      key: "categories",
-      source: "categories",
-      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      key: "collections",
+      source: "catalog_group",
+      groupSlug: "collections",
+      label: { en: "Collections", ar: "\u0645\u062c\u0645\u0648\u0639\u0627\u062a" },
       active: true,
       sortOrder: 1,
     },

@@ -65,6 +65,16 @@ function AdminCatalogRouteValuesPage() {
     [details?.catalogGroupValues, selectedGroupId],
   );
   const selectedRoute = routes.find((route) => route.id === selectedGroupId);
+  const selectedRouteValueIds = useMemo(
+    () => new Set(values.map((value) => value.id)),
+    [values],
+  );
+  const selectedRouteProductCount = useMemo(
+    () =>
+      details?.productGroupValues.filter((entry) => selectedRouteValueIds.has(entry.group_value_id))
+        .length ?? 0,
+    [details?.productGroupValues, selectedRouteValueIds],
+  );
 
   useEffect(() => {
     setValueForm({ ...emptyValueForm, groupId: selectedGroupId, sortOrder: values.length + 1 });
@@ -181,20 +191,58 @@ function AdminCatalogRouteValuesPage() {
                   These labels are selectable for products.
                 </p>
               </div>
-              <button
-                type="button"
-                className="studio-button-secondary px-3 py-1.5 text-xs"
-                onClick={() =>
-                  setValueForm({
-                    ...emptyValueForm,
-                    groupId: selectedGroupId,
-                    sortOrder: values.length + 1,
-                  })
-                }
-              >
-                New value
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="studio-button-secondary px-3 py-1.5 text-xs"
+                  onClick={() =>
+                    setValueForm({
+                      ...emptyValueForm,
+                      groupId: selectedGroupId,
+                      sortOrder: values.length + 1,
+                    })
+                  }
+                >
+                  New value
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    !selectedRoute ||
+                    selectedRouteProductCount > 0 ||
+                    saving === `delete-route-${selectedGroupId}`
+                  }
+                  className="studio-button-secondary px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
+                  onClick={() => {
+                    if (!selectedRoute) return;
+                    if (
+                      !window.confirm(
+                        `Delete ${selectedRoute.name_english}? Unused values under this route will also be deleted.`,
+                      )
+                    ) {
+                      return;
+                    }
+                    void run(`delete-route-${selectedRoute.id}`, async () => {
+                      const nextDetails = await applyAdminBusinessAction(businessId, {
+                        action: "delete_catalog_group",
+                        groupId: selectedRoute.id,
+                      });
+                      const nextGroupId = nextDetails.catalogGroups[0]?.id ?? "";
+                      setSelectedGroupId(nextGroupId);
+                      return nextDetails;
+                    });
+                  }}
+                >
+                  {saving === `delete-route-${selectedGroupId}` ? "Deleting..." : "Delete route"}
+                </button>
+              </div>
             </div>
+            {selectedRouteProductCount > 0 ? (
+              <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-100">
+                This route is used by {selectedRouteProductCount} product assignment(s). Remove
+                those assignments before deleting the route.
+              </p>
+            ) : null}
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {values.length ? (

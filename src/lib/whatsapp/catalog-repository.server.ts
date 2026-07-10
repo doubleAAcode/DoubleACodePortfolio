@@ -41,7 +41,7 @@ export type StoreCatalogGroupValue = {
 export type StoreProduct = {
   id: string;
   businessId: string;
-  categoryId: string;
+  categoryId: string | null;
   code: string;
   nameEnglish: string;
   nameArabic: string;
@@ -119,7 +119,7 @@ type CategoryRow = {
 type ProductRow = {
   id: string;
   business_id: string;
-  category_id: string;
+  category_id: string | null;
   code: string;
   name_english: string;
   name_arabic: string;
@@ -576,28 +576,15 @@ export async function listActiveCategories(businessId: string) {
 }
 
 export async function listActiveCatalogGroups(businessId: string) {
-  const activeCategories = await listActiveCategories(businessId);
-  const customGroups = await listCustomCatalogGroups(businessId);
-  const categoryGroup = activeCategories.length ? [defaultCategoryGroup(businessId)] : [];
-  return [...categoryGroup, ...customGroups];
+  return listCustomCatalogGroups(businessId);
 }
 
 export async function findActiveCatalogGroupById(businessId: string, groupId: string) {
-  if (groupId === defaultCategoryGroupId(businessId)) {
-    const activeCategories = await listActiveCategories(businessId);
-    return activeCategories.length ? defaultCategoryGroup(businessId) : undefined;
-  }
-
   const groups = await listCustomCatalogGroups(businessId);
   return groups.find((group) => group.id === groupId);
 }
 
 export async function listActiveCatalogGroupValues(businessId: string, groupId: string) {
-  if (groupId === defaultCategoryGroupId(businessId)) {
-    const activeCategories = await listActiveCategories(businessId);
-    return activeCategories.map(categoryToGroupValue);
-  }
-
   if (isServerSupabaseConfigured()) {
     try {
       const rows = await supabaseServerRest<CatalogGroupValueRow[]>(
@@ -620,10 +607,6 @@ export async function listVisibleProductsByGroupValue(
   groupId: string,
   groupValueId: string,
 ) {
-  if (groupId === defaultCategoryGroupId(businessId)) {
-    return listVisibleProductsByCategory(businessId, groupValueId);
-  }
-
   if (isServerSupabaseConfigured()) {
     try {
       const links = await supabaseServerRest<ProductGroupValueRow[]>(

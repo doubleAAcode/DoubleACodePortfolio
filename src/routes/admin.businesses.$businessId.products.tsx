@@ -24,7 +24,7 @@ export const Route = createFileRoute("/admin/businesses/$businessId/products")({
 });
 
 const emptyProduct: AdminProductInput = {
-  category_id: "",
+  category_id: null,
   code: "",
   name_english: "",
   name_arabic: "",
@@ -114,10 +114,6 @@ function AdminProductsPage() {
     void load();
   }, [load]);
 
-  const categoryById = useMemo(
-    () => new Map((details?.catalogCategories ?? []).map((category) => [category.id, category])),
-    [details?.catalogCategories],
-  );
   const routeById = useMemo(
     () => new Map((details?.catalogGroups ?? []).map((route) => [route.id, route])),
     [details?.catalogGroups],
@@ -147,13 +143,15 @@ function AdminProductsPage() {
     return [...(details?.catalogProducts ?? [])]
       .filter((product) => {
         if (!query) return true;
-        const category = categoryById.get(product.category_id);
+        const routeValueLabels = (productRouteValueIds.get(product.id) ?? [])
+          .map((id) => details?.catalogGroupValues.find((value) => value.id === id))
+          .filter(Boolean)
+          .map((value) => `${routeById.get(value?.group_id ?? "")?.name_english ?? ""} ${value?.name_english ?? ""}`);
         return [
           product.code,
           product.name_english,
           product.name_arabic,
-          category?.name_english,
-          category?.name_arabic,
+          ...routeValueLabels,
         ]
           .filter(Boolean)
           .join(" ")
@@ -161,7 +159,7 @@ function AdminProductsPage() {
           .includes(query);
       })
       .sort((a, b) => a.sort_order - b.sort_order || a.name_english.localeCompare(b.name_english));
-  }, [categoryById, details?.catalogProducts, search]);
+  }, [details?.catalogGroupValues, details?.catalogProducts, productRouteValueIds, routeById, search]);
 
   async function run(label: string, action: () => Promise<AdminBusinessDetails>) {
     setSaving(label);
@@ -181,7 +179,6 @@ function AdminProductsPage() {
   function openNewProduct() {
     setProductForm({
       ...emptyProduct,
-      category_id: details?.catalogCategories[0]?.id ?? "",
       sort_order: (details?.catalogProducts.length ?? 0) + 10,
     });
     resetAdvancedForms();
@@ -191,7 +188,7 @@ function AdminProductsPage() {
   function openProduct(product: WaProductRow) {
     setProductForm({
       id: product.id,
-      category_id: product.category_id,
+      category_id: product.category_id ?? null,
       code: product.code,
       name_english: product.name_english,
       name_arabic: product.name_arabic,
@@ -220,7 +217,7 @@ function AdminProductsPage() {
   }
 
   async function submitProduct() {
-    const validation = validateProduct(productForm, details);
+    const validation = validateProduct(productForm);
     if (validation) {
       setError(validation);
       return;
@@ -498,11 +495,6 @@ function AdminProductsPage() {
             </button>
           </div>
 
-          {!details?.catalogCategories.length ? (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-100">
-              Add categories before creating products.
-            </div>
-          ) : null}
           {!details?.catalogGroupValues.length ? (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-100">
               Add route values before creating products. Products require at least one route value.
@@ -513,7 +505,6 @@ function AdminProductsPage() {
             <ProductList
               products={products}
               details={details}
-              categoryById={categoryById}
               routeById={routeById}
               productRouteValueIds={productRouteValueIds}
               onEdit={openProduct}
@@ -530,7 +521,6 @@ function AdminProductsPage() {
           ) : (
             <ProductEditor
               form={productForm}
-              details={details}
               routeValueGroups={routeValueGroups}
               saving={saving === "product"}
               onChange={setProductForm}
@@ -569,7 +559,6 @@ function AdminProductsPage() {
 function ProductList({
   products,
   details,
-  categoryById,
   routeById,
   productRouteValueIds,
   onEdit,
@@ -577,7 +566,6 @@ function ProductList({
 }: {
   products: WaProductRow[];
   details: AdminBusinessDetails;
-  categoryById: Map<string, AdminBusinessDetails["catalogCategories"][number]>;
   routeById: Map<string, AdminBusinessDetails["catalogGroups"][number]>;
   productRouteValueIds: Map<string, string[]>;
   onEdit: (product: WaProductRow) => void;
@@ -604,7 +592,7 @@ function ProductList({
                 <div>
                   <h2 className="font-display text-lg font-semibold">{product.name_english}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {product.code} | {categoryById.get(product.category_id)?.name_english ?? "No category"}
+                    {product.code}
                   </p>
                 </div>
                 <span
@@ -655,7 +643,6 @@ function ProductList({
 
 function ProductEditor({
   form,
-  details,
   routeValueGroups,
   saving,
   savingAdvanced,
@@ -685,7 +672,6 @@ function ProductEditor({
   onDeleteCustomField,
 }: {
   form: AdminProductInput;
-  details: AdminBusinessDetails;
   routeValueGroups: Array<{
     route: AdminBusinessDetails["catalogGroups"][number];
     values: AdminBusinessDetails["catalogGroupValues"];
@@ -737,18 +723,6 @@ function ProductEditor({
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <SelectField
-            label="Category"
-            value={form.category_id}
-            onChange={(value) => onChange({ ...form, category_id: value })}
-          >
-            <option value="">Select category</option>
-            {details.catalogCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name_english}
-              </option>
-            ))}
-          </SelectField>
           <TextField
             label="Product code"
             value={form.code}
@@ -1466,9 +1440,7 @@ function choicesToText(choices: WaProductCustomFieldRow["choices"]) {
   return (choices ?? []).map((choice) => choice.labelEnglish).join(", ");
 }
 
-function validateProduct(product: AdminProductInput, details?: AdminBusinessDetails) {
-  if (!details?.catalogCategories.length) return "Add a category before creating products.";
-  if (!product.category_id) return "Choose a category.";
+function validateProduct(product: AdminProductInput) {
   if (!product.code.trim()) return "Add a product code.";
   if (!product.name_english.trim() || !product.name_arabic.trim()) {
     return "Add product names in English and Arabic.";

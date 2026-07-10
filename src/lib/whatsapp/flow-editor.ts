@@ -383,9 +383,10 @@ function getEditorBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
   if (configured?.length) return normalizeBrowseRoutes(configured);
   return [
     {
-      key: "categories",
-      source: "categories",
-      label: { en: "Categories", ar: "\u0627\u0644\u0641\u0626\u0627\u062a" },
+      key: "collections",
+      source: "catalog_group",
+      groupSlug: "collections",
+      label: { en: "Collections", ar: "\u0645\u062c\u0645\u0648\u0639\u0627\u062a" },
       active: true,
       sortOrder: 1,
     },
@@ -395,11 +396,10 @@ function getEditorBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
 function normalizeBrowseRoutes(routes: FlowBrowseRoute[]): FlowBrowseRoute[] {
   return routes.map((route, index) => ({
     key: route.key.trim() || `browse_route_${index + 1}`,
-    source: route.source === "catalog_group" ? "catalog_group" : "categories",
-    groupSlug:
-      route.source === "catalog_group" ? route.groupSlug?.trim() || route.key.trim() : undefined,
+    source: "catalog_group",
+    groupSlug: route.groupSlug?.trim() || route.key.trim(),
     label: {
-      en: route.label.en.trim() || (route.source === "catalog_group" ? "Browse" : "Categories"),
+      en: route.label.en.trim() || "Browse",
       ar: route.label.ar.trim() || route.label.en.trim() || "Categories",
     },
     active: route.active !== false,

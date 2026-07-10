@@ -35,7 +35,7 @@ export type WaCategoryRow = {
 export type WaProductRow = {
   id: string;
   business_id: string;
-  category_id: string;
+  category_id: string | null;
   code: string;
   name_english: string;
   name_arabic: string;
@@ -195,7 +195,7 @@ export type SaveCategoryInput = {
 
 export type SaveProductInput = {
   id?: string;
-  category_id: string;
+  category_id?: string | null;
   code: string;
   name_english: string;
   name_arabic: string;
@@ -470,7 +470,6 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
     }
 
     case "saveProduct":
-      requireOwned(data.categories, action.payload.category_id, "Category");
       validateLanguagePair(action.payload.name_english, action.payload.name_arabic, "product name");
       validateUnique(
         data.products,
@@ -481,12 +480,14 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
       );
       validateProductGroupValues(data, action.payload.group_value_ids ?? []);
       {
+        const categoryId = action.payload.category_id?.trim() || null;
+        if (categoryId) requireOwned(data.categories, categoryId, "Category");
         const productId =
           action.payload.id || makeId("prod", action.payload.code || action.payload.name_english);
         await upsertRow("/wa_products?on_conflict=id", {
           id: productId,
           business_id: businessId,
-          category_id: action.payload.category_id,
+          category_id: categoryId,
           code: requiredText(action.payload.code, "Product code").toUpperCase(),
           name_english: action.payload.name_english.trim(),
           name_arabic: action.payload.name_arabic.trim(),

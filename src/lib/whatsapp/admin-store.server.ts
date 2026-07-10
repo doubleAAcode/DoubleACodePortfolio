@@ -433,9 +433,19 @@ export async function deleteAdminCatalogGroup({
   ensureSupabase();
   const group = (await listCatalogGroups(businessId)).find((entry) => entry.id === groupId);
   if (!group) throw new Error("Route was not found.");
-  const values = await listCatalogGroupValues(businessId);
-  if (values.some((value) => value.group_id === groupId)) {
-    throw new Error("Delete this route's values before deleting the route.");
+  const routeValues = (await listCatalogGroupValues(businessId)).filter(
+    (value) => value.group_id === groupId,
+  );
+  const routeValueIds = new Set(routeValues.map((value) => value.id));
+  const productLinks = await listProductGroupValues(businessId);
+  if (productLinks.some((entry) => routeValueIds.has(entry.group_value_id))) {
+    throw new Error("Remove this route's values from products before deleting the route.");
+  }
+  for (const value of routeValues) {
+    await applyWaDashboardAction(businessId, {
+      type: "deleteCatalogGroupValue",
+      payload: { id: value.id },
+    });
   }
   await applyWaDashboardAction(businessId, { type: "deleteCatalogGroup", payload: { id: groupId } });
   await audit({
@@ -445,7 +455,11 @@ export async function deleteAdminCatalogGroup({
     action: "ADMIN_CATALOG_GROUP_DELETED",
     targetType: "CATALOG_GROUP",
     targetId: groupId,
-    previousValue: { slug: group.slug, nameEnglish: group.name_english },
+    previousValue: {
+      slug: group.slug,
+      nameEnglish: group.name_english,
+      deletedValueIds: routeValues.map((value) => value.id),
+    },
   });
   return getAdminBusinessDetails(businessId);
 }
@@ -591,7 +605,11 @@ export async function saveAdminProduct({
   if (!routeValueIds.length) throw new Error("Choose at least one route value for this product.");
   await applyWaDashboardAction(businessId, {
     type: "saveProduct",
-    payload: { ...input, group_value_ids: routeValueIds },
+    payload: {
+      ...input,
+      category_id: input.category_id?.trim() || null,
+      group_value_ids: routeValueIds,
+    },
   });
   await audit({
     adminUser,
@@ -1146,21 +1164,40 @@ export async function seedDefaultBusinessData({
   request: Request;
 }) {
   const label = templateLabel(templateType);
-  const categoryId = `${businessId}-cat-featured`;
   const productId = `${businessId}-prod-sample`;
+  const routeId = `${businessId}-route-featured`;
+  const routeValueId = `${businessId}-route-featured-value`;
   const areaId = `${businessId}-area-local`;
   const pickupId = `${businessId}-pickup-main`;
   const paymentId = `${businessId}-pay-cash`;
 
   await Promise.all([
-    supabaseServerRest("/wa_categories?on_conflict=id", {
+    supabaseServerRest("/wa_catalog_groups?on_conflict=id", {
       method: "POST",
       prefer: "resolution=ignore-duplicates,return=minimal",
       body: JSON.stringify({
-        id: categoryId,
+        id: routeId,
         business_id: businessId,
+        name_english: "Collections",
+        name_arabic: "\u0645\u062c\u0645\u0648\u0639\u0627\u062a",
+        slug: "collections",
+        source: "custom",
+        is_active: true,
+        sort_order: 1,
+      }),
+    }),
+    supabaseServerRest("/wa_catalog_group_values?on_conflict=id", {
+      method: "POST",
+      prefer: "resolution=ignore-duplicates,return=minimal",
+      body: JSON.stringify({
+        id: routeValueId,
+        business_id: businessId,
+        group_id: routeId,
         name_english: label.category,
         name_arabic: "\u0645\u0646\u062a\u062c\u0627\u062a \u0645\u0645\u064a\u0632\u0629",
+        slug: "featured",
+        source: "custom",
+        is_active: true,
         sort_order: 1,
       }),
     }),
@@ -1213,7 +1250,7 @@ export async function seedDefaultBusinessData({
     body: JSON.stringify({
       id: productId,
       business_id: businessId,
-      category_id: categoryId,
+      category_id: null,
       code: "SAMPLE-001",
       name_english: label.product,
       name_arabic: "\u0645\u0646\u062a\u062c \u062a\u062c\u0631\u064a\u0628\u064a",
@@ -1223,6 +1260,16 @@ export async function seedDefaultBusinessData({
       price: label.price,
       stock_quantity: 10,
       sort_order: 1,
+    }),
+  });
+
+  await supabaseServerRest("/wa_product_group_values?on_conflict=business_id,product_id,group_value_id", {
+    method: "POST",
+    prefer: "resolution=ignore-duplicates,return=minimal",
+    body: JSON.stringify({
+      business_id: businessId,
+      product_id: productId,
+      group_value_id: routeValueId,
     }),
   });
 

@@ -33,7 +33,7 @@ create index if not exists wa_categories_business_sort_idx
 create table if not exists public.wa_products (
   id text primary key,
   business_id text not null references public.wa_businesses(id) on delete cascade,
-  category_id text not null references public.wa_categories(id) on delete restrict,
+  category_id text references public.wa_categories(id) on delete set null,
   code text not null,
   name_english text not null,
   name_arabic text not null,

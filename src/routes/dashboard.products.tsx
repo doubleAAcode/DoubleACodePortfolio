@@ -216,7 +216,7 @@ export function ProductsPage() {
     return [...(data?.products ?? [])]
       .filter((product) => {
         if (!value) return true;
-        const category = categoryById.get(product.category_id);
+        const category = product.category_id ? categoryById.get(product.category_id) : undefined;
         return [
           product.code,
           product.name_english,
@@ -269,7 +269,7 @@ export function ProductsPage() {
   function openNewProduct() {
     setProductForm({
       ...emptyProduct,
-      category_id: categories[0]?.id ?? "",
+      category_id: "",
       sort_order: (data?.products.length ?? 0) + 10,
     });
     setSelectedProductId("");
@@ -542,13 +542,6 @@ export function ProductsPage() {
 
       <Status loading={false} error={error} notice={notice} />
 
-      {!categories.length ? (
-        <section className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-          Add at least one category before adding products. Products need a category so WhatsApp can
-          show them in the right place.
-        </section>
-      ) : null}
-
       {!editorOpen ? (
         <ProductList
           products={products}
@@ -586,7 +579,7 @@ export function ProductsPage() {
                 footer={
                   <EditorActions
                     saving={savingAction === "product"}
-                    disabled={saving || !categories.length}
+                    disabled={saving}
                     primaryLabel={productForm.id ? "Save product" : "Create product"}
                     savingLabel="Saving product..."
                     onPrimary={() => void submitProduct()}
@@ -607,17 +600,20 @@ export function ProductsPage() {
                     onChange={(value) => setProductForm({ ...productForm, name_arabic: value })}
                   />
                   <SelectInput
-                    label="Category"
+                    label="Legacy category"
                     value={productForm.category_id}
                     onChange={(value) => setProductForm({ ...productForm, category_id: value })}
                   >
-                    <option value="">Choose category</option>
+                    <option value="">No legacy category</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name_english}
                       </option>
                     ))}
                   </SelectInput>
+                  <p className="self-end text-xs text-muted-foreground">
+                    Optional. WhatsApp placement is controlled by admin route values.
+                  </p>
                   <TextInput
                     label="Product code"
                     value={productForm.code}
@@ -1163,7 +1159,7 @@ export function ProductsPage() {
               >
                 <WhatsAppPreview
                   product={productForm}
-                  category={categoryById.get(productForm.category_id)}
+                  category={productForm.category_id ? categoryById.get(productForm.category_id) : undefined}
                   optionGroups={optionGroups}
                   fields={productFields}
                   currency={currency}
@@ -1192,7 +1188,7 @@ export function ProductsPage() {
           <aside className="space-y-4">
             <ProductSummary
               product={productForm}
-              category={categoryById.get(productForm.category_id)}
+              category={productForm.category_id ? categoryById.get(productForm.category_id) : undefined}
               currency={currency}
               optionCount={productOptions.length}
               questionCount={productFields.length}
@@ -1200,7 +1196,7 @@ export function ProductsPage() {
             />
             <WhatsAppPreview
               product={productForm}
-              category={categoryById.get(productForm.category_id)}
+              category={productForm.category_id ? categoryById.get(productForm.category_id) : undefined}
               optionGroups={optionGroups}
               fields={productFields}
               currency={currency}
@@ -1250,7 +1246,7 @@ function ProductList({
   return (
     <section className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
       {products.map((product) => {
-        const category = categories.get(product.category_id);
+        const category = product.category_id ? categories.get(product.category_id) : undefined;
         const selected = product.id === selectedProductId;
 
         return (
@@ -1968,7 +1964,7 @@ function Toggle({
 function productToForm(product: WaProductRow): typeof emptyProduct {
   return {
     id: product.id,
-    category_id: product.category_id,
+    category_id: product.category_id ?? "",
     code: product.code,
     name_english: product.name_english,
     name_arabic: product.name_arabic,
@@ -1986,8 +1982,9 @@ function productToForm(product: WaProductRow): typeof emptyProduct {
 }
 
 function validateProductForm(product: typeof emptyProduct, categories: WaCategoryRow[]) {
-  if (!categories.length) return "Add a category before creating products.";
-  if (!product.category_id) return "Choose a category for this product.";
+  if (product.category_id && !categories.some((category) => category.id === product.category_id)) {
+    return "Choose a valid legacy category or leave it empty.";
+  }
   if (!product.name_english.trim() || !product.name_arabic.trim()) {
     return "Add the product name in English and Arabic.";
   }
