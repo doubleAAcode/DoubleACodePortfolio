@@ -5,16 +5,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { applyAdminBusinessAction, getAdminBusinessDetails } from "@/lib/whatsapp/admin-client";
 import type {
   AdminBusinessDetails,
-  AdminCatalogGroupInput,
+  AdminCatalogGroupValueInput,
 } from "@/lib/whatsapp/admin-store.server";
 
-export const Route = createFileRoute("/admin/businesses/$businessId/catalog-routes")({
-  component: AdminCatalogRoutesPage,
+export const Route = createFileRoute("/admin/businesses/$businessId/catalog-route-values")({
+  component: AdminCatalogRouteValuesPage,
 });
 
-type RouteForm = AdminCatalogGroupInput;
+type ValueForm = AdminCatalogGroupValueInput;
 
-const emptyRouteForm: RouteForm = {
+const emptyValueForm: ValueForm = {
+  groupId: "",
   nameEnglish: "",
   nameArabic: "",
   slug: "",
@@ -22,10 +23,11 @@ const emptyRouteForm: RouteForm = {
   sortOrder: 10,
 };
 
-function AdminCatalogRoutesPage() {
+function AdminCatalogRouteValuesPage() {
   const { businessId } = Route.useParams();
   const [details, setDetails] = useState<AdminBusinessDetails>();
-  const [routeForm, setRouteForm] = useState<RouteForm>(emptyRouteForm);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [valueForm, setValueForm] = useState<ValueForm>(emptyValueForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
@@ -34,9 +36,14 @@ function AdminCatalogRoutesPage() {
     setLoading(true);
     setError("");
     try {
-      setDetails(await getAdminBusinessDetails(businessId));
+      const nextDetails = await getAdminBusinessDetails(businessId);
+      setDetails(nextDetails);
+      const firstGroupId = nextDetails.catalogGroups[0]?.id ?? "";
+      setSelectedGroupId((current) =>
+        nextDetails.catalogGroups.some((group) => group.id === current) ? current : firstGroupId,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load catalog routes.");
+      setError(err instanceof Error ? err.message : "Could not load route values.");
     } finally {
       setLoading(false);
     }
@@ -50,6 +57,18 @@ function AdminCatalogRoutesPage() {
     () => [...(details?.catalogGroups ?? [])].sort((a, b) => a.sort_order - b.sort_order),
     [details?.catalogGroups],
   );
+  const values = useMemo(
+    () =>
+      [...(details?.catalogGroupValues ?? [])]
+        .filter((value) => value.group_id === selectedGroupId)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [details?.catalogGroupValues, selectedGroupId],
+  );
+  const selectedRoute = routes.find((route) => route.id === selectedGroupId);
+
+  useEffect(() => {
+    setValueForm({ ...emptyValueForm, groupId: selectedGroupId, sortOrder: values.length + 1 });
+  }, [selectedGroupId, values.length]);
 
   async function run(label: string, action: () => Promise<AdminBusinessDetails>) {
     setSaving(label);
@@ -57,22 +76,23 @@ function AdminCatalogRoutesPage() {
     try {
       setDetails(await action());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Catalog route action failed.");
+      setError(err instanceof Error ? err.message : "Route value action failed.");
     } finally {
       setSaving("");
     }
   }
 
-  function editRoute(routeId: string) {
-    const route = routes.find((entry) => entry.id === routeId);
-    if (!route) return;
-    setRouteForm({
-      id: route.id,
-      nameEnglish: route.name_english,
-      nameArabic: route.name_arabic,
-      slug: route.slug,
-      isActive: route.is_active,
-      sortOrder: route.sort_order,
+  function editValue(valueId: string) {
+    const value = values.find((entry) => entry.id === valueId);
+    if (!value) return;
+    setValueForm({
+      id: value.id,
+      groupId: value.group_id,
+      nameEnglish: value.name_english,
+      nameArabic: value.name_arabic,
+      slug: value.slug,
+      isActive: value.is_active,
+      sortOrder: value.sort_order,
     });
   }
 
@@ -89,18 +109,15 @@ function AdminCatalogRoutesPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to business
           </a>
-          <h1 className="mt-2 font-display text-2xl font-semibold">Catalog routes</h1>
+          <h1 className="mt-2 font-display text-2xl font-semibold">Route values</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Manage route definitions only. Examples: Brands, Offers, Occasions, Collections.
-            Route values and product membership are managed on their own screens.
+            Manage values under each route. Products choose from these values on the admin products
+            screen.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a
-            href={`/admin/businesses/${businessId}/catalog-route-values`}
-            className="studio-button-secondary"
-          >
-            Manage route values
+          <a href={`/admin/businesses/${businessId}/catalog-routes`} className="studio-button-secondary">
+            Manage routes
           </a>
           <a href={`/admin/businesses/${businessId}/products`} className="studio-button-secondary">
             Manage products
@@ -125,75 +142,109 @@ function AdminCatalogRoutesPage() {
 
       {loading ? (
         <div className="rounded-md border border-border bg-surface/60 p-5 text-sm text-muted-foreground">
-          Loading routes...
+          Loading route values...
+        </div>
+      ) : !routes.length ? (
+        <div className="rounded-md border border-border bg-surface/60 p-5 text-sm text-muted-foreground">
+          Create a catalog route before adding route values.
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_360px]">
+          <section className="rounded-lg border border-border bg-surface/60 p-4">
+            <h2 className="font-display text-lg font-semibold">Routes</h2>
+            <div className="mt-4 space-y-2">
+              {routes.map((route) => (
+                <button
+                  key={route.id}
+                  type="button"
+                  className={`w-full rounded-md border p-3 text-left text-sm transition ${
+                    route.id === selectedGroupId
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-background hover:border-primary/60"
+                  }`}
+                  onClick={() => setSelectedGroupId(route.id)}
+                >
+                  <span className="block font-medium">{route.name_english}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{route.slug}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section className="rounded-lg border border-border bg-surface/60 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-display text-lg font-semibold">Routes</h2>
+                <h2 className="font-display text-lg font-semibold">
+                  {selectedRoute?.name_english ?? "Route"} values
+                </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  These can be selected in the flow builder as browse routes.
+                  These labels are selectable for products.
                 </p>
               </div>
               <button
                 type="button"
                 className="studio-button-secondary px-3 py-1.5 text-xs"
-                onClick={() => setRouteForm({ ...emptyRouteForm, sortOrder: routes.length + 1 })}
+                onClick={() =>
+                  setValueForm({
+                    ...emptyValueForm,
+                    groupId: selectedGroupId,
+                    sortOrder: values.length + 1,
+                  })
+                }
               >
-                New route
+                New value
               </button>
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {routes.length ? (
-                routes.map((route) => {
-                  const valueCount =
-                    details?.catalogGroupValues.filter((value) => value.group_id === route.id)
-                      .length ?? 0;
+              {values.length ? (
+                values.map((value) => {
+                  const productCount =
+                    details?.productGroupValues.filter(
+                      (entry) => entry.group_value_id === value.id,
+                    ).length ?? 0;
                   return (
-                    <div key={route.id} className="rounded-md border border-border bg-background p-3">
+                    <div key={value.id} className="rounded-md border border-border bg-background p-3">
                       <button
                         type="button"
                         className="block w-full text-left"
-                        onClick={() => editRoute(route.id)}
+                        onClick={() => editValue(value.id)}
                       >
-                        <span className="block text-sm font-medium">{route.name_english}</span>
+                        <span className="block text-sm font-medium">{value.name_english}</span>
                         <span className="mt-1 block text-xs text-muted-foreground">
-                          slug: {route.slug} | {route.is_active ? "Active" : "Paused"}
+                          slug: {value.slug} | {value.is_active ? "Active" : "Paused"}
                         </span>
                         <span className="mt-1 block text-xs text-muted-foreground">
-                          {valueCount} value(s)
+                          {productCount} product(s)
                         </span>
                       </button>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
                           type="button"
                           className="studio-button-secondary px-3 py-1.5 text-xs"
-                          onClick={() => editRoute(route.id)}
+                          onClick={() => editValue(value.id)}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
-                          className="studio-button-secondary px-3 py-1.5 text-xs text-destructive"
-                          disabled={valueCount > 0 || saving === `delete-route-${route.id}`}
+                          disabled={productCount > 0 || saving === `delete-value-${value.id}`}
+                          className="studio-button-secondary px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
                           onClick={() =>
-                            void run(`delete-route-${route.id}`, () =>
+                            void run(`delete-value-${value.id}`, () =>
                               applyAdminBusinessAction(businessId, {
-                                action: "delete_catalog_group",
-                                groupId: route.id,
+                                action: "delete_catalog_group_value",
+                                valueId: value.id,
                               }),
                             )
                           }
                         >
-                          {saving === `delete-route-${route.id}` ? "Deleting..." : "Delete"}
+                          {saving === `delete-value-${value.id}` ? "Deleting..." : "Delete"}
                         </button>
                       </div>
-                      {valueCount > 0 ? (
+                      {productCount > 0 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                          Delete route values before deleting this route.
+                          Remove this value from products before deleting it.
                         </p>
                       ) : null}
                     </div>
@@ -201,23 +252,27 @@ function AdminCatalogRoutesPage() {
                 })
               ) : (
                 <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground md:col-span-2">
-                  No custom routes yet.
+                  No values for this route yet.
                 </div>
               )}
             </div>
           </section>
 
-          <RouteEditor
-            form={routeForm}
-            saving={saving === "route"}
-            onChange={setRouteForm}
+          <ValueEditor
+            form={{ ...valueForm, groupId: selectedGroupId }}
+            saving={saving === "value"}
+            onChange={setValueForm}
             onSave={() =>
-              void run("route", async () => {
+              void run("value", async () => {
                 const nextDetails = await applyAdminBusinessAction(businessId, {
-                  action: "save_catalog_group",
-                  group: routeForm,
+                  action: "save_catalog_group_value",
+                  value: { ...valueForm, groupId: selectedGroupId },
                 });
-                setRouteForm(emptyRouteForm);
+                setValueForm({
+                  ...emptyValueForm,
+                  groupId: selectedGroupId,
+                  sortOrder: values.length + 2,
+                });
                 return nextDetails;
               })
             }
@@ -228,28 +283,28 @@ function AdminCatalogRoutesPage() {
   );
 }
 
-function RouteEditor({
+function ValueEditor({
   form,
   saving,
   onChange,
   onSave,
 }: {
-  form: RouteForm;
+  form: ValueForm;
   saving: boolean;
-  onChange: (form: RouteForm) => void;
+  onChange: (form: ValueForm) => void;
   onSave: () => void;
 }) {
   return (
     <section className="rounded-lg border border-border bg-surface/60 p-4">
-      <h2 className="font-display text-lg font-semibold">{form.id ? "Edit route" : "Create route"}</h2>
+      <h2 className="font-display text-lg font-semibold">{form.id ? "Edit value" : "Create value"}</h2>
       <div className="mt-4 space-y-3">
         <Field
-          label="Route label EN"
+          label="Value label EN"
           value={form.nameEnglish}
           onChange={(value) => onChange({ ...form, nameEnglish: value })}
         />
         <Field
-          label="Route label AR"
+          label="Value label AR"
           value={form.nameArabic}
           dir="rtl"
           onChange={(value) => onChange({ ...form, nameArabic: value })}
@@ -271,11 +326,11 @@ function RouteEditor({
         />
         <button
           type="button"
-          disabled={saving || !form.nameEnglish.trim()}
+          disabled={saving || !form.groupId || !form.nameEnglish.trim()}
           className="studio-button-primary w-full disabled:cursor-wait disabled:opacity-60"
           onClick={onSave}
         >
-          {saving ? "Saving route..." : form.id ? "Save route" : "Create route"}
+          {saving ? "Saving value..." : form.id ? "Save value" : "Create value"}
         </button>
       </div>
     </section>

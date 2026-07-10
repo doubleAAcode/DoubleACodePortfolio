@@ -102,8 +102,11 @@ import { Route as ApiWaDashboardOrdersOrderIdRouteImport } from './routes/api.wa
 import { Route as ApiWaDashboard2OrdersOrderIdRouteImport } from './routes/api.wa-dashboard-2.orders.$orderId'
 import { Route as ApiWaAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.wa-admin.flow-templates.$templateId'
 import { Route as ApiWaAdminBusinessesBusinessIdRouteImport } from './routes/api.wa-admin.businesses.$businessId'
+import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
 import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
+import { Route as AdminBusinessesBusinessIdCategoriesRouteImport } from './routes/admin.businesses.$businessId.categories'
 import { Route as AdminBusinessesBusinessIdCatalogRoutesRouteImport } from './routes/admin.businesses.$businessId.catalog-routes'
+import { Route as AdminBusinessesBusinessIdCatalogRouteValuesRouteImport } from './routes/admin.businesses.$businessId.catalog-route-values'
 import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
 
@@ -589,16 +592,34 @@ const ApiWaAdminBusinessesBusinessIdRoute =
     path: '/$businessId',
     getParentRoute: () => ApiWaAdminBusinessesRoute,
   } as any)
+const AdminBusinessesBusinessIdProductsRoute =
+  AdminBusinessesBusinessIdProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => AdminBusinessesBusinessIdRoute,
+  } as any)
 const AdminBusinessesBusinessIdFlowBuilderRoute =
   AdminBusinessesBusinessIdFlowBuilderRouteImport.update({
     id: '/flow-builder',
     path: '/flow-builder',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
+const AdminBusinessesBusinessIdCategoriesRoute =
+  AdminBusinessesBusinessIdCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => AdminBusinessesBusinessIdRoute,
+  } as any)
 const AdminBusinessesBusinessIdCatalogRoutesRoute =
   AdminBusinessesBusinessIdCatalogRoutesRouteImport.update({
     id: '/catalog-routes',
     path: '/catalog-routes',
+    getParentRoute: () => AdminBusinessesBusinessIdRoute,
+  } as any)
+const AdminBusinessesBusinessIdCatalogRouteValuesRoute =
+  AdminBusinessesBusinessIdCatalogRouteValuesRouteImport.update({
+    id: '/catalog-route-values',
+    path: '/catalog-route-values',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
 const ApiWaAdminBusinessesBusinessIdFlowRoute =
@@ -695,8 +716,11 @@ export interface FileRoutesByFullPath {
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
+  '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
+  '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
+  '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
@@ -788,8 +812,11 @@ export interface FileRoutesByTo {
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone': typeof StoresPavoneIndexRoute
+  '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
+  '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
+  '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
@@ -888,8 +915,11 @@ export interface FileRoutesById {
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
+  '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
+  '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
+  '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
@@ -989,8 +1019,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone/'
+    | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
+    | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
+    | '/admin/businesses/$businessId/products'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
@@ -1082,8 +1115,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone'
+    | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
+    | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
+    | '/admin/businesses/$businessId/products'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
@@ -1181,8 +1217,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone/'
+    | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
+    | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
+    | '/admin/businesses/$businessId/products'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
@@ -1904,6 +1943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdRouteImport
       parentRoute: typeof ApiWaAdminBusinessesRoute
     }
+    '/admin/businesses/$businessId/products': {
+      id: '/admin/businesses/$businessId/products'
+      path: '/products'
+      fullPath: '/admin/businesses/$businessId/products'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdProductsRouteImport
+      parentRoute: typeof AdminBusinessesBusinessIdRoute
+    }
     '/admin/businesses/$businessId/flow-builder': {
       id: '/admin/businesses/$businessId/flow-builder'
       path: '/flow-builder'
@@ -1911,11 +1957,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusinessesBusinessIdFlowBuilderRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
+    '/admin/businesses/$businessId/categories': {
+      id: '/admin/businesses/$businessId/categories'
+      path: '/categories'
+      fullPath: '/admin/businesses/$businessId/categories'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdCategoriesRouteImport
+      parentRoute: typeof AdminBusinessesBusinessIdRoute
+    }
     '/admin/businesses/$businessId/catalog-routes': {
       id: '/admin/businesses/$businessId/catalog-routes'
       path: '/catalog-routes'
       fullPath: '/admin/businesses/$businessId/catalog-routes'
       preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRoutesRouteImport
+      parentRoute: typeof AdminBusinessesBusinessIdRoute
+    }
+    '/admin/businesses/$businessId/catalog-route-values': {
+      id: '/admin/businesses/$businessId/catalog-route-values'
+      path: '/catalog-route-values'
+      fullPath: '/admin/businesses/$businessId/catalog-route-values'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRouteValuesRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
     '/api/wa-admin/businesses/$businessId/flow': {
@@ -1936,16 +1996,25 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminBusinessesBusinessIdRouteChildren {
+  AdminBusinessesBusinessIdCatalogRouteValuesRoute: typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   AdminBusinessesBusinessIdCatalogRoutesRoute: typeof AdminBusinessesBusinessIdCatalogRoutesRoute
+  AdminBusinessesBusinessIdCategoriesRoute: typeof AdminBusinessesBusinessIdCategoriesRoute
   AdminBusinessesBusinessIdFlowBuilderRoute: typeof AdminBusinessesBusinessIdFlowBuilderRoute
+  AdminBusinessesBusinessIdProductsRoute: typeof AdminBusinessesBusinessIdProductsRoute
 }
 
 const AdminBusinessesBusinessIdRouteChildren: AdminBusinessesBusinessIdRouteChildren =
   {
+    AdminBusinessesBusinessIdCatalogRouteValuesRoute:
+      AdminBusinessesBusinessIdCatalogRouteValuesRoute,
     AdminBusinessesBusinessIdCatalogRoutesRoute:
       AdminBusinessesBusinessIdCatalogRoutesRoute,
+    AdminBusinessesBusinessIdCategoriesRoute:
+      AdminBusinessesBusinessIdCategoriesRoute,
     AdminBusinessesBusinessIdFlowBuilderRoute:
       AdminBusinessesBusinessIdFlowBuilderRoute,
+    AdminBusinessesBusinessIdProductsRoute:
+      AdminBusinessesBusinessIdProductsRoute,
   }
 
 const AdminBusinessesBusinessIdRouteWithChildren =

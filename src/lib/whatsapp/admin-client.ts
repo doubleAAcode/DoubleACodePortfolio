@@ -9,7 +9,13 @@ import type {
   AdminCatalogValueProductsInput,
   AdminCatalogGroupInput,
   AdminCatalogGroupValueInput,
+  AdminCategoryInput,
   AdminCheckoutSettingsInput,
+  AdminProductCustomFieldInput,
+  AdminProductInput,
+  AdminProductOptionInput,
+  AdminProductOptionValueInput,
+  AdminProductVariantInput,
   CreateAdminBusinessInput,
 } from "./admin-store.server";
 import type {
@@ -101,8 +107,22 @@ export async function applyAdminBusinessAction(
     | { action: "save_connection"; connection: CreateAdminBusinessInput["connection"] }
     | { action: "save_checkout_settings"; settings: AdminCheckoutSettingsInput }
     | { action: "save_catalog_group"; group: AdminCatalogGroupInput }
+    | { action: "delete_catalog_group"; groupId: string }
     | { action: "save_catalog_group_value"; value: AdminCatalogGroupValueInput }
+    | { action: "delete_catalog_group_value"; valueId: string }
     | { action: "save_catalog_value_products"; assignment: AdminCatalogValueProductsInput }
+    | { action: "save_admin_category"; category: AdminCategoryInput }
+    | { action: "delete_admin_category"; categoryId: string }
+    | { action: "save_admin_product"; product: AdminProductInput }
+    | { action: "delete_admin_product"; productId: string }
+    | { action: "save_admin_product_option"; option: AdminProductOptionInput }
+    | { action: "delete_admin_product_option"; optionId: string }
+    | { action: "save_admin_product_option_value"; optionValue: AdminProductOptionValueInput }
+    | { action: "delete_admin_product_option_value"; optionValueId: string }
+    | { action: "save_admin_product_variant"; variant: AdminProductVariantInput }
+    | { action: "delete_admin_product_variant"; variantId: string }
+    | { action: "save_admin_product_custom_field"; field: AdminProductCustomFieldInput }
+    | { action: "delete_admin_product_custom_field"; fieldId: string }
     | { action: "clone_flow_template"; templateId: string }
     | { action: "save_business_flow_draft"; flowJson: FlowDefinition }
     | { action: "publish_business_flow"; versionId: string },

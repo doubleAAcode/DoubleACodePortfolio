@@ -14,9 +14,21 @@ import {
 import type {
   WaCatalogGroupRow,
   WaCatalogGroupValueRow,
+  WaCategoryRow,
+  WaProductCustomFieldRow,
   WaProductGroupValueRow,
+  WaProductOptionRow,
+  WaProductOptionValueRow,
   WaProductRow,
+  WaProductVariantRow,
+  SaveCategoryInput,
+  SaveCustomFieldInput,
+  SaveOptionInput,
+  SaveOptionValueInput,
+  SaveProductInput,
+  SaveVariantInput,
 } from "./dashboard-store.server";
+import { applyWaDashboardAction } from "./dashboard-store.server";
 
 export type AdminBusinessStatus = BusinessOperationalStatus;
 export type AdminBusinessTemplate =
@@ -120,10 +132,15 @@ export type AdminBusinessDetails = {
   business: AdminBusinessRow;
   users: AdminBusinessUserRow[];
   connections: AdminConnectionRow[];
+  catalogCategories: WaCategoryRow[];
   catalogGroups: WaCatalogGroupRow[];
   catalogGroupValues: WaCatalogGroupValueRow[];
   catalogProducts: WaProductRow[];
   productGroupValues: WaProductGroupValueRow[];
+  productOptions: WaProductOptionRow[];
+  productOptionValues: WaProductOptionValueRow[];
+  productVariants: WaProductVariantRow[];
+  productCustomFields: WaProductCustomFieldRow[];
   counts: {
     categories: number;
     products: number;
@@ -166,6 +183,13 @@ export type AdminCatalogValueProductsInput = {
   groupValueId: string;
   productIds: string[];
 };
+
+export type AdminProductInput = SaveProductInput;
+export type AdminCategoryInput = SaveCategoryInput;
+export type AdminProductOptionInput = SaveOptionInput;
+export type AdminProductOptionValueInput = SaveOptionValueInput;
+export type AdminProductVariantInput = SaveVariantInput;
+export type AdminProductCustomFieldInput = SaveCustomFieldInput;
 
 export type BusinessHealthReport = {
   status: "OK" | "WARNING" | "ERROR";
@@ -285,10 +309,15 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     notifications,
     audit,
     botFlowSettings,
+    catalogCategories,
     catalogGroups,
     catalogGroupValues,
     catalogProducts,
     productGroupValues,
+    productOptions,
+    productOptionValues,
+    productVariants,
+    productCustomFields,
   ] =
     await Promise.all([
       listBusinesses(`id=eq.${encodeURIComponent(businessId)}`),
@@ -308,10 +337,15 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
       ),
       listAuditLogs(12, businessId),
       getBusinessBotFlowSettings(businessId),
+      listCatalogCategories(businessId),
       listCatalogGroups(businessId),
       listCatalogGroupValues(businessId),
       listCatalogProducts(businessId),
       listProductGroupValues(businessId),
+      listProductOptions(businessId),
+      listProductOptionValues(businessId),
+      listProductVariants(businessId),
+      listProductCustomFields(businessId),
     ]);
   const business = businesses[0];
   if (!business) throw new Error("Business was not found.");
@@ -321,10 +355,15 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     business,
     users,
     connections,
+    catalogCategories,
     catalogGroups,
     catalogGroupValues,
     catalogProducts,
     productGroupValues,
+    productOptions,
+    productOptionValues,
+    productVariants,
+    productCustomFields,
     counts: {
       categories,
       products,
@@ -380,6 +419,37 @@ export async function saveAdminCatalogGroup({
   return getAdminBusinessDetails(businessId);
 }
 
+export async function deleteAdminCatalogGroup({
+  businessId,
+  groupId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  groupId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const group = (await listCatalogGroups(businessId)).find((entry) => entry.id === groupId);
+  if (!group) throw new Error("Route was not found.");
+  const values = await listCatalogGroupValues(businessId);
+  if (values.some((value) => value.group_id === groupId)) {
+    throw new Error("Delete this route's values before deleting the route.");
+  }
+  await applyWaDashboardAction(businessId, { type: "deleteCatalogGroup", payload: { id: groupId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATALOG_GROUP_DELETED",
+    targetType: "CATALOG_GROUP",
+    targetId: groupId,
+    previousValue: { slug: group.slug, nameEnglish: group.name_english },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
 export async function saveAdminCatalogGroupValue({
   businessId,
   input,
@@ -420,6 +490,144 @@ export async function saveAdminCatalogGroupValue({
     targetType: "CATALOG_GROUP_VALUE",
     targetId: valueId,
     newValue: { groupId: input.groupId, slug, nameEnglish: input.nameEnglish },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminCatalogGroupValue({
+  businessId,
+  valueId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  valueId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const value = (await listCatalogGroupValues(businessId)).find((entry) => entry.id === valueId);
+  if (!value) throw new Error("Route value was not found.");
+  const productLinks = await listProductGroupValues(businessId);
+  if (productLinks.some((entry) => entry.group_value_id === valueId)) {
+    throw new Error("Remove this route value from products before deleting it.");
+  }
+  await applyWaDashboardAction(businessId, {
+    type: "deleteCatalogGroupValue",
+    payload: { id: valueId },
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATALOG_GROUP_VALUE_DELETED",
+    targetType: "CATALOG_GROUP_VALUE",
+    targetId: valueId,
+    previousValue: { slug: value.slug, nameEnglish: value.name_english },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminCategory({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminCategoryInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveCategory", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATEGORY_SAVED",
+    targetType: "CATEGORY",
+    targetId: input.id || input.name_english,
+    newValue: input,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminCategory({
+  businessId,
+  categoryId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  categoryId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteCategory", payload: { id: categoryId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_CATEGORY_DELETED",
+    targetType: "CATEGORY",
+    targetId: categoryId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminProduct({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminProductInput;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const routeValueIds = input.group_value_ids ?? [];
+  if (!routeValueIds.length) throw new Error("Choose at least one route value for this product.");
+  await applyWaDashboardAction(businessId, {
+    type: "saveProduct",
+    payload: { ...input, group_value_ids: routeValueIds },
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_SAVED",
+    targetType: "PRODUCT",
+    targetId: input.id || input.code,
+    newValue: { code: input.code, nameEnglish: input.name_english, routeValueIds },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminProduct({
+  businessId,
+  productId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  productId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  ensureSupabase();
+  const product = (await listCatalogProducts(businessId)).find((entry) => entry.id === productId);
+  if (!product) throw new Error("Product was not found.");
+  await applyWaDashboardAction(businessId, { type: "deleteProduct", payload: { id: productId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_DELETED",
+    targetType: "PRODUCT",
+    targetId: productId,
+    previousValue: { code: product.code, nameEnglish: product.name_english },
   });
   return getAdminBusinessDetails(businessId);
 }
@@ -479,6 +687,194 @@ export async function saveAdminCatalogValueProducts({
     targetType: "CATALOG_GROUP_VALUE",
     targetId: input.groupValueId,
     newValue: { productIds },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminProductOption({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminProductOptionInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveOption", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_OPTION_SAVED",
+    targetType: "PRODUCT_OPTION",
+    targetId: input.id || input.product_id,
+    newValue: { productId: input.product_id, nameEnglish: input.name_english },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminProductOption({
+  businessId,
+  optionId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  optionId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteOption", payload: { id: optionId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_OPTION_DELETED",
+    targetType: "PRODUCT_OPTION",
+    targetId: optionId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminProductOptionValue({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminProductOptionValueInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveOptionValue", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_OPTION_VALUE_SAVED",
+    targetType: "PRODUCT_OPTION_VALUE",
+    targetId: input.id || input.option_id,
+    newValue: { optionId: input.option_id, valueEnglish: input.value_english },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminProductOptionValue({
+  businessId,
+  valueId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  valueId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteOptionValue", payload: { id: valueId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_OPTION_VALUE_DELETED",
+    targetType: "PRODUCT_OPTION_VALUE",
+    targetId: valueId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminProductVariant({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminProductVariantInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveVariant", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_VARIANT_SAVED",
+    targetType: "PRODUCT_VARIANT",
+    targetId: input.id || input.product_id,
+    newValue: { productId: input.product_id, sku: input.sku },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminProductVariant({
+  businessId,
+  variantId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  variantId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteVariant", payload: { id: variantId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_VARIANT_DELETED",
+    targetType: "PRODUCT_VARIANT",
+    targetId: variantId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminProductCustomField({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminProductCustomFieldInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveCustomField", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_CUSTOM_FIELD_SAVED",
+    targetType: "PRODUCT_CUSTOM_FIELD",
+    targetId: input.id || input.product_id,
+    newValue: { productId: input.product_id, labelEnglish: input.label_english },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminProductCustomField({
+  businessId,
+  fieldId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  fieldId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteCustomField", payload: { id: fieldId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PRODUCT_CUSTOM_FIELD_DELETED",
+    targetType: "PRODUCT_CUSTOM_FIELD",
+    targetId: fieldId,
   });
   return getAdminBusinessDetails(businessId);
 }
@@ -1096,6 +1492,17 @@ async function listCatalogGroupValues(businessId: string) {
   });
 }
 
+async function listCatalogCategories(businessId: string) {
+  return supabaseServerRest<WaCategoryRow[]>(
+    `/wa_categories?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_categories")) return [];
+    throw error;
+  });
+}
+
 async function listCatalogProducts(businessId: string) {
   return supabaseServerRest<WaProductRow[]>(
     `/wa_products?select=*&business_id=eq.${encodeURIComponent(
@@ -1114,6 +1521,51 @@ async function listProductGroupValues(businessId: string) {
     if (isMissingCatalogGroupTable(error) || isMissingTable(error, "wa_product_group_values")) {
       return [];
     }
+    throw error;
+  });
+}
+
+async function listProductOptions(businessId: string) {
+  return supabaseServerRest<WaProductOptionRow[]>(
+    `/wa_product_options?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_product_options")) return [];
+    throw error;
+  });
+}
+
+async function listProductOptionValues(businessId: string) {
+  const options = await listProductOptions(businessId);
+  const optionIds = options.map((option) => option.id);
+  if (!optionIds.length) return [];
+  return supabaseServerRest<WaProductOptionValueRow[]>(
+    `/wa_product_option_values?select=*&option_id=in.(${optionIds
+      .map((id) => `"${encodeURIComponent(id)}"`)
+      .join(",")})&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_product_option_values")) return [];
+    throw error;
+  });
+}
+
+async function listProductVariants(businessId: string) {
+  return supabaseServerRest<WaProductVariantRow[]>(
+    `/wa_product_variants?select=*&business_id=eq.${encodeURIComponent(businessId)}`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_product_variants")) return [];
+    throw error;
+  });
+}
+
+async function listProductCustomFields(businessId: string) {
+  return supabaseServerRest<WaProductCustomFieldRow[]>(
+    `/wa_product_custom_fields?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_product_custom_fields")) return [];
     throw error;
   });
 }

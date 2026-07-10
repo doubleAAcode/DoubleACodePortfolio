@@ -185,7 +185,7 @@ export type WaDashboardData = {
   paymentMethods: WaPaymentMethodRow[];
 };
 
-type SaveCategoryInput = {
+export type SaveCategoryInput = {
   id?: string;
   name_english: string;
   name_arabic: string;
@@ -193,7 +193,7 @@ type SaveCategoryInput = {
   sort_order: number;
 };
 
-type SaveProductInput = {
+export type SaveProductInput = {
   id?: string;
   category_id: string;
   code: string;
@@ -230,7 +230,7 @@ type SaveCatalogGroupValueInput = {
   sort_order: number;
 };
 
-type SaveOptionInput = {
+export type SaveOptionInput = {
   id?: string;
   product_id: string;
   name_english: string;
@@ -239,7 +239,7 @@ type SaveOptionInput = {
   is_required: boolean;
 };
 
-type SaveOptionValueInput = {
+export type SaveOptionValueInput = {
   id?: string;
   option_id: string;
   value_english: string;
@@ -248,7 +248,7 @@ type SaveOptionValueInput = {
   sort_order: number;
 };
 
-type SaveVariantInput = {
+export type SaveVariantInput = {
   id?: string;
   product_id: string;
   sku: string;
@@ -258,7 +258,7 @@ type SaveVariantInput = {
   is_available: boolean;
 };
 
-type SaveCustomFieldInput = Omit<WaProductCustomFieldRow, "id" | "business_id" | "updated_at"> & {
+export type SaveCustomFieldInput = Omit<WaProductCustomFieldRow, "id" | "business_id" | "updated_at"> & {
   id?: string;
 };
 

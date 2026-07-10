@@ -84,7 +84,12 @@ const templates: AdminBusinessTemplate[] = [
 function AdminBusinessDetailPage() {
   const { businessId } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const showingChildPage = pathname.endsWith("/flow-builder") || pathname.endsWith("/catalog-routes");
+  const showingChildPage =
+    pathname.endsWith("/flow-builder") ||
+    pathname.endsWith("/categories") ||
+    pathname.endsWith("/catalog-routes") ||
+    pathname.endsWith("/catalog-route-values") ||
+    pathname.endsWith("/products");
   const [details, setDetails] = useState<AdminBusinessDetails>();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
@@ -329,8 +334,9 @@ function FlowSection({
         <div>
           <h2 className="font-display text-xl font-semibold">Admin onboarding controls</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Prepare the business catalog routes, then build and publish the WhatsApp conversation.
-            Owner dashboard permissions can stay secondary until the admin setup is stable.
+            Prepare routes, route values, products, then build and publish the WhatsApp
+            conversation. Owner dashboard permissions can stay secondary until the admin setup is
+            stable.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -338,7 +344,19 @@ function FlowSection({
             href={`/admin/businesses/${businessId}/catalog-routes`}
             className="studio-button-secondary"
           >
-            Manage catalog routes
+            Manage routes
+          </a>
+          <a href={`/admin/businesses/${businessId}/categories`} className="studio-button-secondary">
+            Manage categories
+          </a>
+          <a
+            href={`/admin/businesses/${businessId}/catalog-route-values`}
+            className="studio-button-secondary"
+          >
+            Manage route values
+          </a>
+          <a href={`/admin/businesses/${businessId}/products`} className="studio-button-secondary">
+            Manage products
           </a>
           <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
             Open Flow builder
@@ -3542,17 +3560,31 @@ function BrowseRoutesBlockSettings({
                       <div>
                         <div className="text-sm font-medium">Route data status</div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          The flow only decides that this route appears. Route values and product
-                          membership are managed in admin catalog route data.
+                          The flow only decides that this route appears. Route definitions, route
+                          values, and product membership are managed on admin setup screens.
                         </div>
                       </div>
                       {businessId ? (
-                        <a
-                          href={`/admin/businesses/${businessId}/catalog-routes`}
-                          className="studio-button-secondary px-2 py-1"
-                        >
-                          Manage route data
-                        </a>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={`/admin/businesses/${businessId}/catalog-routes`}
+                            className="studio-button-secondary px-2 py-1"
+                          >
+                            Routes
+                          </a>
+                          <a
+                            href={`/admin/businesses/${businessId}/catalog-route-values`}
+                            className="studio-button-secondary px-2 py-1"
+                          >
+                            Values
+                          </a>
+                          <a
+                            href={`/admin/businesses/${businessId}/products`}
+                            className="studio-button-secondary px-2 py-1"
+                          >
+                            Products
+                          </a>
+                        </div>
                       ) : null}
                     </div>
 
@@ -3579,7 +3611,7 @@ function BrowseRoutesBlockSettings({
                     ) : (
                       <p className="text-xs text-muted-foreground">
                         No admin route exists for slug <span className="font-mono">{routeSlug}</span>.
-                        Create it in Catalog route data, then add values and assign products.
+                        Create it in Catalog routes, then add route values and assign products.
                       </p>
                     )}
                   </div>

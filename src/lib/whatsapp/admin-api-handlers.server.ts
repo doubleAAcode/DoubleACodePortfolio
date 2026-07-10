@@ -21,6 +21,14 @@ import { sendWhatsAppText } from "./sender.server";
 import {
   assignBusinessUser,
   createAdminBusiness,
+  deleteAdminCatalogGroup,
+  deleteAdminCatalogGroupValue,
+  deleteAdminCategory,
+  deleteAdminProduct,
+  deleteAdminProductCustomField,
+  deleteAdminProductOption,
+  deleteAdminProductOptionValue,
+  deleteAdminProductVariant,
   getAdminBusinessDetails,
   getAdminBusinesses,
   getAdminLogs,
@@ -29,7 +37,13 @@ import {
   saveAdminCatalogGroup,
   saveAdminCatalogGroupValue,
   saveAdminCatalogValueProducts,
+  saveAdminCategory,
   saveAdminCheckoutSettings,
+  saveAdminProduct,
+  saveAdminProductCustomField,
+  saveAdminProductOption,
+  saveAdminProductOptionValue,
+  saveAdminProductVariant,
   setAdminBusinessStatus,
   upsertAdminConnection,
   recordAdminAuditLog,
@@ -37,6 +51,12 @@ import {
   type AdminCatalogValueProductsInput,
   type AdminCatalogGroupInput,
   type AdminCatalogGroupValueInput,
+  type AdminCategoryInput,
+  type AdminProductCustomFieldInput,
+  type AdminProductInput,
+  type AdminProductOptionInput,
+  type AdminProductOptionValueInput,
+  type AdminProductVariantInput,
   type AdminBusinessStatus,
   type AdminBusinessTemplate,
   type CreateAdminBusinessInput,
@@ -165,8 +185,22 @@ export function createInternalAdminBusinessDetailsHandlers() {
           connection?: CreateAdminBusinessInput["connection"];
           settings?: AdminCheckoutSettingsInput;
           group?: AdminCatalogGroupInput;
+          groupId?: string;
           value?: AdminCatalogGroupValueInput;
+          valueId?: string;
           assignment?: AdminCatalogValueProductsInput;
+          category?: AdminCategoryInput;
+          categoryId?: string;
+          product?: AdminProductInput;
+          productId?: string;
+          option?: AdminProductOptionInput;
+          optionId?: string;
+          variant?: AdminProductVariantInput;
+          variantId?: string;
+          field?: AdminProductCustomFieldInput;
+          fieldId?: string;
+          optionValue?: AdminProductOptionValueInput;
+          optionValueId?: string;
           templateId?: string;
           flowJson?: unknown;
           versionId?: string;
@@ -239,6 +273,16 @@ export function createInternalAdminBusinessDetailsHandlers() {
           return Response.json({ ok: true, data });
         }
 
+        if (body?.action === "delete_catalog_group" && body.groupId) {
+          const data = await deleteAdminCatalogGroup({
+            businessId: params.businessId,
+            groupId: body.groupId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
         if (body?.action === "save_catalog_group_value" && body.value) {
           const data = await saveAdminCatalogGroupValue({
             businessId: params.businessId,
@@ -249,10 +293,140 @@ export function createInternalAdminBusinessDetailsHandlers() {
           return Response.json({ ok: true, data });
         }
 
+        if (body?.action === "delete_catalog_group_value" && body.valueId) {
+          const data = await deleteAdminCatalogGroupValue({
+            businessId: params.businessId,
+            valueId: body.valueId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
         if (body?.action === "save_catalog_value_products" && body.assignment) {
           const data = await saveAdminCatalogValueProducts({
             businessId: params.businessId,
             input: body.assignment as AdminCatalogValueProductsInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_category" && body.category) {
+          const data = await saveAdminCategory({
+            businessId: params.businessId,
+            input: body.category as AdminCategoryInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_category" && body.categoryId) {
+          const data = await deleteAdminCategory({
+            businessId: params.businessId,
+            categoryId: body.categoryId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_product" && body.product) {
+          const data = await saveAdminProduct({
+            businessId: params.businessId,
+            input: body.product as AdminProductInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_product" && body.productId) {
+          const data = await deleteAdminProduct({
+            businessId: params.businessId,
+            productId: body.productId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_product_option" && body.option) {
+          const data = await saveAdminProductOption({
+            businessId: params.businessId,
+            input: body.option as AdminProductOptionInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_product_option" && body.optionId) {
+          const data = await deleteAdminProductOption({
+            businessId: params.businessId,
+            optionId: body.optionId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_product_option_value" && body.optionValue) {
+          const data = await saveAdminProductOptionValue({
+            businessId: params.businessId,
+            input: body.optionValue as AdminProductOptionValueInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_product_option_value" && body.optionValueId) {
+          const data = await deleteAdminProductOptionValue({
+            businessId: params.businessId,
+            valueId: body.optionValueId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_product_variant" && body.variant) {
+          const data = await saveAdminProductVariant({
+            businessId: params.businessId,
+            input: body.variant as AdminProductVariantInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_product_variant" && body.variantId) {
+          const data = await deleteAdminProductVariant({
+            businessId: params.businessId,
+            variantId: body.variantId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_product_custom_field" && body.field) {
+          const data = await saveAdminProductCustomField({
+            businessId: params.businessId,
+            input: body.field as AdminProductCustomFieldInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_product_custom_field" && body.fieldId) {
+          const data = await deleteAdminProductCustomField({
+            businessId: params.businessId,
+            fieldId: body.fieldId,
             adminUser: session.username,
             request,
           });
