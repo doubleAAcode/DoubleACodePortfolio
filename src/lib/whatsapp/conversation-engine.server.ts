@@ -82,6 +82,12 @@ import {
   getBusinessFlowRuntimeSettings,
 } from "./flow-template-store.server";
 import { flowToBotFlowSettings, type FlowDefinition, type FlowNode } from "./flow-template-types";
+import {
+  createCorrelationId,
+  logWhatsAppError,
+  logWhatsAppInfo,
+  type WhatsAppLogContext,
+} from "./logger.server";
 
 export { DOUBLE_A_TEST_BUSINESS_ID };
 
@@ -119,6 +125,72 @@ const visualRuntimeNodeTypes = new Set<FlowNode["type"]>([
   "END",
 ]);
 
+async function measureConversationPhase<T>(
+  context: Omit<WhatsAppLogContext, "operation">,
+  phase: string,
+  task: () => Promise<T>,
+) {
+  const startedAt = Date.now();
+  try {
+    const result = await task();
+    logWhatsAppInfo({
+      ...context,
+      operation: `conversation.timing.${phase}`,
+      durationMs: Date.now() - startedAt,
+      result: "ok",
+    });
+    return result;
+  } catch (error) {
+    logWhatsAppError(
+      {
+        ...context,
+        operation: `conversation.timing.${phase}`,
+        durationMs: Date.now() - startedAt,
+        result: "error",
+      },
+      error,
+    );
+    throw error;
+  }
+}
+
+function logConversationTotal(
+  context: Omit<WhatsAppLogContext, "operation">,
+  startedAt: number,
+  responses: BotResponse[],
+) {
+  logWhatsAppInfo({
+    ...context,
+    operation: "conversation.timing.total",
+    durationMs: Date.now() - startedAt,
+    result: "ok",
+    details: {
+      ...context.details,
+      responseCount: responses.length,
+      responseTypes: responses.map((response) => response.type),
+    },
+  });
+}
+
+function measureOptionalConversationPhase<T>(
+  context: Omit<WhatsAppLogContext, "operation"> | undefined,
+  phase: string,
+  task: () => Promise<T>,
+) {
+  return context ? measureConversationPhase(context, phase, task) : task();
+}
+
+function timedSaveConversationSession(
+  context: Omit<WhatsAppLogContext, "operation"> | undefined,
+  phase: string,
+  session: ConversationSession,
+  now: Date,
+) {
+  return measureOptionalConversationPhase(context, phase, () =>
+    saveConversationSession(session, now),
+  );
+}
+
 export async function processIncomingMessage({
   businessId,
   customerPhone,
@@ -131,33 +203,78 @@ export async function processIncomingMessage({
   input: ConversationInput;
 }): Promise<BotResponse[]> {
   const now = new Date();
-  const activeFlow = await getActiveBusinessFlow(businessId);
-  const runtimeFlowSettings = await getBusinessFlowRuntimeSettings(businessId);
-  const flowSettings = runtimeFlowSettings ?? (await getBusinessBotFlowSettings(businessId));
-  let session = await getActiveConversationSession({ businessId, customerPhone, now });
+  const timingContext = {
+    correlationId: createCorrelationId("wa_conversation"),
+    businessId,
+    customerPhone,
+    metaMessageId: messageId,
+    details: { inputType: input.type, inputLength: input.value.length },
+  };
+  const processStartedAt = Date.now();
+  const activeFlow = await measureConversationPhase(timingContext, "active_flow_load", () =>
+    getActiveBusinessFlow(businessId),
+  );
+  const runtimeFlowSettings = await measureConversationPhase(
+    timingContext,
+    "runtime_flow_settings_load",
+    () => getBusinessFlowRuntimeSettings(businessId),
+  );
+  const flowSettings =
+    runtimeFlowSettings ??
+    (await measureConversationPhase(timingContext, "bot_flow_settings_load", () =>
+      getBusinessBotFlowSettings(businessId),
+    ));
+  let session = await measureConversationPhase(timingContext, "session_load", () =>
+    getActiveConversationSession({ businessId, customerPhone, now }),
+  );
 
   if (!session) {
-    session = await createConversationSession({
-      businessId,
-      customerPhone,
-      businessFlowId: activeFlow?.businessFlowId,
-      flowVersionId: activeFlow?.flowVersionId,
-      currentNodeId: activeFlow?.flow.startNodeId,
-      now,
-    });
+    session = await measureConversationPhase(timingContext, "session_create", () =>
+      createConversationSession({
+        businessId,
+        customerPhone,
+        businessFlowId: activeFlow?.businessFlowId,
+        flowVersionId: activeFlow?.flowVersionId,
+        currentNodeId: activeFlow?.flow.startNodeId,
+        now,
+      }),
+    );
+    if (!session) throw new Error("Conversation session could not be created.");
+    const createdSession = session;
     if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
-      return enterVisualNode(session, activeFlow.flow, activeFlow.flow.startNodeId, now);
+      const responses = await measureConversationPhase(timingContext, "visual_entry", () =>
+        enterVisualNode(
+          createdSession,
+          activeFlow.flow,
+          activeFlow.flow.startNodeId,
+          now,
+          [],
+          timingContext,
+        ),
+      );
+      logConversationTotal(timingContext, processStartedAt, responses);
+      return responses;
     }
     if (!flowSettings.languageSelectionEnabled) {
-      session = await saveConversationSession(
-        {
-          ...session,
-          language: flowSettings.defaultLanguage,
-          currentStep: "MAIN_MENU",
-        },
-        now,
+      session = await measureConversationPhase(
+        timingContext,
+        "session_save_initial_main_menu",
+        () =>
+          saveConversationSession(
+            {
+              ...createdSession,
+              language: flowSettings.defaultLanguage,
+              currentStep: "MAIN_MENU",
+            },
+            now,
+          ),
       );
-      return handleMainMenu(session, input, now, flowSettings);
+      const mainMenuSession = session;
+      const responses = await measureConversationPhase(timingContext, "handler.main_menu", () =>
+        handleMainMenu(mainMenuSession, input, now, flowSettings),
+      );
+      logConversationTotal(timingContext, processStartedAt, responses);
+      return responses;
     }
   }
 
@@ -173,8 +290,21 @@ export async function processIncomingMessage({
       currentNodeId: activeFlow?.flow.startNodeId,
       now,
     });
+    if (!session) throw new Error("Conversation session could not be restarted.");
+    const restartedSession = session;
     if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
-      return enterVisualNode(session, activeFlow.flow, activeFlow.flow.startNodeId, now);
+      const responses = await measureConversationPhase(timingContext, "visual_restart_entry", () =>
+        enterVisualNode(
+          restartedSession,
+          activeFlow.flow,
+          activeFlow.flow.startNodeId,
+          now,
+          [],
+          timingContext,
+        ),
+      );
+      logConversationTotal(timingContext, processStartedAt, responses);
+      return responses;
     }
     if (!flowSettings.languageSelectionEnabled) {
       await saveConversationSession(
@@ -211,7 +341,11 @@ export async function processIncomingMessage({
           },
           now,
         );
-        return enterVisualNode(nextSession, activeFlow.flow, mainMenu.id, now);
+        const responses = await measureConversationPhase(timingContext, "visual_menu_entry", () =>
+          enterVisualNode(nextSession, activeFlow.flow, mainMenu.id, now, [], timingContext),
+        );
+        logConversationTotal(timingContext, processStartedAt, responses);
+        return responses;
       }
     }
     if (!session.language && flowSettings.languageSelectionEnabled)
@@ -281,7 +415,11 @@ export async function processIncomingMessage({
     usesVisualRuntime(activeFlow.flow) &&
     shouldHandleVisualNode(session, activeFlow.flow)
   ) {
-    return handleVisualRuntimeMessage(session, input, now, activeFlow.flow);
+    const responses = await measureConversationPhase(timingContext, "handler.visual_runtime", () =>
+      handleVisualRuntimeMessage(session, input, now, activeFlow.flow, timingContext),
+    );
+    logConversationTotal(timingContext, processStartedAt, responses);
+    return responses;
   }
 
   if (session.currentStep === "SELECT_LANGUAGE")
@@ -359,6 +497,7 @@ async function handleVisualRuntimeMessage(
   input: ConversationInput,
   now: Date,
   flow: FlowDefinition,
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
   const node = findRuntimeNode(flow, session.currentNodeId ?? flow.startNodeId);
   if (!node) return [];
@@ -373,7 +512,7 @@ async function handleVisualRuntimeMessage(
       { ...session, language, currentStep: "SELECT_LANGUAGE", currentNodeId: node.id },
       now,
     );
-    return continueFromRuntimeNode(nextSession, flow, node.id, now);
+    return continueFromRuntimeNode(nextSession, flow, node.id, now, timingContext);
   }
 
   if (node.type === "MAIN_MENU") {
@@ -394,7 +533,7 @@ async function handleVisualRuntimeMessage(
       { ...session, currentStep: "MAIN_MENU", currentNodeId: node.id },
       now,
     );
-    return enterVisualNode(nextSession, flow, edge.to, now);
+    return enterVisualNode(nextSession, flow, edge.to, now, [], timingContext);
   }
 
   if (node.type === "HUMAN_HANDOFF") {
@@ -407,7 +546,7 @@ async function handleVisualRuntimeMessage(
     return [runtimeTextResponse(flow, node, session.language ?? flow.settings.defaultLanguage)];
   }
 
-  return continueFromRuntimeNode(session, flow, node.id, now);
+  return continueFromRuntimeNode(session, flow, node.id, now, timingContext);
 }
 
 async function enterVisualNode(
@@ -416,15 +555,18 @@ async function enterVisualNode(
   nodeId: string,
   now: Date,
   carriedResponses: BotResponse[] = [],
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
   const node = findRuntimeNode(flow, nodeId);
   if (!node) {
-    await saveConversationSession(session, now);
+    await timedSaveConversationSession(timingContext, "visual_missing_node_session_save", session, now);
     return carriedResponses;
   }
 
   const language = session.language ?? flow.settings.defaultLanguage;
-  const baseSession = await saveConversationSession(
+  const baseSession = await timedSaveConversationSession(
+    timingContext,
+    `visual_${node.type.toLowerCase()}_session_save`,
     {
       ...session,
       currentNodeId: node.id,
@@ -436,7 +578,9 @@ async function enterVisualNode(
   if (node.type === "MESSAGE") {
     const response = runtimeTextResponse(flow, node, language);
     const next = firstRuntimeTarget(flow, node.id);
-    if (next) return enterVisualNode(baseSession, flow, next, now, [...carriedResponses, response]);
+    if (next) {
+      return enterVisualNode(baseSession, flow, next, now, [...carriedResponses, response], timingContext);
+    }
     return [...carriedResponses, response];
   }
 
@@ -452,7 +596,7 @@ async function enterVisualNode(
     return [...carriedResponses, runtimeTextResponse(flow, node, language)];
   }
 
-  return enterProtectedRuntimeNode(baseSession, flow, node, now, carriedResponses);
+  return enterProtectedRuntimeNode(baseSession, flow, node, now, carriedResponses, timingContext);
 }
 
 async function continueFromRuntimeNode(
@@ -460,13 +604,14 @@ async function continueFromRuntimeNode(
   flow: FlowDefinition,
   nodeId: string,
   now: Date,
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ) {
   const next = firstRuntimeTarget(flow, nodeId);
   if (!next) {
-    await saveConversationSession(session, now);
+    await timedSaveConversationSession(timingContext, "visual_continue_session_save", session, now);
     return [] as BotResponse[];
   }
-  return enterVisualNode(session, flow, next, now);
+  return enterVisualNode(session, flow, next, now, [], timingContext);
 }
 
 async function enterProtectedRuntimeNode(
@@ -475,9 +620,12 @@ async function enterProtectedRuntimeNode(
   node: FlowNode,
   now: Date,
   carriedResponses: BotResponse[],
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
   const currentStep = runtimeStepForNode(node);
-  const nextSession = await saveConversationSession(
+  const nextSession = await timedSaveConversationSession(
+    timingContext,
+    `protected_${node.type.toLowerCase()}_session_save`,
     { ...session, currentNodeId: node.id, currentStep: currentStep ?? session.currentStep },
     now,
   );
@@ -485,19 +633,28 @@ async function enterProtectedRuntimeNode(
   if (node.type === "CATEGORY_SELECT") {
     return [
       ...carriedResponses,
-      ...(await browseGroupSelectionResponse(
-        nextSession,
-        flowToBotFlowSettings(session.businessId, flow),
+      ...(await measureOptionalConversationPhase(timingContext, "response.browse_group_selection", () =>
+        browseGroupSelectionResponse(nextSession, flowToBotFlowSettings(session.businessId, flow), timingContext),
       )),
     ];
   }
   if (node.type === "PRODUCT_SELECT") {
-    return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
+    return [
+      ...carriedResponses,
+      ...(await measureOptionalConversationPhase(timingContext, "response.product_selection", () =>
+        productSelectionResponse(nextSession, timingContext),
+      )),
+    ];
   }
   if (node.type === "PRODUCT_DETAILS") {
-    const product = await findVisibleProductById(
-      nextSession.businessId,
-      getContextString(nextSession.context.selectedProductId) ?? "",
+    const product = await measureOptionalConversationPhase(
+      timingContext,
+      "catalog.product_details_lookup",
+      () =>
+        findVisibleProductById(
+          nextSession.businessId,
+          getContextString(nextSession.context.selectedProductId) ?? "",
+        ),
     );
     if (product) {
       return [
@@ -505,16 +662,36 @@ async function enterProtectedRuntimeNode(
         productDetailsResponse(product, nextSession.language ?? flow.settings.defaultLanguage),
       ];
     }
-    return [...carriedResponses, ...(await productSelectionResponse(nextSession))];
+    return [
+      ...carriedResponses,
+      ...(await measureOptionalConversationPhase(timingContext, "response.product_selection", () =>
+        productSelectionResponse(nextSession, timingContext),
+      )),
+    ];
   }
   if (node.type === "CART_MENU") {
-    return [...carriedResponses, ...(await cartMenuResponse(nextSession))];
+    return [
+      ...carriedResponses,
+      ...(await measureOptionalConversationPhase(timingContext, "response.cart_menu", () =>
+        cartMenuResponse(nextSession),
+      )),
+    ];
   }
   if (node.type === "CHECKOUT") {
-    return [...carriedResponses, ...(await startCheckout(nextSession, now))];
+    return [
+      ...carriedResponses,
+      ...(await measureOptionalConversationPhase(timingContext, "response.start_checkout", () =>
+        startCheckout(nextSession, now),
+      )),
+    ];
   }
   if (node.type === "ORDER_REVIEW") {
-    return [...carriedResponses, ...(await reviewOrderResponse(nextSession))];
+    return [
+      ...carriedResponses,
+      ...(await measureOptionalConversationPhase(timingContext, "response.order_review", () =>
+        reviewOrderResponse(nextSession),
+      )),
+    ];
   }
 
   const fallback = runtimeTextResponse(
@@ -2463,8 +2640,11 @@ async function categorySelectionResponse(session: ConversationSession): Promise<
 async function listConfiguredCatalogGroups(
   businessId: string,
   flowSettings: BusinessBotFlowSettings,
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<StoreCatalogGroup[]> {
-  const groups = await listActiveCatalogGroups(businessId);
+  const groups = await measureOptionalConversationPhase(timingContext, "catalog.active_groups_load", () =>
+    listActiveCatalogGroups(businessId),
+  );
   const configuredRoutes = (flowSettings.browseRoutes ?? [])
     .filter((route) => route.active !== false)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -2495,18 +2675,24 @@ async function listConfiguredCatalogGroups(
 async function browseGroupSelectionResponse(
   session: ConversationSession,
   flowSettings = getDefaultBotFlowSettings(session.businessId),
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
-  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings);
+  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings, timingContext);
   if (groups.length <= 1) {
     const group = groups[0];
     if (!group) return categorySelectionResponse(session);
-    const nextSession = await saveConversationSession({
-      ...session,
-      currentStep: "SELECT_GROUP_VALUE",
-      context: { ...session.context, selectedCatalogGroupId: group.id, groupValuePage: 0 },
-    });
-    return groupValueSelectionResponse(nextSession, flowSettings);
+    const nextSession = await timedSaveConversationSession(
+      timingContext,
+      "browse_single_group_session_save",
+      {
+        ...session,
+        currentStep: "SELECT_GROUP_VALUE",
+        context: { ...session.context, selectedCatalogGroupId: group.id, groupValuePage: 0 },
+      },
+      new Date(),
+    );
+    return groupValueSelectionResponse(nextSession, flowSettings, timingContext);
   }
 
   const page = getValidPage(getPageNumber(session.context.browseGroupPage), groups.length);
@@ -2533,14 +2719,19 @@ async function browseGroupSelectionResponse(
 async function groupValueSelectionResponse(
   session: ConversationSession,
   flowSettings = getDefaultBotFlowSettings(session.businessId),
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
   const groupId = getContextString(session.context.selectedCatalogGroupId);
-  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings);
+  const groups = await listConfiguredCatalogGroups(session.businessId, flowSettings, timingContext);
   const group = groupId ? groups.find((entry) => entry.id === groupId) : undefined;
-  if (!groupId || !group) return browseGroupSelectionResponse(session, flowSettings);
+  if (!groupId || !group) return browseGroupSelectionResponse(session, flowSettings, timingContext);
 
-  const values = await listActiveCatalogGroupValues(session.businessId, groupId);
+  const values = await measureOptionalConversationPhase(
+    timingContext,
+    "catalog.group_values_load",
+    () => listActiveCatalogGroupValues(session.businessId, groupId),
+  );
   const page = getValidPage(getPageNumber(session.context.groupValuePage), values.length);
   const rows = values.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((value) => ({
     id: value.id,
@@ -2563,25 +2754,38 @@ async function groupValueSelectionResponse(
   ];
 }
 
-async function productSelectionResponse(session: ConversationSession): Promise<BotResponse[]> {
+async function productSelectionResponse(
+  session: ConversationSession,
+  timingContext?: Omit<WhatsAppLogContext, "operation">,
+): Promise<BotResponse[]> {
   const language = session.language ?? "en";
   const groupId = getContextString(session.context.selectedCatalogGroupId);
   const groupValueId = getContextString(session.context.selectedCatalogGroupValueId);
   const groupValue =
     groupId && groupValueId
-      ? (await listActiveCatalogGroupValues(session.businessId, groupId)).find(
-          (value) => value.id === groupValueId,
-        )
+      ? (
+          await measureOptionalConversationPhase(
+            timingContext,
+            "catalog.product_context_group_values_load",
+            () => listActiveCatalogGroupValues(session.businessId, groupId),
+          )
+        ).find((value) => value.id === groupValueId)
       : undefined;
   const categoryId = getContextString(session.context.selectedCategoryId);
   const category = categoryId
-    ? await findActiveCategoryById(session.businessId, categoryId)
+    ? await measureOptionalConversationPhase(timingContext, "catalog.category_lookup", () =>
+        findActiveCategoryById(session.businessId, categoryId),
+      )
     : undefined;
   const products =
     groupId && groupValueId
-      ? await listVisibleProductsByGroupValue(session.businessId, groupId, groupValueId)
+      ? await measureOptionalConversationPhase(timingContext, "catalog.products_by_group_value_load", () =>
+          listVisibleProductsByGroupValue(session.businessId, groupId, groupValueId),
+        )
       : categoryId
-        ? await listVisibleProductsByCategory(session.businessId, categoryId)
+        ? await measureOptionalConversationPhase(timingContext, "catalog.products_by_category_load", () =>
+            listVisibleProductsByCategory(session.businessId, categoryId),
+          )
         : [];
   const browseName = groupValue
     ? getCatalogGroupValueName(groupValue, language)
