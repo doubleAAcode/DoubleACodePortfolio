@@ -13,6 +13,7 @@ import {
   createCorrelationId,
   logWhatsAppError,
   logWhatsAppInfo,
+  type WhatsAppLogContext,
 } from "@/lib/whatsapp/logger.server";
 import { recordWaMessageEvent, type WaMessageType } from "@/lib/whatsapp/message-events.server";
 import {
@@ -33,11 +34,49 @@ export type WhatsAppWebhookOptions = {
   logLabel: string;
 };
 
+type WebhookTimingEntry = {
+  phase: string;
+  durationMs: number;
+  result: "ok" | "error";
+};
+
 export function createWhatsAppWebhookHandlers(options: WhatsAppWebhookOptions) {
   return {
     GET: ({ request }: { request: Request }) => verifyWebhook(request, options),
     POST: ({ request }: { request: Request }) => handleWebhookEvent(request, options),
   };
+}
+
+async function measureWebhookPhase<T>(
+  timings: WebhookTimingEntry[],
+  phase: string,
+  context: WhatsAppLogContext,
+  task: () => Promise<T>,
+) {
+  const phaseStartedAt = Date.now();
+  try {
+    const result = await task();
+    const durationMs = Date.now() - phaseStartedAt;
+    timings.push({ phase, durationMs, result: "ok" });
+    logWhatsAppInfo({
+      ...context,
+      durationMs,
+      result: "ok",
+    });
+    return result;
+  } catch (error) {
+    const durationMs = Date.now() - phaseStartedAt;
+    timings.push({ phase, durationMs, result: "error" });
+    logWhatsAppError(
+      {
+        ...context,
+        durationMs,
+        result: "error",
+      },
+      error,
+    );
+    throw error;
+  }
 }
 
 function verifyWebhook(request: Request, options: WhatsAppWebhookOptions) {
@@ -84,6 +123,7 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
   });
 
   const startedAt = Date.now();
+  const timings: WebhookTimingEntry[] = [];
   const correlationId = createCorrelationId("wa_webhook");
   const rawBody = await request.text();
   console.log("[WA WEBHOOK POST RAW BODY PREVIEW]", {
@@ -149,7 +189,19 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
   const businessIds: string[] = [];
 
   for (const message of messages) {
-    const connection = await resolveWhatsAppConnectionByPhoneNumber(message.phoneNumberId);
+    const connection = await measureWebhookPhase(
+      timings,
+      "connection_lookup",
+      {
+        correlationId,
+        operation: "webhook.timing.connection_lookup",
+        businessId: options.businessId,
+        metaMessageId: message.messageId,
+        customerPhone: message.sender,
+        phoneNumberId: message.phoneNumberId,
+      },
+      () => resolveWhatsAppConnectionByPhoneNumber(message.phoneNumberId),
+    );
     messageIds.push(message.messageId);
     inputTypes.push(message.input.type);
     senderMasks.push(maskCustomerIdentifier(message.sender));
@@ -175,11 +227,24 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
       continue;
     }
 
-    const isDuplicate = await hasProcessedWhatsAppMessage({
-      messageId: message.messageId,
-      businessId: connection.businessId,
-      customerPhone: message.sender,
-    });
+    const isDuplicate = await measureWebhookPhase(
+      timings,
+      "duplicate_check",
+      {
+        correlationId,
+        operation: "webhook.timing.duplicate_check",
+        businessId: connection.businessId,
+        metaMessageId: message.messageId,
+        customerPhone: message.sender,
+        phoneNumberId: message.phoneNumberId,
+      },
+      () =>
+        hasProcessedWhatsAppMessage({
+          messageId: message.messageId,
+          businessId: connection.businessId,
+          customerPhone: message.sender,
+        }),
+    );
 
     logWhatsAppInfo({
       correlationId,
@@ -203,25 +268,38 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
       continue;
     }
 
-    await recordWaMessageEvent({
-      businessId: connection.businessId,
-      connectionId: connection.connectionId,
-      phoneNumberId: message.phoneNumberId,
-      customerPhone: message.sender,
-      direction: "INBOUND",
-      senderType: "CUSTOMER",
-      messageType: toMessageEventType(message.input.type),
-      body: message.input.type === "text" ? message.input.value : undefined,
-      summary: readableIncomingSummary(message.input.type, message.input.value),
-      metaMessageId: message.messageId,
-      status: "received",
-      rawPayload: {
-        messageId: message.messageId,
-        timestamp: message.timestamp,
-        inputType: message.input.type,
-        inputValue: message.input.value,
+    await measureWebhookPhase(
+      timings,
+      "inbound_event_log",
+      {
+        correlationId,
+        operation: "webhook.timing.inbound_event_log",
+        businessId: connection.businessId,
+        metaMessageId: message.messageId,
+        customerPhone: message.sender,
+        phoneNumberId: message.phoneNumberId,
       },
-    });
+      () =>
+        recordWaMessageEvent({
+          businessId: connection.businessId,
+          connectionId: connection.connectionId,
+          phoneNumberId: message.phoneNumberId,
+          customerPhone: message.sender,
+          direction: "INBOUND",
+          senderType: "CUSTOMER",
+          messageType: toMessageEventType(message.input.type),
+          body: message.input.type === "text" ? message.input.value : undefined,
+          summary: readableIncomingSummary(message.input.type, message.input.value),
+          metaMessageId: message.messageId,
+          status: "received",
+          rawPayload: {
+            messageId: message.messageId,
+            timestamp: message.timestamp,
+            inputType: message.input.type,
+            inputValue: message.input.value,
+          },
+        }),
+    );
 
     const missingKeys = getMissingWhatsAppConfigKeys(connection.config);
     if (missingKeys.length) {
@@ -239,35 +317,46 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
       continue;
     }
 
-    const responses = await processIncomingMessage({
-      businessId: connection.businessId,
-      customerPhone: message.sender,
-      messageId: message.messageId,
-      input: message.input,
-    });
+    const responses = await measureWebhookPhase(
+      timings,
+      "process_incoming_message",
+      {
+        correlationId,
+        operation: "webhook.timing.process_incoming_message",
+        businessId: connection.businessId,
+        metaMessageId: message.messageId,
+        customerPhone: message.sender,
+        phoneNumberId: message.phoneNumberId,
+      },
+      () =>
+        processIncomingMessage({
+          businessId: connection.businessId,
+          customerPhone: message.sender,
+          messageId: message.messageId,
+          input: message.input,
+        }),
+    );
 
     for (const response of responses) {
-      const result =
-        response.type === "buttons"
-          ? await sendWhatsAppButtons({
-              phoneNumberId: message.phoneNumberId,
-              recipient: message.sender,
-              body: response.body,
-              buttons: response.buttons,
-              config: connection.config,
-              logContext: {
-                businessId: connection.businessId,
-                connectionId: connection.connectionId,
-                senderType: "BOT",
-              },
-            })
-          : response.type === "list"
-            ? await sendWhatsAppList({
+      const result = await measureWebhookPhase(
+        timings,
+        "send_whatsapp_response",
+        {
+          correlationId,
+          operation: "webhook.timing.send_whatsapp_response",
+          businessId: connection.businessId,
+          metaMessageId: message.messageId,
+          customerPhone: message.sender,
+          phoneNumberId: message.phoneNumberId,
+          details: { responseType: response.type },
+        },
+        () =>
+          response.type === "buttons"
+            ? sendWhatsAppButtons({
                 phoneNumberId: message.phoneNumberId,
                 recipient: message.sender,
                 body: response.body,
-                buttonText: response.buttonText,
-                sections: response.sections,
+                buttons: response.buttons,
                 config: connection.config,
                 logContext: {
                   businessId: connection.businessId,
@@ -275,17 +364,32 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
                   senderType: "BOT",
                 },
               })
-            : await sendWhatsAppText({
-                phoneNumberId: message.phoneNumberId,
-                recipient: message.sender,
-                message: response.text,
-                config: connection.config,
-                logContext: {
-                  businessId: connection.businessId,
-                  connectionId: connection.connectionId,
-                  senderType: "BOT",
-                },
-              });
+            : response.type === "list"
+              ? sendWhatsAppList({
+                  phoneNumberId: message.phoneNumberId,
+                  recipient: message.sender,
+                  body: response.body,
+                  buttonText: response.buttonText,
+                  sections: response.sections,
+                  config: connection.config,
+                  logContext: {
+                    businessId: connection.businessId,
+                    connectionId: connection.connectionId,
+                    senderType: "BOT",
+                  },
+                })
+              : sendWhatsAppText({
+                  phoneNumberId: message.phoneNumberId,
+                  recipient: message.sender,
+                  message: response.text,
+                  config: connection.config,
+                  logContext: {
+                    businessId: connection.businessId,
+                    connectionId: connection.connectionId,
+                    senderType: "BOT",
+                  },
+                }),
+      );
 
       if (!result.ok) {
         sendFailureCount += 1;
@@ -307,6 +411,20 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
       }
     }
   }
+
+  logWhatsAppInfo({
+    correlationId,
+    operation: "webhook.timing.total",
+    businessId: businessIds[0] ?? options.businessId,
+    phoneNumberId: phoneNumberIds[0],
+    durationMs: Date.now() - startedAt,
+    result: sendFailureCount ? "processed_with_send_failures" : "processed",
+    details: {
+      messageCount: messages.length,
+      duplicateCount,
+      timings,
+    },
+  });
 
   void recordWhatsAppWebhookLog({
     method: request.method,
