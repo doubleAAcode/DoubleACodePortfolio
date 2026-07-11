@@ -203,6 +203,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
           optionValueId?: string;
           templateId?: string;
           flowJson?: unknown;
+          flowName?: string;
           versionId?: string;
         } | null;
 
@@ -460,6 +461,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
             businessId: params.businessId,
             flowJson: body.flowJson as never,
             adminUser: session.username,
+            flowName: typeof body.flowName === "string" ? body.flowName : undefined,
           });
           await recordAdminAuditLog({
             adminUser: session.username,

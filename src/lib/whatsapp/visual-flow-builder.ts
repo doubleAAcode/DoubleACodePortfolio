@@ -107,6 +107,19 @@ export type VisualCompileResult = {
 
 export const WHATSAPP_MAX_VISIBLE_OPTIONS = 3;
 
+export function createBlankVisualFlow(name = "Untitled WhatsApp flow"): VisualFlowDefinition {
+  return {
+    version: 1,
+    nodes: [],
+    edges: [],
+    metadata: {
+      name,
+      languageSupport: ["en", "ar"],
+      defaultLanguage: "en",
+    },
+  };
+}
+
 const protectedCommerceVisualTypes = new Set<VisualFlowBlockType>([
   "PRODUCT_SELECTION",
   "PRODUCT_DETAILS",

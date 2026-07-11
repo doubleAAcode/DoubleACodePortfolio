@@ -68,6 +68,9 @@ async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
   if (!response.ok) {
+    const setupMessage = getSupabaseSetupMessage(data);
+    if (setupMessage) throw new Error(setupMessage);
+
     const parts = [
       data?.message || data?.error_description || response.statusText,
       data?.details,
@@ -78,6 +81,28 @@ async function parseResponse<T>(response: Response): Promise<T> {
     throw new Error(message);
   }
   return data as T;
+}
+
+function getSupabaseSetupMessage(data: unknown) {
+  if (!data || typeof data !== "object") return "";
+
+  const error = data as {
+    code?: unknown;
+    message?: unknown;
+  };
+  const code = typeof error.code === "string" ? error.code : "";
+  const message = typeof error.message === "string" ? error.message : "";
+
+  if (
+    code === "PGRST205" &&
+    /pavone_new_(categories|brands|products|product_images|orders|order_items|settings)/.test(
+      message,
+    )
+  ) {
+    return "The new Pavone database tables are missing in Supabase. Run supabase/pavone_new_boutique_schema.sql in the existing Pavone Supabase SQL editor, then refresh this admin page.";
+  }
+
+  return "";
 }
 
 export async function supabaseAuth<T>(

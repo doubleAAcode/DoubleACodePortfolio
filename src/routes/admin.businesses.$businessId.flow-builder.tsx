@@ -10,6 +10,7 @@ import {
 } from "@/lib/whatsapp/admin-client";
 import {
   compileVisualFlowToRuntimeFlow,
+  createBlankVisualFlow,
   getVisualFlow,
   validateVisualFlow,
   type VisualFlowDefinition,
@@ -43,6 +44,8 @@ function BusinessFlowBuilderPage() {
   const [saving, setSaving] = useState("");
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
+  const [nameDialogAction, setNameDialogAction] = useState<"draft" | "publish" | "">("");
+  const [flowNameInput, setFlowNameInput] = useState("");
 
   const load = useCallback(
     async (preferredVersionId?: string, label = "loading") => {
@@ -91,9 +94,11 @@ function BusinessFlowBuilderPage() {
   const selectedVersion = details ? selectVersion(details, selectedVersionId) : undefined;
   const visualValidation = visualFlow ? validateVisualFlow(visualFlow) : undefined;
   const busy = Boolean(saving || loading);
+  const baseFlowForCompile =
+    selectedVersion?.flow_json ?? createDefaultFlowDefinition("CUSTOM_PRODUCTS");
   const compiled =
-    !loading && selectedVersion && visualFlow
-      ? compileVisualFlowToRuntimeFlow(visualFlow, selectedVersion.flow_json)
+    !loading && visualFlow
+      ? compileVisualFlowToRuntimeFlow(visualFlow, baseFlowForCompile)
       : undefined;
 
   async function run(label: string, action: () => Promise<string | undefined>) {
@@ -110,8 +115,6 @@ function BusinessFlowBuilderPage() {
 
   function flowActionError(actionLabel: string) {
     if (!visualFlow) return `${actionLabel} cannot continue because no flow is loaded.`;
-    if (!selectedVersion)
-      return `${actionLabel} cannot continue because no flow version is selected.`;
     if (!compiled?.ok || !compiled.flow) {
       const issues = (compiled?.validation ?? visualValidation)?.issues ?? [];
       const issueList = issues.length
@@ -124,15 +127,35 @@ function BusinessFlowBuilderPage() {
     return "";
   }
 
-  async function saveDraft() {
+  function openNameDialog(action: "draft" | "publish") {
+    const currentName =
+      visualFlow?.metadata.name ||
+      details?.flow?.name ||
+      selectedVersion?.flow_json.name ||
+      "Custom WhatsApp conversation";
+    setFlowNameInput(currentName);
+    setNameDialogAction(action);
+  }
+
+  async function saveDraft(flowName: string) {
     const blockingError = flowActionError("Save draft");
     if (blockingError) throw new Error(blockingError);
     const flow = compiled?.flow;
     if (!flow) throw new Error("Save draft failed because the compiled flow was empty.");
+    const cleanName = flowName.trim() || "Custom WhatsApp conversation";
+    const namedVisualFlow = visualFlow
+      ? { ...visualFlow, metadata: { ...visualFlow.metadata, name: cleanName } }
+      : undefined;
     await applyAdminBusinessAction(businessId, {
       action: "save_business_flow_draft",
-      flowJson: flow,
+      flowName: cleanName,
+      flowJson: {
+        ...flow,
+        name: cleanName,
+        visualFlow: namedVisualFlow ?? flow.visualFlow,
+      },
     });
+    if (namedVisualFlow) setVisualFlow(namedVisualFlow);
     const latest = await getBusinessFlowDetails(businessId);
     return latest.versions.find((version) => version.status === "DRAFT")?.id;
   }
@@ -165,19 +188,32 @@ function BusinessFlowBuilderPage() {
     setOrderConfirmationArabic(nextDetails.business.order_confirmation_message_arabic || "");
   }
 
-  async function startFromScratch() {
-    const flowJson = {
-      ...createDefaultFlowDefinition("CUSTOM_PRODUCTS"),
-      id: `${businessId}_custom_flow`,
-      name: "Custom WhatsApp conversation",
-      description: "Business-specific WhatsApp flow created from scratch.",
-    };
-    await applyAdminBusinessAction(businessId, {
-      action: "save_business_flow_draft",
-      flowJson,
+  function startFromScratch() {
+    setVisualFlow(createBlankVisualFlow("Custom WhatsApp conversation"));
+    setSelectedBlockId("");
+    setSelectedVersionId("");
+  }
+
+  async function confirmNamedAction() {
+    const action = nameDialogAction;
+    if (!action) return;
+    const cleanName = flowNameInput.trim();
+    if (!cleanName) {
+      setError("Enter a template name before saving.");
+      return;
+    }
+    setNameDialogAction("");
+    await run(action, async () => {
+      const draftId = await saveDraft(cleanName);
+      if (action === "publish") {
+        if (!draftId) throw new Error("No draft version was available to publish.");
+        await applyAdminBusinessAction(businessId, {
+          action: "publish_business_flow",
+          versionId: draftId,
+        });
+      }
+      return draftId;
     });
-    const latest = await getBusinessFlowDetails(businessId);
-    return latest.versions.find((version) => version.status === "DRAFT")?.id;
   }
 
   return (
@@ -207,6 +243,7 @@ function BusinessFlowBuilderPage() {
             }}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
           >
+            {!selectedVersionId && visualFlow ? <option value="">Unsaved scratch flow</option> : null}
             {details?.versions.map((version) => (
               <option key={version.id} value={version.id}>
                 Version {version.version_number} - {version.status}
@@ -222,6 +259,14 @@ function BusinessFlowBuilderPage() {
             type="button"
             disabled={busy}
             className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
+            onClick={startFromScratch}
+          >
+            Start from scratch
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
             onClick={() => void load(selectedVersionId, "refresh")}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -231,7 +276,7 @@ function BusinessFlowBuilderPage() {
             type="button"
             disabled={busy}
             className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
-            onClick={() => void run("draft", saveDraft)}
+            onClick={() => openNameDialog("draft")}
           >
             {saving === "draft" ? "Saving..." : "Save draft"}
           </button>
@@ -239,19 +284,7 @@ function BusinessFlowBuilderPage() {
             type="button"
             disabled={busy}
             className="studio-button-primary disabled:cursor-wait disabled:opacity-60"
-            onClick={() =>
-              void run("publish", async () => {
-                const blockingError = flowActionError("Publish");
-                if (blockingError) throw new Error(blockingError);
-                const draftId = await saveDraft();
-                if (!draftId) throw new Error("No draft version was available to publish.");
-                await applyAdminBusinessAction(businessId, {
-                  action: "publish_business_flow",
-                  versionId: draftId,
-                });
-                return draftId;
-              })
-            }
+            onClick={() => openNameDialog("publish")}
           >
             {saving === "publish" ? "Publishing..." : "Publish"}
           </button>
@@ -304,9 +337,9 @@ function BusinessFlowBuilderPage() {
                   type="button"
                   disabled={busy}
                   className="studio-button-primary"
-                  onClick={() => void run("scratch", startFromScratch)}
+                  onClick={startFromScratch}
                 >
-                  {saving === "scratch" ? "Creating..." : "Start from scratch"}
+                  Start from scratch
                 </button>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -350,6 +383,60 @@ function BusinessFlowBuilderPage() {
           />
         </div>
       )}
+      {nameDialogAction ? (
+        <FlowNameDialog
+          action={nameDialogAction}
+          value={flowNameInput}
+          busy={busy}
+          onChange={setFlowNameInput}
+          onCancel={() => setNameDialogAction("")}
+          onConfirm={() => void confirmNamedAction()}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function FlowNameDialog({
+  action,
+  value,
+  busy,
+  onChange,
+  onCancel,
+  onConfirm,
+}: {
+  action: "draft" | "publish";
+  value: string;
+  busy: boolean;
+  onChange: (value: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl">
+        <h2 className="font-display text-xl font-semibold">Name this flow template</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This name will identify the saved WhatsApp flow for this business.
+        </p>
+        <label className="mt-4 block text-sm">
+          <span className="mb-1 block text-muted-foreground">Template name</span>
+          <input
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            autoFocus
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          />
+        </label>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button type="button" className="studio-button-secondary" disabled={busy} onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="studio-button-primary" disabled={busy} onClick={onConfirm}>
+            {action === "publish" ? "Save and publish" : "Save draft"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

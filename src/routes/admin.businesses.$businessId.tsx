@@ -1503,6 +1503,7 @@ function ConversationMap({
     sourceNodeId: string;
     optionKey: string;
   }>();
+  const [showFirstStepWizard, setShowFirstStepWizard] = useState(false);
   const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
   const visited = new Set<string>();
@@ -1602,6 +1603,40 @@ function ConversationMap({
             }}
           />
         ) : null}
+      </div>
+    );
+  }
+
+  if (!primaryPath.length) {
+    return (
+      <div className="mt-5 min-w-0">
+        <div className="rounded-md border border-dashed border-primary/50 bg-primary/5 p-6">
+          <div className="max-w-xl">
+            <div className="font-display text-xl font-semibold">Start from a blank canvas</div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Add the first WhatsApp block, then keep adding the next block one by one.
+            </p>
+            <button
+              type="button"
+              className="studio-button-primary mt-4"
+              onClick={() => setShowFirstStepWizard((value) => !value)}
+            >
+              Add first block
+            </button>
+          </div>
+          {showFirstStepWizard ? (
+            <GuidedAddStepWizard
+              visualFlow={visualFlow}
+              selectedBlockId=""
+              defaultKind="start"
+              onCancel={() => setShowFirstStepWizard(false)}
+              onCreate={(next, createdNodeId) => {
+                setShowFirstStepWizard(false);
+                onCreateStep(next, createdNodeId);
+              }}
+            />
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -2781,6 +2816,7 @@ function AdvancedVisualFlowMode({
 }
 
 type AddStepKind =
+  | "start"
   | "message"
   | "options"
   | "question"
@@ -2792,6 +2828,7 @@ type AddStepKind =
   | "end";
 
 const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBlockType }> = [
+  { id: "start", label: "Start", type: "START" },
   { id: "message", label: "Send a message", type: "SEND_MESSAGE" },
   { id: "options", label: "Send a message with options", type: "SEND_MESSAGE" },
   { id: "question", label: "Ask a question", type: "QUESTION" },
@@ -2894,15 +2931,17 @@ function AddStepWizard({
 function GuidedAddStepWizard({
   visualFlow,
   selectedBlockId,
+  defaultKind = "message",
   onCreate,
   onCancel,
 }: {
   visualFlow: VisualFlowDefinition;
   selectedBlockId: string;
+  defaultKind?: AddStepKind;
   onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
   onCancel: () => void;
 }) {
-  const [kind, setKind] = useState<AddStepKind>("message");
+  const [kind, setKind] = useState<AddStepKind>(defaultKind);
   const [title, setTitle] = useState("");
   const [placement, setPlacement] = useState<"after_selected" | "option_target" | "unconnected">(
     "after_selected",

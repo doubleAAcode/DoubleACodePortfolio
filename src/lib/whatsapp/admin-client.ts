@@ -124,7 +124,7 @@ export async function applyAdminBusinessAction(
     | { action: "save_admin_product_custom_field"; field: AdminProductCustomFieldInput }
     | { action: "delete_admin_product_custom_field"; fieldId: string }
     | { action: "clone_flow_template"; templateId: string }
-    | { action: "save_business_flow_draft"; flowJson: FlowDefinition }
+    | { action: "save_business_flow_draft"; flowJson: FlowDefinition; flowName?: string }
     | { action: "publish_business_flow"; versionId: string },
 ) {
   const result = await apiFetch<ApiResult<AdminBusinessDetails>>(

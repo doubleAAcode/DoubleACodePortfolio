@@ -307,13 +307,37 @@ export async function saveBusinessFlowDraft({
   businessId,
   flowJson,
   adminUser,
+  flowName,
 }: {
   businessId: string;
   flowJson: FlowDefinition;
   adminUser: string;
+  flowName?: string;
 }) {
-  const details = await getBusinessFlowDetails(businessId);
-  if (!details.flow) throw new Error("Clone a template before editing this business flow.");
+  let details = await getBusinessFlowDetails(businessId);
+  const now = new Date().toISOString();
+  if (!details.flow) {
+    const flowId = `bf-${slug(businessId)}`;
+    await upsertBusinessFlow({
+      id: flowId,
+      business_id: businessId,
+      source_template_id: null,
+      name: flowName?.trim() || flowJson.name || "Custom WhatsApp conversation",
+      status: "DRAFT",
+      active_version_id: null,
+      created_at: now,
+      updated_at: now,
+    });
+    details = await getBusinessFlowDetails(businessId);
+  } else if (flowName?.trim() && flowName.trim() !== details.flow.name) {
+    await upsertBusinessFlow({
+      ...details.flow,
+      name: flowName.trim(),
+      updated_at: now,
+    });
+    details = await getBusinessFlowDetails(businessId);
+  }
+  if (!details.flow) throw new Error("Business flow could not be created.");
   const validation = validateFlowForEditor(flowJson);
   const draft = details.versions.find((version) => version.status === "DRAFT");
   const versionNumber =
@@ -328,7 +352,7 @@ export async function saveBusinessFlowDraft({
     validation_result: validation,
     created_by_user_id: adminUser,
     published_at: null,
-    created_at: draft?.created_at ?? new Date().toISOString(),
+    created_at: draft?.created_at ?? now,
   };
   await upsertBusinessFlowVersion(version);
   return getBusinessFlowDetails(businessId);
