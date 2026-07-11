@@ -461,6 +461,15 @@ function AdminProducts() {
                 ))}
               </div>
 
+              {save.error && (
+                <p
+                  role="alert"
+                  className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  {save.error instanceof Error ? save.error.message : "Product save failed."}
+                </p>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"

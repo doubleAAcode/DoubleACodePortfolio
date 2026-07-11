@@ -29,6 +29,9 @@ function AdminSettings() {
   const [username, setUsername] = useState(adminEmailToUsername(session?.user?.email));
   const [password, setPassword] = useState("");
   const [savingAccount, setSavingAccount] = useState(false);
+  const [accountError, setAccountError] = useState("");
+  const [storefrontError, setStorefrontError] = useState("");
+  const [savingStorefront, setSavingStorefront] = useState(false);
   const [uploading, setUploading] = useState("");
   const [settings, setSettings] = useState<PavoneNewSettings | null>(null);
 
@@ -44,6 +47,7 @@ function AdminSettings() {
   async function saveAccount(event: React.FormEvent) {
     event.preventDefault();
     setSavingAccount(true);
+    setAccountError("");
     try {
       await updateAdminAccount({
         displayName: displayName.trim(),
@@ -53,7 +57,9 @@ function AdminSettings() {
       setPassword("");
       toast.success("Admin account updated");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update account");
+      const message = error instanceof Error ? error.message : "Could not update account";
+      setAccountError(message);
+      toast.error(message);
     } finally {
       setSavingAccount(false);
     }
@@ -62,12 +68,18 @@ function AdminSettings() {
   async function saveStorefront(event: React.FormEvent) {
     event.preventDefault();
     if (!settings) return;
+    setSavingStorefront(true);
+    setStorefrontError("");
     try {
       await updateSettings(settings);
       queryClient.invalidateQueries({ queryKey: catalogKeys.settings });
       toast.success("Storefront settings updated");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update storefront");
+      const message = error instanceof Error ? error.message : "Could not update storefront";
+      setStorefrontError(message);
+      toast.error(message);
+    } finally {
+      setSavingStorefront(false);
     }
   }
 
@@ -119,6 +131,14 @@ function AdminSettings() {
             placeholder="Leave empty to keep current password"
           />
         </Field>
+        {accountError && (
+          <p
+            role="alert"
+            className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {accountError}
+          </p>
+        )}
         <button type="submit" disabled={savingAccount} className="btn-primary !py-2.5 text-xs">
           {savingAccount ? "Saving..." : "Save Account"}
         </button>
@@ -194,8 +214,20 @@ function AdminSettings() {
               onChange={(value) => setSettings({ ...settings, about_image_url: value || null })}
               onUpload={(file) => uploadImage(file, "about_image_url")}
             />
-            <button type="submit" className="btn-primary !py-2.5 text-xs">
-              Save Storefront
+            {storefrontError && (
+              <p
+                role="alert"
+                className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {storefrontError}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={savingStorefront || Boolean(uploading)}
+              className="btn-primary !py-2.5 text-xs"
+            >
+              {savingStorefront ? "Saving..." : "Save Storefront"}
             </button>
           </>
         )}

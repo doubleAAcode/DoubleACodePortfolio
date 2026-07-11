@@ -17,7 +17,9 @@ export type SupabaseSession = {
 
 export class SupabaseConfigError extends Error {
   constructor() {
-    super("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local.");
+    super(
+      "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local.",
+    );
   }
 }
 
@@ -39,9 +41,7 @@ export function usernameToAdminEmail(usernameOrEmail: string) {
   const value = usernameOrEmail.trim().toLowerCase();
   if (value.includes("@")) return value;
 
-  const username = value
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const username = value.replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
 
   if (!username) throw new Error("Enter a username.");
   return `${username}@${ADMIN_USERNAME_DOMAIN}`;
@@ -68,7 +68,13 @@ async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
   if (!response.ok) {
-    const message = data?.message || data?.error_description || data?.hint || response.statusText;
+    const parts = [
+      data?.message || data?.error_description || response.statusText,
+      data?.details,
+      data?.hint,
+      data?.code ? `Code: ${data.code}` : "",
+    ].filter(Boolean);
+    const message = parts.join(" ");
     throw new Error(message);
   }
   return data as T;
@@ -116,12 +122,13 @@ export async function uploadPavoneImage(file: File, folder: "products" | "catego
   if (!session?.access_token) throw new Error("You must be signed in to upload images.");
 
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeName = file.name
-    .replace(/\.[^.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 50) || "image";
+  const safeName =
+    file.name
+      .replace(/\.[^.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50) || "image";
   const path = `${folder}/${Date.now()}-${safeName}.${extension}`;
 
   const response = await fetch(`${url}/storage/v1/object/pavone-images/${path}`, {

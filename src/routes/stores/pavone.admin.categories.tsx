@@ -241,6 +241,14 @@ function AdminCategories() {
                   onChange={(is_featured) => setForm({ ...form, is_featured })}
                 />
               </div>
+              {save.error && (
+                <p
+                  role="alert"
+                  className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  {save.error instanceof Error ? save.error.message : "Category save failed."}
+                </p>
+              )}
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
