@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { signInAdmin } from "@/stores/pavone/lib/supabase";
-import { Lock } from "lucide-react";
+import { LOGO_URL, STORE_NAME } from "@/stores/pavone-new/lib/brand";
 
 export const Route = createFileRoute("/stores/pavone/admin/login")({
   component: AdminLogin,
+  head: () => ({
+    meta: [{ title: "Store Owner Login - PAVONE BY RAY" }, { name: "robots", content: "noindex" }],
+  }),
 });
 
 function AdminLogin() {
@@ -14,8 +17,8 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError("");
     setLoading(true);
     try {
@@ -29,52 +32,47 @@ function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blush/30 via-cream to-lavender/30 px-4">
-      <div className="w-full max-w-md bg-background rounded-2xl shadow-soft p-8 border border-border">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-10 w-10 rounded-full bg-pink/15 flex items-center justify-center">
-            <Lock className="h-5 w-5 text-pink" />
-          </div>
-          <div>
-            <div className="font-display text-2xl text-cocoa">Pavone Admin</div>
-            <div className="text-xs text-muted-foreground">Secure owner admin</div>
-          </div>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-secondary/40 px-4">
+      <div className="w-full max-w-sm border border-border bg-background p-8 sm:p-10">
+        <img src={LOGO_URL} alt={STORE_NAME} className="mx-auto h-10 w-auto" />
+        <h1 className="mt-6 text-center font-serif text-2xl">Store Owner Login</h1>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Manage products, categories, brands, homepage content and orders.
+        </p>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="block text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">Username</label>
+            <label className="label-elegant" htmlFor="username">
+              Username or email
+            </label>
             <input
+              id="username"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoFocus
               required
+              autoFocus
               autoComplete="username"
-              placeholder="owner"
-              className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink/40"
+              className="input-elegant"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">Password</label>
+            <label className="label-elegant" htmlFor="password">
+              Password
+            </label>
             <input
+              id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Password"
-              className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink/40"
+              autoComplete="current-password"
+              className="input-elegant"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
             />
           </div>
-
           {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-cocoa text-ivory py-3 text-sm font-medium hover:bg-cocoa/90 transition-colors disabled:opacity-60"
-          >
-            {loading ? "Signing in..." : "Enter studio"}
+          <button type="submit" className="btn-primary w-full" disabled={loading}>
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
       </div>

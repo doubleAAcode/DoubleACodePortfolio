@@ -1,187 +1,339 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useCart } from "@/stores/pavone/context/CartContext";
-import { ProductCard } from "@/stores/pavone/components/ProductCard";
-import { ShoppingBag, Check, Truck, Sparkles } from "lucide-react";
-import { PavoneShell } from "@/stores/pavone/PavoneShell";
-import { PavoneDataState, usePavoneCatalog } from "@/stores/pavone/lib/use-pavone-data";
+import { Heart, Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { ProductCard } from "@/stores/pavone-new/components/ProductCard";
+import { StoreLayout } from "@/stores/pavone-new/components/StoreLayout";
+import { formatPrice } from "@/stores/pavone-new/lib/brand";
+import { CartProvider, useCart } from "@/stores/pavone-new/lib/cart";
+import { useWishlist } from "@/stores/pavone-new/lib/wishlist";
+import {
+  catalogKeys,
+  fetchProductBySlug,
+  fetchProducts,
+  pavoneNewImage,
+  productImage,
+} from "@/stores/pavone-new/lib/catalog";
 
 export const Route = createFileRoute("/stores/pavone/product/$slug")({
+  component: PavoneProductRoute,
   head: ({ params }) => ({
-    meta: [{ title: `${params.slug.replaceAll("-", " ")} - Pavone.lb` }],
+    meta: [
+      { title: `${slugToTitle(params.slug)} - PAVONE BY RAY` },
+      {
+        name: "description",
+        content: `Shop ${slugToTitle(params.slug)} at PAVONE BY RAY.`,
+      },
+      { property: "og:type", content: "product" },
+      { property: "og:url", content: `/stores/pavone/product/${params.slug}` },
+    ],
     links: [{ rel: "canonical", href: `/stores/pavone/product/${params.slug}` }],
   }),
-  component: PavoneProductRoute,
+  errorComponent: () => (
+    <div className="pavone-new-store min-h-screen bg-background text-foreground">
+      <CartProvider>
+        <StoreLayout>
+          <div className="py-32 text-center">
+            <p className="font-serif text-2xl">Something went wrong loading this piece.</p>
+            <Link to="/stores/pavone/shop" className="btn-outline mt-6">
+              Back to Shop
+            </Link>
+          </div>
+        </StoreLayout>
+      </CartProvider>
+    </div>
+  ),
 });
+
+function slugToTitle(slug: string) {
+  return slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 function PavoneProductRoute() {
   return (
-    <PavoneShell>
-      <ProductPage />
-    </PavoneShell>
+    <div className="pavone-new-store min-h-screen bg-background text-foreground">
+      <CartProvider>
+        <ProductPage />
+      </CartProvider>
+    </div>
   );
 }
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { data, loading, error } = usePavoneCatalog();
-  const product = data.products.find((p) => p.slug === slug);
+  const { data: product, isLoading } = useQuery({
+    queryKey: catalogKeys.product(slug),
+    queryFn: () => fetchProductBySlug(slug),
+  });
+  const { data: products = [] } = useQuery({
+    queryKey: catalogKeys.products,
+    queryFn: () => fetchProducts(),
+  });
+  const { addItem } = useCart();
+  const wishlist = useWishlist();
 
-  if (!loading && !error && !product) {
+  const [size, setSize] = useState<string | null>(null);
+  const [color, setColor] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
+
+  if (isLoading) {
     return (
-      <div className="container-page py-24 text-center">
-        <h1 className="font-display text-4xl">Piece not found</h1>
-        <Link to="/stores/pavone/shop" className="mt-6 inline-block underline">Back to shop</Link>
-      </div>
+      <StoreLayout>
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2">
+          <div className="aspect-[4/5] animate-pulse bg-secondary" />
+          <div className="space-y-4">
+            <div className="h-8 w-2/3 animate-pulse bg-secondary" />
+            <div className="h-5 w-1/4 animate-pulse bg-secondary" />
+            <div className="h-24 animate-pulse bg-secondary" />
+          </div>
+        </div>
+      </StoreLayout>
     );
   }
 
+  if (!product || !product.is_active) {
+    return (
+      <StoreLayout>
+        <div className="py-32 text-center">
+          <p className="font-serif text-2xl">This piece is no longer available.</p>
+          <Link to="/stores/pavone/shop" className="btn-outline mt-6">
+            Back to Shop
+          </Link>
+        </div>
+      </StoreLayout>
+    );
+  }
+
+  const images = [...(product.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+  const gallery =
+    images.length > 0 ? images.map((image) => image.image_url) : [pavoneNewImage("hero.jpg")];
+  const onSale = product.sale_price != null && Number(product.sale_price) < Number(product.price);
+  const price = onSale ? Number(product.sale_price) : Number(product.price);
+  const inStock = product.stock_quantity > 0;
+  const related = products
+    .filter((item) => item.id !== product.id && item.category_id === product.category_id)
+    .slice(0, 4);
+
+  const needsSize = product.sizes.length > 0 && !size;
+  const needsColor = product.colors.length > 0 && !color;
+
+  const handleAdd = () => {
+    if (needsSize) {
+      toast("Please select a size");
+      return;
+    }
+    if (needsColor) {
+      toast("Please select a color");
+      return;
+    }
+    addItem(
+      {
+        productId: product.id,
+        slug: product.slug,
+        name: product.name,
+        price,
+        image: productImage(product),
+        size,
+        color,
+      },
+      quantity,
+    );
+    toast.success("Added to your bag", { description: product.name });
+  };
+
   return (
-    <PavoneDataState loading={loading} error={error} empty={!product}>
-      {product && <ProductContent product={product} products={data.products} />}
-    </PavoneDataState>
-  );
-}
+    <StoreLayout>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+        <nav className="mb-8 text-xs tracking-[0.15em] uppercase text-muted-foreground">
+          <Link to="/stores/pavone" className="hover:text-foreground">
+            Home
+          </Link>
+          <span className="mx-2">/</span>
+          <Link to="/stores/pavone/shop" className="hover:text-foreground">
+            Shop
+          </Link>
+          <span className="mx-2">/</span>
+          <span className="text-foreground">{product.name}</span>
+        </nav>
 
-function ProductContent({
-  product,
-  products,
-}: {
-  product: NonNullable<ReturnType<typeof usePavoneCatalog>["data"]["products"][number]>;
-  products: ReturnType<typeof usePavoneCatalog>["data"]["products"];
-}) {
-  const { add, open } = useCart();
-  const [size, setSize] = useState(product.sizes[0] ?? "");
-  const [color, setColor] = useState(product.colors[0]?.name ?? "");
-  const [activeImg, setActiveImg] = useState(0);
-  const [qty, setQty] = useState(1);
-
-  const price = product.salePrice ?? product.price;
-  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
-
-  return (
-    <div className="container-page py-8 md:py-12">
-      <nav className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-6">
-        <Link to="/stores/pavone" className="hover:text-cocoa">Home</Link> /{" "}
-        <Link to="/stores/pavone/category/$slug" params={{ slug: product.category }} className="hover:text-cocoa">
-          {product.category.replace("-", " ")}
-        </Link>{" "}
-        / <span className="text-cocoa">{product.name}</span>
-      </nav>
-
-      <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
-        <div className="grid grid-cols-[80px_1fr] gap-3 md:gap-4">
-          <div className="flex flex-col gap-2 md:gap-3">
-            {product.images.map((src, i) => (
-              <button
-                key={src}
-                onClick={() => setActiveImg(i)}
-                className={`aspect-[3/4] rounded-lg overflow-hidden bg-cream border-2 transition ${activeImg === i ? "border-cocoa" : "border-transparent"}`}
-              >
-                <img src={src} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <div className="aspect-[4/5] overflow-hidden bg-secondary">
+              <img
+                src={gallery[activeImage]}
+                alt={product.name}
+                width={800}
+                height={1000}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            {gallery.length > 1 && (
+              <div className="mt-3 flex gap-3">
+                {gallery.map((src, index) => (
+                  <button
+                    key={src + index}
+                    onClick={() => setActiveImage(index)}
+                    className={`h-20 w-16 overflow-hidden border ${
+                      index === activeImage ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-cream shadow-card group">
-            <img src={product.images[activeImg] ?? product.images[0]} alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            {product.badge && (
-              <span className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.2em]">
-                {product.badge}
-              </span>
+
+          <div>
+            <p className="eyebrow">
+              {product.brand?.name}
+              {product.brand && product.category ? " / " : ""}
+              {product.category?.name}
+            </p>
+            <h1 className="mt-3 font-serif text-3xl sm:text-4xl">{product.name}</h1>
+
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="text-xl">{formatPrice(price)}</span>
+              {onSale && (
+                <span className="text-muted-foreground line-through">
+                  {formatPrice(product.price)}
+                </span>
+              )}
+              {onSale && (
+                <span className="bg-primary px-2 py-0.5 text-[0.625rem] tracking-[0.15em] text-primary-foreground uppercase">
+                  Sale
+                </span>
+              )}
+            </div>
+
+            <p className="mt-2 text-xs tracking-[0.15em] uppercase">
+              {inStock ? (
+                product.stock_quantity <= 5 ? (
+                  <span className="text-destructive">
+                    Low stock - only {product.stock_quantity} left
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">In stock</span>
+                )
+              ) : (
+                <span className="text-destructive">Sold out</span>
+              )}
+            </p>
+
+            {product.description && (
+              <p className="mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground">
+                {product.description}
+              </p>
+            )}
+
+            {product.sizes.length > 0 && (
+              <div className="mt-8">
+                <label className="label-elegant">Size</label>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => setSize(item)}
+                      className={`min-w-12 border px-3 py-2 text-xs tracking-wider transition-colors ${
+                        size === item
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {product.colors.length > 0 && (
+              <div className="mt-6">
+                <label className="label-elegant">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {product.colors.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => setColor(item)}
+                      className={`border px-4 py-2 text-xs tracking-wider transition-colors ${
+                        color === item
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="flex items-center border border-border">
+                <button
+                  aria-label="Decrease quantity"
+                  className="px-3 py-3"
+                  onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-10 text-center text-sm">{quantity}</span>
+                <button
+                  aria-label="Increase quantity"
+                  className="px-3 py-3"
+                  onClick={() => setQuantity((current) => current + 1)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <button
+                className="btn-primary flex-1 sm:flex-none"
+                onClick={handleAdd}
+                disabled={!inStock}
+              >
+                {inStock ? "Add to Bag" : "Sold Out"}
+              </button>
+
+              <button
+                aria-label="Toggle wishlist"
+                onClick={() => wishlist.toggle(product.id)}
+                className="border border-border p-3.5 transition-colors hover:border-primary"
+              >
+                <Heart
+                  className={`h-4 w-4 ${wishlist.has(product.id) ? "fill-primary text-primary" : ""}`}
+                  strokeWidth={1.5}
+                />
+              </button>
+            </div>
+
+            {product.sku && (
+              <p className="mt-8 text-xs text-muted-foreground">SKU: {product.sku}</p>
             )}
           </div>
         </div>
 
-        <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-taupe">{product.category.replace("-", " ")}</p>
-          <h1 className="mt-2 font-display text-4xl md:text-5xl text-cocoa">{product.name}</h1>
-          <div className="mt-4 flex items-baseline gap-3">
-            <span className="font-display text-3xl">${price}</span>
-            {product.salePrice && <span className="text-base line-through text-muted-foreground">${product.price}</span>}
-            <span className="ml-auto text-xs inline-flex items-center gap-1.5 text-emerald-700">
-              <Check className="h-3.5 w-3.5" /> {product.inStock ? "In stock" : "Sold out"}
-            </span>
-          </div>
-          <p className="mt-5 text-muted-foreground leading-relaxed">{product.description}</p>
-
-          {product.pieces && (
-            <div className="mt-6 rounded-2xl bg-cream p-5">
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The Set Includes</div>
-              <ul className="mt-3 space-y-2">
-                {product.pieces.map((piece) => (
-                  <li key={piece.name} className="flex justify-between text-sm">
-                    <span>{piece.name}</span>
-                    <span className="text-muted-foreground">${piece.price}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 pt-3 border-t border-border flex justify-between text-sm font-medium">
-                <span>Complete Set Price</span>
-                <span>${price}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-7">
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Color: {color}</div>
-            <div className="flex gap-2">
-              {product.colors.map((c) => (
-                <button key={c.name} onClick={() => setColor(c.name)} aria-label={c.name}
-                  className={`h-9 w-9 rounded-full border-2 transition ${color === c.name ? "border-cocoa scale-110" : "border-border"}`}
-                  style={{ backgroundColor: c.hex }} />
+        {related.length > 0 && (
+          <section className="mt-20 border-t border-border pt-14">
+            <h2 className="mb-8 text-center font-serif text-2xl sm:text-3xl">You May Also Love</h2>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4">
+              {related.map((item) => (
+                <ProductCard
+                  key={item.id}
+                  product={item}
+                  wishlisted={wishlist.has(item.id)}
+                  onToggleWishlist={wishlist.toggle}
+                />
               ))}
             </div>
-          </div>
-
-          <div className="mt-6">
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Size</div>
-            <div className="flex flex-wrap gap-2">
-              {product.sizes.map((s) => (
-                <button key={s} onClick={() => setSize(s)}
-                  className={`min-w-12 px-4 py-2 rounded-full text-sm border transition ${size === s ? "bg-cocoa text-ivory border-cocoa" : "border-border hover:border-taupe"}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 flex items-center gap-4">
-            <div className="inline-flex items-center border border-border rounded-full">
-              <button className="px-3 py-2" onClick={() => setQty(Math.max(1, qty - 1))}>-</button>
-              <span className="px-4 text-sm w-10 text-center">{qty}</span>
-              <button className="px-3 py-2" onClick={() => setQty(qty + 1)}>+</button>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={() => {
-                add({ productId: product.id, quantity: qty, size, color });
-                open();
-              }}
-              disabled={!product.inStock}
-              className="inline-flex w-full items-center justify-center gap-2 bg-cocoa text-ivory px-6 py-4 rounded-full text-sm tracking-[0.15em] uppercase hover:bg-cocoa/90 disabled:opacity-50"
-            >
-              <ShoppingBag className="h-4 w-4" /> Add to Bag
-            </button>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center gap-2 text-muted-foreground"><Truck className="h-4 w-4 text-taupe" /> Free shipping over $150</div>
-            <div className="flex items-center gap-2 text-muted-foreground"><Sparkles className="h-4 w-4 text-taupe" /> Crafted with love in Lebanon</div>
-          </div>
-        </div>
+          </section>
+        )}
       </div>
-
-      {related.length > 0 && (
-        <section className="mt-20 md:mt-28">
-          <h2 className="font-display text-3xl md:text-4xl mb-8">You may also love</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
-            {related.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </section>
-      )}
-    </div>
+    </StoreLayout>
   );
 }

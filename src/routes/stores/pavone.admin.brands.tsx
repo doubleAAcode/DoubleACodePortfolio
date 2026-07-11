@@ -5,72 +5,61 @@ import { Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   catalogKeys,
-  deleteCategory,
-  fetchCategories,
+  deleteBrand,
+  fetchBrands,
   uploadBoutiqueImage,
-  upsertCategory,
-  type Category,
+  upsertBrand,
+  type Brand,
 } from "@/stores/pavone-new/lib/catalog";
 
-export const Route = createFileRoute("/stores/pavone/admin/categories")({
-  component: AdminCategories,
-  head: () => ({ meta: [{ title: "Categories - Admin" }, { name: "robots", content: "noindex" }] }),
+export const Route = createFileRoute("/stores/pavone/admin/brands")({
+  component: AdminBrands,
+  head: () => ({ meta: [{ title: "Brands - Admin" }, { name: "robots", content: "noindex" }] }),
 });
 
 interface FormState {
   id?: string;
   name: string;
   description: string;
-  image_url: string;
+  logo_url: string;
   is_active: boolean;
-  is_featured: boolean;
-  sort_order: string;
 }
 
-const EMPTY: FormState = {
-  name: "",
-  description: "",
-  image_url: "",
-  is_active: true,
-  is_featured: false,
-  sort_order: "0",
-};
+const EMPTY: FormState = { name: "", description: "", logo_url: "", is_active: true };
 
-function AdminCategories() {
+function AdminBrands() {
   const queryClient = useQueryClient();
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: catalogKeys.categories,
-    queryFn: () => fetchCategories(true),
+  const { data: brands = [], isLoading } = useQuery({
+    queryKey: catalogKeys.brands,
+    queryFn: () => fetchBrands(true),
   });
   const [form, setForm] = useState<FormState | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: catalogKeys.categories });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: catalogKeys.brands });
 
   const save = useMutation({
     mutationFn: (values: FormState) =>
-      upsertCategory({
+      upsertBrand({
         id: values.id,
         name: values.name,
         description: values.description,
-        image_url: values.image_url,
+        logo_url: values.logo_url,
         is_active: values.is_active,
-        is_featured: values.is_featured,
-        sort_order: Number(values.sort_order) || 0,
       }),
     onSuccess: () => {
       invalidate();
       setForm(null);
-      toast.success("Category saved");
+      toast.success("Brand saved");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Save failed"),
   });
 
   const remove = useMutation({
-    mutationFn: deleteCategory,
+    mutationFn: deleteBrand,
     onSuccess: () => {
       invalidate();
-      toast.success("Category deleted");
+      toast.success("Brand deleted");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Delete failed"),
   });
@@ -79,7 +68,7 @@ function AdminCategories() {
     setUploading(true);
     try {
       const url = await uploadBoutiqueImage(file, "categories");
-      setForm((current) => (current ? { ...current, image_url: url } : current));
+      setForm((current) => (current ? { ...current, logo_url: url } : current));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
     } finally {
@@ -91,7 +80,7 @@ function AdminCategories() {
     <div>
       <div className="mb-5 flex justify-end">
         <button className="btn-primary !px-5 !py-2.5 text-xs" onClick={() => setForm(EMPTY)}>
-          <Plus className="h-4 w-4" /> Add Category
+          <Plus className="h-4 w-4" /> Add Brand
         </button>
       </div>
 
@@ -99,38 +88,39 @@ function AdminCategories() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-[0.65rem] tracking-[0.15em] text-muted-foreground uppercase">
-              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Brand</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Featured</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td className="px-4 py-8 text-muted-foreground" colSpan={4}>
+                <td className="px-4 py-8 text-muted-foreground" colSpan={3}>
                   Loading...
                 </td>
               </tr>
             ) : (
-              categories.map((category) => (
-                <tr key={category.id}>
+              brands.map((brand) => (
+                <tr key={brand.id}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {category.image_url ? (
+                      {brand.logo_url ? (
                         <img
-                          src={category.image_url}
+                          src={brand.logo_url}
                           alt=""
-                          className="h-12 w-10 object-cover"
+                          className="h-10 w-10 object-contain"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="h-12 w-10 bg-secondary" />
+                        <div className="flex h-10 w-10 items-center justify-center bg-secondary font-serif">
+                          {brand.name.charAt(0)}
+                        </div>
                       )}
                       <div>
-                        <p className="font-medium">{category.name}</p>
+                        <p className="font-medium">{brand.name}</p>
                         <p className="max-w-xs truncate text-xs text-muted-foreground">
-                          {category.description}
+                          {brand.description}
                         </p>
                       </div>
                     </div>
@@ -138,21 +128,20 @@ function AdminCategories() {
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-0.5 text-[0.625rem] tracking-[0.12em] uppercase ${
-                        category.is_active
+                        brand.is_active
                           ? "bg-primary text-primary-foreground"
                           : "border border-border text-muted-foreground"
                       }`}
                     >
-                      {category.is_active ? "Active" : "Inactive"}
+                      {brand.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs">{category.is_featured ? "Yes" : "-"}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button
                         aria-label="Edit"
                         className="border border-border p-2 hover:border-primary"
-                        onClick={() => setForm(toForm(category))}
+                        onClick={() => setForm(toForm(brand))}
                       >
                         <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                       </button>
@@ -160,9 +149,7 @@ function AdminCategories() {
                         aria-label="Delete"
                         className="border border-border p-2 text-destructive hover:border-destructive"
                         onClick={() => {
-                          if (confirm(`Delete category "${category.name}"?`)) {
-                            remove.mutate(category.id);
-                          }
+                          if (confirm(`Delete brand "${brand.name}"?`)) remove.mutate(brand.id);
                         }}
                       >
                         <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -180,7 +167,7 @@ function AdminCategories() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setForm(null)} />
           <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto border border-border bg-background p-6">
-            <h2 className="font-serif text-xl">{form.id ? "Edit Category" : "Add Category"}</h2>
+            <h2 className="font-serif text-xl">{form.id ? "Edit Brand" : "Add Brand"}</h2>
             <form
               className="mt-5 space-y-4"
               onSubmit={(event) => {
@@ -204,18 +191,10 @@ function AdminCategories() {
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
                 />
               </Field>
-              <Field label="Sort Order">
-                <input
-                  type="number"
-                  className="input-elegant"
-                  value={form.sort_order}
-                  onChange={(event) => setForm({ ...form, sort_order: event.target.value })}
-                />
-              </Field>
               <div>
-                <label className="label-elegant">Image</label>
-                {form.image_url && (
-                  <img src={form.image_url} alt="" className="mb-2 h-24 w-20 object-cover" />
+                <label className="label-elegant">Logo / Image</label>
+                {form.logo_url && (
+                  <img src={form.logo_url} alt="" className="mb-2 h-16 w-16 object-contain" />
                 )}
                 <label className="btn-outline cursor-pointer !px-4 !py-2 text-xs">
                   <Upload className="h-4 w-4" /> {uploading ? "Uploading..." : "Upload Image"}
@@ -229,18 +208,14 @@ function AdminCategories() {
                   />
                 </label>
               </div>
-              <div className="flex gap-6">
-                <Checkbox
-                  label="Active"
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
                   checked={form.is_active}
-                  onChange={(is_active) => setForm({ ...form, is_active })}
+                  onChange={(event) => setForm({ ...form, is_active: event.target.checked })}
                 />
-                <Checkbox
-                  label="Featured"
-                  checked={form.is_featured}
-                  onChange={(is_featured) => setForm({ ...form, is_featured })}
-                />
-              </div>
+                Active
+              </label>
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
@@ -265,15 +240,13 @@ function AdminCategories() {
   );
 }
 
-function toForm(category: Category): FormState {
+function toForm(brand: Brand): FormState {
   return {
-    id: category.id,
-    name: category.name,
-    description: category.description ?? "",
-    image_url: category.image_url ?? "",
-    is_active: category.is_active,
-    is_featured: category.is_featured,
-    sort_order: String(category.sort_order),
+    id: brand.id,
+    name: brand.name,
+    description: brand.description ?? "",
+    logo_url: brand.logo_url ?? "",
+    is_active: brand.is_active,
   };
 }
 
@@ -282,27 +255,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <label className="block">
       <span className="label-elegant">{label}</span>
       {children}
-    </label>
-  );
-}
-
-function Checkbox({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      {label}
     </label>
   );
 }

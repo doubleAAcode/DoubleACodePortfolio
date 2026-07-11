@@ -62,22 +62,22 @@
 
   /* Deep blacks (logo bg) */
   --background: oklch(0.06 0.005 300);
-  --surface: oklch(0.10 0.012 300);
+  --surface: oklch(0.1 0.012 300);
   --surface-2: oklch(0.14 0.018 300);
 
   --foreground: oklch(0.97 0.005 300);
   --muted: oklch(0.16 0.012 300);
   --muted-foreground: oklch(0.62 0.02 320);
 
-  --card: oklch(0.10 0.012 300);
+  --card: oklch(0.1 0.012 300);
   --card-foreground: oklch(0.97 0.005 300);
-  --popover: oklch(0.10 0.012 300);
+  --popover: oklch(0.1 0.012 300);
   --popover-foreground: oklch(0.97 0.005 300);
 
   /* Brand — extracted directly from the AA Code logo */
-  --brand-violet: oklch(0.55 0.24 305);   /* deep purple */
-  --brand-magenta: oklch(0.65 0.27 5);    /* hot pink */
-  --brand-orange: oklch(0.78 0.18 55);    /* warm orange */
+  --brand-violet: oklch(0.55 0.24 305); /* deep purple */
+  --brand-magenta: oklch(0.65 0.27 5); /* hot pink */
+  --brand-orange: oklch(0.78 0.18 55); /* warm orange */
 
   --primary: oklch(0.65 0.27 5);
   --primary-foreground: oklch(0.06 0.01 300);
@@ -101,11 +101,7 @@
     oklch(0.55 0.24 305 / 0.18),
     transparent 60%
   );
-  --gradient-text: linear-gradient(
-    180deg,
-    oklch(1 0 0) 0%,
-    oklch(0.7 0.02 320) 100%
-  );
+  --gradient-text: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.7 0.02 320) 100%);
   --gradient-brand: linear-gradient(
     135deg,
     var(--brand-violet) 0%,
@@ -122,7 +118,7 @@
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --ivory: oklch(0.985 0.010 75);
+  --ivory: oklch(0.985 0.01 75);
   --cream: oklch(0.968 0.018 25);
   --sand: oklch(0.94 0.035 150);
   --taupe: oklch(0.58 0.11 350);
@@ -151,13 +147,13 @@
   --muted-foreground: oklch(0.52 0.04 340);
   --accent: var(--blush);
   --accent-foreground: var(--cocoa);
-  --destructive: oklch(0.62 0.20 25);
+  --destructive: oklch(0.62 0.2 25);
   --destructive-foreground: var(--ivory);
   --border: oklch(0.91 0.022 350);
   --input: oklch(0.91 0.022 350);
   --ring: var(--pink);
   --shadow-soft: 0 12px 44px -14px oklch(0.65 0.15 358 / 0.22);
-  --shadow-card: 0 2px 20px -6px oklch(0.60 0.12 358 / 0.14);
+  --shadow-card: 0 2px 20px -6px oklch(0.6 0.12 358 / 0.14);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -223,15 +219,15 @@
    Warm, low-glare palette: soft off-white canvas with layered neutrals for clear
    section / card / elevated hierarchy. No pure white anywhere. */
 :root.light {
-  --background: oklch(0.965 0.006 300);     /* soft warm off-white canvas */
-  --surface: oklch(0.945 0.008 300);        /* card / panel */
-  --surface-2: oklch(0.915 0.012 300);      /* elevated / inset */
+  --background: oklch(0.965 0.006 300); /* soft warm off-white canvas */
+  --surface: oklch(0.945 0.008 300); /* card / panel */
+  --surface-2: oklch(0.915 0.012 300); /* elevated / inset */
 
-  --foreground: oklch(0.22 0.02 295);       /* deep ink, never pure black */
+  --foreground: oklch(0.22 0.02 295); /* deep ink, never pure black */
   --muted: oklch(0.92 0.01 300);
   --muted-foreground: oklch(0.46 0.025 295);
 
-  --card: oklch(0.985 0.005 300);           /* slightly brighter than bg */
+  --card: oklch(0.985 0.005 300); /* slightly brighter than bg */
   --card-foreground: oklch(0.22 0.02 295);
   --popover: oklch(0.985 0.005 300);
   --popover-foreground: oklch(0.22 0.02 295);
@@ -280,14 +276,14 @@
   backdrop-filter: blur(20px) saturate(140%);
 }
 
-:root.light .bg-noise { opacity: 0.5; }
+:root.light .bg-noise {
+  opacity: 0.5;
+}
 
 :root.light ::selection {
   background: oklch(0.5 0.24 305 / 0.2);
   color: oklch(0.18 0.02 295);
 }
-
-
 
 .wa-dashboard-light {
   --background: oklch(0.975 0.006 285);
@@ -342,7 +338,12 @@
     overflow-x: hidden;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
@@ -352,8 +353,13 @@
     color: oklch(0.98 0 0);
   }
 
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--background); }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
   ::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, var(--brand-violet), var(--brand-orange));
     border-radius: 4px;
@@ -361,7 +367,9 @@
 }
 
 @layer utilities {
-  .font-display { font-family: var(--font-display); }
+  .font-display {
+    font-family: var(--font-display);
+  }
   .text-gradient {
     background: var(--gradient-text);
     -webkit-background-clip: text;
@@ -390,13 +398,17 @@
   .bg-noise {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
   }
-  .glow-ring { box-shadow: var(--shadow-glow); }
+  .glow-ring {
+    box-shadow: var(--shadow-glow);
+  }
   .glass {
     background: oklch(1 0 0 / 0.03);
     backdrop-filter: blur(20px);
     border: 1px solid oklch(1 0 0 / 0.08);
   }
-  .bg-brand { background: var(--gradient-brand); }
+  .bg-brand {
+    background: var(--gradient-brand);
+  }
   .border-brand {
     border: 1px solid transparent;
     background:
@@ -420,7 +432,10 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-foreground);
-    transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      transform 160ms ease;
   }
   .studio-button:hover {
     border-color: oklch(0.65 0.27 5 / 0.45);
@@ -485,7 +500,10 @@
     border-radius: 9999px;
     border: 1px solid var(--color-border);
     background: oklch(1 0 0 / 0.03);
-    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
   }
   .studio-icon-button:hover {
     border-color: oklch(0.65 0.27 5 / 0.45);
@@ -494,45 +512,256 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(-20px) translateX(10px); }
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+  }
 }
-@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 @keyframes spin-slow {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
-.animate-float { animation: float 8s ease-in-out infinite; }
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
 .animate-shimmer {
   background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.1), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
-.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
-.animate-spin-slow { animation: spin-slow 40s linear infinite; }
-.animate-fade-up { animation: fade-up 0.6s ease-out both; }
-.animate-marquee { animation: marquee 30s linear infinite; }
-.shadow-soft { box-shadow: var(--shadow-soft); }
-.shadow-card { box-shadow: var(--shadow-card); }
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+.animate-spin-slow {
+  animation: spin-slow 40s linear infinite;
+}
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
 .container-page {
   width: 100%;
   margin-inline: auto;
   max-width: 80rem;
   padding-inline: 1.25rem;
+}
+
+.pavone-new-store {
+  --radius: 0.125rem;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.16 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.965 0.003 90);
+  --secondary-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.965 0.003 90);
+  --muted-foreground: oklch(0.5 0.005 90);
+  --accent: oklch(0.93 0.012 80);
+  --accent-foreground: oklch(0.16 0 0);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.003 90);
+  --input: oklch(0.9 0.003 90);
+  --ring: oklch(0.16 0 0);
+  --gold: oklch(0.72 0.1 85);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  background-color: var(--background);
+  color: var(--foreground);
+  color-scheme: light;
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.pavone-new-store * {
+  border-color: var(--color-border);
+}
+
+.pavone-new-store h1,
+.pavone-new-store h2,
+.pavone-new-store h3,
+.pavone-new-store h4,
+.pavone-new-store .font-serif {
+  font-family: var(--font-serif);
+}
+
+.pavone-new-store .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.9rem 2.5rem;
+  transition: opacity 0.3s ease;
+}
+
+.pavone-new-store .btn-primary:hover {
+  opacity: 0.85;
+}
+
+.pavone-new-store .btn-primary:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pavone-new-store .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.9rem 2.5rem;
+  transition: all 0.3s ease;
+}
+
+.pavone-new-store .btn-outline:hover {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+.pavone-new-store .input-elegant {
+  width: 100%;
+  border: 1px solid var(--color-input);
+  background: var(--color-background);
+  padding: 0.7rem 1rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.pavone-new-store .input-elegant:focus {
+  border-color: var(--color-primary);
+}
+
+.pavone-new-store .label-elegant,
+.pavone-new-store .eyebrow {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.pavone-new-store .label-elegant {
+  margin-bottom: 0.4rem;
+}
+
+.pavone-new-store .eyebrow {
+  letter-spacing: 0.28em;
+}
+
+@keyframes pavone-intro-logo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pavone-intro-fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.pavone-new-store .animate-intro-logo {
+  animation: pavone-intro-logo-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pavone-new-store .animate-intro-out {
+  animation: pavone-intro-fade-out 0.7s ease both;
 }

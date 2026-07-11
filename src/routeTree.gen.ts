@@ -54,6 +54,8 @@ import { Route as AdminAppReviewDemoRouteImport } from './routes/admin.app-revie
 import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
 import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
+import { Route as StoresPavoneCheckoutRouteImport } from './routes/stores/pavone.checkout'
+import { Route as StoresPavoneCartRouteImport } from './routes/stores/pavone.cart'
 import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
 import { Route as DashboardOrdersOrderIdRouteImport } from './routes/dashboard.orders.$orderId'
 import { Route as Dashboard2OrdersOrderIdRouteImport } from './routes/dashboard-2.orders.$orderId'
@@ -98,6 +100,7 @@ import { Route as StoresPavoneAdminOrdersRouteImport } from './routes/stores/pav
 import { Route as StoresPavoneAdminLoginRouteImport } from './routes/stores/pavone.admin.login'
 import { Route as StoresPavoneAdminInspirationsRouteImport } from './routes/stores/pavone.admin.inspirations'
 import { Route as StoresPavoneAdminCategoriesRouteImport } from './routes/stores/pavone.admin.categories'
+import { Route as StoresPavoneAdminBrandsRouteImport } from './routes/stores/pavone.admin.brands'
 import { Route as ApiWaDashboardOrdersOrderIdRouteImport } from './routes/api.wa-dashboard.orders.$orderId'
 import { Route as ApiWaDashboard2OrdersOrderIdRouteImport } from './routes/api.wa-dashboard-2.orders.$orderId'
 import { Route as ApiWaAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.wa-admin.flow-templates.$templateId'
@@ -335,6 +338,16 @@ const StoresPavoneShopRoute = StoresPavoneShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => StoresPavoneRoute,
 } as any)
+const StoresPavoneCheckoutRoute = StoresPavoneCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneCartRoute = StoresPavoneCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
 const StoresPavoneAdminRoute = StoresPavoneAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -568,6 +581,11 @@ const StoresPavoneAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => StoresPavoneAdminRoute,
   } as any)
+const StoresPavoneAdminBrandsRoute = StoresPavoneAdminBrandsRouteImport.update({
+  id: '/brands',
+  path: '/brands',
+  getParentRoute: () => StoresPavoneAdminRoute,
+} as any)
 const ApiWaDashboardOrdersOrderIdRoute =
   ApiWaDashboardOrdersOrderIdRouteImport.update({
     id: '/$orderId',
@@ -713,6 +731,8 @@ export interface FileRoutesByFullPath {
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
+  '/stores/pavone/cart': typeof StoresPavoneCartRoute
+  '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
@@ -725,6 +745,7 @@ export interface FileRoutesByFullPath {
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
   '/stores/pavone/admin/login': typeof StoresPavoneAdminLoginRoute
@@ -809,6 +830,8 @@ export interface FileRoutesByTo {
   '/api/whatsapp/webhook-2': typeof ApiWhatsappWebhook2Route
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
+  '/stores/pavone/cart': typeof StoresPavoneCartRoute
+  '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone': typeof StoresPavoneIndexRoute
@@ -821,6 +844,7 @@ export interface FileRoutesByTo {
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
   '/stores/pavone/admin/login': typeof StoresPavoneAdminLoginRoute
@@ -912,6 +936,8 @@ export interface FileRoutesById {
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
+  '/stores/pavone/cart': typeof StoresPavoneCartRoute
+  '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
@@ -924,6 +950,7 @@ export interface FileRoutesById {
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
   '/stores/pavone/admin/login': typeof StoresPavoneAdminLoginRoute
@@ -1016,6 +1043,8 @@ export interface FileRouteTypes {
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
     | '/stores/pavone/admin'
+    | '/stores/pavone/cart'
+    | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone/'
@@ -1028,6 +1057,7 @@ export interface FileRouteTypes {
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
     | '/stores/pavone/admin/login'
@@ -1112,6 +1142,8 @@ export interface FileRouteTypes {
     | '/api/whatsapp/webhook-2'
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
+    | '/stores/pavone/cart'
+    | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone'
@@ -1124,6 +1156,7 @@ export interface FileRouteTypes {
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
     | '/stores/pavone/admin/login'
@@ -1214,6 +1247,8 @@ export interface FileRouteTypes {
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
     | '/stores/pavone/admin'
+    | '/stores/pavone/cart'
+    | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
     | '/stores/pavone/'
@@ -1226,6 +1261,7 @@ export interface FileRouteTypes {
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
     | '/stores/pavone/admin/login'
@@ -1607,6 +1643,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresPavoneShopRouteImport
       parentRoute: typeof StoresPavoneRoute
     }
+    '/stores/pavone/checkout': {
+      id: '/stores/pavone/checkout'
+      path: '/checkout'
+      fullPath: '/stores/pavone/checkout'
+      preLoaderRoute: typeof StoresPavoneCheckoutRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/cart': {
+      id: '/stores/pavone/cart'
+      path: '/cart'
+      fullPath: '/stores/pavone/cart'
+      preLoaderRoute: typeof StoresPavoneCartRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
     '/stores/pavone/admin': {
       id: '/stores/pavone/admin'
       path: '/admin'
@@ -1915,6 +1965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresPavoneAdminCategoriesRouteImport
       parentRoute: typeof StoresPavoneAdminRoute
     }
+    '/stores/pavone/admin/brands': {
+      id: '/stores/pavone/admin/brands'
+      path: '/brands'
+      fullPath: '/stores/pavone/admin/brands'
+      preLoaderRoute: typeof StoresPavoneAdminBrandsRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
     '/api/wa-dashboard/orders/$orderId': {
       id: '/api/wa-dashboard/orders/$orderId'
       path: '/$orderId'
@@ -2157,6 +2214,7 @@ const Dashboard2RouteWithChildren = Dashboard2Route._addFileChildren(
 )
 
 interface StoresPavoneAdminRouteChildren {
+  StoresPavoneAdminBrandsRoute: typeof StoresPavoneAdminBrandsRoute
   StoresPavoneAdminCategoriesRoute: typeof StoresPavoneAdminCategoriesRoute
   StoresPavoneAdminInspirationsRoute: typeof StoresPavoneAdminInspirationsRoute
   StoresPavoneAdminLoginRoute: typeof StoresPavoneAdminLoginRoute
@@ -2167,6 +2225,7 @@ interface StoresPavoneAdminRouteChildren {
 }
 
 const StoresPavoneAdminRouteChildren: StoresPavoneAdminRouteChildren = {
+  StoresPavoneAdminBrandsRoute: StoresPavoneAdminBrandsRoute,
   StoresPavoneAdminCategoriesRoute: StoresPavoneAdminCategoriesRoute,
   StoresPavoneAdminInspirationsRoute: StoresPavoneAdminInspirationsRoute,
   StoresPavoneAdminLoginRoute: StoresPavoneAdminLoginRoute,
@@ -2181,6 +2240,8 @@ const StoresPavoneAdminRouteWithChildren =
 
 interface StoresPavoneRouteChildren {
   StoresPavoneAdminRoute: typeof StoresPavoneAdminRouteWithChildren
+  StoresPavoneCartRoute: typeof StoresPavoneCartRoute
+  StoresPavoneCheckoutRoute: typeof StoresPavoneCheckoutRoute
   StoresPavoneShopRoute: typeof StoresPavoneShopRoute
   StoresPavoneWishlistRoute: typeof StoresPavoneWishlistRoute
   StoresPavoneIndexRoute: typeof StoresPavoneIndexRoute
@@ -2190,6 +2251,8 @@ interface StoresPavoneRouteChildren {
 
 const StoresPavoneRouteChildren: StoresPavoneRouteChildren = {
   StoresPavoneAdminRoute: StoresPavoneAdminRouteWithChildren,
+  StoresPavoneCartRoute: StoresPavoneCartRoute,
+  StoresPavoneCheckoutRoute: StoresPavoneCheckoutRoute,
   StoresPavoneShopRoute: StoresPavoneShopRoute,
   StoresPavoneWishlistRoute: StoresPavoneWishlistRoute,
   StoresPavoneIndexRoute: StoresPavoneIndexRoute,

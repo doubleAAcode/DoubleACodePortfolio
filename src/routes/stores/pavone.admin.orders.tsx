@@ -1,179 +1,218 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { deleteOrder, updateOrderStatus, type OrderStatus, type PavoneOrder } from "@/stores/pavone/lib/pavone-api";
-import { Trash2, X, Search } from "lucide-react";
-import { StatusPill } from "./pavone.admin.index";
-import { usePavoneOrders } from "@/stores/pavone/lib/use-pavone-data";
+import { ChevronDown, ChevronUp, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { formatPrice } from "@/stores/pavone-new/lib/brand";
+import {
+  catalogKeys,
+  fetchOrders,
+  ORDER_STATUSES,
+  updateOrderStatus,
+  type OrderStatus,
+  type PavoneNewOrder,
+} from "@/stores/pavone-new/lib/catalog";
 
 export const Route = createFileRoute("/stores/pavone/admin/orders")({
   component: AdminOrders,
+  head: () => ({ meta: [{ title: "Orders - Admin" }, { name: "robots", content: "noindex" }] }),
 });
 
-const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "canceled"];
+const STATUS_STYLES: Record<OrderStatus, string> = {
+  new: "bg-primary text-primary-foreground",
+  confirmed: "bg-accent text-accent-foreground",
+  preparing: "border border-border bg-secondary text-secondary-foreground",
+  completed: "border border-border bg-secondary text-muted-foreground",
+  cancelled: "bg-destructive/10 text-destructive",
+};
 
 function AdminOrders() {
-  const { data: orders, loading, error, reload } = usePavoneOrders();
-  const [filter, setFilter] = useState<"all" | OrderStatus>("all");
-  const [q, setQ] = useState("");
-  const [open, setOpen] = useState<PavoneOrder | null>(null);
-  const [saving, setSaving] = useState("");
+  const queryClient = useQueryClient();
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: catalogKeys.orders,
+    queryFn: fetchOrders,
+  });
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    return orders
-      .filter((o) => filter === "all" || o.status === filter)
-      .filter((o) => !q || `${o.orderNumber} ${o.customerName} ${o.customerPhone}`.toLowerCase().includes(q.toLowerCase()));
-  }, [orders, filter, q]);
+  const filtered = useMemo(
+    () => (statusFilter ? orders.filter((order) => order.status === statusFilter) : orders),
+    [orders, statusFilter],
+  );
 
-  async function setStatus(order: PavoneOrder, status: OrderStatus) {
-    setSaving(order.id);
-    try {
-      const updated = await updateOrderStatus(order.id, status);
-      if (open?.id === order.id) setOpen({ ...open, status: updated.status });
-      await reload();
-    } finally {
-      setSaving("");
-    }
-  }
-
-  async function removeOrder(order: PavoneOrder) {
-    if (!confirm(`Delete ${order.orderNumber}?`)) return;
-    await deleteOrder(order.id);
-    if (open?.id === order.id) setOpen(null);
-    await reload();
-  }
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: OrderStatus }) =>
+      updateOrderStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: catalogKeys.orders });
+      toast.success("Order status updated");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Update failed"),
+  });
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl text-cocoa">Orders</h1>
-        <p className="text-sm text-muted-foreground mt-1">{orders.length} total orders</p>
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      </header>
+    <div>
+      <div className="mb-5 flex flex-wrap gap-2">
+        <button
+          onClick={() => setStatusFilter("")}
+          className={`px-4 py-2 text-xs tracking-[0.12em] uppercase ${
+            statusFilter === "" ? "bg-primary text-primary-foreground" : "border border-border"
+          }`}
+        >
+          All ({orders.length})
+        </button>
+        {ORDER_STATUSES.map((status) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`px-4 py-2 text-xs tracking-[0.12em] uppercase ${
+              statusFilter === status
+                ? "bg-primary text-primary-foreground"
+                : "border border-border"
+            }`}
+          >
+            {status} ({orders.filter((order) => order.status === status).length})
+          </button>
+        ))}
+      </div>
 
-      <div className="flex flex-wrap gap-3 items-center bg-background rounded-xl border border-border p-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search order, customer, or phone..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background"
-          />
+      {isLoading ? (
+        <p className="py-10 text-sm text-muted-foreground">Loading...</p>
+      ) : filtered.length === 0 ? (
+        <div className="border border-border bg-background py-16 text-center">
+          <p className="font-serif text-xl">No orders here yet.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            New customer orders will appear in this list.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {(["all", ...STATUSES] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 text-xs uppercase tracking-[0.14em] rounded-full transition-colors ${
-                filter === s ? "bg-cocoa text-ivory" : "bg-cream text-muted-foreground hover:text-cocoa"
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((order) => (
+            <OrderItem
+              key={order.id}
+              order={order}
+              open={expanded === order.id}
+              onToggle={() => setExpanded(expanded === order.id ? null : order.id)}
+              onStatus={(status) => statusMutation.mutate({ id: order.id, status })}
+              updating={statusMutation.isPending}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function OrderItem({
+  order,
+  open,
+  onToggle,
+  onStatus,
+  updating,
+}: {
+  order: PavoneNewOrder;
+  open: boolean;
+  onToggle: () => void;
+  onStatus: (status: OrderStatus) => void;
+  updating: boolean;
+}) {
+  return (
+    <li className="border border-border bg-background">
+      <button
+        className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left sm:px-5"
+        onClick={onToggle}
+      >
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-medium">{order.customer_name}</p>
+            <span
+              className={`px-2 py-0.5 text-[0.625rem] tracking-[0.12em] uppercase ${
+                STATUS_STYLES[order.status]
               }`}
             >
-              {s}
-            </button>
-          ))}
+              {order.status}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {order.order_number} / {new Date(order.created_at).toLocaleString()} /{" "}
+            {order.order_items.length} item(s) / {order.phone}
+          </p>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-background overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-cream/60 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-3">Order</th>
-              <th className="text-left px-4 py-3 hidden md:table-cell">Customer</th>
-              <th className="text-left px-4 py-3 hidden lg:table-cell">Date</th>
-              <th className="text-left px-4 py-3">Total</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-right px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {filtered.map((o) => (
-              <tr key={o.id} className="hover:bg-cream/30 cursor-pointer" onClick={() => setOpen(o)}>
-                <td className="px-4 py-3 font-medium text-cocoa">{o.orderNumber}</td>
-                <td className="px-4 py-3 hidden md:table-cell">
-                  <div>{o.customerName}</div>
-                  <div className="text-xs text-muted-foreground">{o.city} - {o.customerPhone}</div>
-                </td>
-                <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3">${o.total}</td>
-                <td className="px-4 py-3">
-                  <select
-                    value={o.status}
-                    disabled={saving === o.id}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => void setStatus(o, e.target.value as OrderStatus)}
-                    className="text-xs bg-transparent border border-input rounded-md px-2 py-1"
-                  >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); void removeOrder(o); }}
-                    className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className="text-center py-10 text-sm text-muted-foreground">No orders match your filters.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="font-serif text-lg">{formatPrice(order.total)}</span>
+          {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </div>
+      </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-cocoa/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-background rounded-2xl max-w-xl w-full shadow-soft border border-border">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="border-t border-border px-4 py-5 sm:px-5">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-3 text-sm">
               <div>
-                <h2 className="font-display text-2xl text-cocoa">{open.orderNumber}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <StatusPill status={open.status} />
-                  <span className="text-xs text-muted-foreground">{new Date(open.createdAt).toLocaleString()}</span>
-                </div>
+                <p className="label-elegant !mb-1">Phone</p>
+                <a href={`tel:${order.phone}`} className="flex items-center gap-2 hover:underline">
+                  <Phone className="h-3.5 w-3.5" /> {order.phone}
+                </a>
               </div>
-              <button onClick={() => setOpen(null)} className="p-2 rounded-md hover:bg-cream"><X className="h-4 w-4" /></button>
+              {order.whatsapp && (
+                <div>
+                  <p className="label-elegant !mb-1">WhatsApp</p>
+                  <a
+                    href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:underline"
+                  >
+                    {order.whatsapp}
+                  </a>
+                </div>
+              )}
+              <div>
+                <p className="label-elegant !mb-1">Delivery Address</p>
+                <p className="whitespace-pre-wrap">{order.address}</p>
+              </div>
+              {order.notes && (
+                <div>
+                  <p className="label-elegant !mb-1">Customer Notes</p>
+                  <p className="whitespace-pre-wrap text-muted-foreground">{order.notes}</p>
+                </div>
+              )}
             </div>
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <Info label="Customer" value={open.customerName} />
-                <Info label="Phone" value={open.customerPhone} />
-                <Info label="Email" value={open.customerEmail || "-"} />
-                <Info label="City" value={open.city} />
-                <Info label="Address" value={open.address} wide />
-                <Info label="Notes" value={open.notes || "-"} wide />
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-2">Items</div>
-                <div className="divide-y divide-border rounded-lg border border-border">
-                  {open.items.map((it, i) => (
-                    <div key={it.id ?? i} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
-                      <span>{it.productName} <span className="text-muted-foreground">x {it.quantity}</span></span>
-                      <span>${it.quantity * it.price}</span>
+
+            <div>
+              <p className="label-elegant">Items</p>
+              <ul className="divide-y divide-border border border-border">
+                {order.order_items.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate">{item.product_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {[item.size, item.color].filter(Boolean).join(" / ")} x {item.quantity}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="font-display text-2xl text-cocoa">${open.total}</span>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-2">Update status</div>
+                    <span>{formatPrice(item.price * item.quantity)}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-4">
+                <p className="label-elegant">Update Status</p>
                 <div className="flex flex-wrap gap-2">
-                  {STATUSES.map((s) => (
+                  {ORDER_STATUSES.map((status) => (
                     <button
-                      key={s}
-                      onClick={() => void setStatus(open, s)}
-                      className={`px-3 py-1.5 text-xs uppercase tracking-[0.14em] rounded-full ${
-                        open.status === s ? "bg-cocoa text-ivory" : "bg-cream hover:bg-blush/40"
+                      key={status}
+                      disabled={order.status === status || updating}
+                      onClick={() => onStatus(status)}
+                      className={`px-3 py-1.5 text-[0.65rem] tracking-[0.12em] uppercase transition-colors ${
+                        order.status === status
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border hover:border-primary"
                       }`}
                     >
-                      {s}
+                      {status}
                     </button>
                   ))}
                 </div>
@@ -182,15 +221,6 @@ function AdminOrders() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function Info({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
-  return (
-    <div className={wide ? "col-span-2" : undefined}>
-      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="text-cocoa mt-0.5">{value}</div>
-    </div>
+    </li>
   );
 }

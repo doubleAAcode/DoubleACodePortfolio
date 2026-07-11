@@ -1,304 +1,533 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import type { Product, CategorySlug } from "@/stores/pavone/data/products";
-import { Plus, Pencil, Trash2, Search, X, Upload } from "lucide-react";
-import { deleteProduct, upsertProduct } from "@/stores/pavone/lib/pavone-api";
-import { usePavoneCatalog } from "@/stores/pavone/lib/use-pavone-data";
-import { uploadPavoneImage } from "@/stores/pavone/lib/supabase";
+import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import { formatPrice } from "@/stores/pavone-new/lib/brand";
+import {
+  catalogKeys,
+  deleteProduct,
+  fetchBrands,
+  fetchCategories,
+  fetchProducts,
+  uploadBoutiqueImage,
+  upsertProduct,
+  type Product,
+} from "@/stores/pavone-new/lib/catalog";
 
 export const Route = createFileRoute("/stores/pavone/admin/products")({
   component: AdminProducts,
+  head: () => ({ meta: [{ title: "Products - Admin" }, { name: "robots", content: "noindex" }] }),
 });
 
+interface FormState {
+  id?: string;
+  name: string;
+  slug?: string;
+  description: string;
+  category_id: string;
+  brand_id: string;
+  price: string;
+  sale_price: string;
+  sizes: string;
+  colors: string;
+  stock_quantity: string;
+  sku: string;
+  is_featured: boolean;
+  is_best_seller: boolean;
+  is_new_arrival: boolean;
+  is_active: boolean;
+  images: string[];
+}
+
+const EMPTY: FormState = {
+  name: "",
+  description: "",
+  category_id: "",
+  brand_id: "",
+  price: "",
+  sale_price: "",
+  sizes: "XS, S, M, L",
+  colors: "",
+  stock_quantity: "0",
+  sku: "",
+  is_featured: false,
+  is_best_seller: false,
+  is_new_arrival: true,
+  is_active: true,
+  images: [],
+};
+
 function AdminProducts() {
-  const { data, error, reload } = usePavoneCatalog();
-  const { products, categories } = data;
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<"all" | CategorySlug>("all");
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: catalogKeys.products,
+    queryFn: () => fetchProducts(true),
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: catalogKeys.categories,
+    queryFn: () => fetchCategories(true),
+  });
+  const { data: brands = [] } = useQuery({
+    queryKey: catalogKeys.brands,
+    queryFn: () => fetchBrands(true),
+  });
+
+  const [form, setForm] = useState<FormState | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
-      if (cat !== "all" && p.category !== cat) return false;
-      if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
-      return true;
-    });
-  }, [products, q, cat]);
+    let list = products;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (product) =>
+          product.name.toLowerCase().includes(q) || (product.sku ?? "").toLowerCase().includes(q),
+      );
+    }
+    if (filterCategory) list = list.filter((product) => product.category_id === filterCategory);
+    return list;
+  }, [products, search, filterCategory]);
 
-  function openNew() {
-    setEditing({
-      id: "p" + Math.random().toString(36).slice(2, 8),
-      slug: "new-product",
-      name: "",
-      description: "",
-      category: "dresses",
-      price: 0,
-      images: [""],
-      sizes: ["S", "M", "L"],
-      colors: [{ name: "Default", hex: "#f4b8d8" }],
-      inStock: true,
-    });
-    setOpen(true);
-  }
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: catalogKeys.products });
+    queryClient.invalidateQueries({ queryKey: ["pavone-new", "product"] });
+  };
 
-  function openEdit(p: Product) {
-    setEditing({ ...p });
-    setOpen(true);
-  }
+  const save = useMutation({
+    mutationFn: (values: FormState) =>
+      upsertProduct({
+        id: values.id,
+        slug: values.slug,
+        name: values.name,
+        description: values.description.trim() || null,
+        category_id: values.category_id || null,
+        brand_id: values.brand_id || null,
+        price: Number(values.price),
+        sale_price: values.sale_price ? Number(values.sale_price) : null,
+        sizes: csvToArray(values.sizes),
+        colors: csvToArray(values.colors),
+        stock_quantity: Number(values.stock_quantity) || 0,
+        sku: values.sku.trim() || null,
+        is_featured: values.is_featured,
+        is_best_seller: values.is_best_seller,
+        is_new_arrival: values.is_new_arrival,
+        is_active: values.is_active,
+        images: values.images,
+      }),
+    onSuccess: () => {
+      invalidate();
+      setForm(null);
+      toast.success("Product saved");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Save failed"),
+  });
 
-  async function save() {
-    if (!editing) return;
-    const slug = editing.slug || editing.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    await upsertProduct({ ...editing, slug });
-    await reload();
-    setOpen(false);
-    setEditing(null);
-  }
+  const remove = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      invalidate();
+      toast.success("Product deleted");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Delete failed"),
+  });
+
+  const handleUpload = async (files: FileList) => {
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const url = await uploadBoutiqueImage(file, "products");
+        setForm((current) =>
+          current ? { ...current, images: [...current.images, url] } : current,
+        );
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-cocoa">Products</h1>
-          <p className="text-sm text-muted-foreground mt-1">{products.length} items in your catalog</p>
-          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-        </div>
-        <button onClick={openNew} className="inline-flex items-center gap-2 rounded-lg bg-cocoa text-ivory px-4 py-2.5 text-sm hover:bg-cocoa/90">
-          <Plus className="h-4 w-4" /> Add product
-        </button>
-      </header>
-
-      <div className="flex flex-wrap gap-3 items-center bg-background rounded-xl border border-border p-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search products..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-pink/40"
-          />
-        </div>
+    <div>
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          placeholder="Search by name or SKU..."
+          className="input-elegant !w-auto min-w-52 flex-1 sm:flex-none"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
         <select
-          value={cat}
-          onChange={(e) => setCat(e.target.value as typeof cat)}
-          className="px-3 py-2 text-sm rounded-md border border-input bg-background"
+          className="input-elegant !w-auto"
+          value={filterCategory}
+          onChange={(event) => setFilterCategory(event.target.value)}
         >
-          <option value="all">All categories</option>
-          {categories.map((c) => (
-            <option key={c.slug} value={c.slug}>{c.name}</option>
+          <option value="">All Categories</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
           ))}
         </select>
+        <button
+          className="btn-primary ml-auto !px-5 !py-2.5 text-xs"
+          onClick={() => setForm(EMPTY)}
+        >
+          <Plus className="h-4 w-4" /> Add Product
+        </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-background overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-cream/60 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-3">Product</th>
-              <th className="text-left px-4 py-3 hidden md:table-cell">Category</th>
-              <th className="text-left px-4 py-3">Price</th>
-              <th className="text-left px-4 py-3 hidden lg:table-cell">Stock</th>
-              <th className="text-right px-4 py-3">Actions</th>
+      <div className="overflow-x-auto border border-border bg-background">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-[0.65rem] tracking-[0.15em] text-muted-foreground uppercase">
+              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3">Category / Brand</th>
+              <th className="px-4 py-3">Price</th>
+              <th className="px-4 py-3">Stock</th>
+              <th className="px-4 py-3">Flags</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filtered.map((p) => (
-              <tr key={p.id} className="hover:bg-cream/30">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    {p.images[0] ? (
-                      <img src={p.images[0]} alt={p.name} className="h-12 w-12 rounded-lg object-cover" />
-                    ) : (
-                      <div className="h-12 w-12 rounded-lg bg-cream" />
-                    )}
-                    <div>
-                      <div className="font-medium text-cocoa">{p.name || <span className="italic text-muted-foreground">Untitled</span>}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">/{p.slug}</span>
-                        {p.tags?.includes("new") && (
-                          <span className="rounded-full bg-pink/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-pink">
-                            New arrival
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 hidden md:table-cell capitalize">{p.category.replace("-", " ")}</td>
-                <td className="px-4 py-3">
-                  {p.salePrice ? (
-                    <span><span className="line-through text-muted-foreground">${p.price}</span> <span className="text-pink font-medium">${p.salePrice}</span></span>
-                  ) : (
-                    <span>${p.price}</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 hidden lg:table-cell">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${p.inStock ? "bg-mint/50 text-cocoa" : "bg-destructive/15 text-destructive"}`}>
-                    {p.inStock ? "In stock" : "Sold out"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="inline-flex gap-1">
-                    <button onClick={() => openEdit(p)} className="p-2 rounded-md hover:bg-cream text-muted-foreground hover:text-cocoa">
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={async () => { if (confirm(`Delete "${p.name}"?`)) { await deleteProduct(p.id); await reload(); } }}
-                      className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+            {isLoading ? (
+              <tr>
+                <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
+                  Loading...
                 </td>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={5} className="text-center py-10 text-sm text-muted-foreground">No products match your filters.</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
+                  No products found.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((product) => (
+                <tr key={product.id} className={product.is_active ? "" : "opacity-50"}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {product.product_images[0] ? (
+                        <img
+                          src={product.product_images[0].image_url}
+                          alt=""
+                          className="h-14 w-11 object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="h-14 w-11 bg-secondary" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.sku}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {product.category?.name ?? "-"}
+                    <br />
+                    {product.brand?.name ?? "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {product.sale_price != null ? (
+                      <>
+                        <span>{formatPrice(product.sale_price)}</span>{" "}
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatPrice(product.price)}
+                        </span>
+                      </>
+                    ) : (
+                      formatPrice(product.price)
+                    )}
+                  </td>
+                  <td
+                    className={`px-4 py-3 ${product.stock_quantity <= 5 ? "text-destructive" : ""}`}
+                  >
+                    {product.stock_quantity}
+                  </td>
+                  <td className="px-4 py-3 text-[0.625rem] tracking-wider text-muted-foreground uppercase">
+                    {[
+                      product.is_featured && "Featured",
+                      product.is_best_seller && "Best",
+                      product.is_new_arrival && "New",
+                    ]
+                      .filter(Boolean)
+                      .join(" / ") || "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`px-2 py-0.5 text-[0.625rem] tracking-[0.12em] uppercase ${
+                        product.is_active
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-muted-foreground"
+                      }`}
+                    >
+                      {product.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        aria-label="Edit"
+                        className="border border-border p-2 hover:border-primary"
+                        onClick={() => setForm(toForm(product))}
+                      >
+                        <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      </button>
+                      <button
+                        aria-label="Delete"
+                        className="border border-border p-2 text-destructive hover:border-destructive"
+                        onClick={() => {
+                          if (confirm(`Delete "${product.name}"?`)) remove.mutate(product.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
-      {open && editing && (
-        <ProductDialog
-          product={editing}
-          categories={categories}
-          onChange={setEditing}
-          onClose={() => { setOpen(false); setEditing(null); }}
-          onSave={save}
-        />
+      {form && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setForm(null)} />
+          <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto border border-border bg-background p-6">
+            <h2 className="font-serif text-xl">{form.id ? "Edit Product" : "Add Product"}</h2>
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                save.mutate(form);
+              }}
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Name *" className="sm:col-span-2">
+                  <input
+                    required
+                    className="input-elegant"
+                    value={form.name}
+                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  />
+                </Field>
+                <Field label="Description" className="sm:col-span-2">
+                  <textarea
+                    rows={3}
+                    className="input-elegant"
+                    value={form.description}
+                    onChange={(event) => setForm({ ...form, description: event.target.value })}
+                  />
+                </Field>
+                <Field label="Category">
+                  <select
+                    className="input-elegant"
+                    value={form.category_id}
+                    onChange={(event) => setForm({ ...form, category_id: event.target.value })}
+                  >
+                    <option value="">None</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Brand">
+                  <select
+                    className="input-elegant"
+                    value={form.brand_id}
+                    onChange={(event) => setForm({ ...form, brand_id: event.target.value })}
+                  >
+                    <option value="">None</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Price *">
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="input-elegant"
+                    value={form.price}
+                    onChange={(event) => setForm({ ...form, price: event.target.value })}
+                  />
+                </Field>
+                <Field label="Sale Price">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="input-elegant"
+                    value={form.sale_price}
+                    onChange={(event) => setForm({ ...form, sale_price: event.target.value })}
+                  />
+                </Field>
+                <Field label="Sizes">
+                  <input
+                    className="input-elegant"
+                    value={form.sizes}
+                    onChange={(event) => setForm({ ...form, sizes: event.target.value })}
+                  />
+                </Field>
+                <Field label="Colors">
+                  <input
+                    className="input-elegant"
+                    value={form.colors}
+                    onChange={(event) => setForm({ ...form, colors: event.target.value })}
+                  />
+                </Field>
+                <Field label="Stock Quantity">
+                  <input
+                    type="number"
+                    min="0"
+                    className="input-elegant"
+                    value={form.stock_quantity}
+                    onChange={(event) => setForm({ ...form, stock_quantity: event.target.value })}
+                  />
+                </Field>
+                <Field label="SKU">
+                  <input
+                    className="input-elegant"
+                    value={form.sku}
+                    onChange={(event) => setForm({ ...form, sku: event.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <div>
+                <label className="label-elegant">Images</label>
+                <div className="flex flex-wrap gap-3">
+                  {form.images.map((url, index) => (
+                    <div key={url + index} className="relative">
+                      <img src={url} alt="" className="h-24 w-20 object-cover" />
+                      <button
+                        type="button"
+                        aria-label="Remove image"
+                        className="absolute -right-2 -top-2 rounded-full bg-primary p-1 text-primary-foreground"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            images: form.images.filter((_, imageIndex) => imageIndex !== index),
+                          })
+                        }
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex h-24 w-20 cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border text-xs text-muted-foreground hover:border-primary">
+                    <Upload className="h-4 w-4" strokeWidth={1.5} />
+                    {uploading ? "..." : "Add"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => event.target.files && handleUpload(event.target.files)}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {(
+                  [
+                    ["is_active", "Active"],
+                    ["is_featured", "Featured"],
+                    ["is_best_seller", "Best Seller"],
+                    ["is_new_arrival", "New Arrival"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form[key]}
+                      onChange={(event) => setForm({ ...form, [key]: event.target.checked })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="btn-primary flex-1 !py-2.5 text-xs"
+                  disabled={save.isPending || uploading}
+                >
+                  {save.isPending ? "Saving..." : "Save Product"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-outline !py-2.5 text-xs"
+                  onClick={() => setForm(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function ProductDialog({
-  product, categories, onChange, onClose, onSave,
-}: {
-  product: Product;
-  categories: { slug: CategorySlug; name: string }[];
-  onChange: (p: Product) => void;
-  onClose: () => void;
-  onSave: () => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-
-  async function uploadImage(file: File | undefined) {
-    if (!file) return;
-    setUploading(true);
-    setUploadError("");
-    try {
-      const url = await uploadPavoneImage(file, "products");
-      onChange({ ...product, images: [url, ...product.images.slice(1)] });
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Could not upload image.");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  function toggleNewArrival(checked: boolean) {
-    const tags = product.tags ?? [];
-    const nextTags: Product["tags"] = checked
-      ? Array.from(new Set([...tags, "new"]))
-      : tags.filter((tag) => tag !== "new");
-    onChange({ ...product, tags: nextTags });
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-cocoa/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-background rounded-2xl max-w-2xl w-full my-8 shadow-soft border border-border">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="font-display text-2xl text-cocoa">{product.name ? "Edit product" : "New product"}</h2>
-          <button onClick={onClose} className="p-2 rounded-md hover:bg-cream"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <Field label="Name">
-            <input value={product.name} onChange={(e) => onChange({ ...product, name: e.target.value })} className={inputCls} />
-          </Field>
-          <Field label="Slug">
-            <input value={product.slug} onChange={(e) => onChange({ ...product, slug: e.target.value })} className={inputCls} />
-          </Field>
-          <Field label="Description">
-            <textarea rows={3} value={product.description} onChange={(e) => onChange({ ...product, description: e.target.value })} className={inputCls} />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Category">
-              <select value={product.category} onChange={(e) => onChange({ ...product, category: e.target.value as CategorySlug })} className={inputCls}>
-                {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-              </select>
-            </Field>
-            <Field label="In stock">
-              <select value={product.inStock ? "1" : "0"} onChange={(e) => onChange({ ...product, inStock: e.target.value === "1" })} className={inputCls}>
-                <option value="1">In stock</option>
-                <option value="0">Sold out</option>
-              </select>
-            </Field>
-            <Field label="Price ($)">
-              <input type="number" value={product.price} onChange={(e) => onChange({ ...product, price: Number(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Sale price ($)">
-              <input type="number" value={product.salePrice ?? ""} onChange={(e) => onChange({ ...product, salePrice: e.target.value ? Number(e.target.value) : undefined })} className={inputCls} />
-            </Field>
-          </div>
-          <label className="flex items-start gap-3 rounded-xl border border-border bg-cream/35 p-4">
-            <input
-              type="checkbox"
-              checked={product.tags?.includes("new") ?? false}
-              onChange={(e) => toggleNewArrival(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-pink"
-            />
-            <span>
-              <span className="block text-sm font-medium text-cocoa">Show in New Arrivals</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">Checked products appear in the homepage New Arrivals section.</span>
-            </span>
-          </label>
-          <Field label="Product image">
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-cream/40 px-4 py-4 text-sm text-cocoa hover:bg-cream">
-              <Upload className="h-4 w-4" />
-              {uploading ? "Uploading..." : "Upload image"}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                disabled={uploading}
-                onChange={(e) => void uploadImage(e.target.files?.[0])}
-              />
-            </label>
-            {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
-            <input
-              value={product.images[0] ?? ""}
-              onChange={(e) => onChange({ ...product, images: [e.target.value, ...product.images.slice(1)] })}
-              className={`${inputCls} mt-2`}
-              placeholder="https://..."
-            />
-            {product.images[0] && <img src={product.images[0]} alt="" className="mt-2 h-32 w-32 rounded-lg object-cover" />}
-          </Field>
-          <Field label="Sizes (comma separated)">
-            <input
-              value={product.sizes.join(", ")}
-              onChange={(e) => onChange({ ...product, sizes: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-              className={inputCls}
-            />
-          </Field>
-        </div>
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-border bg-cream/30">
-          <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg hover:bg-cream">Cancel</button>
-          <button onClick={onSave} className="px-4 py-2 text-sm rounded-lg bg-cocoa text-ivory hover:bg-cocoa/90">Save product</button>
-        </div>
-      </div>
-    </div>
-  );
+function toForm(product: Product): FormState {
+  return {
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    description: product.description ?? "",
+    category_id: product.category_id ?? "",
+    brand_id: product.brand_id ?? "",
+    price: String(product.price),
+    sale_price: product.sale_price != null ? String(product.sale_price) : "",
+    sizes: product.sizes.join(", "),
+    colors: product.colors.join(", "),
+    stock_quantity: String(product.stock_quantity),
+    sku: product.sku ?? "",
+    is_featured: product.is_featured,
+    is_best_seller: product.is_best_seller,
+    is_new_arrival: product.is_new_arrival,
+    is_active: product.is_active,
+    images: [...product.product_images]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((image) => image.image_url),
+  };
 }
 
-const inputCls = "w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-pink/40";
+function csvToArray(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <label className="block">
-      <span className="block text-xs uppercase tracking-[0.16em] text-muted-foreground mb-1.5">{label}</span>
+    <label className={className}>
+      <span className="label-elegant">{label}</span>
       {children}
     </label>
   );

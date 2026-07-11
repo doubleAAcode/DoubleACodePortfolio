@@ -1,132 +1,169 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { DollarSign, Package, ShoppingCart, TrendingUp, Clock } from "lucide-react";
-import { usePavoneCatalog, usePavoneOrders } from "@/stores/pavone/lib/use-pavone-data";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, ClipboardList, Layers, Package, Plus, Tags } from "lucide-react";
+import { formatPrice } from "@/stores/pavone-new/lib/brand";
+import {
+  catalogKeys,
+  fetchBrands,
+  fetchCategories,
+  fetchOrders,
+  fetchProducts,
+  type OrderStatus,
+} from "@/stores/pavone-new/lib/catalog";
 
 export const Route = createFileRoute("/stores/pavone/admin/")({
   component: AdminDashboard,
+  head: () => ({
+    meta: [{ title: "Admin Dashboard - PAVONE BY RAY" }, { name: "robots", content: "noindex" }],
+  }),
 });
 
+const STATUS_STYLES: Record<OrderStatus, string> = {
+  new: "bg-primary text-primary-foreground",
+  confirmed: "bg-accent text-accent-foreground",
+  preparing: "border border-border bg-secondary text-secondary-foreground",
+  completed: "border border-border bg-secondary text-muted-foreground",
+  cancelled: "bg-destructive/10 text-destructive",
+};
+
 function AdminDashboard() {
-  const catalog = usePavoneCatalog();
-  const ordersState = usePavoneOrders();
-  const products = catalog.data.products;
-  const categories = catalog.data.categories;
-  const orders = ordersState.data;
+  const { data: products = [] } = useQuery({
+    queryKey: catalogKeys.products,
+    queryFn: () => fetchProducts(true),
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: catalogKeys.categories,
+    queryFn: () => fetchCategories(true),
+  });
+  const { data: brands = [] } = useQuery({
+    queryKey: catalogKeys.brands,
+    queryFn: () => fetchBrands(true),
+  });
+  const { data: orders = [] } = useQuery({
+    queryKey: catalogKeys.orders,
+    queryFn: fetchOrders,
+  });
 
-  const revenue = orders.filter((o) => o.status !== "canceled").reduce((sum, o) => sum + o.total, 0);
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
-  const recentOrders = orders.slice(0, 5);
-
-  const unitMap = new Map<string, { name: string; units: number; revenue: number }>();
-  for (const o of orders) {
-    if (o.status === "canceled") continue;
-    for (const it of o.items) {
-      const key = it.productId ?? it.productName;
-      const cur = unitMap.get(key) ?? { name: it.productName, units: 0, revenue: 0 };
-      cur.units += it.quantity;
-      cur.revenue += it.quantity * it.price;
-      unitMap.set(key, cur);
-    }
-  }
-  const topSellers = [...unitMap.entries()].sort((a, b) => b[1].units - a[1].units).slice(0, 5);
-
+  const lowStock = products.filter((product) => product.is_active && product.stock_quantity <= 5);
+  const recentOrders = orders.slice(0, 6);
   const stats = [
-    { label: "Revenue", value: `$${revenue.toLocaleString()}`, icon: DollarSign, accent: "from-pink/20 to-blush/20" },
-    { label: "Orders", value: orders.length, icon: ShoppingCart, accent: "from-lavender/30 to-sky/30" },
-    { label: "Products", value: products.length, icon: Package, accent: "from-mint/30 to-sage/30" },
-    { label: "Pending", value: pendingCount, icon: Clock, accent: "from-peach/40 to-coral/20" },
-  ];
-
-  const error = catalog.error || ordersState.error;
+    {
+      label: "Products",
+      value: products.length,
+      icon: Package,
+      to: "/stores/pavone/admin/products",
+    },
+    {
+      label: "Categories",
+      value: categories.length,
+      icon: Layers,
+      to: "/stores/pavone/admin/categories",
+    },
+    { label: "Brands", value: brands.length, icon: Tags, to: "/stores/pavone/admin/brands" },
+    {
+      label: "Orders",
+      value: orders.length,
+      icon: ClipboardList,
+      to: "/stores/pavone/admin/orders",
+    },
+  ] as const;
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-3xl text-cocoa">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Live Supabase overview for Pavone.</p>
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      </header>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className={`rounded-2xl bg-gradient-to-br ${s.accent} p-5 border border-border/50`}>
-              <div className="flex items-center justify-between">
-                <div className="text-xs uppercase tracking-[0.18em] text-cocoa/70">{s.label}</div>
-                <Icon className="h-4 w-4 text-cocoa/70" />
-              </div>
-              <div className="mt-3 font-display text-3xl text-cocoa">{s.value}</div>
-            </div>
-          );
-        })}
+    <div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Link
+            key={stat.label}
+            to={stat.to}
+            className="border border-border bg-background p-5 transition-shadow hover:shadow-sm"
+          >
+            <stat.icon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+            <p className="mt-3 font-serif text-3xl">{stat.value}</p>
+            <p className="mt-1 text-xs tracking-[0.15em] text-muted-foreground uppercase">
+              {stat.label}
+            </p>
+          </Link>
+        ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-2xl bg-background border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl text-cocoa">Recent orders</h2>
-            <Link to="/stores/pavone/admin/orders" className="text-xs text-pink hover:underline uppercase tracking-[0.18em]">View all</Link>
-          </div>
-          <div className="divide-y divide-border">
-            {recentOrders.map((o) => (
-              <div key={o.id} className="flex items-center justify-between py-3">
-                <div>
-                  <div className="text-sm font-medium text-cocoa">{o.orderNumber} - {o.customerName}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleString()} - {o.items.length} item(s)</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-cocoa">${o.total}</div>
-                  <StatusPill status={o.status} />
-                </div>
-              </div>
-            ))}
-            {recentOrders.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No orders yet.</p>}
-          </div>
-        </div>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link to="/stores/pavone/admin/products" className="btn-primary !px-5 !py-2.5 text-xs">
+          <Plus className="h-4 w-4" /> Add Product
+        </Link>
+        <Link to="/stores/pavone/admin/categories" className="btn-outline !px-5 !py-2.5 text-xs">
+          <Plus className="h-4 w-4" /> Add Category
+        </Link>
+        <Link to="/stores/pavone/admin/brands" className="btn-outline !px-5 !py-2.5 text-xs">
+          <Plus className="h-4 w-4" /> Add Brand
+        </Link>
+      </div>
 
-        <div className="rounded-2xl bg-background border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl text-cocoa">Top sellers</h2>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <ul className="space-y-3">
-            {topSellers.map(([id, info], idx) => (
-              <li key={id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium text-pink w-5">#{idx + 1}</span>
-                  <span className="text-sm text-cocoa">{info.name}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{info.units} sold</span>
-              </li>
-            ))}
-            {topSellers.length === 0 && <p className="text-sm text-muted-foreground">No sales yet.</p>}
-          </ul>
-          <div className="mt-6 pt-4 border-t border-border">
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">Categories</div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <span key={c.slug} className="text-xs px-3 py-1 rounded-full bg-cream text-cocoa">{c.name}</span>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <section className="border border-border bg-background">
+          <header className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h2 className="font-serif text-lg">Recent Orders</h2>
+            <Link
+              to="/stores/pavone/admin/orders"
+              className="text-xs tracking-[0.15em] uppercase underline underline-offset-4"
+            >
+              View All
+            </Link>
+          </header>
+          {recentOrders.length === 0 ? (
+            <p className="px-5 py-8 text-sm text-muted-foreground">No orders yet.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recentOrders.map((order) => (
+                <li key={order.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{order.customer_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString()} / {order.order_items.length}{" "}
+                      item(s)
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={`px-2 py-0.5 text-[0.625rem] tracking-[0.12em] uppercase ${
+                        STATUS_STYLES[order.status]
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                    <span className="text-sm">{formatPrice(order.total)}</span>
+                  </div>
+                </li>
               ))}
-            </div>
-          </div>
-        </div>
+            </ul>
+          )}
+        </section>
+
+        <section className="border border-border bg-background">
+          <header className="flex items-center gap-2 border-b border-border px-5 py-4">
+            <AlertTriangle className="h-4 w-4 text-destructive" strokeWidth={1.5} />
+            <h2 className="font-serif text-lg">Low Stock (5 or less)</h2>
+          </header>
+          {lowStock.length === 0 ? (
+            <p className="px-5 py-8 text-sm text-muted-foreground">
+              All active products are well stocked.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {lowStock.map((product) => (
+                <li
+                  key={product.id}
+                  className="flex items-center justify-between gap-3 px-5 py-3.5"
+                >
+                  <p className="min-w-0 truncate text-sm">{product.name}</p>
+                  <span className="shrink-0 text-sm text-destructive">
+                    {product.stock_quantity} left
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
-  );
-}
-
-export function StatusPill({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-peach/40 text-cocoa",
-    confirmed: "bg-sky/40 text-cocoa",
-    shipped: "bg-lavender/40 text-cocoa",
-    delivered: "bg-mint/50 text-cocoa",
-    canceled: "bg-destructive/15 text-destructive",
-  };
-  return (
-    <span className={`inline-block text-[10px] uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ${map[status] ?? "bg-cream"}`}>
-      {status}
-    </span>
   );
 }

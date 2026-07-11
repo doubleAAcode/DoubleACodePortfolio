@@ -1,119 +1,139 @@
-import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Package, FolderTree, ShoppingCart, LogOut, Database, Store, Settings, Sparkles } from "lucide-react";
-import { getStoredSession, signOutAdmin } from "@/stores/pavone/lib/supabase";
-import { seedCatalogIfEmpty } from "@/stores/pavone/lib/pavone-api";
+import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  ClipboardList,
+  ExternalLink,
+  Layers,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Package,
+  Settings,
+  Tags,
+  X,
+} from "lucide-react";
 import { useState } from "react";
+import { LOGO_URL, STORE_NAME } from "@/stores/pavone-new/lib/brand";
+import { getStoredSession, signOutAdmin } from "@/stores/pavone/lib/supabase";
 
 export const Route = createFileRoute("/stores/pavone/admin")({
   component: AdminLayout,
 });
 
+const LINKS = [
+  { to: "/stores/pavone/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/stores/pavone/admin/products", label: "Products", icon: Package },
+  { to: "/stores/pavone/admin/categories", label: "Categories", icon: Layers },
+  { to: "/stores/pavone/admin/brands", label: "Brands", icon: Tags },
+  { to: "/stores/pavone/admin/orders", label: "Orders", icon: ClipboardList },
+  { to: "/stores/pavone/admin/settings", label: "Settings", icon: Settings },
+] as const;
+
 function AdminLayout() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [open, setOpen] = useState(false);
   const authed = Boolean(getStoredSession()?.access_token);
-  const [seedMessage, setSeedMessage] = useState("");
 
   if (pathname === "/stores/pavone/admin/login") {
     return (
-      <div className="pavone-store">
+      <div className="pavone-new-store">
         <Outlet />
       </div>
     );
   }
 
   if (!authed) {
-    navigate({ to: "/stores/pavone/admin/login" });
+    navigate({ to: "/stores/pavone/admin/login", replace: true });
     return null;
   }
 
-  const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
-    { to: "/stores/pavone/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-    { to: "/stores/pavone/admin/products", label: "Products", icon: Package },
-    { to: "/stores/pavone/admin/categories", label: "Categories", icon: FolderTree },
-    { to: "/stores/pavone/admin/inspirations", label: "Inspirations", icon: Sparkles },
-    { to: "/stores/pavone/admin/orders", label: "Orders", icon: ShoppingCart },
-    { to: "/stores/pavone/admin/settings", label: "Settings", icon: Settings },
-  ];
+  const signOut = () => {
+    signOutAdmin();
+    navigate({ to: "/stores/pavone/admin/login", replace: true });
+  };
+
+  const nav = (
+    <nav className="flex flex-1 flex-col gap-1">
+      {LINKS.map((link) => {
+        const active =
+          "exact" in link && link.exact ? pathname === link.to : pathname.startsWith(link.to);
+        return (
+          <Link
+            key={link.to}
+            to={link.to}
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground/70 hover:bg-secondary"
+            }`}
+          >
+            <link.icon className="h-4 w-4" strokeWidth={1.5} />
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
+  const footer = (
+    <div className="space-y-1 border-t border-border pt-3">
+      <Link
+        to="/stores/pavone"
+        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/70 hover:bg-secondary"
+      >
+        <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
+        View Store
+      </Link>
+      <button
+        onClick={signOut}
+        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/70 hover:bg-secondary"
+      >
+        <LogOut className="h-4 w-4" strokeWidth={1.5} />
+        Sign Out
+      </button>
+    </div>
+  );
 
   return (
-    <div className="pavone-store min-h-screen bg-cream/40">
-      <div className="flex">
-        <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-background min-h-screen sticky top-0">
-          <div className="px-6 py-6 border-b border-border">
-            <div className="font-display text-2xl text-cocoa">Pavone.lb</div>
-            <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground mt-1">Admin Studio</div>
-          </div>
-          <nav className="flex-1 p-3 space-y-1">
-            {nav.map((n) => {
-              const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
-              const Icon = n.icon;
-              return (
-                <Link
-                  key={n.to}
-                  to={n.to as "/stores/pavone/admin"}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                    active ? "bg-pink/15 text-cocoa font-medium" : "text-muted-foreground hover:bg-cream hover:text-cocoa"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {n.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="p-3 border-t border-border space-y-1">
-            <Link to="/stores/pavone" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-cream hover:text-cocoa">
-              <Store className="h-4 w-4" /> View storefront
-            </Link>
-            <button
-              onClick={async () => {
-                setSeedMessage("");
-                try {
-                  const result = await seedCatalogIfEmpty();
-                  setSeedMessage(result.inserted ? "Catalog seeded." : "Catalog already has products.");
-                } catch (err) {
-                  setSeedMessage(err instanceof Error ? err.message : "Could not seed catalog.");
-                }
-              }}
-              className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-cream hover:text-cocoa"
-            >
-              <Database className="h-4 w-4" /> Seed catalog
-            </button>
-            {seedMessage && <p className="px-3 text-xs text-muted-foreground">{seedMessage}</p>}
-            <button
-              onClick={() => { signOutAdmin(); navigate({ to: "/stores/pavone/admin/login" }); }}
-              className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-cream hover:text-cocoa"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </div>
-        </aside>
+    <div className="pavone-new-store flex min-h-screen bg-secondary/30 text-foreground">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-background p-4 lg:flex">
+        <Link to="/stores/pavone/admin" className="mb-8 mt-2 block px-2">
+          <img src={LOGO_URL} alt={STORE_NAME} className="h-8 w-auto" />
+          <p className="mt-2 text-[0.6rem] tracking-[0.25em] text-muted-foreground uppercase">
+            Admin Panel
+          </p>
+        </Link>
+        {nav}
+        {footer}
+      </aside>
 
-        <div className="flex-1 min-w-0">
-          {/* Mobile top bar */}
-          <div className="md:hidden flex items-center justify-between border-b border-border bg-background px-4 py-3 sticky top-0 z-30">
-            <div className="font-display text-xl text-cocoa">Pavone Admin</div>
-            <div className="flex gap-1 overflow-x-auto">
-              {nav.map((n) => {
-                const Icon = n.icon;
-                const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
-                return (
-                  <Link key={n.to} to={n.to as "/stores/pavone/admin"} className={`p-2 rounded-md ${active ? "bg-pink/15 text-cocoa" : "text-muted-foreground"}`}>
-                    <Icon className="h-4 w-4" />
-                  </Link>
-                );
-              })}
-              <button onClick={() => { signOutAdmin(); navigate({ to: "/stores/pavone/admin/login" }); }} className="p-2 text-muted-foreground">
-                <LogOut className="h-4 w-4" />
+      {open && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-background p-4">
+            <div className="mb-6 flex items-center justify-between px-2">
+              <img src={LOGO_URL} alt={STORE_NAME} className="h-7 w-auto" />
+              <button aria-label="Close menu" onClick={() => setOpen(false)}>
+                <X className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </div>
-          </div>
-
-          <main className="p-5 md:p-8 max-w-7xl">
-            <Outlet />
-          </main>
+            {nav}
+            {footer}
+          </aside>
         </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-4 sm:px-6">
+          <button className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
+            <Menu className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+          <h1 className="truncate font-serif text-xl sm:text-2xl">PAVONE Admin</h1>
+        </header>
+        <main className="p-4 sm:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

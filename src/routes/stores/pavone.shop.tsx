@@ -1,131 +1,323 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ProductCard } from "@/stores/pavone/components/ProductCard";
-import type { CategorySlug } from "@/stores/pavone/data/products";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { PavoneShell } from "@/stores/pavone/PavoneShell";
-import { PavoneDataState, usePavoneCatalog } from "@/stores/pavone/lib/use-pavone-data";
+import { SlidersHorizontal, X } from "lucide-react";
+import { ProductCard } from "@/stores/pavone-new/components/ProductCard";
+import { StoreLayout } from "@/stores/pavone-new/components/StoreLayout";
+import { CartProvider } from "@/stores/pavone-new/lib/cart";
+import { useWishlist } from "@/stores/pavone-new/lib/wishlist";
+import {
+  catalogKeys,
+  fetchBrands,
+  fetchCategories,
+  fetchProducts,
+} from "@/stores/pavone-new/lib/catalog";
+
+interface ShopSearch {
+  category?: string;
+  filter?: string;
+}
+
+type SortKey = "newest" | "price-asc" | "price-desc" | "best";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  newest: "Newest",
+  "price-asc": "Price: Low to High",
+  "price-desc": "Price: High to Low",
+  best: "Best Sellers",
+};
 
 export const Route = createFileRoute("/stores/pavone/shop")({
+  component: PavoneShopRoute,
+  validateSearch: (search: Record<string, unknown>): ShopSearch => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+    filter: typeof search.filter === "string" ? search.filter : undefined,
+  }),
   head: () => ({
     meta: [
-      { title: "Shop All — Pavone.lb" },
-      { name: "description", content: "Browse all Pavone.lb modest fashion: dresses, sets, scarves, formal wear and the latest collection." },
-      { property: "og:title", content: "Shop All — Pavone.lb" },
-      { property: "og:description", content: "Browse all Pavone.lb modest fashion." },
+      { title: "Shop All - PAVONE BY RAY" },
+      {
+        name: "description",
+        content:
+          "Browse the full PAVONE BY RAY collection. Filter by category, brand, size, color and price.",
+      },
       { property: "og:url", content: "/stores/pavone/shop" },
     ],
     links: [{ rel: "canonical", href: "/stores/pavone/shop" }],
   }),
-  component: PavoneShopRoute,
 });
+
+function effectivePrice(product: { price: number; sale_price: number | null }) {
+  return product.sale_price != null ? Number(product.sale_price) : Number(product.price);
+}
 
 function PavoneShopRoute() {
   return (
-    <PavoneShell>
-      <ShopPage />
-    </PavoneShell>
+    <div className="pavone-new-store min-h-screen bg-background text-foreground">
+      <CartProvider>
+        <ShopPage />
+      </CartProvider>
+    </div>
   );
 }
 
 function ShopPage() {
-  const { data, loading, error } = usePavoneCatalog();
-  const { products, categories } = data;
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<CategorySlug | "all">("all");
-  const [maxPrice, setMaxPrice] = useState(300);
-  const [sort, setSort] = useState<"featured" | "price-asc" | "price-desc" | "new">("featured");
+  const { category: initialCategory, filter } = Route.useSearch();
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: catalogKeys.products,
+    queryFn: () => fetchProducts(),
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: catalogKeys.categories,
+    queryFn: () => fetchCategories(),
+  });
+  const { data: brands = [] } = useQuery({
+    queryKey: catalogKeys.brands,
+    queryFn: () => fetchBrands(),
+  });
+  const wishlist = useWishlist();
+
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState(initialCategory ?? "");
+  const [brand, setBrand] = useState("");
+  const [size, setSize] = useState("");
+  const [color, setColor] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sort, setSort] = useState<SortKey>(filter === "best" ? "best" : "newest");
+  const [onlyNew] = useState(filter === "new");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const allSizes = useMemo(
+    () => Array.from(new Set(products.flatMap((product) => product.sizes))).sort(),
+    [products],
+  );
+  const allColors = useMemo(
+    () => Array.from(new Set(products.flatMap((product) => product.colors))).sort(),
+    [products],
+  );
 
   const filtered = useMemo(() => {
-    let list = products.filter((p) => {
-      if (cat !== "all" && p.category !== cat) return false;
-      const price = p.salePrice ?? p.price;
-      if (price > maxPrice) return false;
-      if (q && !`${p.name} ${p.description} ${p.category}`.toLowerCase().includes(q.toLowerCase())) return false;
-      return true;
-    });
-    if (sort === "price-asc") list = [...list].sort((a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price));
-    if (sort === "price-desc") list = [...list].sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price));
-    if (sort === "new") list = [...list].sort((a, b) => Number(b.tags?.includes("new")) - Number(a.tags?.includes("new")));
+    let list = [...products];
+    if (onlyNew) list = list.filter((product) => product.is_new_arrival);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (product) =>
+          product.name.toLowerCase().includes(q) ||
+          (product.description ?? "").toLowerCase().includes(q),
+      );
+    }
+    if (category) list = list.filter((product) => product.category?.slug === category);
+    if (brand) list = list.filter((product) => product.brand?.slug === brand);
+    if (size) list = list.filter((product) => product.sizes.includes(size));
+    if (color) list = list.filter((product) => product.colors.includes(color));
+    if (maxPrice) list = list.filter((product) => effectivePrice(product) <= Number(maxPrice));
+
+    switch (sort) {
+      case "price-asc":
+        list.sort((a, b) => effectivePrice(a) - effectivePrice(b));
+        break;
+      case "price-desc":
+        list.sort((a, b) => effectivePrice(b) - effectivePrice(a));
+        break;
+      case "best":
+        list.sort((a, b) => Number(b.is_best_seller) - Number(a.is_best_seller));
+        break;
+      default:
+        list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
     return list;
-  }, [products, q, cat, maxPrice, sort]);
+  }, [products, search, category, brand, size, color, maxPrice, sort, onlyNew]);
 
-  return (
-    <PavoneDataState loading={loading} error={error} empty={products.length === 0}>
-    <div className="container-page py-12 md:py-16">
-      <div className="text-center max-w-2xl mx-auto">
-        <h1 className="font-display text-5xl md:text-6xl">The Collection</h1>
-        <p className="mt-3 text-muted-foreground">Every piece, hand-selected. Filter, search, and find your next favorite.</p>
+  const activeFilters = [category, brand, size, color, maxPrice].filter(Boolean).length;
+
+  const filterControls = (
+    <div className="space-y-6">
+      <div>
+        <label className="label-elegant">Category</label>
+        <select
+          className="input-elegant"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+        >
+          <option value="">All Categories</option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.slug}>
+              {item.name}
+            </option>
+          ))}
+        </select>
       </div>
-
-      <div className="mt-10 grid lg:grid-cols-[260px_1fr] gap-10">
-        <aside className="space-y-7">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search…"
-              className="w-full pl-9 pr-3 py-2.5 rounded-full border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Category</div>
-            <div className="flex flex-wrap gap-2">
-              <FilterChip active={cat === "all"} onClick={() => setCat("all")}>All</FilterChip>
-              {categories.map((c) => (
-                <FilterChip key={c.slug} active={cat === c.slug} onClick={() => setCat(c.slug)}>{c.name}</FilterChip>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Max price: ${maxPrice}</div>
-            <input type="range" min={40} max={300} step={5} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-cocoa" />
-          </div>
-
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Sort</div>
-            <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
-              className="w-full px-3 py-2.5 rounded-full border border-border bg-background text-sm">
-              <option value="featured">Featured</option>
-              <option value="new">Newest</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-            </select>
-          </div>
-        </aside>
-
-        <div>
-          <div className="text-sm text-muted-foreground mb-4">{filtered.length} pieces</div>
-          {filtered.length === 0 ? (
-            <div className="py-20 text-center">
-              <p className="font-display text-2xl">Nothing matches just yet.</p>
-              <p className="text-sm text-muted-foreground mt-2">Try widening your filters or <Link to="/stores/pavone/shop" className="underline">reset</Link>.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-8">
-              {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
-          )}
+      <div>
+        <label className="label-elegant">Brand</label>
+        <select
+          className="input-elegant"
+          value={brand}
+          onChange={(event) => setBrand(event.target.value)}
+        >
+          <option value="">All Brands</option>
+          {brands.map((item) => (
+            <option key={item.id} value={item.slug}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="label-elegant">Size</label>
+        <div className="flex flex-wrap gap-2">
+          {allSizes.map((item) => (
+            <button
+              key={item}
+              onClick={() => setSize(size === item ? "" : item)}
+              className={`border px-3 py-1.5 text-xs tracking-wider transition-colors ${
+                size === item
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:border-primary"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
         </div>
       </div>
+      <div>
+        <label className="label-elegant">Color</label>
+        <select
+          className="input-elegant"
+          value={color}
+          onChange={(event) => setColor(event.target.value)}
+        >
+          <option value="">All Colors</option>
+          {allColors.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="label-elegant">Max Price</label>
+        <select
+          className="input-elegant"
+          value={maxPrice}
+          onChange={(event) => setMaxPrice(event.target.value)}
+        >
+          <option value="">Any Price</option>
+          <option value="100">Under $100</option>
+          <option value="150">Under $150</option>
+          <option value="200">Under $200</option>
+          <option value="300">Under $300</option>
+        </select>
+      </div>
+      {activeFilters > 0 && (
+        <button
+          onClick={() => {
+            setCategory("");
+            setBrand("");
+            setSize("");
+            setColor("");
+            setMaxPrice("");
+          }}
+          className="text-xs tracking-[0.15em] uppercase underline underline-offset-4"
+        >
+          Clear All Filters
+        </button>
+      )}
     </div>
-    </PavoneDataState>
   );
-}
 
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      className={`px-3.5 py-1.5 rounded-full text-xs tracking-wide border transition-colors ${
-        active ? "bg-cocoa text-ivory border-cocoa" : "bg-background border-border hover:border-taupe"
-      }`}
-    >
-      {children}
-    </button>
+    <StoreLayout>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mb-8 text-center">
+          <p className="eyebrow">The Collection</p>
+          <h1 className="mt-3 font-serif text-3xl sm:text-4xl">
+            {onlyNew ? "New Arrivals" : sort === "best" ? "Best Sellers" : "Shop All"}
+          </h1>
+        </div>
+
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="search"
+            placeholder="Search products..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="input-elegant sm:max-w-xs"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setFiltersOpen(true)}
+              className="flex items-center gap-2 border border-border px-4 py-2.5 text-xs tracking-[0.15em] uppercase lg:hidden"
+            >
+              <SlidersHorizontal className="h-4 w-4" strokeWidth={1.5} />
+              Filters {activeFilters > 0 ? `(${activeFilters})` : ""}
+            </button>
+            <select
+              className="input-elegant !w-auto"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortKey)}
+              aria-label="Sort products"
+            >
+              {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                <option key={key} value={key}>
+                  {SORT_LABELS[key]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
+          <aside className="hidden lg:block">{filterControls}</aside>
+
+          <div>
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="aspect-[4/5] animate-pulse bg-secondary" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="py-24 text-center">
+                <p className="font-serif text-2xl">No pieces found</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try adjusting your filters or search.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">
+                {filtered.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    wishlisted={wishlist.has(product.id)}
+                    onToggleWishlist={wishlist.toggle}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setFiltersOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] overflow-y-auto bg-background p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="font-serif text-xl">Filters</h2>
+              <button aria-label="Close filters" onClick={() => setFiltersOpen(false)}>
+                <X className="h-5 w-5" strokeWidth={1.5} />
+              </button>
+            </div>
+            {filterControls}
+            <button className="btn-primary mt-8 w-full" onClick={() => setFiltersOpen(false)}>
+              Show {filtered.length} Results
+            </button>
+          </div>
+        </div>
+      )}
+    </StoreLayout>
   );
 }
