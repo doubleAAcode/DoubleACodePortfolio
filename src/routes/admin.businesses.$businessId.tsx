@@ -1585,6 +1585,10 @@ function ConversationMap({
               optionLabel,
             })
           }
+          onCreateOptionTarget={(next, createdNodeId) => {
+            onCreateStep(next, createdNodeId);
+            onSelectBlock(createdNodeId);
+          }}
           onUpdateOption={updateFocusedOption}
           onDeleteOption={deleteFocusedOption}
         />
@@ -1872,6 +1876,7 @@ function FocusedBranchCanvas({
   onAddAfterNode,
   onAddOption,
   onAddOptionTarget,
+  onCreateOptionTarget,
   onUpdateOption,
   onDeleteOption,
 }: {
@@ -1885,6 +1890,7 @@ function FocusedBranchCanvas({
   onAddAfterNode: (sourceNodeId: string, nextNodeId?: string) => void;
   onAddOption: (sourceNodeId: string) => void;
   onAddOptionTarget: (sourceNodeId: string, optionKey: string, optionLabel: string) => void;
+  onCreateOptionTarget: (flow: VisualFlowDefinition, createdNodeId: string) => void;
   onUpdateOption: (
     sourceNodeId: string,
     optionKey: string,
@@ -1918,6 +1924,7 @@ function FocusedBranchCanvas({
   const branchTitle = sourceOption?.label.en || route?.label || "Branch";
   const sourceTitle =
     sourceNode?.title || (sourceNode ? friendlyBlockName(sourceNode.type) : "option block");
+  const [createTargetOpen, setCreateTargetOpen] = useState(false);
 
   return (
     <div className="rounded-md border border-border bg-surface/20 p-4 pb-5">
@@ -1980,6 +1987,7 @@ function FocusedBranchCanvas({
               label="After customer taps this option"
               nodes={visualFlow.nodes}
               value={sourceOption.targetNodeId ?? ""}
+              onCreateNew={() => setCreateTargetOpen(true)}
               onChange={(value) =>
                 onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
                   ...option,
@@ -2006,6 +2014,19 @@ function FocusedBranchCanvas({
               Active
             </label>
           </div>
+          {createTargetOpen ? (
+            <CreateOptionTargetDialog
+              visualFlow={visualFlow}
+              sourceNodeId={focusedOption.sourceNodeId}
+              optionKey={focusedOption.optionKey}
+              suggestedTitle={branchTitle}
+              onCancel={() => setCreateTargetOpen(false)}
+              onCreate={(next, createdNodeId) => {
+                setCreateTargetOpen(false);
+                onCreateOptionTarget(next, createdNodeId);
+              }}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -2068,6 +2089,105 @@ function FocusedBranchCanvas({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CreateOptionTargetDialog({
+  visualFlow,
+  sourceNodeId,
+  optionKey,
+  suggestedTitle,
+  onCreate,
+  onCancel,
+}: {
+  visualFlow: VisualFlowDefinition;
+  sourceNodeId: string;
+  optionKey: string;
+  suggestedTitle: string;
+  onCreate: (flow: VisualFlowDefinition, createdNodeId: string) => void;
+  onCancel: () => void;
+}) {
+  const [kind, setKind] = useState<AddStepKind>("message");
+  const [title, setTitle] = useState(suggestedTitle);
+  const selectedKind = addStepKinds.find((entry) => entry.id === kind) ?? addStepKinds[0];
+  const availableKinds = addStepKinds.filter((entry) => entry.id !== "start");
+
+  function createAndConnect() {
+    const cleanTitle = title.trim() || selectedKind.label;
+    const withNode = addConfiguredVisualNode(visualFlow, selectedKind.type, {
+      title: cleanTitle,
+    });
+    const created = withNode.nodes[withNode.nodes.length - 1];
+    const createdConfig: VisualFlowNode["config"] =
+      kind === "options"
+        ? {
+            ...created.config,
+            messageBehavior: "options",
+            menuOptions: [
+              {
+                key: "option_1",
+                label: { en: "First option", ar: "" },
+                active: true,
+              },
+            ],
+          }
+        : selectedKind.type === "SEND_MESSAGE"
+          ? {
+              ...created.config,
+              messageBehavior: kind === "message_end" ? "end" : created.config.messageBehavior,
+            }
+          : created.config;
+    const nextFlow: VisualFlowDefinition = {
+      ...withNode,
+      nodes: withNode.nodes.map((node) => {
+        if (node.id === created.id) return { ...node, config: createdConfig };
+        if (node.id !== sourceNodeId) return node;
+        return connectSourceNodeToCreatedStep(node, created.id, {
+          mode: "option",
+          optionKey,
+          optionLabel: cleanTitle,
+        });
+      }),
+    };
+    onCreate(nextFlow, created.id);
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-primary/40 bg-background p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="font-medium">Create and connect a new block</div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This block will become the target after the customer taps this WhatsApp option.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1 block text-muted-foreground">Block type</span>
+          <select
+            value={kind}
+            onChange={(event) => setKind(event.target.value as AddStepKind)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          >
+            {availableKinds.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <TextField label="Admin title" value={title} onChange={setTitle} />
+      </div>
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <button type="button" className="studio-button-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="studio-button-primary" onClick={createAndConnect}>
+          Create and connect
+        </button>
+      </div>
     </div>
   );
 }
@@ -5134,21 +5254,30 @@ function NextBlockSelect({
   nodes,
   value,
   onChange,
+  onCreateNew,
 }: {
   label: string;
   nodes: VisualFlowNode[];
   value: string;
   onChange: (value: string) => void;
+  onCreateNew?: () => void;
 }) {
   return (
     <label className="block text-sm">
       <span className="mb-1 block text-muted-foreground">{label}</span>
       <select
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          if (event.target.value === "__create_new_block__") {
+            onCreateNew?.();
+            return;
+          }
+          onChange(event.target.value);
+        }}
         className="w-full rounded-md border border-input bg-background px-3 py-2"
       >
         <option value="">Select block</option>
+        {onCreateNew ? <option value="__create_new_block__">+ Create new block...</option> : null}
         {nodes.map((node) => (
           <option key={node.id} value={node.id}>
             {node.title || friendlyBlockName(node.type)} ({friendlyBlockName(node.type)})
