@@ -88,6 +88,12 @@ create table if not exists public.pavone_new_settings (
   hero_image_url text,
   editorial_image_url text,
   about_image_url text,
+  lookbook_image_urls text[] not null default array[
+    '/images/pavone-new/look-1.jpg',
+    '/images/pavone-new/look-2.jpg',
+    '/images/pavone-new/look-3.jpg',
+    '/images/pavone-new/look-4.jpg'
+  ],
   hero_eyebrow text not null default 'The New Collection',
   hero_title text not null default 'Elegance, Worn Daily',
   hero_subtitle text not null default 'Considered silhouettes and timeless fabrics, designed for the woman who dresses with intention.',
@@ -95,6 +101,14 @@ create table if not exists public.pavone_new_settings (
   updated_at timestamptz not null default now(),
   constraint pavone_new_settings_singleton check (id = 'home')
 );
+
+alter table public.pavone_new_settings
+add column if not exists lookbook_image_urls text[] not null default array[
+  '/images/pavone-new/look-1.jpg',
+  '/images/pavone-new/look-2.jpg',
+  '/images/pavone-new/look-3.jpg',
+  '/images/pavone-new/look-4.jpg'
+];
 
 create or replace function public.pavone_new_set_updated_at()
 returns trigger

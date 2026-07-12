@@ -71,6 +71,7 @@ import {
   publishTemplateVersion,
   saveBusinessFlowDraft,
   saveTemplateDraftVersion,
+  validateBusinessFlowJson,
 } from "./flow-template-store.server";
 import { validateFlowForEditor } from "./flow-editor";
 import type { FlowCategory, FlowDefinition } from "./flow-template-types";
@@ -456,7 +457,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
         }
 
         if (body?.action === "save_business_flow_draft" && body.flowJson) {
-          const validation = validateFlowForEditor(body.flowJson as FlowDefinition);
+          const validation = validateBusinessFlowJson(body.flowJson);
           const data = await saveBusinessFlowDraft({
             businessId: params.businessId,
             flowJson: body.flowJson as never,

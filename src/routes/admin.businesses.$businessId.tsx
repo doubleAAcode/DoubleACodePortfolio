@@ -1628,7 +1628,7 @@ function ConversationMap({
             <GuidedAddStepWizard
               visualFlow={visualFlow}
               selectedBlockId=""
-              defaultKind="start"
+              defaultKind="options"
               onCancel={() => setShowFirstStepWizard(false)}
               onCreate={(next, createdNodeId) => {
                 setShowFirstStepWizard(false);
@@ -2167,6 +2167,7 @@ function InlineAddStepCard({
       title: selectedKind.label,
       optionLabel: optionLabel || selectedKind.label,
       makeOptions: kind === "options",
+      endAfter: kind === "message_end",
       nextNodeId,
     });
     const created = next.nodes[next.nodes.length - 1];
@@ -2220,6 +2221,7 @@ function createInlineVisualStep(
     title: string;
     optionLabel: string;
     makeOptions: boolean;
+    endAfter: boolean;
     nextNodeId?: string;
   },
 ) {
@@ -2230,7 +2232,11 @@ function createInlineVisualStep(
   const created = withNode.nodes[withNode.nodes.length - 1];
   const createdConfig: VisualFlowNode["config"] = {
     ...created.config,
-    messageBehavior: options.makeOptions ? "options" : created.config.messageBehavior,
+    messageBehavior: options.makeOptions
+      ? "options"
+      : options.endAfter
+        ? "end"
+        : created.config.messageBehavior,
     menuOptions: options.makeOptions
       ? [
           {
@@ -2818,6 +2824,7 @@ function AdvancedVisualFlowMode({
 type AddStepKind =
   | "start"
   | "message"
+  | "message_end"
   | "options"
   | "question"
   | "products"
@@ -2830,6 +2837,7 @@ type AddStepKind =
 const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBlockType }> = [
   { id: "start", label: "Start", type: "START" },
   { id: "message", label: "Send a message", type: "SEND_MESSAGE" },
+  { id: "message_end", label: "Send one message then stop", type: "SEND_MESSAGE" },
   { id: "options", label: "Send a message with options", type: "SEND_MESSAGE" },
   { id: "question", label: "Ask a question", type: "QUESTION" },
   { id: "products", label: "Product purchase", type: "PRODUCT_SELECTION" },
@@ -2892,18 +2900,19 @@ function AddStepWizard({
             const next = addConfiguredVisualNode(visualFlow, selectedKind.type, {
               title: title || selectedKind.label,
               afterNodeId,
-              nextNodeId,
+              nextNodeId: kind === "message_end" ? undefined : nextNodeId,
             });
             const created = next.nodes[next.nodes.length - 1];
             onCreate({
               ...next,
               nodes: next.nodes.map((node) =>
-                node.id === created.id && kind === "options"
+                node.id === created.id && (kind === "options" || kind === "message_end")
                   ? {
                       ...node,
                       config: {
                         ...node.config,
-                        messageBehavior: "options",
+                        messageBehavior: kind === "options" ? "options" : "end",
+                        ...(kind === "message_end" ? { menuOptions: node.config.menuOptions } : {}),
                         menuOptions: [
                           {
                             key: "option_1",
@@ -2911,6 +2920,7 @@ function AddStepWizard({
                             active: true,
                           },
                         ],
+                        ...(kind === "message_end" ? { menuOptions: node.config.menuOptions } : {}),
                       },
                     }
                   : node,
@@ -2978,7 +2988,9 @@ function GuidedAddStepWizard({
             ...created.config,
             messageBehavior:
               selectedKind.type === "SEND_MESSAGE"
-                ? afterBehavior === "main_menu"
+                ? kind === "message_end"
+                  ? "end"
+                  : afterBehavior === "main_menu"
                   ? "main_menu"
                   : afterBehavior === "end"
                     ? "end"
@@ -3066,7 +3078,7 @@ function GuidedAddStepWizard({
           <option value="next">Go to another step</option>
           <option value="options">Show options</option>
           <option value="main_menu">Go to main menu</option>
-          <option value="end">End conversation</option>
+          <option value="end">End conversation here</option>
         </select>
       </label>
       {afterBehavior === "next" ? (
@@ -3775,7 +3787,11 @@ function MessageStepSettings({
         />
       ) : null}
       {behavior === "end" ? (
-        <SettingsSection title="Optional closing message">
+        <SettingsSection title="Conversation ends here">
+          <p className="text-sm text-muted-foreground">
+            No next block is required. After this message is sent, the bot stops the flow unless
+            the customer starts again.
+          </p>
           <TextAreaField
             label="Closing message EN"
             value={block.config.fallback?.en ?? ""}

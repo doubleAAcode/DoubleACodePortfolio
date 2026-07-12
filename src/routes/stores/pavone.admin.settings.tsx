@@ -10,6 +10,7 @@ import {
 import {
   catalogKeys,
   getSettings,
+  normalizeLookbookImages,
   updateSettings,
   uploadBoutiqueImage,
   type PavoneNewSettings,
@@ -41,7 +42,12 @@ function AdminSettings() {
   });
 
   useEffect(() => {
-    if (settingsQuery.data) setSettings(settingsQuery.data);
+    if (settingsQuery.data) {
+      setSettings({
+        ...settingsQuery.data,
+        lookbook_image_urls: normalizeLookbookImages(settingsQuery.data.lookbook_image_urls),
+      });
+    }
   }, [settingsQuery.data]);
 
   async function saveAccount(event: React.FormEvent) {
@@ -89,6 +95,22 @@ function AdminSettings() {
     try {
       const url = await uploadBoutiqueImage(file, "hero");
       setSettings({ ...settings, [field]: url });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not upload image");
+    } finally {
+      setUploading("");
+    }
+  }
+
+  async function uploadLookbookImage(file: File | undefined, index: number) {
+    if (!file || !settings) return;
+    const uploadKey = `lookbook_${index}`;
+    setUploading(uploadKey);
+    try {
+      const url = await uploadBoutiqueImage(file, "hero");
+      const nextImages = normalizeLookbookImages(settings.lookbook_image_urls);
+      nextImages[index] = url;
+      setSettings({ ...settings, lookbook_image_urls: nextImages });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not upload image");
     } finally {
@@ -214,6 +236,33 @@ function AdminSettings() {
               onChange={(value) => setSettings({ ...settings, about_image_url: value || null })}
               onUpload={(file) => uploadImage(file, "about_image_url")}
             />
+            <div>
+              <div>
+                <h3 className="font-serif text-xl">Lookbook Images</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These four images appear in the Lookbook grid at the bottom of the storefront.
+                </p>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {normalizeLookbookImages(settings.lookbook_image_urls).map((image, index) => (
+                  <ImageField
+                    key={index}
+                    label={`Lookbook image ${index + 1}`}
+                    value={image}
+                    uploading={uploading === `lookbook_${index}`}
+                    onChange={(value) => {
+                      const nextImages = normalizeLookbookImages(settings.lookbook_image_urls);
+                      nextImages[index] = value;
+                      setSettings({
+                        ...settings,
+                        lookbook_image_urls: normalizeLookbookImages(nextImages),
+                      });
+                    }}
+                    onUpload={(file) => uploadLookbookImage(file, index)}
+                  />
+                ))}
+              </div>
+            </div>
             {storefrontError && (
               <p
                 role="alert"

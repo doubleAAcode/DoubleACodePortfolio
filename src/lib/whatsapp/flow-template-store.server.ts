@@ -11,6 +11,8 @@ import {
   type FlowValidationResult,
 } from "./flow-template-types";
 import { validateFlowForEditor } from "./flow-editor";
+import { withCanonicalFlowDocument } from "./flow-document";
+import { flowDiagnosticsToLegacyResult, validateFlow } from "./flow-validation";
 
 export type FlowTemplateRow = {
   id: string;
@@ -142,8 +144,8 @@ export async function createFlowTemplate({
   };
   adminUser: string;
 }) {
-  const flow = input.flowJson ?? createDefaultFlowDefinition(input.category);
-  const validation = validateFlowForEditor(flow);
+  const flow = withCanonicalFlowDocument(input.flowJson ?? createDefaultFlowDefinition(input.category));
+  const validation = validateForPersistence(flow, input.publish ? "publish" : "draft");
   if (input.publish && !validation.ok) throw new Error(formatValidationError(validation));
   const templateId = templateSlug(input.id || input.name || flow.id);
   const now = new Date().toISOString();
@@ -197,7 +199,10 @@ export async function saveTemplateDraftVersion({
   flowJson: FlowDefinition;
   adminUser: string;
 }) {
-  const validation = validateFlowForEditor(flowJson);
+  const flow = withCanonicalFlowDocument(flowJson);
+  const saveValidation = validateForPersistence(flow, "save");
+  if (!saveValidation.ok) throw new Error(formatValidationError(saveValidation));
+  const validation = validateForPersistence(flow, "draft");
   const versions = await listTemplateVersions(templateId);
   const draft = versions.find((version) => version.status === "DRAFT");
   const versionNumber =
@@ -207,7 +212,7 @@ export async function saveTemplateDraftVersion({
     template_id: templateId,
     version_number: versionNumber,
     status: "DRAFT",
-    flow_json: flowJson,
+    flow_json: flow,
     validation_result: validation,
     created_by_admin_user_id: adminUser,
     published_at: null,
@@ -226,14 +231,25 @@ export async function publishTemplateVersion({
 }) {
   const version = (await listTemplateVersions(templateId)).find((entry) => entry.id === versionId);
   if (!version) throw new Error("Template version was not found.");
-  const validation = validateFlowForEditor(version.flow_json);
+  const flow = withCanonicalFlowDocument(version.flow_json);
+  const validation = validateForPersistence(flow, "publish");
   if (!validation.ok) throw new Error(formatValidationError(validation));
   const now = new Date().toISOString();
-  version.status = "PUBLISHED";
-  version.published_at = now;
-  version.validation_result = validation;
-  await archiveOtherTemplateVersions(templateId, version.id);
-  await upsertTemplateVersion(version);
+  const versionNumber =
+    Math.max(0, ...(await listTemplateVersions(templateId)).map((entry) => entry.version_number)) + 1;
+  const publishedVersion: FlowTemplateVersionRow = {
+    id: `${templateId}-v${versionNumber}`,
+    template_id: templateId,
+    version_number: versionNumber,
+    status: "PUBLISHED",
+    flow_json: flow,
+    validation_result: validation,
+    created_by_admin_user_id: version.created_by_admin_user_id,
+    published_at: now,
+    created_at: now,
+  };
+  await upsertTemplateVersion(publishedVersion);
+  await archiveOtherTemplateVersions(templateId, publishedVersion.id);
   await updateTemplateStatus(templateId, "PUBLISHED");
   return getFlowTemplateDetails(templateId);
 }
@@ -250,7 +266,8 @@ export async function cloneTemplateToBusiness({
   const template = await getFlowTemplateDetails(templateId);
   const sourceVersion = template.versions.find((version) => version.status === "PUBLISHED");
   if (!sourceVersion) throw new Error("Template has no published version to clone.");
-  const validation = validateFlowForEditor(sourceVersion.flow_json);
+  const flowJson = withCanonicalFlowDocument(sourceVersion.flow_json);
+  const validation = validateForPersistence(flowJson, "publish");
   if (!validation.ok) throw new Error(formatValidationError(validation));
   const now = new Date().toISOString();
   const flowId = `bf-${slug(businessId)}`;
@@ -270,7 +287,7 @@ export async function cloneTemplateToBusiness({
     business_flow_id: flowId,
     version_number: 1,
     status: "PUBLISHED",
-    flow_json: sourceVersion.flow_json,
+    flow_json: flowJson,
     validation_result: validation,
     created_by_user_id: adminUser,
     published_at: now,
@@ -338,7 +355,10 @@ export async function saveBusinessFlowDraft({
     details = await getBusinessFlowDetails(businessId);
   }
   if (!details.flow) throw new Error("Business flow could not be created.");
-  const validation = validateFlowForEditor(flowJson);
+  const flow = withCanonicalFlowDocument(flowJson);
+  const saveValidation = validateForPersistence(flow, "save");
+  if (!saveValidation.ok) throw new Error(formatValidationError(saveValidation));
+  const validation = validateForPersistence(flow, "draft");
   const draft = details.versions.find((version) => version.status === "DRAFT");
   const versionNumber =
     draft?.version_number ??
@@ -348,7 +368,7 @@ export async function saveBusinessFlowDraft({
     business_flow_id: details.flow.id,
     version_number: versionNumber,
     status: "DRAFT",
-    flow_json: flowJson,
+    flow_json: flow,
     validation_result: validation,
     created_by_user_id: adminUser,
     published_at: null,
@@ -369,18 +389,30 @@ export async function publishBusinessFlowVersion({
   if (!details.flow) throw new Error("Business flow was not found.");
   const version = details.versions.find((entry) => entry.id === versionId);
   if (!version) throw new Error("Business flow version was not found.");
-  const validation = validateFlowForEditor(version.flow_json);
+  const flow = withCanonicalFlowDocument(version.flow_json);
+  const validation = validateForPersistence(flow, "publish");
   if (!validation.ok) throw new Error(formatValidationError(validation));
-  version.status = "PUBLISHED";
-  version.published_at = new Date().toISOString();
-  version.validation_result = validation;
-  await archiveOtherBusinessVersions(details.flow.id, version.id);
-  await upsertBusinessFlowVersion(version);
+  const now = new Date().toISOString();
+  const versionNumber =
+    Math.max(0, ...details.versions.map((entry) => entry.version_number)) + 1;
+  const publishedVersion: BusinessFlowVersionRow = {
+    id: `${details.flow.id}-v${versionNumber}`,
+    business_flow_id: details.flow.id,
+    version_number: versionNumber,
+    status: "PUBLISHED",
+    flow_json: flow,
+    validation_result: validation,
+    created_by_user_id: version.created_by_user_id,
+    published_at: now,
+    created_at: now,
+  };
+  await upsertBusinessFlowVersion(publishedVersion);
+  await archiveOtherBusinessVersions(details.flow.id, publishedVersion.id);
   await upsertBusinessFlow({
     ...details.flow,
     status: "PUBLISHED",
-    active_version_id: version.id,
-    updated_at: new Date().toISOString(),
+    active_version_id: publishedVersion.id,
+    updated_at: now,
   });
   return getBusinessFlowDetails(businessId);
 }
@@ -393,13 +425,36 @@ export async function getActiveBusinessFlow(
   if (details.flow.status !== "PUBLISHED" || details.activeVersion.status !== "PUBLISHED") {
     return null;
   }
-  const validation = validateFlowForEditor(details.activeVersion.flow_json);
+  const flow = withCanonicalFlowDocument(details.activeVersion.flow_json);
+  const validation = validateForPersistence(flow, "publish");
   if (!validation.ok) return null;
   return {
     businessFlowId: details.flow.id,
     flowVersionId: details.activeVersion.id,
     versionNumber: details.activeVersion.version_number,
-    flow: details.activeVersion.flow_json,
+    flow,
+  };
+}
+
+export async function getBusinessFlowVersion({
+  businessId,
+  versionId,
+}: {
+  businessId: string;
+  versionId: string;
+}): Promise<ActiveBusinessFlow | null> {
+  const details = await getBusinessFlowDetails(businessId);
+  if (!details.flow) return null;
+  const version = details.versions.find((entry) => entry.id === versionId);
+  if (!version) return null;
+  const flow = withCanonicalFlowDocument(version.flow_json);
+  const validation = validateForPersistence(flow, "publish");
+  if (!validation.ok) return null;
+  return {
+    businessFlowId: details.flow.id,
+    flowVersionId: version.id,
+    versionNumber: version.version_number,
+    flow,
   };
 }
 
@@ -409,7 +464,7 @@ export async function getBusinessFlowRuntimeSettings(businessId: string) {
 }
 
 export function validateBusinessFlowJson(flowJson: unknown) {
-  return validateFlowForEditor(flowJson as FlowDefinition);
+  return validateForPersistence(flowJson, "draft");
 }
 
 function listTemplates(filter?: string) {
@@ -592,6 +647,20 @@ function formatValidationError(validation: FlowValidationResult) {
     .filter((issue) => issue.severity === "ERROR")
     .map((issue) => issue.message)
     .join(" ");
+}
+
+function validateForPersistence(
+  flowJson: unknown,
+  mode: "save" | "draft" | "publish",
+): FlowValidationResult {
+  const canonicalValidation = validateFlow(flowJson, { mode });
+  const canonicalResult = flowDiagnosticsToLegacyResult(canonicalValidation.diagnostics);
+  if (mode !== "publish") return canonicalResult;
+  const legacyResult = validateFlowForEditor(flowJson as FlowDefinition);
+  return {
+    ok: canonicalResult.ok && legacyResult.ok,
+    issues: [...canonicalResult.issues, ...legacyResult.issues],
+  };
 }
 
 function isMissingFlowTable(error: unknown) {

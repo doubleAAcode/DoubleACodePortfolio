@@ -344,13 +344,20 @@ export function compileVisualFlowToRuntimeFlow(
     edgesBySource.set(edge.sourceNodeId, [...(edgesBySource.get(edge.sourceNodeId) ?? []), edge]);
   }
   const nodes: FlowNode[] = normalizedVisualFlow.nodes.map((node) => {
-    const type = visualTypeToRuntime(node.type);
+    const type =
+      node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options"
+        ? "MAIN_MENU"
+        : visualTypeToRuntime(node.type);
     const firstEdge = edgesBySource.get(node.id)?.sort((a, b) => a.sortOrder - b.sortOrder)[0];
     return {
       id: node.id,
       type,
       messages: node.config.messages,
       labels: node.config.labels,
+      options: node.config.menuOptions?.map((option) => ({
+        key: option.key || option.action?.toLowerCase() || "option",
+        label: option.label,
+      })),
       next: firstEdge?.targetNodeId,
       protectedAction: protectedActions[type],
       optional: node.type === "HUMAN_HANDOFF" || node.type === "QUESTION",
@@ -446,9 +453,12 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
   const issues: FlowValidationIssue[] = [];
   const effectiveEdges = getEffectiveVisualEdges(visualFlow);
   const startNodes = visualFlow.nodes.filter((node) => node.type === "START");
-  if (startNodes.length === 0) issues.push(error("VISUAL_START_REQUIRED", "Add one START block."));
+  if (!visualFlow.nodes.length) {
+    issues.push(error("VISUAL_FIRST_BLOCK_REQUIRED", "Add the first WhatsApp message block."));
+  }
   if (startNodes.length > 1)
     issues.push(error("VISUAL_START_UNIQUE", "Only one START block is allowed."));
+  const entryNode = startNodes[0] ?? visualFlow.nodes[0];
   const ids = new Set(visualFlow.nodes.map((node) => node.id));
   for (const edge of effectiveEdges) {
     if (!ids.has(edge.sourceNodeId))
@@ -456,30 +466,34 @@ export function validateVisualFlow(visualFlow: VisualFlowDefinition): FlowValida
     if (!ids.has(edge.targetNodeId))
       issues.push(error("VISUAL_EDGE_TARGET", "Edge target is missing."));
   }
-  const reachable = reachableVisualNodes(startNodes[0]?.id, effectiveEdges);
-  const startHasTarget = startNodes[0]
-    ? effectiveEdges.some((edge) => edge.sourceNodeId === startNodes[0].id)
+  const reachable = reachableVisualNodes(entryNode?.id, effectiveEdges);
+  const startHasTarget = entryNode
+    ? effectiveEdges.some((edge) => edge.sourceNodeId === entryNode.id)
     : false;
-  if (startNodes[0] && !startHasTarget) {
+  if (entryNode && !startHasTarget && !isTerminalVisualNode(entryNode)) {
     issues.push(
       error(
         "VISUAL_ENTRY_NEXT_REQUIRED",
-        "Entry point needs a first step. Choose the first customer experience in Entry point settings.",
+        "The first WhatsApp message needs a next step or option target.",
       ),
     );
   }
   for (const node of visualFlow.nodes) {
-    if (startNodes.length && !reachable.has(node.id)) {
+    if (entryNode && !reachable.has(node.id)) {
       issues.push(
         warning(
           "VISUAL_UNREACHABLE",
-          `${friendlyValidationStepName(node)} is not reachable from Entry point.`,
+          `${friendlyValidationStepName(node)} is not reachable from the first WhatsApp message.`,
         ),
       );
     }
     const outgoingEdges = effectiveEdges.filter((edge) => edge.sourceNodeId === node.id);
     const outgoing = outgoingEdges.length > 0;
-    if (!outgoing && node.type !== "END" && !protectedCommerceVisualTypes.has(node.type)) {
+    if (
+      !outgoing &&
+      !isTerminalVisualNode(node) &&
+      !protectedCommerceVisualTypes.has(node.type)
+    ) {
       issues.push(
         warning(
           "VISUAL_DEAD_END",
@@ -872,6 +886,14 @@ function duplicateOptionLabels(
     }
   }
   return messages;
+}
+
+function isTerminalVisualNode(node: VisualFlowNode) {
+  return (
+    node.type === "END" ||
+    node.type === "HUMAN_HANDOFF" ||
+    node.config.messageBehavior === "end"
+  );
 }
 
 function buildMainMenuOptions(mainMenu: VisualFlowNode | undefined): FlowMainMenuOption[] {

@@ -276,7 +276,9 @@ export function validateFlowForEditor(flow: FlowDefinition): FlowValidationResul
   }
 
   validateRequiredCopy(model, issues);
-  validateMainMenuOptions(model.mainMenuOptions, model.supportedLanguages, issues);
+  if (flow.nodes.some((node) => node.type === "MAIN_MENU")) {
+    validateMainMenuOptions(model.mainMenuOptions, model.supportedLanguages, issues);
+  }
   validateCustomQuestions(model.customQuestions, model.supportedLanguages, issues);
 
   if (model.ordering.allowUnavailableOrdering) {
@@ -343,7 +345,7 @@ function copyPair(flow: FlowDefinition, key: keyof FlowEditorModel["copy"]) {
 
 function getEditorMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
   const configured = flow.editor?.mainMenuOptions;
-  if (configured?.length) {
+  if (configured) {
     return configured
       .map((option, index) => ({
         ...option,
@@ -380,7 +382,7 @@ function getEditorMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
 
 function getEditorBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
   const configured = flow.editor?.browseRoutes;
-  if (configured?.length) return normalizeBrowseRoutes(configured);
+  if (configured) return normalizeBrowseRoutes(configured);
   return [
     {
       key: "collections",

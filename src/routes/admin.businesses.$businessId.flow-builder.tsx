@@ -138,14 +138,22 @@ function BusinessFlowBuilderPage() {
   }
 
   async function saveDraft(flowName: string) {
-    const blockingError = flowActionError("Save draft");
-    if (blockingError) throw new Error(blockingError);
-    const flow = compiled?.flow;
-    if (!flow) throw new Error("Save draft failed because the compiled flow was empty.");
+    if (!visualFlow) throw new Error("Save draft cannot continue because no flow is loaded.");
     const cleanName = flowName.trim() || "Custom WhatsApp conversation";
     const namedVisualFlow = visualFlow
       ? { ...visualFlow, metadata: { ...visualFlow.metadata, name: cleanName } }
       : undefined;
+    const flow =
+      compiled?.flow ??
+      ({
+        ...baseFlowForCompile,
+        name: cleanName,
+        startNodeId:
+          namedVisualFlow?.nodes.find((node) => node.type === "START")?.id ??
+          namedVisualFlow?.nodes[0]?.id ??
+          baseFlowForCompile.startNodeId,
+        visualFlow: namedVisualFlow,
+      } as typeof baseFlowForCompile);
     await applyAdminBusinessAction(businessId, {
       action: "save_business_flow_draft",
       flowName: cleanName,

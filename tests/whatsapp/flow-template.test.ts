@@ -178,17 +178,20 @@ test("maps language selection message into runtime bot settings", () => {
   );
 });
 
-test("rejects visual flow without a start block", () => {
+test("allows a visual flow to use the first block as the entry when no start block exists", () => {
   const flow = createDefaultFlowDefinition("STANDARD_ONLINE_STORE");
   const visual = {
     ...createVisualFlowFromRuntime(flow),
     nodes: createVisualFlowFromRuntime(flow).nodes.filter((node) => node.type !== "START"),
+    edges: createVisualFlowFromRuntime(flow).edges.filter(
+      (edge) => edge.sourceNodeId !== "start" && edge.targetNodeId !== "start",
+    ),
   };
   const validation = validateVisualFlow(visual);
 
-  assert.equal(validation.ok, false);
+  assert.equal(validation.ok, true);
   assert.equal(
     validation.issues.some((issue) => issue.code === "VISUAL_START_REQUIRED"),
-    true,
+    false,
   );
 });

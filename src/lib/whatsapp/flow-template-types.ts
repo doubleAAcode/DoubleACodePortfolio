@@ -32,6 +32,7 @@ export type FlowNode = {
   type: FlowNodeType;
   messages?: Partial<Record<FlowLanguage, string>>;
   labels?: Partial<Record<FlowLanguage, string>>;
+  options?: Array<{ key: string; label: Partial<Record<FlowLanguage, string>> }>;
   next?: string;
   protectedAction?: string;
   optional?: boolean;
@@ -48,6 +49,7 @@ export type FlowDefinition = {
   id: string;
   name: string;
   description?: string;
+  canonicalDocument?: unknown;
   visualFlow?: unknown;
   compiledRuntimeFlowJson?: unknown;
   startNodeId: string;
@@ -516,7 +518,7 @@ export function flowToBotFlowSettings(
 function getMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
   const nodesById = new Map(flow.nodes.map((node) => [node.id, node]));
   const configured = flow.editor?.mainMenuOptions;
-  if (configured?.length) {
+  if (configured) {
     return configured
       .filter((option) => option.active)
       .map((option, index) => ({
@@ -556,7 +558,7 @@ function getMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
 
 function getBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {
   const configured = flow.editor?.browseRoutes;
-  const routes = configured?.length ? configured : defaultBrowseRoutes();
+  const routes = configured ?? defaultBrowseRoutes();
   return routes
     .filter((route) => route.active !== false)
     .map((route, index): FlowBrowseRoute => {

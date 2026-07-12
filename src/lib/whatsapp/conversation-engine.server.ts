@@ -79,9 +79,12 @@ import {
 import { createOwnerNewOrderNotifications } from "./owner-notifications.server";
 import {
   getActiveBusinessFlow,
-  getBusinessFlowRuntimeSettings,
+  getBusinessFlowVersion,
+  type ActiveBusinessFlow,
 } from "./flow-template-store.server";
 import { flowToBotFlowSettings, type FlowDefinition, type FlowNode } from "./flow-template-types";
+import { loadCanonicalFlowDocument } from "./flow-document";
+import { isRuntimeNodeTypeSupported } from "./runtime-node-handlers.server";
 import {
   createCorrelationId,
   logWhatsAppError,
@@ -117,6 +120,7 @@ export type BotResponse =
 
 const PAGE_SIZE = 6;
 const MAX_QUANTITY_PER_ITEM = 10;
+const MAX_AUTOMATIC_RUNTIME_TRANSITIONS = 12;
 const visualRuntimeNodeTypes = new Set<FlowNode["type"]>([
   "MESSAGE",
   "LANGUAGE_SELECT",
@@ -214,19 +218,43 @@ export async function processIncomingMessage({
   const activeFlow = await measureConversationPhase(timingContext, "active_flow_load", () =>
     getActiveBusinessFlow(businessId),
   );
-  const runtimeFlowSettings = await measureConversationPhase(
-    timingContext,
-    "runtime_flow_settings_load",
-    () => getBusinessFlowRuntimeSettings(businessId),
+  let session = await measureConversationPhase(timingContext, "session_load", () =>
+    getActiveConversationSession({ businessId, customerPhone, now }),
   );
+  let conversationFlow = session
+    ? await resolveSessionFlowVersion({
+        businessId,
+        session,
+        activeFlow,
+        now,
+        timingContext,
+      })
+    : activeFlow;
+  if (session && !session.flowVersionId && conversationFlow) {
+    session = await saveConversationSession(
+      {
+        ...session,
+        businessFlowId: conversationFlow.businessFlowId,
+        flowVersionId: conversationFlow.flowVersionId,
+        currentNodeId: session.currentNodeId ?? conversationFlow.flow.startNodeId,
+      },
+      now,
+    );
+    logWhatsAppInfo({
+      ...timingContext,
+      operation: "conversation.flow_version_legacy_session_pinned",
+      result: "ok",
+      details: { flowVersionId: conversationFlow.flowVersionId },
+    });
+  }
+  const runtimeFlowSettings = conversationFlow
+    ? flowToBotFlowSettings(businessId, conversationFlow.flow)
+    : null;
   const flowSettings =
     runtimeFlowSettings ??
     (await measureConversationPhase(timingContext, "bot_flow_settings_load", () =>
       getBusinessBotFlowSettings(businessId),
     ));
-  let session = await measureConversationPhase(timingContext, "session_load", () =>
-    getActiveConversationSession({ businessId, customerPhone, now }),
-  );
 
   if (!session) {
     session = await measureConversationPhase(timingContext, "session_create", () =>
@@ -240,13 +268,15 @@ export async function processIncomingMessage({
       }),
     );
     if (!session) throw new Error("Conversation session could not be created.");
+    conversationFlow = activeFlow;
     const createdSession = session;
-    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+    const createdFlow = conversationFlow?.flow;
+    if (createdFlow && usesVisualRuntime(createdFlow)) {
       const responses = await measureConversationPhase(timingContext, "visual_entry", () =>
         enterVisualNode(
           createdSession,
-          activeFlow.flow,
-          activeFlow.flow.startNodeId,
+          createdFlow,
+          createdFlow.startNodeId,
           now,
           [],
           timingContext,
@@ -291,13 +321,15 @@ export async function processIncomingMessage({
       now,
     });
     if (!session) throw new Error("Conversation session could not be restarted.");
+    conversationFlow = activeFlow;
     const restartedSession = session;
-    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+    const restartedFlow = conversationFlow?.flow;
+    if (restartedFlow && usesVisualRuntime(restartedFlow)) {
       const responses = await measureConversationPhase(timingContext, "visual_restart_entry", () =>
         enterVisualNode(
           restartedSession,
-          activeFlow.flow,
-          activeFlow.flow.startNodeId,
+          restartedFlow,
+          restartedFlow.startNodeId,
           now,
           [],
           timingContext,
@@ -321,9 +353,9 @@ export async function processIncomingMessage({
   }
 
   if (command === "menu") {
-    if (activeFlow?.flow && usesVisualRuntime(activeFlow.flow)) {
+    if (conversationFlow?.flow && usesVisualRuntime(conversationFlow.flow)) {
       const language = session.language ?? flowSettings.defaultLanguage;
-      const mainMenu = activeFlow.flow.nodes.find((node) => node.type === "MAIN_MENU");
+      const mainMenu = conversationFlow.flow.nodes.find((node) => node.type === "MAIN_MENU");
       if (mainMenu) {
         const nextSession = await saveConversationSession(
           {
@@ -342,7 +374,7 @@ export async function processIncomingMessage({
           now,
         );
         const responses = await measureConversationPhase(timingContext, "visual_menu_entry", () =>
-          enterVisualNode(nextSession, activeFlow.flow, mainMenu.id, now, [], timingContext),
+          enterVisualNode(nextSession, conversationFlow.flow, mainMenu.id, now, [], timingContext),
         );
         logConversationTotal(timingContext, processStartedAt, responses);
         return responses;
@@ -411,12 +443,12 @@ export async function processIncomingMessage({
   }
 
   if (
-    activeFlow?.flow &&
-    usesVisualRuntime(activeFlow.flow) &&
-    shouldHandleVisualNode(session, activeFlow.flow)
+    conversationFlow?.flow &&
+    usesVisualRuntime(conversationFlow.flow) &&
+    shouldHandleVisualNode(session, conversationFlow.flow)
   ) {
     const responses = await measureConversationPhase(timingContext, "handler.visual_runtime", () =>
-      handleVisualRuntimeMessage(session, input, now, activeFlow.flow, timingContext),
+      handleVisualRuntimeMessage(session, input, now, conversationFlow.flow, timingContext),
     );
     logConversationTotal(timingContext, processStartedAt, responses);
     return responses;
@@ -483,13 +515,59 @@ export async function processIncomingMessage({
   return handleMainMenu(session, input, now, flowSettings);
 }
 
+async function resolveSessionFlowVersion({
+  businessId,
+  session,
+  activeFlow,
+  now,
+  timingContext,
+}: {
+  businessId: string;
+  session: ConversationSession;
+  activeFlow: ActiveBusinessFlow | null;
+  now: Date;
+  timingContext: Omit<WhatsAppLogContext, "operation">;
+}) {
+  if (!session.flowVersionId) return activeFlow;
+  const pinnedFlow = await measureConversationPhase(timingContext, "pinned_flow_version_load", () =>
+    getBusinessFlowVersion({ businessId, versionId: session.flowVersionId as string }),
+  );
+  if (pinnedFlow) return pinnedFlow;
+
+  logWhatsAppError(
+    {
+      ...timingContext,
+      operation: "conversation.flow_version_missing",
+      result: "error",
+      details: { flowVersionId: session.flowVersionId },
+    },
+    new Error("Pinned conversation flow version was not found."),
+  );
+  await saveConversationSession(
+    {
+      ...session,
+      currentNodeId: undefined,
+      flowVariables: {
+        ...session.flowVariables,
+        missingFlowVersionId: session.flowVersionId,
+        missingFlowVersionAt: now.toISOString(),
+      },
+    },
+    now,
+  );
+  return null;
+}
+
 function usesVisualRuntime(flow: FlowDefinition) {
-  return Boolean(flow.visualFlow) && flow.nodes.length > 0 && flow.edges.length > 0;
+  const loaded = loadCanonicalFlowDocument(flow);
+  return loaded.ok && flow.nodes.length > 0;
 }
 
 function shouldHandleVisualNode(session: ConversationSession, flow: FlowDefinition) {
   const node = findRuntimeNode(flow, session.currentNodeId ?? flow.startNodeId);
-  return Boolean(node && visualRuntimeNodeTypes.has(node.type));
+  return Boolean(
+    node && visualRuntimeNodeTypes.has(node.type) && isRuntimeNodeTypeSupported(node.type),
+  );
 }
 
 async function handleVisualRuntimeMessage(
@@ -557,6 +635,32 @@ async function enterVisualNode(
   carriedResponses: BotResponse[] = [],
   timingContext?: Omit<WhatsAppLogContext, "operation">,
 ): Promise<BotResponse[]> {
+  if (carriedResponses.length >= MAX_AUTOMATIC_RUNTIME_TRANSITIONS) {
+    const logContext =
+      timingContext ??
+      ({
+        correlationId: createCorrelationId("wa_runtime"),
+        businessId: session.businessId,
+        customerPhone: session.customerPhone,
+      } satisfies Omit<WhatsAppLogContext, "operation">);
+    logWhatsAppError(
+      {
+        ...logContext,
+        operation: "conversation.runtime_transition_limit",
+        result: "error",
+        details: { nodeId, limit: MAX_AUTOMATIC_RUNTIME_TRANSITIONS },
+      },
+      new Error("Automatic runtime transition limit exceeded."),
+    );
+    await timedSaveConversationSession(timingContext, "visual_transition_limit_session_save", session, now);
+    return [
+      ...carriedResponses,
+      {
+        type: "text",
+        text: "This conversation could not continue safely. Please type menu or restart.",
+      },
+    ];
+  }
   const node = findRuntimeNode(flow, nodeId);
   if (!node) {
     await timedSaveConversationSession(timingContext, "visual_missing_node_session_save", session, now);
@@ -774,7 +878,9 @@ function runtimeMainMenuResponse(
     .slice(0, 3)
     .map((edge, index) => {
       const target = findRuntimeNode(flow, edge.to);
-      const option = flow.editor?.mainMenuOptions?.find((entry) => entry.key === edge.condition);
+      const option =
+        node.options?.find((entry) => entry.key === edge.condition) ??
+        flow.editor?.mainMenuOptions?.find((entry) => entry.key === edge.condition);
       const id = edge.condition ? `main_${edge.condition}` : `main_option_${index + 1}`;
       return {
         id,

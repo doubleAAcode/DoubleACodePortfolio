@@ -6,6 +6,7 @@ import { IntroScreen } from "@/stores/pavone-new/components/IntroScreen";
 import { useWishlist } from "@/stores/pavone-new/lib/wishlist";
 import {
   catalogKeys,
+  normalizeLookbookImages,
   fetchCategories,
   fetchProducts,
   getSettings,
@@ -28,8 +29,6 @@ export const Route = createFileRoute("/stores/pavone/")({
     links: [{ rel: "canonical", href: "/stores/pavone" }],
   }),
 });
-
-const LOOKS = ["look-1.jpg", "look-2.jpg", "look-3.jpg", "look-4.jpg"];
 
 function PavoneHomeRoute() {
   return (
@@ -62,6 +61,7 @@ function HomePage() {
   const heroImage = settings?.hero_image_url || pavoneNewImage("hero.jpg");
   const editorialImage = settings?.editorial_image_url || pavoneNewImage("editorial.jpg");
   const aboutImage = settings?.about_image_url || pavoneNewImage("about.jpg");
+  const lookbookImages = normalizeLookbookImages(settings?.lookbook_image_urls);
   const instagramUrl = settings?.instagram_url || "https://instagram.com";
 
   return (
@@ -254,7 +254,7 @@ function HomePage() {
           <h2 className="mt-3 font-serif text-3xl sm:text-4xl">The Lookbook</h2>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {LOOKS.map((src, index) => (
+          {lookbookImages.map((src, index) => (
             <a
               key={src}
               href={instagramUrl}
@@ -263,7 +263,7 @@ function HomePage() {
               className="group block aspect-square overflow-hidden bg-secondary"
             >
               <img
-                src={pavoneNewImage(src)}
+                src={src}
                 alt={`PAVONE BY RAY look ${index + 1}`}
                 loading="lazy"
                 width={900}

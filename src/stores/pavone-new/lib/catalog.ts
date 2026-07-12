@@ -84,6 +84,7 @@ export interface PavoneNewSettings {
   hero_image_url: string | null;
   editorial_image_url: string | null;
   about_image_url: string | null;
+  lookbook_image_urls: string[];
   hero_eyebrow: string;
   hero_title: string;
   hero_subtitle: string;
@@ -367,8 +368,20 @@ export async function updateSettings(settings: PavoneNewSettings) {
   await supabaseRest("/pavone_new_settings?on_conflict=id", {
     method: "POST",
     prefer: "resolution=merge-duplicates,return=representation",
-    body: JSON.stringify(settings),
+    body: JSON.stringify({
+      ...settings,
+      lookbook_image_urls: normalizeLookbookImages(settings.lookbook_image_urls),
+    }),
   });
+}
+
+export function defaultLookbookImages() {
+  return ["look-1.jpg", "look-2.jpg", "look-3.jpg", "look-4.jpg"].map(pavoneNewImage);
+}
+
+export function normalizeLookbookImages(images: string[] | null | undefined) {
+  const values = images?.map((image) => image.trim()).filter(Boolean) ?? [];
+  return values.length > 0 ? values : defaultLookbookImages();
 }
 
 function toProduct(
@@ -396,6 +409,7 @@ const defaultSettings: PavoneNewSettings = {
   hero_image_url: null,
   editorial_image_url: null,
   about_image_url: null,
+  lookbook_image_urls: defaultLookbookImages(),
   hero_eyebrow: "The New Collection",
   hero_title: "Elegance, Worn Daily",
   hero_subtitle:

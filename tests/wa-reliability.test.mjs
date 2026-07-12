@@ -10,6 +10,7 @@ const catalogSql = read("supabase/wa_catalog_settings_schema.sql");
 const diagnosticsHandler = read("src/lib/whatsapp/diagnostics.server.ts");
 const dashboardHandlers = read("src/lib/whatsapp/dashboard-api-handlers.server.ts");
 const sender = read("src/lib/whatsapp/sender.server.ts");
+const reliability = read("src/lib/whatsapp/reliability.ts");
 const sessionStore = read("src/lib/whatsapp/conversation-store.server.ts");
 const conversationEngine = read("src/lib/whatsapp/conversation-engine.server.ts");
 
@@ -54,9 +55,9 @@ test("diagnostics endpoint remains dashboard-auth protected", () => {
 test("WhatsApp sender uses timeout and retryable failure classification", () => {
   assert.match(sender, /WHATSAPP_SEND_TIMEOUT_MS/);
   assert.match(sender, /AbortController/);
-  assert.match(sender, /isRetryableStatus/);
-  assert.match(sender, /status === 429/);
-  assert.match(sender, /status >= 500/);
+  assert.match(sender, /isRetryableHttpStatus/);
+  assert.match(reliability, /status === 429/);
+  assert.match(reliability, /status >= 500/);
 });
 
 test("stored conversation sessions are schema-validated on load", () => {
