@@ -92,6 +92,8 @@ function BusinessFlowBuilderPage() {
   }, [load]);
 
   const selectedVersion = details ? selectVersion(details, selectedVersionId) : undefined;
+  const liveVersion = details?.activeVersion;
+  const draftVersion = details?.versions.find((version) => version.status === "DRAFT");
   const visualValidation = visualFlow ? validateVisualFlow(visualFlow) : undefined;
   const busy = Boolean(saving || loading);
   const baseFlowForCompile =
@@ -299,10 +301,26 @@ function BusinessFlowBuilderPage() {
         </div>
       </header>
 
-      {error ? (
-        <div className="shrink-0 whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
+      <FlowBuilderStatusOverview
+        selectedVersion={selectedVersion}
+        liveVersion={liveVersion ?? undefined}
+        draftVersion={draftVersion}
+        hasScratchFlow={!selectedVersionId && Boolean(visualFlow)}
+        templates={templates}
+        templateId={templateId}
+        busy={busy}
+        saving={saving}
+        onTemplateIdChange={setTemplateId}
+        onCloneTemplate={() => void run("template", cloneSelectedTemplate)}
+      />
+
+      {error ? <FlowBuilderErrorBanner message={error} /> : null}
+      {visualFlow && visualValidation?.issues.length ? (
+        <FlowValidationSummary
+          validation={visualValidation}
+          visualFlow={visualFlow}
+          onSelectBlock={setSelectedBlockId}
+        />
       ) : null}
 
       {!visualFlow ? (
@@ -449,6 +467,227 @@ function FlowNameDialog({
   );
 }
 
+function FlowBuilderStatusOverview({
+  selectedVersion,
+  liveVersion,
+  draftVersion,
+  hasScratchFlow,
+  templates,
+  templateId,
+  busy,
+  saving,
+  onTemplateIdChange,
+  onCloneTemplate,
+}: {
+  selectedVersion?: BusinessFlowVersionRow;
+  liveVersion?: BusinessFlowVersionRow;
+  draftVersion?: BusinessFlowVersionRow;
+  hasScratchFlow: boolean;
+  templates: FlowTemplateRow[];
+  templateId: string;
+  busy: boolean;
+  saving: string;
+  onTemplateIdChange: (value: string) => void;
+  onCloneTemplate: () => void;
+}) {
+  const title = flowEditingTitle(selectedVersion, liveVersion, hasScratchFlow);
+  const basedOn = flowEditingBase(selectedVersion, liveVersion, hasScratchFlow);
+  const liveText = liveVersion
+    ? `Customers are currently using Version ${liveVersion.version_number}.`
+    : "No live version is currently published for customers.";
+  const draftText = draftVersion
+    ? `Draft available: Version ${draftVersion.version_number}.`
+    : "No saved draft yet.";
+
+  return (
+    <section className="grid shrink-0 gap-3 rounded-md border border-border bg-surface/40 p-3 xl:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+            {title}
+          </span>
+          {selectedVersion?.status ? (
+            <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+              Selected: {selectedVersion.status}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-2 grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
+          <div>
+            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
+              Editing source
+            </span>
+            <span className="text-foreground">{basedOn}</span>
+          </div>
+          <div>
+            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
+              Live customers
+            </span>
+            <span className="text-foreground">{liveText}</span>
+          </div>
+          <div>
+            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
+              Draft state
+            </span>
+            <span className="text-foreground">{draftText}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-md border border-border bg-background/70 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-sm font-medium">Clone a flow template</div>
+            <p className="text-xs text-muted-foreground">
+              Start from a reusable admin template, then save it as this business draft.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={!templateId || busy}
+            className="studio-button-secondary px-3 py-1.5 text-xs disabled:cursor-wait disabled:opacity-60"
+            onClick={onCloneTemplate}
+          >
+            {saving === "template" ? "Cloning..." : "Clone template"}
+          </button>
+        </div>
+        <select
+          value={templateId}
+          onChange={(event) => onTemplateIdChange(event.target.value)}
+          disabled={!templates.length || busy}
+          className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+        >
+          {templates.length ? (
+            templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))
+          ) : (
+            <option value="">No published templates</option>
+          )}
+        </select>
+      </div>
+    </section>
+  );
+}
+
+function FlowBuilderErrorBanner({ message }: { message: string }) {
+  const lines = message.split("\n").filter((line) => line.trim());
+  const title = lines[0] ?? message;
+  const items = lines.slice(1);
+  return (
+    <div className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+      <div className="font-medium">{title}</div>
+      {items.length ? (
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          {items.map((line, index) => (
+            <li key={`${line}-${index}`}>{line.replace(/^\d+\.\s*/, "")}</li>
+          ))}
+        </ol>
+      ) : null}
+      <p className="mt-2 text-xs text-destructive/80">
+        Open the Test tab for the full validation list, or click the affected step in the map.
+      </p>
+    </div>
+  );
+}
+
+function FlowValidationSummary({
+  validation,
+  visualFlow,
+  onSelectBlock,
+}: {
+  validation: ReturnType<typeof validateVisualFlow>;
+  visualFlow: VisualFlowDefinition;
+  onSelectBlock: (blockId: string) => void;
+}) {
+  if (!validation.issues.length) return null;
+  const errors = validation.issues.filter((issue) => issue.severity === "ERROR");
+  const warnings = validation.issues.filter((issue) => issue.severity !== "ERROR");
+  return (
+    <details className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm" open>
+      <summary className="cursor-pointer font-medium text-amber-100">
+        Flow diagnostics: {errors.length} error{errors.length === 1 ? "" : "s"}
+        {warnings.length ? `, ${warnings.length} warning${warnings.length === 1 ? "" : "s"}` : ""}
+      </summary>
+      <div className="mt-3 grid gap-2 xl:grid-cols-2">
+        {validation.issues.slice(0, 6).map((issue, index) => {
+          const target = nodeForBuilderIssue(visualFlow, issue.message);
+          return (
+            <div
+              key={`${issue.code}-${index}`}
+              className="rounded-md border border-border/80 bg-background/70 p-3"
+            >
+              <div
+                className={
+                  issue.severity === "ERROR"
+                    ? "text-xs font-semibold text-destructive"
+                    : "text-xs font-semibold text-amber-200"
+                }
+              >
+                {issue.severity}
+              </div>
+              <div className="mt-1 text-muted-foreground">
+                {humanizeValidationIssue(issue.message)}
+              </div>
+              {target ? (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => onSelectBlock(target.id)}
+                >
+                  Focus {target.title || friendlyBlockNameForRoute(target.type)}
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      {validation.issues.length > 6 ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Showing the first 6 diagnostics. Open the Test tab for the full list.
+        </p>
+      ) : null}
+    </details>
+  );
+}
+
+function flowEditingTitle(
+  selectedVersion: BusinessFlowVersionRow | undefined,
+  liveVersion: BusinessFlowVersionRow | undefined,
+  hasScratchFlow: boolean,
+) {
+  if (hasScratchFlow) return "Editing unsaved scratch flow";
+  if (!selectedVersion) return "No flow loaded";
+  if (selectedVersion.status === "DRAFT") return `Editing Draft ${selectedVersion.version_number}`;
+  if (liveVersion?.id === selectedVersion.id) {
+    return `Editing a copy of Live Version ${selectedVersion.version_number}`;
+  }
+  if (selectedVersion.status === "PUBLISHED") {
+    return `Editing a copy of Published Version ${selectedVersion.version_number}`;
+  }
+  return `Viewing Version ${selectedVersion.version_number}`;
+}
+
+function flowEditingBase(
+  selectedVersion: BusinessFlowVersionRow | undefined,
+  liveVersion: BusinessFlowVersionRow | undefined,
+  hasScratchFlow: boolean,
+) {
+  if (hasScratchFlow) return "Blank canvas, not saved yet.";
+  if (!selectedVersion) return "Select a version or start from scratch.";
+  if (selectedVersion.status === "DRAFT" && liveVersion) {
+    return `Based on Live Version ${liveVersion.version_number}.`;
+  }
+  if (selectedVersion.status === "DRAFT") return "Editing the saved draft.";
+  if (liveVersion?.id === selectedVersion.id) return "Saving creates or updates a draft.";
+  if (selectedVersion.status === "PUBLISHED") {
+    return "Historical published version. Saving creates or updates a draft.";
+  }
+  return "Loaded from saved flow data.";
+}
+
 function toBotFlowSettingsInput(settings: BusinessBotFlowSettings): BotFlowSettingsInput {
   const { businessId: _businessId, updatedAt: _updatedAt, ...input } = settings;
   return input;
@@ -479,4 +718,27 @@ function humanizeValidationIssue(message: string) {
     .replaceAll("START", "Entry point")
     .replaceAll("MAIN_MENU", "Main menu")
     .replaceAll("HUMAN_HANDOFF", "Talk to human");
+}
+
+function nodeForBuilderIssue(visualFlow: VisualFlowDefinition, message: string) {
+  const lowerMessage = message.toLowerCase();
+  return visualFlow.nodes.find((node) => {
+    const labels = [
+      node.id,
+      node.title,
+      node.type,
+      friendlyBlockNameForRoute(node.type),
+      node.type === "START" ? "Entry point" : "",
+      node.type === "HUMAN_HANDOFF" ? "Talk to human" : "",
+    ].filter(Boolean);
+    return labels.some((label) => lowerMessage.includes(label.toLowerCase()));
+  });
+}
+
+function friendlyBlockNameForRoute(type: string) {
+  return type
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

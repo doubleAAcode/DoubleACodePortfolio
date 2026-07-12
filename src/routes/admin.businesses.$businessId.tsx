@@ -1423,7 +1423,7 @@ function ConfigureFlowMode({
   onSaveCheckoutSettings?: () => void;
 }) {
   return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_390px_360px]">
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(560px,1fr)_390px_minmax(380px,460px)] 2xl:grid-cols-[minmax(640px,1fr)_430px_minmax(440px,560px)]">
       <div className="min-h-0 overflow-y-auto rounded-md border border-border bg-background p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1668,8 +1668,16 @@ function ConversationMap({
               <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
                 <button
                   type="button"
-                  title="Add a step here"
-                  aria-label="Add a step here"
+                  title={
+                    index === primaryPath.length - 1
+                      ? "Add the next step after this block"
+                      : "Insert a step between these blocks"
+                  }
+                  aria-label={
+                    index === primaryPath.length - 1
+                      ? "Add the next step after this block"
+                      : "Insert a step between these blocks"
+                  }
                   onClick={() =>
                     setAddTarget({
                       sourceNodeId: node.id,
@@ -1677,13 +1685,11 @@ function ConversationMap({
                       nextNodeId: primaryPath[index + 1]?.id,
                     })
                   }
-                  className="grid h-9 w-9 place-items-center rounded-full border border-primary/60 bg-primary/15 text-lg font-semibold text-primary transition hover:bg-primary hover:text-background"
+                  className="inline-flex items-center gap-2 rounded-full border border-primary/60 bg-primary/15 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
-                  +
+                  <span className="text-base leading-none">+</span>
+                  {index === primaryPath.length - 1 ? "Add next step" : "Insert step"}
                 </button>
-                {index === primaryPath.length - 1 ? (
-                  <span className="text-xs font-medium text-primary">Add next</span>
-                ) : null}
               </div>
             </div>
           ))}
@@ -1778,7 +1784,10 @@ function ConversationMapBlock({
           {customerStepKind(node)}
         </span>
         <span className="mt-2 block font-medium">{node.title || friendlyBlockName(node.type)}</span>
-        <span className="mt-2 block line-clamp-3 text-muted-foreground">
+        <span
+          title={stepPrimaryText(node) || visualBlockSummary(node)}
+          className="mt-2 block max-h-16 overflow-hidden whitespace-pre-wrap text-muted-foreground"
+        >
           {stepPrimaryText(node) || visualBlockSummary(node)}
         </span>
       </button>
@@ -1802,7 +1811,7 @@ function ConversationMapBlock({
           className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-sm text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="text-lg leading-none">+</span>
-          {canAddOptionBranch ? "Add option branch" : "Maximum 3 options"}
+          {canAddOptionBranch ? "Add WhatsApp option" : "Maximum 3 options"}
         </button>
       ) : null}
     </div>
@@ -2037,16 +2046,22 @@ function FocusedBranchCanvas({
                 <div className="flex min-h-[140px] flex-col items-center justify-center gap-2">
                   <button
                     type="button"
-                    title="Add a step here"
-                    aria-label="Add a step here"
+                    title={
+                      index === branchPath.length - 1
+                        ? "Add the next step after this block"
+                        : "Insert a step between these blocks"
+                    }
+                    aria-label={
+                      index === branchPath.length - 1
+                        ? "Add the next step after this block"
+                        : "Insert a step between these blocks"
+                    }
                     onClick={() => onAddAfterNode(node.id, branchPath[index + 1]?.id)}
-                    className="grid h-9 w-9 place-items-center rounded-full border border-primary/60 bg-primary/15 text-lg font-semibold text-primary transition hover:bg-primary hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="inline-flex items-center gap-2 rounded-full border border-primary/60 bg-primary/15 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    +
+                    <span className="text-base leading-none">+</span>
+                    {index === branchPath.length - 1 ? "Add next step" : "Insert step"}
                   </button>
-                  {index === branchPath.length - 1 ? (
-                    <span className="text-xs font-medium text-primary">Add next</span>
-                  ) : null}
                 </div>
               </div>
             ))}
@@ -2080,7 +2095,10 @@ function MiniConversationBlock({
         {customerStepKind(node)}
       </span>
       <span className="mt-1 block font-medium">{node.title || friendlyBlockName(node.type)}</span>
-      <span className="mt-1 block line-clamp-2 text-muted-foreground">
+      <span
+        title={stepPrimaryText(node) || visualBlockSummary(node)}
+        className="mt-1 block max-h-10 overflow-hidden whitespace-pre-wrap text-muted-foreground"
+      >
         {stepPrimaryText(node) || visualBlockSummary(node)}
       </span>
     </button>
@@ -2466,15 +2484,33 @@ function StepSettingsColumn({
   );
   return (
     <div className="min-h-0 min-w-0 overflow-y-auto rounded-md border border-border bg-background p-4">
-      <div className="font-medium">Selected step</div>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-medium">Selected step</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Edit the visible copy, routing, and protected settings for this block.
+          </p>
+        </div>
+        {selectedIssues.length ? (
+          <span className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs text-destructive">
+            {selectedIssues.length} issue{selectedIssues.length === 1 ? "" : "s"}
+          </span>
+        ) : selectedBlock ? (
+          <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-1 text-xs text-primary">
+            OK
+          </span>
+        ) : null}
+      </div>
       {selectedBlock ? (
         <div className="mt-3 space-y-3">
-          <StepExplanation block={selectedBlock} />
-          <TextField
-            label="Admin title"
-            value={selectedBlock.title}
-            onChange={(value) => onUpdateNode({ ...selectedBlock, title: value })}
-          />
+          <SettingsSection title="Step identity">
+            <StepExplanation block={selectedBlock} />
+            <TextField
+              label="Admin title"
+              value={selectedBlock.title}
+              onChange={(value) => onUpdateNode({ ...selectedBlock, title: value })}
+            />
+          </SettingsSection>
           {showCheckoutRuntimeSettings ? (
             <CheckoutRuntimeSettings
               selectedBlock={selectedBlock}
@@ -2488,16 +2524,19 @@ function StepSettingsColumn({
               onSave={onSaveCheckoutSettings}
             />
           ) : (
-            <BusinessBlockSettings
-              block={selectedBlock}
-              nodes={visualFlow.nodes}
-              visualFlow={visualFlow}
-              businessId={businessId}
-              catalogGroups={catalogGroups}
-              catalogGroupValues={catalogGroupValues}
-              onChange={onUpdateNode}
-              onFlowChange={onChange}
-            />
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Customer-facing behavior</div>
+              <BusinessBlockSettings
+                block={selectedBlock}
+                nodes={visualFlow.nodes}
+                visualFlow={visualFlow}
+                businessId={businessId}
+                catalogGroups={catalogGroups}
+                catalogGroupValues={catalogGroupValues}
+                onChange={onUpdateNode}
+                onFlowChange={onChange}
+              />
+            </div>
           )}
           {selectedIssues.length ? (
             <StepIssueList issues={selectedIssues} visualFlow={visualFlow} onSelectBlock={onSelectBlock} />

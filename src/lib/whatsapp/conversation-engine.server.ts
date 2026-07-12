@@ -615,8 +615,8 @@ async function handleVisualRuntimeMessage(
   }
 
   if (node.type === "HUMAN_HANDOFF") {
-    await saveConversationSession({ ...session, currentNodeId: node.id }, now);
-    return [runtimeTextResponse(flow, node, session.language ?? flow.settings.defaultLanguage)];
+    await saveConversationSession(markHumanHandoffPaused(session, node.id, now), now);
+    return [];
   }
 
   if (node.type === "END") {
@@ -668,11 +668,13 @@ async function enterVisualNode(
   }
 
   const language = session.language ?? flow.settings.defaultLanguage;
+  const sessionForNode =
+    node.type === "HUMAN_HANDOFF" ? markHumanHandoffPaused(session, node.id, now) : session;
   const baseSession = await timedSaveConversationSession(
     timingContext,
     `visual_${node.type.toLowerCase()}_session_save`,
     {
-      ...session,
+      ...sessionForNode,
       currentNodeId: node.id,
       currentStep: runtimeStepForNode(node) ?? session.currentStep,
     },
@@ -701,6 +703,26 @@ async function enterVisualNode(
   }
 
   return enterProtectedRuntimeNode(baseSession, flow, node, now, carriedResponses, timingContext);
+}
+
+function markHumanHandoffPaused(
+  session: ConversationSession,
+  nodeId: string,
+  now: Date,
+): ConversationSession {
+  return {
+    ...session,
+    currentNodeId: nodeId,
+    flowVariables: {
+      ...session.flowVariables,
+      humanHandoff: {
+        status: "paused",
+        nodeId,
+        pausedAt:
+          getRecord(session.flowVariables.humanHandoff)?.pausedAt ?? now.toISOString(),
+      },
+    },
+  };
 }
 
 async function continueFromRuntimeNode(
@@ -4110,6 +4132,12 @@ function getPageNumber(value: unknown) {
 
 function getContextString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+
+function getRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 function getAvailabilityLabel(product: StoreProduct, language: ConversationLanguage) {

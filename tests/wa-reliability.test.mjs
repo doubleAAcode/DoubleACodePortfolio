@@ -89,6 +89,28 @@ test("new checkout flows clear previous completed order markers", () => {
   assert.match(completedOrderHandler, /createdOrderNumber:\s*undefined/);
 });
 
+test("visual human handoff sends once and then stays paused", () => {
+  const visualRuntimeHandler = conversationEngine.match(
+    /async function handleVisualRuntimeMessage[\s\S]*?async function enterVisualNode/,
+  )?.[0];
+  assert.ok(visualRuntimeHandler);
+  const handoffHandler = visualRuntimeHandler.match(
+    /if \(node\.type === "HUMAN_HANDOFF"\) \{[\s\S]*?\n  \}/,
+  )?.[0];
+  assert.ok(handoffHandler);
+  assert.match(handoffHandler, /markHumanHandoffPaused\(session, node\.id, now\)/);
+  assert.match(handoffHandler, /return \[\];/);
+  assert.doesNotMatch(handoffHandler, /runtimeTextResponse\(flow, node/);
+
+  const enterVisualNode = conversationEngine.match(
+    /async function enterVisualNode[\s\S]*?async function continueFromRuntimeNode/,
+  )?.[0];
+  assert.ok(enterVisualNode);
+  assert.match(enterVisualNode, /node\.type === "HUMAN_HANDOFF"/);
+  assert.match(enterVisualNode, /markHumanHandoffPaused\(session, node\.id, now\)/);
+  assert.match(enterVisualNode, /runtimeTextResponse\(flow, node, language\)/);
+});
+
 function read(path) {
   return readFileSync(join(root, path), "utf8");
 }
