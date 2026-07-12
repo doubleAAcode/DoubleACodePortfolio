@@ -27,12 +27,20 @@ export type FlowNodeType =
 
 export type FlowLanguage = "en" | "ar";
 
+export type FlowNodeOption = {
+  key: string;
+  label: Partial<Record<FlowLanguage, string>>;
+  targetNodeId?: string;
+  active?: boolean;
+  sortOrder?: number;
+};
+
 export type FlowNode = {
   id: string;
   type: FlowNodeType;
   messages?: Partial<Record<FlowLanguage, string>>;
   labels?: Partial<Record<FlowLanguage, string>>;
-  options?: Array<{ key: string; label: Partial<Record<FlowLanguage, string>> }>;
+  options?: FlowNodeOption[];
   next?: string;
   protectedAction?: string;
   optional?: boolean;
@@ -177,6 +185,9 @@ export type FlowValidationIssue = {
   code: string;
   message: string;
   severity: "ERROR" | "WARNING";
+  nodeId?: string;
+  edgeId?: string;
+  path?: string;
 };
 
 export type FlowValidationResult = {

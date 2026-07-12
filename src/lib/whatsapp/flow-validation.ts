@@ -85,6 +85,9 @@ export function flowDiagnosticsToLegacyResult(diagnostics: FlowDiagnostic[]) {
       code: diagnostic.code,
       message: diagnostic.message,
       severity: diagnostic.severity === "error" ? ("ERROR" as const) : ("WARNING" as const),
+      nodeId: diagnostic.nodeId,
+      edgeId: diagnostic.edgeId,
+      path: diagnostic.path,
     })),
   };
 }
@@ -240,11 +243,19 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
 function validateChoiceDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic[]) {
   const options = activeOptions(node);
   if (!options.length) {
-    diagnostics.push(warning("CHOICE_OPTIONS_MISSING", `${node.id} has no active options.`, node.id));
+    diagnostics.push(
+      warning("CHOICE_OPTIONS_MISSING", `${nodeName(node)} needs at least one active option.`, node.id),
+    );
   }
   for (const option of options) {
     if (!option.label?.en?.trim()) {
-      diagnostics.push(warning("CHOICE_LABEL_MISSING", `${node.id} has an option without an English label.`, node.id));
+      diagnostics.push(
+        warning(
+          "CHOICE_LABEL_MISSING",
+          `${nodeName(node)} has an option without an English label.`,
+          node.id,
+        ),
+      );
     }
   }
 }
@@ -256,13 +267,19 @@ function validateChoicePublish(
 ) {
   const options = activeOptions(node);
   if (!options.length) {
-    diagnostics.push(error("PUBLISH_CHOICE_OPTIONS_MISSING", `${node.id} needs active options.`, node.id));
+    diagnostics.push(
+      error(
+        "PUBLISH_CHOICE_OPTIONS_MISSING",
+        `${nodeName(node)} needs at least one active option.`,
+        node.id,
+      ),
+    );
   }
   if (options.length > WHATSAPP_MAX_BUTTONS) {
     diagnostics.push(
       error(
         "PUBLISH_WHATSAPP_BUTTON_LIMIT",
-        `${node.id} has ${options.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
+        `${nodeName(node)} has ${options.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
         node.id,
       ),
     );
@@ -271,11 +288,23 @@ function validateChoicePublish(
   for (const option of options) {
     const label = option.label?.en?.trim();
     if (!label) {
-      diagnostics.push(error("PUBLISH_CHOICE_LABEL_MISSING", `${node.id} has an option without an English label.`, node.id));
+      diagnostics.push(
+        error(
+          "PUBLISH_CHOICE_LABEL_MISSING",
+          `${nodeName(node)} has an option without an English label.`,
+          node.id,
+        ),
+      );
     } else {
       const key = label.toLowerCase();
       if (labels.has(key)) {
-        diagnostics.push(error("PUBLISH_CHOICE_LABEL_DUPLICATE", `${node.id} has duplicate option label ${label}.`, node.id));
+        diagnostics.push(
+          error(
+            "PUBLISH_CHOICE_LABEL_DUPLICATE",
+            `${nodeName(node)} has duplicate option label ${label}.`,
+            node.id,
+          ),
+        );
       }
       labels.add(key);
       if (label.length > WHATSAPP_BUTTON_TITLE_MAX) {
@@ -284,7 +313,9 @@ function validateChoicePublish(
     }
     const key = option.key?.trim();
     if (key && !outgoing(document.edges, node.id).some((edge) => edge.condition === key)) {
-      diagnostics.push(error("PUBLISH_CHOICE_TARGET_MISSING", `${node.id} option ${key} needs a target.`, node.id));
+      diagnostics.push(
+        error("PUBLISH_CHOICE_TARGET_MISSING", `${nodeName(node)} option ${key} needs a target.`, node.id),
+      );
     }
   }
 }
@@ -340,7 +371,11 @@ function outgoing(edges: CanonicalFlowEdge[], nodeId: string) {
 }
 
 function activeOptions(node: CanonicalFlowNode) {
-  return node.options ?? [];
+  return (node.options ?? []).filter((option) => option.active !== false);
+}
+
+function nodeName(node: CanonicalFlowNode) {
+  return node.title?.trim() || node.labels?.en?.trim() || node.messages?.en?.trim() || node.id;
 }
 
 function isMessageLike(node: CanonicalFlowNode) {

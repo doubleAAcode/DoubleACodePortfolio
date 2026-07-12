@@ -276,7 +276,7 @@ export function validateFlowForEditor(flow: FlowDefinition): FlowValidationResul
   }
 
   validateRequiredCopy(model, issues);
-  if (flow.nodes.some((node) => node.type === "MAIN_MENU")) {
+  if (shouldValidateLegacyMainMenuOptions(flow, model.mainMenuOptions)) {
     validateMainMenuOptions(model.mainMenuOptions, model.supportedLanguages, issues);
   }
   validateCustomQuestions(model.customQuestions, model.supportedLanguages, issues);
@@ -378,6 +378,15 @@ function getEditorMainMenuOptions(flow: FlowDefinition): FlowMainMenuOption[] {
       sortOrder: 3,
     },
   ];
+}
+
+function shouldValidateLegacyMainMenuOptions(
+  flow: FlowDefinition,
+  options: FlowMainMenuOption[],
+) {
+  const menuNodes = flow.nodes.filter((node) => node.type === "MAIN_MENU");
+  if (!menuNodes.length) return false;
+  return options.length > 0 || menuNodes.some((node) => !node.options?.length);
 }
 
 function getEditorBrowseRoutes(flow: FlowDefinition): FlowBrowseRoute[] {

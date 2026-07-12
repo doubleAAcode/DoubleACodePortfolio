@@ -3522,7 +3522,7 @@ function BrowseRoutesBlockSettings({
               : [];
             return (
               <div
-                key={`${route.key}-${index}`}
+                key={`browse-route-${index}`}
                 className="space-y-3 rounded-md border border-border p-3"
               >
                 <div className="flex items-center justify-between gap-2">
@@ -3969,7 +3969,7 @@ function MenuOptionsEditor({
       <div className="space-y-3">
         {options.map((option, index) => (
           <div
-            key={`${option.key}-${index}`}
+            key={`menu-option-${index}`}
             className="space-y-3 rounded-md border border-border p-3"
           >
             <div className="flex items-center justify-between gap-2">
@@ -4204,7 +4204,7 @@ function QuestionBlockSettings({
           <div className="space-y-3">
             {choices.map((choice, index) => (
               <div
-                key={`${choice.value}-${index}`}
+                key={`question-choice-${index}`}
                 className="space-y-3 rounded-md border border-border p-3"
               >
                 <div className="flex items-center justify-between gap-2">
@@ -5662,7 +5662,7 @@ function MainMenuFlowEditor({
         <div className="space-y-3">
           {editor.mainMenuOptions.map((option, index) => (
             <div
-              key={`${option.key}-${index}`}
+              key={`editor-main-menu-option-${index}`}
               className="space-y-3 rounded-md border border-border p-3"
             >
               <div className="flex items-center justify-between gap-2">
@@ -5934,7 +5934,7 @@ function CustomQuestionsFlowEditor({
       </button>
       {editor.customQuestions.map((question, index) => (
         <div
-          key={`${question.key}-${index}`}
+          key={`custom-question-${index}`}
           className="space-y-3 rounded-md border border-border p-4"
         >
           <div className="grid gap-3 sm:grid-cols-2">

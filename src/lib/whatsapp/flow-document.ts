@@ -29,6 +29,7 @@ export type CanonicalFlowDocument = {
 export type CanonicalFlowNode = {
   id: string;
   type: CanonicalFlowNodeType;
+  title?: string;
   messages?: Partial<Record<FlowLanguage, string>>;
   labels?: Partial<Record<FlowLanguage, string>>;
   options?: FlowNode["options"];
@@ -63,6 +64,7 @@ const languageCopySchema = z.object({ en: z.string().optional(), ar: z.string().
 const canonicalNodeSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
+  title: z.string().optional(),
   messages: languageCopySchema.partial().optional(),
   labels: languageCopySchema.partial().optional(),
   options: z
@@ -70,6 +72,9 @@ const canonicalNodeSchema = z.object({
       z.object({
         key: z.string(),
         label: languageCopySchema.partial(),
+        targetNodeId: z.string().optional(),
+        active: z.boolean().optional(),
+        sortOrder: z.number().optional(),
       }),
     )
     .optional(),
@@ -158,18 +163,34 @@ export function loadCanonicalFlowDocument(value: unknown): CanonicalFlowLoadResu
 }
 
 export function convertLegacyRuntimeFlowToCanonical(flow: FlowDefinition): CanonicalFlowDocument {
+  const edgesBySource = new Map<string, FlowEdge[]>();
+  for (const edge of flow.edges) {
+    edgesBySource.set(edge.from, [...(edgesBySource.get(edge.from) ?? []), edge]);
+  }
   return {
     schemaVersion: CANONICAL_FLOW_SCHEMA_VERSION,
     startNodeId: flow.startNodeId || null,
-    nodes: flow.nodes.map((node) => ({
-      id: node.id,
-      type: node.type,
-      messages: node.messages,
-      labels: node.labels,
-      options: node.options,
-      protectedAction: node.protectedAction,
-      optional: node.optional,
-    })),
+    nodes: flow.nodes.map((node) => {
+      const sourceEdges = edgesBySource.get(node.id) ?? [];
+      return {
+        id: node.id,
+        type: node.type,
+        title: visualTitleForNode(flow.visualFlow, node.id),
+        messages: node.messages,
+        labels: node.labels,
+        options: node.options?.map((option, index) => ({
+          key: option.key,
+          label: option.label,
+          targetNodeId:
+            option.targetNodeId ??
+            sourceEdges.find((edge) => edge.condition === option.key)?.to,
+          active: option.active !== false,
+          sortOrder: option.sortOrder ?? index + 1,
+        })),
+        protectedAction: node.protectedAction,
+        optional: node.optional,
+      };
+    }),
     edges: flow.edges.map((edge) => ({
       id: edge.id,
       from: edge.from,
@@ -198,11 +219,15 @@ export function convertLegacyVisualFlowToCanonical(
       return {
         id: node.id,
         type,
+        title: node.title,
         messages: node.config.messages ?? runtimeNode?.messages,
         labels: node.config.labels ?? runtimeNode?.labels,
         options: node.config.menuOptions?.map((option, index) => ({
           key: option.key || option.action?.toLowerCase() || `option_${index + 1}`,
           label: option.label,
+          targetNodeId: option.targetNodeId,
+          active: option.active !== false,
+          sortOrder: index + 1,
         })),
         protectedAction: runtimeNode?.protectedAction ?? protectedActionFor(type),
         optional: runtimeNode?.optional ?? node.type === "HUMAN_HANDOFF",
@@ -227,7 +252,7 @@ export function canonicalFlowToRuntimeFlow(
   baseFlow: FlowDefinition,
 ): FlowDefinition {
   const edgesBySource = new Map<string, FlowEdge[]>();
-  const edges = document.edges.map((edge) => ({
+  const edges = canonicalEdgesWithOptionTargets(document).map((edge) => ({
     id: edge.id,
     from: edge.from,
     to: edge.to,
@@ -245,7 +270,13 @@ export function canonicalFlowToRuntimeFlow(
       type: node.type,
       messages: node.messages,
       labels: node.labels,
-      options: node.options,
+      options: node.options?.map((option, index) => ({
+        key: option.key,
+        label: option.label,
+        targetNodeId: option.targetNodeId,
+        active: option.active !== false,
+        sortOrder: option.sortOrder ?? index + 1,
+      })),
       protectedAction: node.protectedAction ?? protectedActionFor(node.type),
       optional: node.optional,
       next: edgesBySource.get(node.id)?.[0]?.to,
@@ -261,9 +292,37 @@ export function canonicalFlowToRuntimeFlow(
 }
 
 export function withCanonicalFlowDocument(flow: FlowDefinition): FlowDefinition {
+  if (isLegacyVisualFlow(flow.visualFlow)) {
+    return {
+      ...flow,
+      canonicalDocument: convertLegacyVisualFlowToCanonical(flow.visualFlow, flow),
+    };
+  }
   const loaded = loadCanonicalFlowDocument(flow);
   if (!loaded.ok) return flow;
   return { ...flow, canonicalDocument: loaded.document };
+}
+
+function canonicalEdgesWithOptionTargets(document: CanonicalFlowDocument): CanonicalFlowEdge[] {
+  const edges = [...document.edges];
+  const edgeKeys = new Set(
+    edges.map((edge) => `${edge.from}\u0000${edge.to}\u0000${edge.condition ?? ""}`),
+  );
+  for (const node of document.nodes) {
+    for (const option of node.options ?? []) {
+      if (!option.targetNodeId) continue;
+      const key = `${node.id}\u0000${option.targetNodeId}\u0000${option.key}`;
+      if (edgeKeys.has(key)) continue;
+      edges.push({
+        id: `${node.id}_option_${safeId(option.key)}_to_${safeId(option.targetNodeId)}`,
+        from: node.id,
+        to: option.targetNodeId,
+        condition: option.key,
+      });
+      edgeKeys.add(key);
+    }
+  }
+  return edges;
 }
 
 function parseCanonical(value: unknown, source: "canonical_v2"): CanonicalFlowLoadResult {
@@ -300,6 +359,11 @@ function editorMetadataFromVisual(visualFlow: VisualFlowDefinition) {
   return {
     positions: Object.fromEntries(visualFlow.nodes.map((node) => [node.id, node.position])),
   };
+}
+
+function visualTitleForNode(visualFlow: unknown, nodeId: string) {
+  if (!isLegacyVisualFlow(visualFlow)) return undefined;
+  return visualFlow.nodes.find((node) => node.id === nodeId)?.title;
 }
 
 function visualToCanonicalType(
@@ -362,6 +426,10 @@ function protectedActionFor(type: string) {
 
 function stripUndefined(value: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
+}
+
+function safeId(value: string) {
+  return value.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

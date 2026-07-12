@@ -354,9 +354,12 @@ export function compileVisualFlowToRuntimeFlow(
       type,
       messages: node.config.messages,
       labels: node.config.labels,
-      options: node.config.menuOptions?.map((option) => ({
-        key: option.key || option.action?.toLowerCase() || "option",
+      options: node.config.menuOptions?.map((option, index) => ({
+        key: visualOptionKey(option, index),
         label: option.label,
+        targetNodeId: option.targetNodeId,
+        active: option.active !== false,
+        sortOrder: index + 1,
       })),
       next: firstEdge?.targetNodeId,
       protectedAction: protectedActions[type],
@@ -370,6 +373,11 @@ export function compileVisualFlowToRuntimeFlow(
     condition: edge.condition,
   }));
   const mainMenu = normalizedVisualFlow.nodes.find((node) => node.type === "MAIN_MENU");
+  const legacyOptionsSource =
+    mainMenu ??
+    normalizedVisualFlow.nodes.find(
+      (node) => node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options",
+    );
   const browseEntry = normalizedVisualFlow.nodes.find((node) => node.type === "CATEGORY_SELECTION");
   const storeInfo = normalizedVisualFlow.nodes.find((node) => node.type === "STORE_INFO");
   const handoff = normalizedVisualFlow.nodes.find((node) => node.type === "HUMAN_HANDOFF");
@@ -379,7 +387,7 @@ export function compileVisualFlowToRuntimeFlow(
   const questions = normalizedVisualFlow.nodes
     .filter((node) => node.type === "QUESTION" && node.config.question)
     .map((node) => node.config.question as FlowCustomQuestion);
-  const mainMenuOptions = buildMainMenuOptions(mainMenu);
+  const mainMenuOptions = buildMainMenuOptions(legacyOptionsSource);
   const legacyOrderOption =
     mainMenuOptions.find((option) => option.key === "order") ?? mainMenuOptions[0];
   const legacyQuestionOption =
@@ -900,12 +908,19 @@ function buildMainMenuOptions(mainMenu: VisualFlowNode | undefined): FlowMainMen
   return (mainMenu?.config.menuOptions ?? [])
     .filter((option) => option.active !== false)
     .map((option, index) => ({
-      key: option.key || option.action?.toLowerCase() || `option_${index + 1}`,
+      key: visualOptionKey(option, index),
       label: option.label,
       targetNodeId: option.targetNodeId,
       active: true,
       sortOrder: index + 1,
     }));
+}
+
+function visualOptionKey(
+  option: NonNullable<VisualFlowNode["config"]["menuOptions"]>[number],
+  index: number,
+) {
+  return option.key?.trim() || option.action?.toLowerCase() || `option_${index + 1}`;
 }
 
 function buildBrowseRoutes(browseEntry: VisualFlowNode | undefined): FlowBrowseRoute[] {
@@ -964,7 +979,7 @@ function generatedEdgesFromNodeSettings(visualFlow: VisualFlowDefinition): Visua
     ) {
       for (const option of node.config.menuOptions ?? []) {
         if (option.active === false || !option.targetNodeId) continue;
-        const key = option.key || option.action || `option_${sortOrder}`;
+        const key = visualOptionKey(option, sortOrder - 1);
         edges.push({
           id: `${node.id}_option_${key}_to_${option.targetNodeId}`,
           sourceNodeId: node.id,
