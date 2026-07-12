@@ -227,92 +227,104 @@ function BusinessFlowBuilderPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-        <div>
-          <a
-            href={`/admin/businesses/${businessId}`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to business
-          </a>
-          <h1 className="mt-2 font-display text-2xl font-semibold">Flow builder</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure, build, test, and publish the WhatsApp customer journey for {businessId}.
-          </p>
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
+      <header className="shrink-0 border-b border-border pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={`/admin/businesses/${businessId}`}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Business
+              </a>
+              <span className="text-muted-foreground">/</span>
+              <h1 className="font-display text-xl font-semibold">Flow builder</h1>
+              <span className="hidden text-sm text-muted-foreground sm:inline">
+                - {adminDetails?.business.name || businessId}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {liveVersion ? (
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                Live v{liveVersion.version_number}
+              </span>
+            ) : (
+              <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+                No live version
+              </span>
+            )}
+            {draftVersion ? (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-100">
+                Draft v{draftVersion.version_number}
+              </span>
+            ) : null}
+            <select
+              value={selectedVersionId}
+              disabled={busy}
+              onChange={(event) => {
+                const nextVersionId = event.target.value;
+                setSelectedVersionId(nextVersionId);
+                void load(nextVersionId, "version");
+              }}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm disabled:cursor-wait disabled:opacity-60"
+            >
+              {!selectedVersionId && visualFlow ? <option value="">Unsaved scratch flow</option> : null}
+              {details?.versions.map((version) => (
+                <option key={version.id} value={version.id}>
+                  Version {version.version_number} - {version.status}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={busy}
+              className="studio-button-secondary h-9 disabled:cursor-wait disabled:opacity-60"
+              onClick={() => openNameDialog("draft")}
+            >
+              {saving === "draft" ? "Saving..." : "Save draft"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              className="studio-button-primary h-9 disabled:cursor-wait disabled:opacity-60"
+              onClick={() => openNameDialog("publish")}
+            >
+              {saving === "publish" ? "Publishing..." : "Publish changes"}
+            </button>
+            <FlowBuilderMoreMenu
+              templates={templates}
+              templateId={templateId}
+              busy={busy}
+              saving={saving}
+              loading={loading}
+              onTemplateIdChange={setTemplateId}
+              onCloneTemplate={() => void run("template", cloneSelectedTemplate)}
+              onStartFromScratch={startFromScratch}
+              onRefresh={() => void load(selectedVersionId, "refresh")}
+            />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={selectedVersionId}
-            disabled={busy}
-            onChange={(event) => {
-              const nextVersionId = event.target.value;
-              setSelectedVersionId(nextVersionId);
-              void load(nextVersionId, "version");
-            }}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
-          >
-            {!selectedVersionId && visualFlow ? <option value="">Unsaved scratch flow</option> : null}
-            {details?.versions.map((version) => (
-              <option key={version.id} value={version.id}>
-                Version {version.version_number} - {version.status}
-              </option>
-            ))}
-          </select>
+        <div className="mt-2 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">
+            {flowEditingTitle(selectedVersion, liveVersion ?? undefined, !selectedVersionId && Boolean(visualFlow))}
+          </span>
+          <span>{flowEditingBase(selectedVersion, liveVersion ?? undefined, !selectedVersionId && Boolean(visualFlow))}</span>
+          <span>
+            {liveVersion
+              ? `Customers use v${liveVersion.version_number}.`
+              : "No customer-facing version is live."}
+          </span>
           {loading ? (
-            <span className="text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-primary">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               {loading === "version" ? "Loading selected version..." : "Loading..."}
             </span>
           ) : null}
-          <button
-            type="button"
-            disabled={busy}
-            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
-            onClick={startFromScratch}
-          >
-            Start from scratch
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
-            onClick={() => void load(selectedVersionId, "refresh")}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            {loading === "refresh" ? "Refreshing..." : "Refresh"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
-            onClick={() => openNameDialog("draft")}
-          >
-            {saving === "draft" ? "Saving..." : "Save draft"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            className="studio-button-primary disabled:cursor-wait disabled:opacity-60"
-            onClick={() => openNameDialog("publish")}
-          >
-            {saving === "publish" ? "Publishing..." : "Publish"}
-          </button>
         </div>
       </header>
-
-      <FlowBuilderStatusOverview
-        selectedVersion={selectedVersion}
-        liveVersion={liveVersion ?? undefined}
-        draftVersion={draftVersion}
-        hasScratchFlow={!selectedVersionId && Boolean(visualFlow)}
-        templates={templates}
-        templateId={templateId}
-        busy={busy}
-        saving={saving}
-        onTemplateIdChange={setTemplateId}
-        onCloneTemplate={() => void run("template", cloneSelectedTemplate)}
-      />
 
       {error ? <FlowBuilderErrorBanner message={error} /> : null}
       {visualFlow && visualValidation?.issues.length ? (
@@ -467,108 +479,85 @@ function FlowNameDialog({
   );
 }
 
-function FlowBuilderStatusOverview({
-  selectedVersion,
-  liveVersion,
-  draftVersion,
-  hasScratchFlow,
+function FlowBuilderMoreMenu({
   templates,
   templateId,
   busy,
   saving,
+  loading,
   onTemplateIdChange,
   onCloneTemplate,
+  onStartFromScratch,
+  onRefresh,
 }: {
-  selectedVersion?: BusinessFlowVersionRow;
-  liveVersion?: BusinessFlowVersionRow;
-  draftVersion?: BusinessFlowVersionRow;
-  hasScratchFlow: boolean;
   templates: FlowTemplateRow[];
   templateId: string;
   busy: boolean;
   saving: string;
+  loading: string;
   onTemplateIdChange: (value: string) => void;
   onCloneTemplate: () => void;
+  onStartFromScratch: () => void;
+  onRefresh: () => void;
 }) {
-  const title = flowEditingTitle(selectedVersion, liveVersion, hasScratchFlow);
-  const basedOn = flowEditingBase(selectedVersion, liveVersion, hasScratchFlow);
-  const liveText = liveVersion
-    ? `Customers are currently using Version ${liveVersion.version_number}.`
-    : "No live version is currently published for customers.";
-  const draftText = draftVersion
-    ? `Draft available: Version ${draftVersion.version_number}.`
-    : "No saved draft yet.";
-
   return (
-    <section className="grid shrink-0 gap-3 rounded-md border border-border bg-surface/40 p-3 xl:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            {title}
-          </span>
-          {selectedVersion?.status ? (
-            <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-              Selected: {selectedVersion.status}
-            </span>
-          ) : null}
+    <details className="relative">
+      <summary className="studio-button-secondary h-9 cursor-pointer list-none">
+        More
+      </summary>
+      <div className="absolute right-0 z-30 mt-2 w-[min(420px,calc(100vw-2rem))] rounded-md border border-border bg-background p-3 shadow-2xl">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={busy}
+            className="studio-button-secondary justify-center disabled:cursor-wait disabled:opacity-60"
+            onClick={onStartFromScratch}
+          >
+            Start from scratch
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            className="studio-button-secondary justify-center disabled:cursor-wait disabled:opacity-60"
+            onClick={onRefresh}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading === "refresh" ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
-        <div className="mt-2 grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
-          <div>
-            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
-              Editing source
-            </span>
-            <span className="text-foreground">{basedOn}</span>
-          </div>
-          <div>
-            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
-              Live customers
-            </span>
-            <span className="text-foreground">{liveText}</span>
-          </div>
-          <div>
-            <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground/80">
-              Draft state
-            </span>
-            <span className="text-foreground">{draftText}</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="rounded-md border border-border bg-background/70 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-medium">Clone a flow template</div>
-            <p className="text-xs text-muted-foreground">
-              Start from a reusable admin template, then save it as this business draft.
-            </p>
-          </div>
+        <div className="mt-3 rounded-md border border-border bg-surface/40 p-3">
+          <div className="text-sm font-medium">Clone a flow template</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Start from a reusable admin template, then save it as this business draft.
+          </p>
+          <select
+            value={templateId}
+            onChange={(event) => onTemplateIdChange(event.target.value)}
+            disabled={!templates.length || busy}
+            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+          >
+            {templates.length ? (
+              templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))
+            ) : (
+              <option value="">No published templates</option>
+            )}
+          </select>
           <button
             type="button"
             disabled={!templateId || busy}
-            className="studio-button-secondary px-3 py-1.5 text-xs disabled:cursor-wait disabled:opacity-60"
+            className="studio-button-primary mt-3 w-full justify-center disabled:cursor-wait disabled:opacity-60"
             onClick={onCloneTemplate}
           >
-            {saving === "template" ? "Cloning..." : "Clone template"}
+            {saving === "template" ? "Cloning..." : "Clone selected template"}
           </button>
         </div>
-        <select
-          value={templateId}
-          onChange={(event) => onTemplateIdChange(event.target.value)}
-          disabled={!templates.length || busy}
-          className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-        >
-          {templates.length ? (
-            templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))
-          ) : (
-            <option value="">No published templates</option>
-          )}
-        </select>
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -606,7 +595,7 @@ function FlowValidationSummary({
   const errors = validation.issues.filter((issue) => issue.severity === "ERROR");
   const warnings = validation.issues.filter((issue) => issue.severity !== "ERROR");
   return (
-    <details className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm" open>
+    <details className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
       <summary className="cursor-pointer font-medium text-amber-100">
         Flow diagnostics: {errors.length} error{errors.length === 1 ? "" : "s"}
         {warnings.length ? `, ${warnings.length} warning${warnings.length === 1 ? "" : "s"}` : ""}
