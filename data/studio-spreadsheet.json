@@ -99,7 +99,7 @@
         "projectId": "P002",
         "amount": 50,
         "collectedBy": "Hussein",
-        "paymentMethod": "",
+        "paymentMethod": "Product ",
         "notes": ""
       }
     ],
@@ -201,5 +201,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-13T07:24:16.813Z"
+  "updatedAt": "2026-07-13T07:24:22.188Z"
 }
