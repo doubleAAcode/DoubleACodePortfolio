@@ -97,7 +97,7 @@
         "id": "53ceeeab-6840-4ad0-a4a3-e390b62efa55",
         "date": "2026-07-13",
         "projectId": "P002",
-        "amount": 0,
+        "amount": 50,
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
@@ -201,5 +201,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-13T07:24:12.703Z"
+  "updatedAt": "2026-07-13T07:24:14.630Z"
 }
