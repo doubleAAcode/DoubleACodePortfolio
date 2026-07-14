@@ -92,6 +92,15 @@
         "collectedBy": "Saeed",
         "paymentMethod": "cash",
         "notes": ""
+      },
+      {
+        "id": "53ceeeab-6840-4ad0-a4a3-e390b62efa55",
+        "date": "2026-07-13",
+        "projectId": "P002",
+        "amount": 50,
+        "collectedBy": "Hussein",
+        "paymentMethod": "Product ",
+        "notes": ""
       }
     ],
     "expenses": [
@@ -189,8 +198,16 @@
         "amount": 316,
         "payoutType": "Mixed",
         "notes": ""
+      },
+      {
+        "id": "62331d5b-020c-4295-92e2-24a203ba7f08",
+        "date": "2026-07-13",
+        "paidTo": "Hussein",
+        "amount": 50,
+        "payoutType": "Mixed",
+        "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-07-01T09:10:59.954Z"
+  "updatedAt": "2026-07-13T07:27:26.909Z"
 }
