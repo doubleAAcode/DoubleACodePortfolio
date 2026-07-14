@@ -32,6 +32,9 @@ import { applyWaDashboardAction } from "./dashboard-store.server";
 
 export type AdminBusinessStatus = BusinessOperationalStatus;
 export type AdminBusinessTemplate =
+  | "ecommerce"
+  | "restaurant"
+  | "greeting_store_info"
   | "standard_online_store"
   | "jewelry_store"
   | "clothing_store"
@@ -1799,6 +1802,10 @@ function sanitizeAuditValue(value?: Record<string, unknown>) {
 }
 
 function templateLabel(templateType: AdminBusinessTemplate) {
+  if (templateType === "restaurant")
+    return { category: "Menu", product: "Sample Meal", price: 12 };
+  if (templateType === "greeting_store_info")
+    return { category: "Information", product: "Store Info", price: 0 };
   if (templateType === "jewelry_store")
     return { category: "Jewelry", product: "Sample Necklace", price: 25 };
   if (templateType === "clothing_store")

@@ -221,7 +221,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
         if (body?.action === "seed_defaults") {
           const data = await seedDefaultBusinessData({
             businessId: params.businessId,
-            templateType: body.templateType || "standard_online_store",
+            templateType: body.templateType || "ecommerce",
             adminUser: session.username,
             request,
           });
@@ -534,7 +534,7 @@ export function createInternalAdminFlowTemplatesHandlers() {
             id: body?.id,
             name: body?.name || "Untitled flow template",
             description: body?.description,
-            category: body?.category || "STANDARD_ONLINE_STORE",
+            category: body?.category || "ECOMMERCE",
             flowJson: body?.flowJson as never,
             publish: Boolean(body?.publish),
           },

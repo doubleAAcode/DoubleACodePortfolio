@@ -10,7 +10,6 @@ import {
 } from "@/lib/whatsapp/admin-client";
 import {
   compileVisualFlowToRuntimeFlow,
-  createBlankVisualFlow,
   getVisualFlow,
   validateVisualFlow,
   type VisualFlowDefinition,
@@ -97,7 +96,7 @@ function BusinessFlowBuilderPage() {
   const visualValidation = visualFlow ? validateVisualFlow(visualFlow) : undefined;
   const busy = Boolean(saving || loading);
   const baseFlowForCompile =
-    selectedVersion?.flow_json ?? createDefaultFlowDefinition("CUSTOM_PRODUCTS");
+    selectedVersion?.flow_json ?? createDefaultFlowDefinition("ECOMMERCE");
   const compiled =
     !loading && visualFlow
       ? compileVisualFlowToRuntimeFlow(visualFlow, baseFlowForCompile)
@@ -198,12 +197,6 @@ function BusinessFlowBuilderPage() {
     setOrderConfirmationArabic(nextDetails.business.order_confirmation_message_arabic || "");
   }
 
-  function startFromScratch() {
-    setVisualFlow(createBlankVisualFlow("Custom WhatsApp conversation"));
-    setSelectedBlockId("");
-    setSelectedVersionId("");
-  }
-
   async function confirmNamedAction() {
     const action = nameDialogAction;
     if (!action) return;
@@ -271,7 +264,7 @@ function BusinessFlowBuilderPage() {
               }}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm disabled:cursor-wait disabled:opacity-60"
             >
-              {!selectedVersionId && visualFlow ? <option value="">Unsaved scratch flow</option> : null}
+              {!selectedVersionId && visualFlow ? <option value="">Unsaved template flow</option> : null}
               {details?.versions.map((version) => (
                 <option key={version.id} value={version.id}>
                   Version {version.version_number} - {version.status}
@@ -302,7 +295,6 @@ function BusinessFlowBuilderPage() {
               loading={loading}
               onTemplateIdChange={setTemplateId}
               onCloneTemplate={() => void run("template", cloneSelectedTemplate)}
-              onStartFromScratch={startFromScratch}
               onRefresh={() => void load(selectedVersionId, "refresh")}
             />
           </div>
@@ -343,10 +335,10 @@ function BusinessFlowBuilderPage() {
             <div className="max-w-3xl">
               <h2 className="font-display text-xl font-semibold">Start this WhatsApp flow</h2>
               <p className="mt-2 text-muted-foreground">
-                Use a saved admin template for a reusable store journey, or start from scratch and
-                build the conversation map step by step.
+                Choose one of the supported admin templates, then deeply edit the conversation map
+                for this business.
               </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+              <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <select
                   value={templateId}
                   onChange={(event) => setTemplateId(event.target.value)}
@@ -370,14 +362,6 @@ function BusinessFlowBuilderPage() {
                   onClick={() => void run("template", cloneSelectedTemplate)}
                 >
                   {saving === "template" ? "Creating..." : "Start from template"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  className="studio-button-primary"
-                  onClick={startFromScratch}
-                >
-                  Start from scratch
                 </button>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -487,7 +471,6 @@ function FlowBuilderMoreMenu({
   loading,
   onTemplateIdChange,
   onCloneTemplate,
-  onStartFromScratch,
   onRefresh,
 }: {
   templates: FlowTemplateRow[];
@@ -497,7 +480,6 @@ function FlowBuilderMoreMenu({
   loading: string;
   onTemplateIdChange: (value: string) => void;
   onCloneTemplate: () => void;
-  onStartFromScratch: () => void;
   onRefresh: () => void;
 }) {
   return (
@@ -506,15 +488,7 @@ function FlowBuilderMoreMenu({
         More
       </summary>
       <div className="absolute right-0 z-30 mt-2 w-[min(420px,calc(100vw-2rem))] rounded-md border border-border bg-background p-3 shadow-2xl">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            disabled={busy}
-            className="studio-button-secondary justify-center disabled:cursor-wait disabled:opacity-60"
-            onClick={onStartFromScratch}
-          >
-            Start from scratch
-          </button>
+        <div className="grid gap-2">
           <button
             type="button"
             disabled={busy}
@@ -647,7 +621,7 @@ function flowEditingTitle(
   liveVersion: BusinessFlowVersionRow | undefined,
   hasScratchFlow: boolean,
 ) {
-  if (hasScratchFlow) return "Editing unsaved scratch flow";
+  if (hasScratchFlow) return "Editing unsaved template flow";
   if (!selectedVersion) return "No flow loaded";
   if (selectedVersion.status === "DRAFT") return `Editing Draft ${selectedVersion.version_number}`;
   if (liveVersion?.id === selectedVersion.id) {
@@ -664,8 +638,8 @@ function flowEditingBase(
   liveVersion: BusinessFlowVersionRow | undefined,
   hasScratchFlow: boolean,
 ) {
-  if (hasScratchFlow) return "Blank canvas, not saved yet.";
-  if (!selectedVersion) return "Select a version or start from scratch.";
+  if (hasScratchFlow) return "Template copy, not saved yet.";
+  if (!selectedVersion) return "Select a version or start from a template.";
   if (selectedVersion.status === "DRAFT" && liveVersion) {
     return `Based on Live Version ${liveVersion.version_number}.`;
   }

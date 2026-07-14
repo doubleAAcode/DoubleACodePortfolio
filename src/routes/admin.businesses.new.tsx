@@ -22,13 +22,13 @@ const statuses: AdminBusinessStatus[] = [
   "ERROR",
 ];
 
-const templates: AdminBusinessTemplate[] = [
-  "standard_online_store",
-  "jewelry_store",
-  "clothing_store",
-  "accessories_store",
-  "custom_products",
-];
+const templates: AdminBusinessTemplate[] = ["ecommerce", "restaurant", "greeting_store_info"];
+
+const templateLabels: Partial<Record<AdminBusinessTemplate, string>> = {
+  ecommerce: "E-commerce",
+  restaurant: "Restaurant",
+  greeting_store_info: "Greeting + Store Info",
+};
 
 function NewAdminBusinessPage() {
   const [saving, setSaving] = useState(false);
@@ -124,7 +124,7 @@ function NewAdminBusinessPage() {
             name="templateType"
             label="Template"
             values={templates}
-            defaultValue="standard_online_store"
+            defaultValue="ecommerce"
           />
           <label className="flex items-center gap-3 pt-8 text-sm">
             <input
@@ -217,7 +217,7 @@ function Select({
       >
         {values.map((value) => (
           <option key={value} value={value}>
-            {value.replaceAll("_", " ")}
+            {templateLabels[value as AdminBusinessTemplate] ?? value.replaceAll("_", " ")}
           </option>
         ))}
       </select>

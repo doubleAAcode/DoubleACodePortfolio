@@ -27,6 +27,33 @@ test("validates the standard online store flow template", () => {
   );
 });
 
+test("official admin templates validate and preserve intended commerce scope", () => {
+  const ecommerce = createDefaultFlowDefinition("ECOMMERCE");
+  const restaurant = createDefaultFlowDefinition("RESTAURANT");
+  const greeting = createDefaultFlowDefinition("GREETING_STORE_INFO");
+
+  for (const flow of [ecommerce, restaurant, greeting]) {
+    const validation = validateFlowDefinition(flow);
+    assert.equal(validation.ok, true, `${flow.name} should validate`);
+    assert.equal(
+      validation.issues.some((issue) => issue.severity === "ERROR"),
+      false,
+      `${flow.name} should have no validation errors`,
+    );
+  }
+
+  assert.equal(ecommerce.nodes.some((node) => node.type === "ORDER_CONFIRMATION"), true);
+  assert.equal(restaurant.nodes.some((node) => node.type === "ORDER_CONFIRMATION"), true);
+  assert.equal(greeting.nodes.some((node) => node.type === "ORDER_CONFIRMATION"), false);
+  assert.equal(greeting.nodes.some((node) => node.type === "CATEGORY_SELECT"), false);
+
+  const greetingSettings = flowToBotFlowSettings("business-a", greeting);
+  assert.deepEqual(
+    greetingSettings.mainMenuOptions.map((option) => option.key),
+    ["store_info", "support"],
+  );
+});
+
 test("rejects broken flow templates before publishing", () => {
   const flow: FlowDefinition = {
     ...createDefaultFlowDefinition("STANDARD_ONLINE_STORE"),

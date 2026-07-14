@@ -2409,7 +2409,7 @@ create table if not exists public.wa_flow_templates (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (status in ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
-  check (category in ('STANDARD_ONLINE_STORE', 'JEWELRY', 'CLOTHING', 'ACCESSORIES', 'CUSTOM_PRODUCTS'))
+  check (category in ('ECOMMERCE', 'RESTAURANT', 'GREETING_STORE_INFO', 'STANDARD_ONLINE_STORE', 'JEWELRY', 'CLOTHING', 'ACCESSORIES', 'CUSTOM_PRODUCTS'))
 );
 
 create table if not exists public.wa_flow_template_versions (
@@ -2504,7 +2504,7 @@ alter table public.wa_businesses
   add column if not exists status text not null default 'ACTIVE',
   add column if not exists timezone text not null default 'Asia/Beirut',
   add column if not exists country text not null default 'LB',
-  add column if not exists template_type text not null default 'standard_online_store';
+  add column if not exists template_type text not null default 'ecommerce';
 
 do $$
 begin

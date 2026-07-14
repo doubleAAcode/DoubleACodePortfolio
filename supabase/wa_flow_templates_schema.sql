@@ -10,7 +10,7 @@ create table if not exists public.wa_flow_templates (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (status in ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
-  check (category in ('STANDARD_ONLINE_STORE', 'JEWELRY', 'CLOTHING', 'ACCESSORIES', 'CUSTOM_PRODUCTS'))
+  check (category in ('ECOMMERCE', 'RESTAURANT', 'GREETING_STORE_INFO', 'STANDARD_ONLINE_STORE', 'JEWELRY', 'CLOTHING', 'ACCESSORIES', 'CUSTOM_PRODUCTS'))
 );
 
 create table if not exists public.wa_flow_template_versions (

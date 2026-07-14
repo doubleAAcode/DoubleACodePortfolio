@@ -2,6 +2,9 @@ import type { BotFlowSettingsInput } from "./bot-flow-settings.server";
 
 export type FlowTemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type FlowCategory =
+  | "ECOMMERCE"
+  | "RESTAURANT"
+  | "GREETING_STORE_INFO"
   | "STANDARD_ONLINE_STORE"
   | "JEWELRY"
   | "CLOTHING"
@@ -231,6 +234,144 @@ const maxWhatsAppListTitleLength = 24;
 export function createDefaultFlowDefinition(category: FlowCategory): FlowDefinition {
   const variant = templateVariant(category);
   const id = variant.id;
+  const settings: FlowDefinition["settings"] = {
+    allowHumanHandoff: true,
+    allowRestart: true,
+    allowBack: true,
+    languageSelectionEnabled: true,
+    defaultLanguage: "en",
+    orderNotesEnabled: true,
+    showProductDetailsBeforeOrdering: true,
+    autoUseSavedCheckoutDetails: false,
+    skipFulfillmentWhenSingleOption: true,
+    skipDeliveryAreaWhenSingleOption: true,
+    skipPickupLocationWhenSingleOption: true,
+    skipPaymentWhenSingleOption: true,
+    allowDelivery: true,
+    allowPickup: true,
+  };
+  const copyBlock: FlowDefinition["copy"] = {
+    welcome: variant.welcome,
+    orderButton: variant.orderButton,
+    questionButton: { en: "Ask a question", ar: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644" },
+    questionResponse: {
+      en: "Send us your question here and our team will reply shortly.",
+      ar: "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
+    },
+    infoButton: {
+      en: "Store information",
+      ar: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
+    },
+    infoResponse: {
+      en: variant.infoResponse,
+      ar: "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
+    },
+    customerNamePrompt: {
+      en: "What name should we put on the order?",
+      ar: "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
+    },
+    fulfillmentPrompt: {
+      en: "How would you like to receive your order?",
+      ar: "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
+    },
+    deliveryAreaPrompt: {
+      en: "Choose your delivery area:",
+      ar: "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
+    },
+    pickupLocationPrompt: {
+      en: "Choose a pickup location:",
+      ar: "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
+    },
+    deliveryAddressPrompt: {
+      en: "Send the full delivery address. You can also send a WhatsApp location.",
+      ar: "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
+    },
+    paymentMethodPrompt: {
+      en: "Choose a payment method:",
+      ar: "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
+    },
+    orderNotesPrompt: {
+      en: variant.notesPrompt,
+      ar: "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
+    },
+    noNotesButton: {
+      en: "No notes",
+      ar: "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
+    },
+  };
+  if (category === "GREETING_STORE_INFO") {
+    return {
+      id,
+      name: variant.name,
+      startNodeId: "start",
+      supportedLanguages: ["en", "ar"],
+      nodes: [
+        {
+          id: "start",
+          type: "MAIN_MENU",
+          messages: variant.welcome,
+          next: "store_info",
+          options: [
+            {
+              key: "store_info",
+              label: variant.orderButton,
+              targetNodeId: "store_info",
+              active: true,
+              sortOrder: 1,
+            },
+            {
+              key: "support",
+              label: copyBlock.questionButton,
+              targetNodeId: "human_handoff",
+              active: true,
+              sortOrder: 2,
+            },
+          ],
+        },
+        {
+          id: "store_info",
+          type: "MESSAGE",
+          messages: copyBlock.infoResponse,
+          next: "end",
+        },
+        { id: "human_handoff", type: "HUMAN_HANDOFF", optional: true, next: "end" },
+        { id: "end", type: "END" },
+      ],
+      edges: [
+        edge("start", "store_info", "store_info"),
+        edge("start", "human_handoff", "support"),
+        edge("store_info", "end"),
+        edge("human_handoff", "end"),
+      ],
+      settings: {
+        ...settings,
+        languageSelectionEnabled: false,
+        orderNotesEnabled: false,
+        showProductDetailsBeforeOrdering: false,
+        allowDelivery: false,
+        allowPickup: false,
+      },
+      copy: copyBlock,
+      editor: {
+        mainMenuOptions: [
+          {
+            key: "store_info",
+            label: variant.orderButton,
+            targetNodeId: "store_info",
+            active: true,
+            sortOrder: 1,
+          },
+          {
+            key: "support",
+            label: copyBlock.questionButton,
+            targetNodeId: "human_handoff",
+            active: true,
+            sortOrder: 2,
+          },
+        ],
+      },
+    };
+  }
   return {
     id,
     name: variant.name,
@@ -315,71 +456,8 @@ export function createDefaultFlowDefinition(category: FlowCategory): FlowDefinit
       edge("order_confirmation", "end"),
       edge("human_handoff", "end"),
     ],
-    settings: {
-      allowHumanHandoff: true,
-      allowRestart: true,
-      allowBack: true,
-      languageSelectionEnabled: true,
-      defaultLanguage: "en",
-      orderNotesEnabled: true,
-      showProductDetailsBeforeOrdering: true,
-      autoUseSavedCheckoutDetails: false,
-      skipFulfillmentWhenSingleOption: true,
-      skipDeliveryAreaWhenSingleOption: true,
-      skipPickupLocationWhenSingleOption: true,
-      skipPaymentWhenSingleOption: true,
-      allowDelivery: true,
-      allowPickup: true,
-    },
-    copy: {
-      welcome: variant.welcome,
-      orderButton: variant.orderButton,
-      questionButton: { en: "Ask a question", ar: "\u0637\u0631\u062d \u0633\u0624\u0627\u0644" },
-      questionResponse: {
-        en: "Send us your question here and our team will reply shortly.",
-        ar: "\u0627\u0631\u0633\u0644 \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627 \u0648\u0633\u064a\u0631\u062f \u0641\u0631\u064a\u0642\u0646\u0627 \u0642\u0631\u064a\u0628\u0627.",
-      },
-      infoButton: {
-        en: "Store information",
-        ar: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0631",
-      },
-      infoResponse: {
-        en: variant.infoResponse,
-        ar: "\u0646\u062d\u0646 \u0645\u062a\u0627\u062d\u0648\u0646 \u064a\u0648\u0645\u064a\u0627. \u0627\u0631\u0633\u0644 \u0631\u0633\u0627\u0644\u0629 \u0647\u0646\u0627 \u0625\u0630\u0627 \u0627\u062d\u062a\u062c\u062a \u0645\u0633\u0627\u0639\u062f\u0629.",
-      },
-      customerNamePrompt: {
-        en: "What name should we put on the order?",
-        ar: "\u0645\u0627 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0630\u064a \u0646\u0636\u0639\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628\u061f",
-      },
-      fulfillmentPrompt: {
-        en: "How would you like to receive your order?",
-        ar: "\u0643\u064a\u0641 \u062a\u0631\u064a\u062f \u0627\u0633\u062a\u0644\u0627\u0645 \u0637\u0644\u0628\u0643\u061f",
-      },
-      deliveryAreaPrompt: {
-        en: "Choose your delivery area:",
-        ar: "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:",
-      },
-      pickupLocationPrompt: {
-        en: "Choose a pickup location:",
-        ar: "\u0627\u062e\u062a\u0631 \u0645\u0643\u0627\u0646 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645:",
-      },
-      deliveryAddressPrompt: {
-        en: "Send the full delivery address. You can also send a WhatsApp location.",
-        ar: "\u0623\u0631\u0633\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u0644. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0642\u0639 \u0648\u0627\u062a\u0633\u0627\u0628.",
-      },
-      paymentMethodPrompt: {
-        en: "Choose a payment method:",
-        ar: "\u0627\u062e\u062a\u0631 \u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639:",
-      },
-      orderNotesPrompt: {
-        en: variant.notesPrompt,
-        ar: "\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u061f",
-      },
-      noNotesButton: {
-        en: "No notes",
-        ar: "\u0628\u062f\u0648\u0646 \u0645\u0644\u0627\u062d\u0638\u0627\u062a",
-      },
-    },
+    settings,
+    copy: copyBlock,
   };
 }
 
@@ -687,6 +765,45 @@ function edge(from: string, to: string, condition?: string): FlowEdge {
 }
 
 function templateVariant(category: FlowCategory) {
+  if (category === "ECOMMERCE") {
+    return {
+      id: "ecommerce",
+      name: "E-commerce",
+      welcome: {
+        en: "Welcome. Browse products, get store information, or ask for help.",
+        ar: "\u0623\u0647\u0644\u0627. \u062a\u0635\u0641\u062d \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0623\u0648 \u0627\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629.",
+      },
+      orderButton: { en: "Place an order", ar: "\u062a\u0642\u062f\u064a\u0645 \u0637\u0644\u0628" },
+      infoResponse: "We are open daily. Send a message here if you need help.",
+      notesPrompt: "Would you like to add any notes?",
+    };
+  }
+  if (category === "RESTAURANT") {
+    return {
+      id: "restaurant",
+      name: "Restaurant",
+      welcome: {
+        en: "Welcome. Browse the menu, order food, or ask about the restaurant.",
+        ar: "\u0623\u0647\u0644\u0627. \u062a\u0635\u0641\u062d \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0627\u0644\u0637\u0639\u0627\u0645.",
+      },
+      orderButton: { en: "Order food", ar: "\u0627\u0637\u0644\u0628 \u0637\u0639\u0627\u0645" },
+      infoResponse: "Ask us about opening hours, delivery, reservations, or menu items.",
+      notesPrompt: "Add any delivery, allergy, or preparation notes?",
+    };
+  }
+  if (category === "GREETING_STORE_INFO") {
+    return {
+      id: "greeting_store_info",
+      name: "Greeting + Store Info",
+      welcome: {
+        en: "Welcome. Choose an option and our team will help you.",
+        ar: "\u0623\u0647\u0644\u0627. \u0627\u062e\u062a\u0631 \u062e\u064a\u0627\u0631\u0627 \u0648\u0633\u0646\u0633\u0627\u0639\u062f\u0643.",
+      },
+      orderButton: { en: "Store info", ar: "\u0645\u0639\u0644\u0648\u0645\u0627\u062a" },
+      infoResponse: "We are open daily. Send us a message if you need anything else.",
+      notesPrompt: "Would you like to add any notes?",
+    };
+  }
   if (category === "JEWELRY") {
     return {
       id: "jewelry_store",

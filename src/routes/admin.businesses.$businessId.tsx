@@ -73,13 +73,13 @@ const statuses: AdminBusinessStatus[] = [
   "ERROR",
 ];
 
-const templates: AdminBusinessTemplate[] = [
-  "standard_online_store",
-  "jewelry_store",
-  "clothing_store",
-  "accessories_store",
-  "custom_products",
-];
+const templates: AdminBusinessTemplate[] = ["ecommerce", "restaurant", "greeting_store_info"];
+
+const templateLabels: Partial<Record<AdminBusinessTemplate, string>> = {
+  ecommerce: "E-commerce",
+  restaurant: "Restaurant",
+  greeting_store_info: "Greeting + Store Info",
+};
 
 function AdminBusinessDetailPage() {
   const { businessId } = Route.useParams();
@@ -518,7 +518,7 @@ function FlowSection({
       {!templates.length ? (
         <p className="mt-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
           No published templates are available. Apply the flow template migration, then open Flow
-          templates once to seed Standard Online Store, Jewelry, and Clothing.
+          templates once to seed E-commerce, Restaurant, and Greeting + Store Info.
         </p>
       ) : null}
 
@@ -6786,7 +6786,7 @@ function SeedDefaultsForm({
   saving: string;
   onSeed: (templateType: AdminBusinessTemplate) => void;
 }) {
-  const [templateType, setTemplateType] = useState<AdminBusinessTemplate>("standard_online_store");
+  const [templateType, setTemplateType] = useState<AdminBusinessTemplate>("ecommerce");
   return (
     <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
       <select
@@ -6796,7 +6796,7 @@ function SeedDefaultsForm({
       >
         {templates.map((template) => (
           <option key={template} value={template}>
-            {template.replaceAll("_", " ")}
+            {templateLabels[template] ?? template.replaceAll("_", " ")}
           </option>
         ))}
       </select>
@@ -6866,7 +6866,7 @@ function Select({
       >
         {values.map((value) => (
           <option key={value} value={value}>
-            {value.replaceAll("_", " ")}
+            {templateLabels[value as AdminBusinessTemplate] ?? value.replaceAll("_", " ")}
           </option>
         ))}
       </select>

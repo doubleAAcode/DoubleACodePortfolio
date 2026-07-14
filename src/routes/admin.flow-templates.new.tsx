@@ -9,19 +9,17 @@ export const Route = createFileRoute("/admin/flow-templates/new")({
   component: NewFlowTemplatePage,
 });
 
-const categories: FlowCategory[] = [
-  "STANDARD_ONLINE_STORE",
-  "JEWELRY",
-  "CLOTHING",
-  "ACCESSORIES",
-  "CUSTOM_PRODUCTS",
-];
+const categories: FlowCategory[] = ["ECOMMERCE", "RESTAURANT", "GREETING_STORE_INFO"];
+
+const categoryLabels: Partial<Record<FlowCategory, string>> = {
+  ECOMMERCE: "E-commerce",
+  RESTAURANT: "Restaurant",
+  GREETING_STORE_INFO: "Greeting + Store Info",
+};
 
 function NewFlowTemplatePage() {
-  const [category, setCategory] = useState<FlowCategory>("STANDARD_ONLINE_STORE");
-  const [json, setJson] = useState(
-    JSON.stringify(createDefaultFlowDefinition("STANDARD_ONLINE_STORE"), null, 2),
-  );
+  const [category, setCategory] = useState<FlowCategory>("ECOMMERCE");
+  const [json, setJson] = useState(JSON.stringify(createDefaultFlowDefinition("ECOMMERCE"), null, 2));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -72,8 +70,8 @@ function NewFlowTemplatePage() {
       ) : null}
       <section className="rounded-lg border border-border bg-surface/60 p-5">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field name="name" label="Name" defaultValue="Standard Online Store" required />
-          <Field name="id" label="ID" defaultValue="standard-online-store-custom" />
+          <Field name="name" label="Name" defaultValue="E-commerce" required />
+          <Field name="id" label="ID" defaultValue="ecommerce-custom" />
           <label className="block text-sm">
             Category
             <select
@@ -83,7 +81,7 @@ function NewFlowTemplatePage() {
             >
               {categories.map((entry) => (
                 <option key={entry} value={entry}>
-                  {entry.replaceAll("_", " ")}
+                  {categoryLabels[entry] ?? entry.replaceAll("_", " ")}
                 </option>
               ))}
             </select>

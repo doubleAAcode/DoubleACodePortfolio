@@ -84,7 +84,7 @@ const memoryBusinessFlows = new Map<string, BusinessFlowRow>();
 const memoryBusinessFlowVersions = new Map<string, BusinessFlowVersionRow>();
 
 export async function ensureDefaultFlowTemplates(adminUser = "system") {
-  for (const category of ["STANDARD_ONLINE_STORE", "JEWELRY", "CLOTHING"] as FlowCategory[]) {
+  for (const category of ["ECOMMERCE", "RESTAURANT", "GREETING_STORE_INFO"] as FlowCategory[]) {
     const flow = createDefaultFlowDefinition(category);
     const templateId = flow.id;
     const existing = await getFlowTemplateDetails(templateId).catch(() => null);
@@ -305,7 +305,7 @@ export async function getBusinessFlowDetails(businessId: string): Promise<Busine
     await ensureDefaultFlowTemplates();
     await cloneTemplateToBusiness({
       businessId,
-      templateId: "standard_online_store",
+      templateId: "ecommerce",
       adminUser: "system",
     });
     flows = await listBusinessFlows(businessId);
@@ -630,6 +630,9 @@ function templateSlug(value: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
   if (normalized === "standard-online-store") return "standard_online_store";
+  if (normalized === "e-commerce" || normalized === "ecommerce") return "ecommerce";
+  if (normalized === "restaurant") return "restaurant";
+  if (normalized === "greeting-store-info") return "greeting_store_info";
   if (normalized === "jewelry-store") return "jewelry_store";
   if (normalized === "clothing-store") return "clothing_store";
   return normalized;

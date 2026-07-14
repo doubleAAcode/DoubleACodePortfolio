@@ -8,7 +8,7 @@ alter table public.wa_businesses
   add column if not exists status text not null default 'ACTIVE',
   add column if not exists timezone text not null default 'Asia/Beirut',
   add column if not exists country text not null default 'LB',
-  add column if not exists template_type text not null default 'standard_online_store';
+  add column if not exists template_type text not null default 'ecommerce';
 
 do $$
 begin
