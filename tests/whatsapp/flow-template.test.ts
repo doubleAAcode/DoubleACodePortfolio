@@ -7,6 +7,7 @@ import {
   validateFlowDefinition,
   type FlowDefinition,
 } from "../../src/lib/whatsapp/flow-template-types.ts";
+import { validateFlow } from "../../src/lib/whatsapp/flow-validation.ts";
 import {
   addVisualNode,
   compileVisualFlowToRuntimeFlow,
@@ -34,7 +35,9 @@ test("official admin templates validate and preserve intended commerce scope", (
 
   for (const flow of [ecommerce, restaurant, greeting]) {
     const validation = validateFlowDefinition(flow);
+    const publishValidation = validateFlow(flow, { mode: "publish" });
     assert.equal(validation.ok, true, `${flow.name} should validate`);
+    assert.equal(publishValidation.ok, true, `${flow.name} should pass publish validation`);
     assert.equal(
       validation.issues.some((issue) => issue.severity === "ERROR"),
       false,
