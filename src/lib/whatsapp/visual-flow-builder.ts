@@ -21,6 +21,9 @@ export type VisualFlowBlockType =
   | "CATEGORY_SELECTION"
   | "PRODUCT_SELECTION"
   | "PRODUCT_DETAILS"
+  | "PRODUCT_OPTIONS"
+  | "CUSTOM_FIELDS"
+  | "QUANTITY"
   | "QUESTION"
   | "CONDITION"
   | "CART_REVIEW"
@@ -123,6 +126,9 @@ export function createBlankVisualFlow(name = "Untitled WhatsApp flow"): VisualFl
 const protectedCommerceVisualTypes = new Set<VisualFlowBlockType>([
   "PRODUCT_SELECTION",
   "PRODUCT_DETAILS",
+  "PRODUCT_OPTIONS",
+  "CUSTOM_FIELDS",
+  "QUANTITY",
 ]);
 
 const protectedActions: Partial<Record<FlowNodeType, string>> = {
@@ -150,6 +156,9 @@ export const visualBlockPalette: Array<{
   { type: "CATEGORY_SELECTION", title: "Browse routes", category: "Catalog" },
   { type: "PRODUCT_SELECTION", title: "Product purchase", category: "Catalog" },
   { type: "PRODUCT_DETAILS", title: "Product details", category: "Catalog" },
+  { type: "PRODUCT_OPTIONS", title: "Product options", category: "Catalog" },
+  { type: "CUSTOM_FIELDS", title: "Product questions", category: "Catalog" },
+  { type: "QUANTITY", title: "Quantity", category: "Catalog" },
   { type: "QUESTION", title: "Question", category: "Logic" },
   { type: "CONDITION", title: "Condition", category: "Logic" },
   { type: "CART_REVIEW", title: "Cart review", category: "Checkout" },
@@ -338,15 +347,19 @@ export function compileVisualFlowToRuntimeFlow(
   const normalizedVisualFlow = { ...visualFlow, edges: getEffectiveVisualEdges(visualFlow) };
   const visualValidation = validateVisualFlow(normalizedVisualFlow);
   if (!visualValidation.ok) return { ok: false, validation: visualValidation };
+  const baseNodeById = new Map(baseFlow.nodes.map((node) => [node.id, node]));
 
   const edgesBySource = new Map<string, VisualFlowEdge[]>();
   for (const edge of normalizedVisualFlow.edges) {
     edgesBySource.set(edge.sourceNodeId, [...(edgesBySource.get(edge.sourceNodeId) ?? []), edge]);
   }
   const nodes: FlowNode[] = normalizedVisualFlow.nodes.map((node) => {
+    const baseNode = baseNodeById.get(node.id);
     const type =
       node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options"
         ? "MAIN_MENU"
+        : node.type === "SEND_MESSAGE" && baseNode?.protectedAction
+          ? baseNode.type
         : visualTypeToRuntime(node.type);
     const firstEdge = edgesBySource.get(node.id)?.sort((a, b) => a.sortOrder - b.sortOrder)[0];
     return {
@@ -1112,6 +1125,9 @@ function runtimeTypeToVisual(type: FlowNodeType, id: string): VisualFlowBlockTyp
   if (type === "CATEGORY_SELECT") return "CATEGORY_SELECTION";
   if (type === "PRODUCT_SELECT") return "PRODUCT_SELECTION";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
+  if (type === "PRODUCT_OPTIONS") return "PRODUCT_OPTIONS";
+  if (type === "CUSTOM_FIELDS") return "CUSTOM_FIELDS";
+  if (type === "QUANTITY") return "QUANTITY";
   if (type === "CART_MENU") return "CART_REVIEW";
   if (type === "CHECKOUT") return "CHECKOUT_FULFILLMENT";
   if (type === "ORDER_REVIEW") return "ORDER_REVIEW";
@@ -1127,6 +1143,9 @@ function visualTypeToRuntime(type: VisualFlowBlockType): FlowNodeType {
   if (type === "CATEGORY_SELECTION") return "CATEGORY_SELECT";
   if (type === "PRODUCT_SELECTION") return "PRODUCT_SELECT";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
+  if (type === "PRODUCT_OPTIONS") return "PRODUCT_OPTIONS";
+  if (type === "CUSTOM_FIELDS") return "CUSTOM_FIELDS";
+  if (type === "QUANTITY") return "QUANTITY";
   if (type === "QUESTION") return "CUSTOM_FIELDS";
   if (type === "CART_REVIEW") return "CART_MENU";
   if (type.startsWith("CHECKOUT_")) return "CHECKOUT";

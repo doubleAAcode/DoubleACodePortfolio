@@ -8,6 +8,7 @@ import {
   type FlowDefinition,
 } from "../../src/lib/whatsapp/flow-template-types.ts";
 import { validateFlow } from "../../src/lib/whatsapp/flow-validation.ts";
+import { convertLegacyVisualFlowToCanonical } from "../../src/lib/whatsapp/flow-document.ts";
 import { validateFlowForEditor } from "../../src/lib/whatsapp/flow-editor.ts";
 import {
   addVisualNode,
@@ -52,12 +53,59 @@ test("official admin templates validate and preserve intended commerce scope", (
   assert.equal(restaurant.nodes.some((node) => node.type === "ORDER_CONFIRMATION"), true);
   assert.equal(greeting.nodes.some((node) => node.type === "ORDER_CONFIRMATION"), false);
   assert.equal(greeting.nodes.some((node) => node.type === "CATEGORY_SELECT"), false);
+  assert.equal(greeting.edges.some((edge) => edge.from === "store_info"), false);
 
   const greetingSettings = flowToBotFlowSettings("business-a", greeting);
   assert.deepEqual(
     greetingSettings.mainMenuOptions.map((option) => option.key),
     ["store_info", "support"],
   );
+});
+
+test("ecommerce template clone preserves protected purchase pipeline nodes", () => {
+  const ecommerce = createDefaultFlowDefinition("ECOMMERCE");
+  const visual = createVisualFlowFromRuntime(ecommerce);
+  const legacyVisual = {
+    ...visual,
+    nodes: visual.nodes.map((node) =>
+      ["product_options", "custom_fields", "quantity"].includes(node.id)
+        ? { ...node, type: "SEND_MESSAGE" as const }
+        : node,
+    ),
+  };
+  const canonical = convertLegacyVisualFlowToCanonical(visual, ecommerce);
+  const legacyCanonical = convertLegacyVisualFlowToCanonical(legacyVisual, ecommerce);
+  const compiled = compileVisualFlowToRuntimeFlow(visual, ecommerce);
+  const legacyCompiled = compileVisualFlowToRuntimeFlow(legacyVisual, ecommerce);
+
+  for (const nodeId of ["product_options", "custom_fields", "quantity"]) {
+    assert.equal(canonical.nodes.find((node) => node.id === nodeId)?.type, nodeId.toUpperCase());
+    assert.equal(
+      legacyCanonical.nodes.find((node) => node.id === nodeId)?.type,
+      nodeId.toUpperCase(),
+    );
+    assert.equal(visual.nodes.find((node) => node.id === nodeId)?.type, nodeId.toUpperCase());
+  }
+
+  assert.equal(validateFlow({ ...ecommerce, visualFlow: visual }, { mode: "publish" }).ok, true);
+  assert.equal(validateFlow({ ...ecommerce, visualFlow: legacyVisual }, { mode: "publish" }).ok, true);
+  assert.equal(compiled.ok, true);
+  assert.equal(legacyCompiled.ok, true);
+  assert.equal(
+    compiled.flow?.nodes.find((node) => node.id === "product_options")?.type,
+    "PRODUCT_OPTIONS",
+  );
+  assert.equal(compiled.flow?.nodes.find((node) => node.id === "custom_fields")?.type, "CUSTOM_FIELDS");
+  assert.equal(compiled.flow?.nodes.find((node) => node.id === "quantity")?.type, "QUANTITY");
+  assert.equal(
+    legacyCompiled.flow?.nodes.find((node) => node.id === "product_options")?.type,
+    "PRODUCT_OPTIONS",
+  );
+  assert.equal(
+    legacyCompiled.flow?.nodes.find((node) => node.id === "custom_fields")?.type,
+    "CUSTOM_FIELDS",
+  );
+  assert.equal(legacyCompiled.flow?.nodes.find((node) => node.id === "quantity")?.type, "QUANTITY");
 });
 
 test("rejects broken flow templates before publishing", () => {

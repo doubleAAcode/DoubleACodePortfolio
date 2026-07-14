@@ -215,7 +215,10 @@ export function convertLegacyVisualFlowToCanonical(
     startNodeId: startNode?.id ?? null,
     nodes: visualFlow.nodes.map((node) => {
       const runtimeNode = runtimeNodeById.get(node.id);
-      const type = visualToCanonicalType(node.type, node.config.messageBehavior);
+      const type =
+        node.type === "SEND_MESSAGE" && runtimeNode?.protectedAction
+          ? runtimeNode.type
+          : visualToCanonicalType(node.type, node.config.messageBehavior);
       return {
         id: node.id,
         type,
@@ -376,6 +379,9 @@ function visualToCanonicalType(
   if (type === "CATEGORY_SELECTION") return "CATEGORY_SELECT";
   if (type === "PRODUCT_SELECTION") return "PRODUCT_SELECT";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
+  if (type === "PRODUCT_OPTIONS") return "PRODUCT_OPTIONS";
+  if (type === "CUSTOM_FIELDS") return "CUSTOM_FIELDS";
+  if (type === "QUANTITY") return "QUANTITY";
   if (type === "QUESTION") return "CUSTOM_FIELDS";
   if (type === "CONDITION") return "CONDITION";
   if (type === "CART_REVIEW") return "CART_MENU";

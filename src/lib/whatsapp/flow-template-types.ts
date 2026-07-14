@@ -332,22 +332,17 @@ export function createDefaultFlowDefinition(category: FlowCategory): FlowDefinit
           id: "store_info",
           type: "MESSAGE",
           messages: copyBlock.infoResponse,
-          next: "end",
         },
         {
           id: "human_handoff",
           type: "HUMAN_HANDOFF",
           messages: copyBlock.questionResponse,
           optional: true,
-          next: "end",
         },
-        { id: "end", type: "END" },
       ],
       edges: [
         edge("start", "store_info", "store_info"),
         edge("start", "human_handoff", "support"),
-        edge("store_info", "end"),
-        edge("human_handoff", "end"),
       ],
       settings: {
         ...settings,
