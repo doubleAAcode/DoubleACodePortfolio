@@ -292,7 +292,7 @@ export function validateFlowForEditor(flow: FlowDefinition): FlowValidationResul
       error("FINAL_CONFIRMATION_REQUIRED", "Final order confirmation cannot be disabled."),
     );
   }
-  if (!flow.settings.allowDelivery && !flow.settings.allowPickup) {
+  if (usesCommerceCheckout(flow) && !flow.settings.allowDelivery && !flow.settings.allowPickup) {
     issues.push(error("FULFILLMENT_REQUIRED", "Delivery or pickup must be enabled."));
   }
   if (!model.commands.allowHumanHandoff) {
@@ -306,6 +306,12 @@ export function validateFlowForEditor(flow: FlowDefinition): FlowValidationResul
     ok: !issues.some((issue) => issue.severity === "ERROR"),
     issues,
   };
+}
+
+function usesCommerceCheckout(flow: FlowDefinition) {
+  return flow.nodes.some((node) =>
+    ["CHECKOUT", "ORDER_REVIEW", "ORDER_CONFIRMATION"].includes(node.type),
+  );
 }
 
 export function createFlowPreview(flow: FlowDefinition, language: FlowLanguage): FlowPreview {
