@@ -1440,6 +1440,7 @@ function ConfigureFlowMode({
           visualFlow={visualFlow}
           effectiveEdges={getEffectiveVisualEdges(visualFlow)}
           selectedBlockId={selectedBlockId}
+          businessId={businessId}
           onSelectBlock={onSelectBlock}
           onChange={onChange}
           onCreateStep={(next, createdNodeId) => {
@@ -1483,6 +1484,7 @@ function ConversationMap({
   visualFlow,
   effectiveEdges,
   selectedBlockId,
+  businessId,
   onSelectBlock,
   onChange,
   onCreateStep,
@@ -1490,6 +1492,7 @@ function ConversationMap({
   visualFlow: VisualFlowDefinition;
   effectiveEdges: ReturnType<typeof getEffectiveVisualEdges>;
   selectedBlockId: string;
+  businessId?: string;
   onSelectBlock: (blockId: string) => void;
   onChange: (flow: VisualFlowDefinition) => void;
   onCreateStep: (flow: VisualFlowDefinition, createdNodeId: string) => void;
@@ -1593,6 +1596,8 @@ function ConversationMap({
           }}
           onUpdateOption={updateFocusedOption}
           onDeleteOption={deleteFocusedOption}
+          onChange={onChange}
+          businessId={businessId}
         />
         {addTarget ? (
           <InlineAddStepCard
@@ -1809,7 +1814,7 @@ function ConversationMapBlock({
           ))}
         </div>
       ) : null}
-      {node.type === "MAIN_MENU" || node.config.messageBehavior === "options" ? (
+      {node.type === "START" || node.type === "MAIN_MENU" || node.config.messageBehavior === "options" ? (
         <button
           type="button"
           disabled={!canAddOptionBranch}
@@ -1881,10 +1886,13 @@ function FocusedBranchCanvas({
   onCreateOptionTarget,
   onUpdateOption,
   onDeleteOption,
+  onChange,
+  businessId,
 }: {
   visualFlow: VisualFlowDefinition;
   edges: ReturnType<typeof getEffectiveVisualEdges>;
   selectedBlockId: string;
+  businessId?: string;
   focusedOption: { sourceNodeId: string; optionKey: string };
   onBack: () => void;
   onSelectBlock: (blockId: string) => void;
@@ -1899,11 +1907,14 @@ function FocusedBranchCanvas({
     updater: (option: VisualMenuOption) => VisualMenuOption,
   ) => void;
   onDeleteOption: (sourceNodeId: string, optionKey: string) => void;
+  onChange: (flow: VisualFlowDefinition) => void;
 }) {
   const sourceNode = visualFlow.nodes.find((node) => node.id === focusedOption.sourceNodeId);
-  const sourceOption = sourceNode?.config.menuOptions?.find(
-    (option) => option.key === focusedOption.optionKey,
-  );
+  const sourceOptionIndex =
+    sourceNode?.config.menuOptions?.findIndex((option) => option.key === focusedOption.optionKey) ??
+    -1;
+  const sourceOption =
+    sourceOptionIndex >= 0 ? sourceNode?.config.menuOptions?.[sourceOptionIndex] : undefined;
   const route = sourceNode
     ? optionRoutesForNode(
         sourceNode,
@@ -1985,18 +1996,17 @@ function FocusedBranchCanvas({
             />
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-            <NextBlockSelect
-              label="After customer taps this option"
-              nodes={visualFlow.nodes}
-              value={sourceOption.targetNodeId ?? ""}
-              onCreateNew={() => setCreateTargetOpen(true)}
-              onChange={(value) =>
-                onUpdateOption(focusedOption.sourceNodeId, focusedOption.optionKey, (option) => ({
-                  ...option,
-                  targetNodeId: value,
-                }))
-              }
-            />
+            {sourceNode && sourceOption ? (
+              <OptionResponseEditor
+                visualFlow={visualFlow}
+                sourceNode={sourceNode}
+                option={sourceOption}
+                optionIndex={sourceOptionIndex}
+                nodes={visualFlow.nodes}
+                businessId={businessId}
+                onFlowChange={onChange}
+              />
+            ) : null}
             <label className="mt-6 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -3456,13 +3466,23 @@ function BusinessBlockSettings({
         block={block}
         nodes={nodes}
         visualFlow={visualFlow}
+        businessId={businessId}
         onChange={onChange}
         onFlowChange={onFlowChange}
       />
     );
   }
   if (block.type === "MAIN_MENU") {
-    return <MainMenuBlockSettings block={block} nodes={nodes} onChange={onChange} />;
+    return (
+      <MainMenuBlockSettings
+        block={block}
+        nodes={nodes}
+        visualFlow={visualFlow}
+        businessId={businessId}
+        onChange={onChange}
+        onFlowChange={onFlowChange}
+      />
+    );
   }
   if (block.type === "QUESTION") {
     return <QuestionBlockSettings block={block} nodes={nodes} onChange={onChange} />;
@@ -3498,7 +3518,16 @@ function BusinessBlockSettings({
     );
   }
   if (block.config.menuOptions?.length || block.config.messageBehavior === "options") {
-    return <OptionsMessageSettings block={block} nodes={nodes} onChange={onChange} />;
+    return (
+      <OptionsMessageSettings
+        block={block}
+        nodes={nodes}
+        visualFlow={visualFlow}
+        businessId={businessId}
+        onChange={onChange}
+        onFlowChange={onFlowChange}
+      />
+    );
   }
   if (block.type === "SEND_MESSAGE" || block.config.messageBehavior) {
     return <MessageStepSettings block={block} nodes={nodes} onChange={onChange} />;
@@ -3547,12 +3576,14 @@ function EntryPointSettings({
   block,
   nodes,
   visualFlow,
+  businessId,
   onChange,
   onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
   visualFlow: VisualFlowDefinition;
+  businessId?: string;
   onChange: (node: VisualFlowNode) => void;
   onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
@@ -3629,6 +3660,17 @@ function EntryPointSettings({
             }
           />
         </SettingsSection>
+      ) : null}
+      {block.config.menuOptions?.length ? (
+        <MenuOptionsEditor
+          block={block}
+          nodes={nodes}
+          visualFlow={visualFlow}
+          businessId={businessId}
+          onChange={onChange}
+          onFlowChange={onFlowChange}
+          title="Welcome options customers see"
+        />
       ) : null}
       {behavior === "custom_step" ? (
         <NextBlockSelect
@@ -4170,11 +4212,17 @@ function MessageStepSettings({
 function OptionsMessageSettings({
   block,
   nodes,
+  visualFlow,
+  businessId,
   onChange,
+  onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  businessId?: string;
   onChange: (node: VisualFlowNode) => void;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -4186,7 +4234,10 @@ function OptionsMessageSettings({
       <MenuOptionsEditor
         block={block}
         nodes={nodes}
+        visualFlow={visualFlow}
+        businessId={businessId}
         onChange={onChange}
+        onFlowChange={onFlowChange}
         title="WhatsApp options customers see"
       />
       <SettingsSection title="Invalid input">
@@ -4227,11 +4278,17 @@ function OptionsMessageSettings({
 function MainMenuBlockSettings({
   block,
   nodes,
+  visualFlow,
+  businessId,
   onChange,
+  onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  businessId?: string;
   onChange: (node: VisualFlowNode) => void;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -4261,7 +4318,10 @@ function MainMenuBlockSettings({
       <MenuOptionsEditor
         block={block}
         nodes={nodes}
+        visualFlow={visualFlow}
+        businessId={businessId}
         onChange={onChange}
+        onFlowChange={onFlowChange}
         title="WhatsApp options customers see"
       />
     </div>
@@ -4271,13 +4331,19 @@ function MainMenuBlockSettings({
 function MenuOptionsEditor({
   block,
   nodes,
+  visualFlow,
+  businessId,
   title,
   onChange,
+  onFlowChange,
 }: {
   block: VisualFlowNode;
   nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  businessId?: string;
   title: string;
   onChange: (node: VisualFlowNode) => void;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
 }) {
   const options = block.config.menuOptions ?? [];
   const activeOptionCount = options.filter((option) => option.active !== false).length;
@@ -4371,16 +4437,26 @@ function MenuOptionsEditor({
                 }
               />
             </div>
-            <TextField
-              label="Option key"
-              value={option.key ?? option.action ?? ""}
-              onChange={(value) => updateOption(index, { ...option, key: value })}
-            />
-            <NextBlockSelect
-              label="After customer taps this option"
+            <details className="rounded-md border border-border/70 bg-surface/20 px-3 py-2 text-sm">
+              <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                Advanced option identity
+              </summary>
+              <div className="mt-3">
+                <TextField
+                  label="Stable option key"
+                  value={option.key ?? option.action ?? ""}
+                  onChange={(value) => updateOption(index, { ...option, key: value })}
+                />
+              </div>
+            </details>
+            <OptionResponseEditor
+              visualFlow={visualFlow}
+              sourceNode={block}
+              option={option}
+              optionIndex={index}
               nodes={nodes}
-              value={option.targetNodeId ?? ""}
-              onChange={(value) => updateOption(index, { ...option, targetNodeId: value })}
+              businessId={businessId}
+              onFlowChange={onFlowChange}
             />
             <ToggleField
               label="Active"
@@ -4428,6 +4504,617 @@ function MenuOptionsEditor({
       </button>
     </SettingsSection>
   );
+}
+
+type OptionResponseKind = "send_text" | "send_image" | "talk_to_human" | "end" | "go_to_step";
+type ResponseAfterBehavior = "return_here" | "end" | "main_menu" | "next";
+
+const optionResponseKinds: Array<{ id: OptionResponseKind; label: string; help: string }> = [
+  {
+    id: "send_text",
+    label: "Send text reply",
+    help: "Customer taps the option and receives a normal WhatsApp text message.",
+  },
+  {
+    id: "send_image",
+    label: "Send image + caption",
+    help: "Use for price lists, menus, flyers, or any image-based answer.",
+  },
+  {
+    id: "talk_to_human",
+    label: "Talk to human",
+    help: "Pause automation and send the customer to support.",
+  },
+  {
+    id: "end",
+    label: "End conversation",
+    help: "Stop the automated flow after this option is tapped.",
+  },
+  {
+    id: "go_to_step",
+    label: "Go to existing step",
+    help: "Advanced: send this option to another block in the map.",
+  },
+];
+
+function OptionResponseEditor({
+  visualFlow,
+  sourceNode,
+  option,
+  optionIndex,
+  nodes,
+  businessId,
+  onFlowChange,
+}: {
+  visualFlow: VisualFlowDefinition;
+  sourceNode: VisualFlowNode;
+  option: VisualMenuOption;
+  optionIndex: number;
+  nodes: VisualFlowNode[];
+  businessId?: string;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
+}) {
+  const target = nodes.find((node) => node.id === option.targetNodeId);
+  const responseKind = inferOptionResponseKind(target);
+  const selectedKind =
+    optionResponseKinds.find((entry) => entry.id === responseKind) ?? optionResponseKinds[0];
+
+  function applyKind(kind: OptionResponseKind) {
+    if (kind === "go_to_step") return;
+    onFlowChange(
+      ensureOptionResponseTarget(visualFlow, {
+        sourceNodeId: sourceNode.id,
+        option,
+        optionIndex,
+        kind,
+      }),
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border border-primary/25 bg-primary/5 p-3">
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium">When customer taps this option</span>
+        <select
+          value={responseKind}
+          onChange={(event) => applyKind(event.target.value as OptionResponseKind)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          {optionResponseKinds.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {entry.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="text-xs text-muted-foreground">{selectedKind.help}</p>
+
+      {responseKind === "send_text" && target ? (
+        <TextOptionResponseFields
+          block={target}
+          sourceNodeId={sourceNode.id}
+          nodes={nodes}
+          visualFlow={visualFlow}
+          onFlowChange={onFlowChange}
+        />
+      ) : null}
+      {responseKind === "send_image" && target?.type === "SEND_IMAGE" ? (
+        <ImageOptionResponseFields
+          block={target}
+          sourceNodeId={sourceNode.id}
+          nodes={nodes}
+          visualFlow={visualFlow}
+          businessId={businessId}
+          onFlowChange={onFlowChange}
+        />
+      ) : null}
+      {responseKind === "talk_to_human" ? (
+        <p className="rounded-md border border-border/80 bg-background px-3 py-2 text-xs text-muted-foreground">
+          This option will pause the bot and send the configured human handoff message. Select the
+          handoff step in the map to edit that support message.
+        </p>
+      ) : null}
+      {responseKind === "end" ? (
+        <p className="rounded-md border border-border/80 bg-background px-3 py-2 text-xs text-muted-foreground">
+          This option ends the automated conversation. The customer can message again later to start
+          a new flow.
+        </p>
+      ) : null}
+      {responseKind === "go_to_step" ? (
+        <NextBlockSelect
+          label="Existing step"
+          nodes={nodes}
+          value={option.targetNodeId ?? ""}
+          onChange={(targetNodeId) =>
+            onFlowChange(setOptionTarget(visualFlow, sourceNode.id, optionIndex, targetNodeId))
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function TextOptionResponseFields({
+  block,
+  sourceNodeId,
+  nodes,
+  visualFlow,
+  onFlowChange,
+}: {
+  block: VisualFlowNode;
+  sourceNodeId: string;
+  nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <TextAreaField
+        label="Reply text EN"
+        value={block.config.messages?.en ?? ""}
+        onChange={(value) =>
+          onFlowChange(
+            updateVisualFlowNode(visualFlow, {
+              ...block,
+              config: { ...block.config, messages: { ...block.config.messages, en: value } },
+            }),
+          )
+        }
+      />
+      <TextAreaField
+        label="Reply text AR"
+        value={block.config.messages?.ar ?? ""}
+        dir="rtl"
+        onChange={(value) =>
+          onFlowChange(
+            updateVisualFlowNode(visualFlow, {
+              ...block,
+              config: { ...block.config, messages: { ...block.config.messages, ar: value } },
+            }),
+          )
+        }
+      />
+      <AfterResponseSelect
+        block={block}
+        sourceNodeId={sourceNodeId}
+        nodes={nodes}
+        visualFlow={visualFlow}
+        onFlowChange={onFlowChange}
+      />
+    </div>
+  );
+}
+
+function ImageOptionResponseFields({
+  block,
+  sourceNodeId,
+  nodes,
+  visualFlow,
+  businessId,
+  onFlowChange,
+}: {
+  block: VisualFlowNode;
+  sourceNodeId: string;
+  nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  businessId?: string;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  async function handleUpload(file: File | undefined) {
+    if (!file) return;
+    if (!businessId) {
+      setUploadError("Open a business before uploading images.");
+      return;
+    }
+    setUploading(true);
+    setUploadError("");
+    try {
+      const image = await uploadAdminFlowImage(businessId, file);
+      onFlowChange(
+        updateVisualFlowNode(visualFlow, {
+          ...block,
+          config: { ...block.config, mediaUrl: image.url },
+        }),
+      );
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Image upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md border border-border bg-background p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium">Image file</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Upload a JPG, PNG, or WebP price list/menu image.
+            </p>
+          </div>
+          <label
+            className={`studio-button-secondary cursor-pointer px-3 py-1.5 ${
+              uploading ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            {uploading ? "Uploading..." : "Upload image"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={uploading}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                void handleUpload(file);
+              }}
+            />
+          </label>
+        </div>
+        {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
+        {block.config.mediaUrl ? (
+          <div className="mt-3 overflow-hidden rounded-md border border-border bg-surface/30">
+            <img
+              src={block.config.mediaUrl}
+              alt="WhatsApp option image preview"
+              className="max-h-40 w-full object-contain"
+            />
+          </div>
+        ) : null}
+      </div>
+      <TextField
+        label="Image URL"
+        value={block.config.mediaUrl ?? ""}
+        onChange={(value) =>
+          onFlowChange(
+            updateVisualFlowNode(visualFlow, {
+              ...block,
+              config: { ...block.config, mediaUrl: value },
+            }),
+          )
+        }
+      />
+      <TextAreaField
+        label="Caption EN"
+        value={block.config.mediaCaption?.en ?? ""}
+        onChange={(value) =>
+          onFlowChange(
+            updateVisualFlowNode(visualFlow, {
+              ...block,
+              config: {
+                ...block.config,
+                mediaCaption: { ...block.config.mediaCaption, en: value },
+              },
+            }),
+          )
+        }
+      />
+      <TextAreaField
+        label="Caption AR"
+        value={block.config.mediaCaption?.ar ?? ""}
+        dir="rtl"
+        onChange={(value) =>
+          onFlowChange(
+            updateVisualFlowNode(visualFlow, {
+              ...block,
+              config: {
+                ...block.config,
+                mediaCaption: { ...block.config.mediaCaption, ar: value },
+              },
+            }),
+          )
+        }
+      />
+      <AfterResponseSelect
+        block={block}
+        sourceNodeId={sourceNodeId}
+        nodes={nodes}
+        visualFlow={visualFlow}
+        onFlowChange={onFlowChange}
+      />
+    </div>
+  );
+}
+
+function AfterResponseSelect({
+  block,
+  sourceNodeId,
+  nodes,
+  visualFlow,
+  onFlowChange,
+}: {
+  block: VisualFlowNode;
+  sourceNodeId: string;
+  nodes: VisualFlowNode[];
+  visualFlow: VisualFlowDefinition;
+  onFlowChange: (flow: VisualFlowDefinition) => void;
+}) {
+  const behavior = inferAfterResponseBehavior(block, sourceNodeId);
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm">
+        <span className="mb-1 block text-muted-foreground">After sending this reply</span>
+        <select
+          value={behavior}
+          onChange={(event) =>
+            onFlowChange(
+              updateVisualFlowNode(
+                visualFlow,
+                applyAfterResponseBehavior(block, sourceNodeId, event.target.value as ResponseAfterBehavior),
+              ),
+            )
+          }
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option value="return_here">Return to these options</option>
+          <option value="end">End conversation</option>
+          <option value="main_menu">Go to main menu</option>
+          <option value="next">Go to another step</option>
+        </select>
+      </label>
+      {behavior === "next" ? (
+        <NextBlockSelect
+          label="Next step"
+          nodes={nodes}
+          value={
+            block.config.messageNextNodeId && block.config.messageNextNodeId !== sourceNodeId
+              ? block.config.messageNextNodeId
+              : ""
+          }
+          onChange={(targetNodeId) =>
+            onFlowChange(
+              updateVisualFlowNode(visualFlow, {
+                ...block,
+                config: {
+                  ...block.config,
+                  messageBehavior: "next",
+                  messageNextNodeId: targetNodeId,
+                },
+              }),
+            )
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function inferOptionResponseKind(target?: VisualFlowNode): OptionResponseKind {
+  if (!target) return "go_to_step";
+  if (target.type === "SEND_IMAGE") return "send_image";
+  if (target.type === "HUMAN_HANDOFF") return "talk_to_human";
+  if (target.type === "END") return "end";
+  if (target.type === "SEND_MESSAGE" || target.type === "STORE_INFO") return "send_text";
+  return "go_to_step";
+}
+
+function inferAfterResponseBehavior(block: VisualFlowNode, sourceNodeId: string): ResponseAfterBehavior {
+  if (block.config.messageBehavior === "end") return "end";
+  if (block.config.messageBehavior === "main_menu") return "main_menu";
+  if (block.config.messageBehavior === "next" && block.config.messageNextNodeId === sourceNodeId) {
+    return "return_here";
+  }
+  return "next";
+}
+
+function applyAfterResponseBehavior(
+  block: VisualFlowNode,
+  sourceNodeId: string,
+  behavior: ResponseAfterBehavior,
+): VisualFlowNode {
+  if (behavior === "return_here") {
+    return {
+      ...block,
+      config: { ...block.config, messageBehavior: "next", messageNextNodeId: sourceNodeId },
+    };
+  }
+  if (behavior === "end") {
+    return {
+      ...block,
+      config: { ...block.config, messageBehavior: "end", messageNextNodeId: undefined },
+    };
+  }
+  if (behavior === "main_menu") {
+    return {
+      ...block,
+      config: { ...block.config, messageBehavior: "main_menu", messageNextNodeId: undefined },
+    };
+  }
+  return {
+    ...block,
+    config: {
+      ...block.config,
+      messageBehavior: "next",
+      messageNextNodeId:
+        block.config.messageNextNodeId === sourceNodeId ? undefined : block.config.messageNextNodeId,
+    },
+  };
+}
+
+function ensureOptionResponseTarget(
+  visualFlow: VisualFlowDefinition,
+  options: {
+    sourceNodeId: string;
+    option: VisualMenuOption;
+    optionIndex: number;
+    kind: Exclude<OptionResponseKind, "go_to_step">;
+  },
+): VisualFlowDefinition {
+  const target = visualFlow.nodes.find((node) => node.id === options.option.targetNodeId);
+  const label = options.option.label.en?.trim() || options.option.key?.trim() || "Option";
+
+  if (options.kind === "talk_to_human") {
+    const existing =
+      target?.type === "HUMAN_HANDOFF"
+        ? target
+        : visualFlow.nodes.find((node) => node.type === "HUMAN_HANDOFF");
+    const created = existing ? undefined : addResponseBlock(visualFlow, "HUMAN_HANDOFF", "Talk to human");
+    const handoff = existing ?? created?.node;
+    const flow = created?.flow ?? visualFlow;
+    if (!handoff) return visualFlow;
+    return setOptionTarget(flow, options.sourceNodeId, options.optionIndex, handoff.id);
+  }
+
+  if (options.kind === "end") {
+    const existing =
+      target?.type === "END" ? target : visualFlow.nodes.find((node) => node.type === "END");
+    const created = existing ? undefined : addResponseBlock(visualFlow, "END", "End");
+    const end = existing ?? created?.node;
+    const flow = created?.flow ?? visualFlow;
+    if (!end) return visualFlow;
+    return setOptionTarget(flow, options.sourceNodeId, options.optionIndex, end.id);
+  }
+
+  if (options.kind === "send_image") {
+    if (target?.type === "SEND_IMAGE") return visualFlow;
+    if (
+      target &&
+      isSimpleResponseBlock(target) &&
+      canConvertOptionTarget(visualFlow, options.sourceNodeId, target.id)
+    ) {
+      const converted: VisualFlowNode = {
+        ...target,
+        type: "SEND_IMAGE",
+        title: target.title || `${label} image`,
+        config: {
+          ...target.config,
+          mediaCaption: target.config.mediaCaption ?? target.config.messages,
+          messageBehavior: "next",
+          messageNextNodeId: options.sourceNodeId,
+          menuOptions: undefined,
+        },
+      };
+      return setOptionTarget(
+        updateVisualFlowNode(visualFlow, converted),
+        options.sourceNodeId,
+        options.optionIndex,
+        converted.id,
+      );
+    }
+    const { flow, node } = addResponseBlock(
+      visualFlow,
+      "SEND_IMAGE",
+      `${label} image`,
+      options.sourceNodeId,
+    );
+    return setOptionTarget(flow, options.sourceNodeId, options.optionIndex, node.id);
+  }
+
+  if (target?.type === "SEND_MESSAGE" || target?.type === "STORE_INFO") return visualFlow;
+  if (
+    target &&
+    isSimpleResponseBlock(target) &&
+    canConvertOptionTarget(visualFlow, options.sourceNodeId, target.id)
+  ) {
+    const converted: VisualFlowNode = {
+      ...target,
+      type: "SEND_MESSAGE",
+      title: target.title || `${label} reply`,
+      config: {
+        ...target.config,
+        messages: target.config.messages ?? target.config.mediaCaption ?? { en: "", ar: "" },
+        mediaUrl: undefined,
+        mediaCaption: undefined,
+        messageBehavior: "end",
+        messageNextNodeId: undefined,
+        menuOptions: undefined,
+      },
+    };
+    return setOptionTarget(
+      updateVisualFlowNode(visualFlow, converted),
+      options.sourceNodeId,
+      options.optionIndex,
+      converted.id,
+    );
+  }
+  const { flow, node } = addResponseBlock(visualFlow, "SEND_MESSAGE", `${label} reply`);
+  return setOptionTarget(flow, options.sourceNodeId, options.optionIndex, node.id);
+}
+
+function addResponseBlock(
+  visualFlow: VisualFlowDefinition,
+  type: VisualFlowBlockType,
+  title: string,
+  returnToNodeId?: string,
+) {
+  const next = addConfiguredVisualNode(visualFlow, type, {
+    title,
+    nextNodeId: returnToNodeId,
+  });
+  const node = next.nodes[next.nodes.length - 1];
+  const configured =
+    type === "SEND_IMAGE"
+      ? {
+          ...node,
+          config: {
+            ...node.config,
+            mediaCaption: node.config.mediaCaption ?? { en: title, ar: "" },
+            messageBehavior: returnToNodeId ? "next" : node.config.messageBehavior,
+            messageNextNodeId: returnToNodeId ?? node.config.messageNextNodeId,
+          },
+        }
+      : node;
+  const flow =
+    configured === node
+      ? next
+      : {
+          ...next,
+          nodes: next.nodes.map((entry) => (entry.id === configured.id ? configured : entry)),
+        };
+  return { flow, node: configured };
+}
+
+function setOptionTarget(
+  visualFlow: VisualFlowDefinition,
+  sourceNodeId: string,
+  optionIndex: number,
+  targetNodeId: string,
+): VisualFlowDefinition {
+  return {
+    ...visualFlow,
+    nodes: visualFlow.nodes.map((node) =>
+      node.id === sourceNodeId
+        ? {
+            ...node,
+            config: {
+              ...node.config,
+              menuOptions: (node.config.menuOptions ?? []).map((option, index) =>
+                index === optionIndex ? { ...option, targetNodeId } : option,
+              ),
+            },
+          }
+        : node,
+    ),
+  };
+}
+
+function updateVisualFlowNode(
+  visualFlow: VisualFlowDefinition,
+  updatedNode: VisualFlowNode,
+): VisualFlowDefinition {
+  return {
+    ...visualFlow,
+    nodes: visualFlow.nodes.map((node) => (node.id === updatedNode.id ? updatedNode : node)),
+  };
+}
+
+function canConvertOptionTarget(
+  visualFlow: VisualFlowDefinition,
+  sourceNodeId: string,
+  targetNodeId: string,
+) {
+  const incoming = getEffectiveVisualEdges(visualFlow).filter(
+    (edge) => edge.targetNodeId === targetNodeId,
+  );
+  return incoming.length <= 1 && incoming.every((edge) => edge.sourceNodeId === sourceNodeId);
+}
+
+function isSimpleResponseBlock(node: VisualFlowNode) {
+  return node.type === "SEND_MESSAGE" || node.type === "SEND_IMAGE";
 }
 
 function QuestionBlockSettings({
