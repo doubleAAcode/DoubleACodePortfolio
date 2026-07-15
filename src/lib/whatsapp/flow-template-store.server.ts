@@ -275,12 +275,10 @@ export async function cloneTemplateToBusiness({
   const existingFlow = (await listBusinessFlows(businessId))[0] ?? null;
   const existingVersions = existingFlow ? await listBusinessFlowVersions(existingFlow.id) : [];
   const flowId = existingFlow?.id ?? `bf-${slug(businessId)}`;
-  const draft = existingVersions.find((version) => version.status === "DRAFT");
   const versionNumber = publish
     ? Math.max(0, ...existingVersions.map((version) => version.version_number)) + 1
-    : draft?.version_number ??
-      Math.max(0, ...existingVersions.map((version) => version.version_number)) + 1;
-  const versionId = publish ? `${flowId}-v${versionNumber}` : draft?.id ?? `${flowId}-v${versionNumber}`;
+    : Math.max(0, ...existingVersions.map((version) => version.version_number)) + 1;
+  const versionId = `${flowId}-v${versionNumber}`;
   const flow: BusinessFlowRow = {
     id: flowId,
     business_id: businessId,
@@ -300,9 +298,12 @@ export async function cloneTemplateToBusiness({
     validation_result: validation,
     created_by_user_id: adminUser,
     published_at: publish ? now : null,
-    created_at: publish ? now : draft?.created_at ?? now,
+    created_at: now,
   };
   await upsertBusinessFlow(flow);
+  if (!publish) {
+    await archiveBusinessDraftVersions(flowId);
+  }
   await upsertBusinessFlowVersion(version);
   if (publish) {
     await archiveOtherBusinessVersions(flowId, versionId);
@@ -620,6 +621,15 @@ async function archiveOtherBusinessVersions(businessFlowId: string, exceptVersio
   await Promise.all(
     versions
       .filter((version) => version.id !== exceptVersionId && version.status === "PUBLISHED")
+      .map((version) => upsertBusinessFlowVersion({ ...version, status: "ARCHIVED" })),
+  );
+}
+
+async function archiveBusinessDraftVersions(businessFlowId: string) {
+  const versions = await listBusinessFlowVersions(businessFlowId);
+  await Promise.all(
+    versions
+      .filter((version) => version.status === "DRAFT")
       .map((version) => upsertBusinessFlowVersion({ ...version, status: "ARCHIVED" })),
   );
 }

@@ -248,10 +248,14 @@ test("admin template cloning creates an editable draft without replacing the liv
   const route = readFileSync("src/routes/admin.businesses.$businessId.flow-builder.tsx", "utf8");
 
   assert.match(source, /publish = false/);
+  assert.match(source, /const versionId = `\$\{flowId\}-v\$\{versionNumber\}`/);
   assert.match(source, /status: publish \? "PUBLISHED" : "DRAFT"/);
   assert.match(source, /active_version_id: publish \? null : existingFlow\?\.active_version_id \?\? null/);
+  assert.match(source, /await archiveBusinessDraftVersions\(flowId\)/);
+  assert.match(source, /async function archiveBusinessDraftVersions/);
   assert.match(source, /if \(publish\) \{/);
   assert.match(source, /publish: true/);
+  assert.doesNotMatch(source, /draft\?\.id \?\? `\$\{flowId\}-v\$\{versionNumber\}`/);
   assert.match(route, /latest\.versions\.find\(\(version\) => version\.status === "DRAFT"\)\?\.id/);
 });
 
