@@ -362,11 +362,13 @@ export function compileVisualFlowToRuntimeFlow(
   const nodes: FlowNode[] = normalizedVisualFlow.nodes.map((node) => {
     const baseNode = baseNodeById.get(node.id);
     const type =
-      node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options"
+      node.type === "START" && node.config.menuOptions?.length
         ? "MAIN_MENU"
-        : node.type === "SEND_MESSAGE" && baseNode?.protectedAction
-          ? baseNode.type
-        : visualTypeToRuntime(node.type);
+        : node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options"
+          ? "MAIN_MENU"
+          : node.type === "SEND_MESSAGE" && baseNode?.protectedAction
+            ? baseNode.type
+            : visualTypeToRuntime(node.type);
     const firstEdge = edgesBySource.get(node.id)?.sort((a, b) => a.sortOrder - b.sortOrder)[0];
     return {
       id: node.id,
@@ -396,6 +398,7 @@ export function compileVisualFlowToRuntimeFlow(
   const mainMenu = normalizedVisualFlow.nodes.find((node) => node.type === "MAIN_MENU");
   const legacyOptionsSource =
     mainMenu ??
+    normalizedVisualFlow.nodes.find((node) => node.type === "START" && node.config.menuOptions?.length) ??
     normalizedVisualFlow.nodes.find(
       (node) => node.type === "SEND_MESSAGE" && node.config.messageBehavior === "options",
     );
@@ -645,8 +648,33 @@ function configFromRuntimeNode(flow: FlowDefinition, node: FlowNode): VisualFlow
         .filter((edgeEntry) => edgeEntry.from === node.id)
         .map((edgeEntry) => [edgeEntry.condition, edgeEntry.to]),
     );
+    const configuredOptions = flow.editor?.mainMenuOptions?.length
+      ? flow.editor.mainMenuOptions
+      : node.options?.length
+        ? node.options
+        : undefined;
+    if (configuredOptions?.length) {
+      return {
+        messages: node.messages ?? flow.copy.welcome,
+        menuOptions: configuredOptions
+          .map((option, index) => {
+            const key = option.key || `option_${index + 1}`;
+            return {
+              key,
+              label: {
+                en: option.label.en ?? "",
+                ar: option.label.ar ?? "",
+              },
+              targetNodeId: option.targetNodeId ?? targetByCondition.get(key),
+              active: option.active !== false,
+              sortOrder: option.sortOrder ?? index + 1,
+            };
+          })
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+      };
+    }
     return {
-      messages: flow.copy.welcome,
+      messages: node.messages ?? flow.copy.welcome,
       menuOptions: [
         {
           key: "order",
@@ -989,7 +1017,7 @@ function generatedEdgesFromNodeSettings(visualFlow: VisualFlowDefinition): Visua
   const edges: VisualFlowEdge[] = [];
   let sortOrder = 1;
   for (const node of visualFlow.nodes) {
-    if (node.type === "START") {
+    if (node.type === "START" && !node.config.menuOptions?.length) {
       const target =
         node.config.startBehavior === "language_first"
           ? visualFlow.nodes.find((entry) => entry.type === "LANGUAGE_SELECTION")?.id
@@ -1009,7 +1037,7 @@ function generatedEdgesFromNodeSettings(visualFlow: VisualFlowDefinition): Visua
       }
     } else if (
       node.config.menuOptions?.length &&
-      (node.type === "MAIN_MENU" || node.config.messageBehavior === "options")
+      (node.type === "START" || node.type === "MAIN_MENU" || node.config.messageBehavior === "options")
     ) {
       for (const option of node.config.menuOptions ?? []) {
         if (option.active === false || !option.targetNodeId) continue;

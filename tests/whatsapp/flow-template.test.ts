@@ -65,6 +65,70 @@ test("official admin templates validate and preserve intended commerce scope", (
   );
 });
 
+test("greeting template clone preserves start options and targets in the visual builder", () => {
+  const greeting = createDefaultFlowDefinition("GREETING_STORE_INFO");
+  const visual = createVisualFlowFromRuntime(greeting);
+  const start = visual.nodes.find((node) => node.id === "start");
+  const effectiveEdges = getEffectiveVisualEdges(visual);
+  const visualValidation = validateVisualFlow(visual);
+  const compiled = compileVisualFlowToRuntimeFlow(visual, greeting);
+
+  assert.equal(start?.type, "START");
+  assert.deepEqual(
+    start?.config.menuOptions?.map((option) => ({
+      key: option.key,
+      targetNodeId: option.targetNodeId,
+      active: option.active,
+    })),
+    [
+      { key: "store_info", targetNodeId: "store_info", active: true },
+      { key: "support", targetNodeId: "human_handoff", active: true },
+    ],
+  );
+  assert.equal(
+    visualValidation.issues.some((issue) => issue.code === "VISUAL_ENTRY_NEXT_REQUIRED"),
+    false,
+  );
+  assert.equal(
+    visualValidation.issues.some((issue) =>
+      issue.message.includes("not reachable from the first WhatsApp message"),
+    ),
+    false,
+  );
+  assert.equal(visualValidation.ok, true);
+  assert.equal(
+    effectiveEdges.some(
+      (edge) =>
+        edge.sourceNodeId === "start" &&
+        edge.targetNodeId === "store_info" &&
+        edge.condition === "store_info",
+    ),
+    true,
+  );
+  assert.equal(
+    effectiveEdges.some(
+      (edge) =>
+        edge.sourceNodeId === "start" &&
+        edge.targetNodeId === "human_handoff" &&
+        edge.condition === "support",
+    ),
+    true,
+  );
+  assert.equal(compiled.ok, true);
+  assert.equal(compiled.flow?.nodes.find((node) => node.id === "start")?.type, "MAIN_MENU");
+  assert.deepEqual(
+    compiled.flow?.editor?.mainMenuOptions?.map((option) => ({
+      key: option.key,
+      targetNodeId: option.targetNodeId,
+      active: option.active,
+    })),
+    [
+      { key: "store_info", targetNodeId: "store_info", active: true },
+      { key: "support", targetNodeId: "human_handoff", active: true },
+    ],
+  );
+});
+
 test("ecommerce template clone preserves protected purchase pipeline nodes", () => {
   const ecommerce = createDefaultFlowDefinition("ECOMMERCE");
   const visual = createVisualFlowFromRuntime(ecommerce);
