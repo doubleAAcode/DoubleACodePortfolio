@@ -103,6 +103,7 @@ export type ConversationInput = {
 
 export type BotResponse =
   | { type: "text"; text: string }
+  | { type: "image"; imageUrl: string; caption?: string }
   | {
       type: "buttons";
       body: string;
@@ -123,6 +124,7 @@ const MAX_QUANTITY_PER_ITEM = 10;
 const MAX_AUTOMATIC_RUNTIME_TRANSITIONS = 12;
 const visualRuntimeNodeTypes = new Set<FlowNode["type"]>([
   "MESSAGE",
+  "IMAGE_MESSAGE",
   "LANGUAGE_SELECT",
   "MAIN_MENU",
   "HUMAN_HANDOFF",
@@ -472,7 +474,7 @@ export async function processIncomingMessage({
     return handleCustomFieldInput(session, input, now);
   if (session.currentStep === "SELECT_QUANTITY")
     return handleQuantitySelection(session, input, now);
-  if (session.currentStep === "CART_MENU") return handleCartMenu(session, input, now);
+  if (session.currentStep === "CART_MENU") return handleCartMenu(session, input, now, flowSettings);
   if (session.currentStep === "EDIT_CART_ITEM") return handleEditCartItem(session, input, now);
   if (session.currentStep === "REMOVE_CART_ITEM") return handleRemoveCartItem(session, input, now);
   if (session.currentStep === "CHANGE_CART_ITEM_QUANTITY") {
@@ -509,7 +511,7 @@ export async function processIncomingMessage({
     return confirmOrder(session, now, messageId);
   }
   if (session.currentStep === "ORDER_CREATED") {
-    return handleCompletedOrder(session, input, now);
+    return handleCompletedOrder(session, input, now, flowSettings);
   }
 
   return handleMainMenu(session, input, now, flowSettings);
@@ -683,6 +685,15 @@ async function enterVisualNode(
 
   if (node.type === "MESSAGE") {
     const response = runtimeTextResponse(flow, node, language);
+    const next = firstRuntimeTarget(flow, node.id);
+    if (next) {
+      return enterVisualNode(baseSession, flow, next, now, [...carriedResponses, response], timingContext);
+    }
+    return [...carriedResponses, response];
+  }
+
+  if (node.type === "IMAGE_MESSAGE") {
+    const response = runtimeImageResponse(node, language);
     const next = firstRuntimeTarget(flow, node.id);
     if (next) {
       return enterVisualNode(baseSession, flow, next, now, [...carriedResponses, response], timingContext);
@@ -873,6 +884,24 @@ function runtimeTextResponse(
   };
 }
 
+function runtimeImageResponse(
+  node: FlowNode,
+  language: ConversationLanguage,
+): Extract<BotResponse, { type: "image" }> {
+  const imageUrl = node.mediaUrl?.trim() || "";
+  const caption =
+    node.mediaCaption?.[language]?.trim() ||
+    node.mediaCaption?.en?.trim() ||
+    node.messages?.[language]?.trim() ||
+    node.messages?.en?.trim() ||
+    undefined;
+  return {
+    type: "image",
+    imageUrl,
+    caption,
+  };
+}
+
 function runtimeLanguageResponse(
   flow: FlowDefinition,
   language: ConversationLanguage,
@@ -933,6 +962,27 @@ function normalizeRuntimeOption(value: string) {
   return normalize(value).replace(/^main_/, "");
 }
 
+function resetBrowseContext(
+  context: Record<string, unknown>,
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    ...context,
+    browseGroupPage: 0,
+    groupValuePage: 0,
+    categoryPage: 0,
+    productPage: 0,
+    selectedCatalogGroupId: undefined,
+    selectedCatalogGroupValueId: undefined,
+    selectedCategoryId: undefined,
+    selectedProductId: undefined,
+    pendingItem: undefined,
+    optionIndex: undefined,
+    customFieldIndex: undefined,
+    ...overrides,
+  };
+}
+
 async function handleLanguageSelection(
   session: ConversationSession,
   input: ConversationInput,
@@ -964,18 +1014,10 @@ async function handleMainMenu(
         ...session,
         language,
         currentStep: "SELECT_BROWSE_GROUP",
-        context: {
-          ...session.context,
-          browseGroupPage: 0,
-          groupValuePage: 0,
-          categoryPage: 0,
-          selectedCatalogGroupId: undefined,
-          selectedCatalogGroupValueId: undefined,
-          selectedCategoryId: undefined,
-          selectedProductId: undefined,
+        context: resetBrowseContext(session.context, {
           createdOrderId: undefined,
           createdOrderNumber: undefined,
-        },
+        }),
       },
       now,
     );
@@ -1040,20 +1082,14 @@ async function handleBrowseGroupSelection(
 
   const nextSession = await saveConversationSession(
     {
-      ...session,
-      currentStep: "SELECT_GROUP_VALUE",
-      context: {
-        ...session.context,
-        selectedCatalogGroupId: selectedGroup.id,
-        selectedCatalogGroupValueId: undefined,
-        selectedCategoryId: undefined,
-        selectedProductId: undefined,
-        groupValuePage: 0,
-        productPage: 0,
+        ...session,
+        currentStep: "SELECT_GROUP_VALUE",
+        context: resetBrowseContext(session.context, {
+          selectedCatalogGroupId: selectedGroup.id,
+        }),
       },
-    },
-    now,
-  );
+      now,
+    );
   return groupValueSelectionResponse(nextSession, flowSettings);
 }
 
@@ -1071,13 +1107,7 @@ async function handleGroupValueSelection(
       {
         ...session,
         currentStep: "SELECT_BROWSE_GROUP",
-        context: {
-          ...session.context,
-          selectedCatalogGroupId: undefined,
-          selectedCatalogGroupValueId: undefined,
-          selectedCategoryId: undefined,
-          groupValuePage: 0,
-        },
+        context: resetBrowseContext(session.context),
       },
       now,
     );
@@ -1167,12 +1197,9 @@ async function handleCategorySelection(
     {
       ...session,
       currentStep: "SELECT_PRODUCT",
-      context: {
-        ...session.context,
+      context: resetBrowseContext(session.context, {
         selectedCategoryId: selectedCategory.id,
-        selectedProductId: undefined,
-        productPage: 0,
-      },
+      }),
     },
     now,
   );
@@ -1274,12 +1301,10 @@ async function handleProductDetails(
       {
         ...session,
         currentStep: "SELECT_CATEGORY",
-        context: {
-          ...session.context,
-          categoryPage: 0,
+        context: resetBrowseContext(session.context, {
           createdOrderId: undefined,
           createdOrderNumber: undefined,
-        },
+        }),
       },
       now,
     );
@@ -1696,6 +1721,7 @@ async function handleCartMenu(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): Promise<BotResponse[]> {
   const language = session.language ?? "en";
   const normalized = normalize(input.value);
@@ -1704,12 +1730,12 @@ async function handleCartMenu(
     const nextSession = await saveConversationSession(
       {
         ...session,
-        currentStep: "SELECT_CATEGORY",
-        context: { ...session.context, categoryPage: 0 },
+        currentStep: "SELECT_BROWSE_GROUP",
+        context: resetBrowseContext(session.context),
       },
       now,
     );
-    return categorySelectionResponse(nextSession);
+    return browseGroupSelectionResponse(nextSession, flowSettings);
   }
 
   if (["cart_view", "view cart"].includes(normalized)) return cartMenuResponse(session);
@@ -2562,28 +2588,24 @@ async function handleCompletedOrder(
   session: ConversationSession,
   input: ConversationInput,
   now: Date,
+  flowSettings = getDefaultBotFlowSettings(session.businessId),
 ): Promise<BotResponse[]> {
   const normalized = normalize(input.value);
   if (["cart_add_another", "new order", "place an order"].includes(normalized)) {
     const nextSession = await saveConversationSession(
       {
         ...session,
-        currentStep: "SELECT_CATEGORY",
-        context: {
-          ...session.context,
+        currentStep: "SELECT_BROWSE_GROUP",
+        context: resetBrowseContext(session.context, {
           cart: [],
           checkout: undefined,
-          pendingItem: undefined,
-          categoryPage: 0,
-          selectedCategoryId: undefined,
-          selectedProductId: undefined,
           createdOrderId: undefined,
           createdOrderNumber: undefined,
-        },
+        }),
       },
       now,
     );
-    return categorySelectionResponse(nextSession);
+    return browseGroupSelectionResponse(nextSession, flowSettings);
   }
 
   await saveConversationSession(session, now);
@@ -2816,7 +2838,7 @@ async function browseGroupSelectionResponse(
       {
         ...session,
         currentStep: "SELECT_GROUP_VALUE",
-        context: { ...session.context, selectedCatalogGroupId: group.id, groupValuePage: 0 },
+        context: resetBrowseContext(session.context, { selectedCatalogGroupId: group.id }),
       },
       new Date(),
     );

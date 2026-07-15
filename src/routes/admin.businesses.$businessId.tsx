@@ -21,6 +21,7 @@ import {
   getAdminBusinessDetails,
   getBusinessFlowDetails,
   getFlowTemplates,
+  uploadAdminFlowImage,
 } from "@/lib/whatsapp/admin-client";
 import {
   applyFlowEditorModel,
@@ -949,6 +950,7 @@ export function VisualFlowBuilderEditor({
               block={selectedBlock}
               nodes={visualFlow.nodes}
               visualFlow={visualFlow}
+              businessId={businessId}
               onChange={updateNode}
               onFlowChange={onChange}
             />
@@ -2117,6 +2119,7 @@ function CreateOptionTargetDialog({
     const cleanTitle = title.trim() || selectedKind.label;
     const withNode = addConfiguredVisualNode(visualFlow, selectedKind.type, {
       title: cleanTitle,
+      nextNodeId: kind === "image_return" ? sourceNodeId : undefined,
     });
     const created = withNode.nodes[withNode.nodes.length - 1];
     const createdConfig: VisualFlowNode["config"] =
@@ -2132,6 +2135,16 @@ function CreateOptionTargetDialog({
               },
             ],
           }
+        : kind === "image_return"
+          ? {
+              ...created.config,
+              mediaCaption: {
+                en: cleanTitle,
+                ar: "",
+              },
+              messageBehavior: "next",
+              messageNextNodeId: sourceNodeId,
+            }
         : selectedKind.type === "SEND_MESSAGE"
           ? {
               ...created.config,
@@ -2984,6 +2997,7 @@ type AddStepKind =
   | "start"
   | "message"
   | "message_end"
+  | "image_return"
   | "options"
   | "question"
   | "products"
@@ -2997,6 +3011,7 @@ const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBloc
   { id: "start", label: "Start", type: "START" },
   { id: "message", label: "Send a message", type: "SEND_MESSAGE" },
   { id: "message_end", label: "Send one message then stop", type: "SEND_MESSAGE" },
+  { id: "image_return", label: "Send image then return here", type: "SEND_IMAGE" },
   { id: "options", label: "Send a message with options", type: "SEND_MESSAGE" },
   { id: "question", label: "Ask a question", type: "QUESTION" },
   { id: "products", label: "Product purchase", type: "PRODUCT_SELECTION" },
@@ -3127,11 +3142,16 @@ function GuidedAddStepWizard({
     const withNode = addConfiguredVisualNode(visualFlow, selectedKind.type, {
       title: title.trim() || selectedKind.label,
       afterNodeId,
-      nextNodeId: afterBehavior === "next" ? nextNodeId : undefined,
+      nextNodeId:
+        kind === "image_return"
+          ? selectedBlockId
+          : afterBehavior === "next"
+            ? nextNodeId
+            : undefined,
     });
     const created = withNode.nodes[withNode.nodes.length - 1];
     const createdConfig: VisualFlowNode["config"] =
-      kind === "options" || afterBehavior === "options"
+      kind === "options" || (selectedKind.type !== "SEND_IMAGE" && afterBehavior === "options")
         ? {
             ...created.config,
             messageBehavior: "options",
@@ -3143,7 +3163,15 @@ function GuidedAddStepWizard({
               },
             ],
           }
-        : {
+        : selectedKind.type === "SEND_IMAGE"
+          ? {
+              ...created.config,
+              mediaCaption: { en: title.trim() || selectedKind.label, ar: "" },
+              messageBehavior: kind === "image_return" ? "next" : created.config.messageBehavior,
+              messageNextNodeId:
+                kind === "image_return" ? selectedBlockId : created.config.messageNextNodeId,
+            }
+          : {
             ...created.config,
             messageBehavior:
               selectedKind.type === "SEND_MESSAGE"
@@ -3456,6 +3484,16 @@ function BusinessBlockSettings({
         catalogGroupValues={catalogGroupValues}
         onChange={onChange}
         onFlowChange={onFlowChange}
+      />
+    );
+  }
+  if (block.type === "SEND_IMAGE") {
+    return (
+      <ImageStepSettings
+        block={block}
+        nodes={nodes}
+        businessId={businessId}
+        onChange={onChange}
       />
     );
   }
@@ -3869,6 +3907,157 @@ function normalizeClientSlug(value: string) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 64) || "route"
+  );
+}
+
+function ImageStepSettings({
+  block,
+  nodes,
+  businessId,
+  onChange,
+}: {
+  block: VisualFlowNode;
+  nodes: VisualFlowNode[];
+  businessId?: string;
+  onChange: (node: VisualFlowNode) => void;
+}) {
+  const behavior = block.config.messageBehavior ?? "next";
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const handleUpload = async (file: File | undefined) => {
+    if (!file) return;
+    if (!businessId) {
+      setUploadError("Open a business before uploading images.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+    try {
+      const image = await uploadAdminFlowImage(businessId, file);
+      onChange({ ...block, config: { ...block.config, mediaUrl: image.url } });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Image upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <SettingsSection title="Image customers receive">
+        <div className="rounded-md border border-border bg-surface/40 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">Upload image</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                JPG, PNG, or WebP. Maximum 3 MB. The uploaded public URL is saved into this step.
+              </p>
+            </div>
+            <label
+              className={`studio-button-secondary cursor-pointer ${
+                uploading ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
+              {uploading ? "Uploading..." : "Choose image"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  event.currentTarget.value = "";
+                  void handleUpload(file);
+                }}
+              />
+            </label>
+          </div>
+          {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
+          {block.config.mediaUrl ? (
+            <div className="mt-3 overflow-hidden rounded-md border border-border bg-background">
+              <img
+                src={block.config.mediaUrl}
+                alt="Uploaded WhatsApp image preview"
+                className="max-h-48 w-full object-contain"
+              />
+            </div>
+          ) : null}
+        </div>
+        <TextField
+          label="Public image URL"
+          value={block.config.mediaUrl ?? ""}
+          onChange={(value) =>
+            onChange({ ...block, config: { ...block.config, mediaUrl: value } })
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          Use a direct http or https image link. WhatsApp sends this as an image message, not a text
+          link.
+        </p>
+        <TextAreaField
+          label="Caption EN"
+          value={block.config.mediaCaption?.en ?? ""}
+          onChange={(value) =>
+            onChange({
+              ...block,
+              config: {
+                ...block.config,
+                mediaCaption: { ...block.config.mediaCaption, en: value },
+              },
+            })
+          }
+        />
+        <TextAreaField
+          label="Caption AR"
+          value={block.config.mediaCaption?.ar ?? ""}
+          dir="rtl"
+          onChange={(value) =>
+            onChange({
+              ...block,
+              config: {
+                ...block.config,
+                mediaCaption: { ...block.config.mediaCaption, ar: value },
+              },
+            })
+          }
+        />
+      </SettingsSection>
+      <SettingsSection title="After image">
+        <label className="block text-sm">
+          <span className="mb-1 block text-muted-foreground">After sending image</span>
+          <select
+            value={behavior}
+            onChange={(event) =>
+              onChange({
+                ...block,
+                config: {
+                  ...block.config,
+                  messageBehavior: event.target.value as NonNullable<
+                    VisualFlowNode["config"]["messageBehavior"]
+                  >,
+                },
+              })
+            }
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          >
+            <option value="next">Go to another step</option>
+            <option value="end">End conversation</option>
+            <option value="main_menu">Go to main menu</option>
+          </select>
+        </label>
+        {behavior === "next" ? (
+          <NextBlockSelect
+            label="Target step"
+            nodes={nodes}
+            value={block.config.messageNextNodeId ?? ""}
+            onChange={(value) =>
+              onChange({ ...block, config: { ...block.config, messageNextNodeId: value } })
+            }
+          />
+        ) : null}
+      </SettingsSection>
+    </div>
   );
 }
 
@@ -4858,6 +5047,37 @@ function StepIssueList({
   );
 }
 
+function WhatsAppImageBubble({
+  block,
+  language,
+}: {
+  block: VisualFlowNode;
+  language: "en" | "ar";
+}) {
+  const imageUrl = block.config.mediaUrl?.trim();
+  const caption =
+    block.config.mediaCaption?.[language]?.trim() ||
+    block.config.mediaCaption?.en?.trim() ||
+    block.config.messages?.[language]?.trim() ||
+    block.config.messages?.en?.trim();
+  return (
+    <div className="space-y-2">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={caption || block.title || "WhatsApp image preview"}
+          className="max-h-48 w-full rounded-md object-cover"
+        />
+      ) : (
+        <div className="flex h-28 items-center justify-center rounded-md border border-dashed border-[#2a3942] bg-black/20 text-xs text-white/55">
+          Image URL not configured
+        </div>
+      )}
+      {caption ? <div className="whitespace-pre-wrap">{caption}</div> : null}
+    </div>
+  );
+}
+
 function WhatsAppStepPreview({ block }: { block: VisualFlowNode }) {
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const message = previewMessageForBlock(block, language);
@@ -4889,7 +5109,11 @@ function WhatsAppStepPreview({ block }: { block: VisualFlowNode }) {
         </div>
       </div>
       <div className="max-w-[90%] rounded-lg bg-[#1f2c34] px-3 py-2">
-        <div className="whitespace-pre-wrap">{message}</div>
+        {block.type === "SEND_IMAGE" ? (
+          <WhatsAppImageBubble block={block} language={language} />
+        ) : (
+          <div className="whitespace-pre-wrap">{message}</div>
+        )}
       </div>
       {[...options, ...choices].length ? (
         <div className="mt-2 max-w-[90%] space-y-1">
@@ -5003,7 +5227,13 @@ function LivePreviewColumn({
           <div className="text-[11px] text-white/45">
             {block ? block.title || friendlyBlockName(block.type) : "Preview"}
           </div>
-          <div className="mt-1 whitespace-pre-wrap">{botMessage}</div>
+          <div className="mt-1">
+            {block?.type === "SEND_IMAGE" ? (
+              <WhatsAppImageBubble block={block} language={language} />
+            ) : (
+              <div className="whitespace-pre-wrap">{botMessage}</div>
+            )}
+          </div>
         </div>
         {options.length ? (
           <div className="mt-2 max-w-[86%] space-y-1">
@@ -5323,6 +5553,9 @@ function visualBlockSummary(node: VisualFlowNode) {
       ? `${question.type.replaceAll("_", " ")} · ${question.required ? "required" : "optional"}`
       : "Question not configured";
   }
+  if (node.type === "SEND_IMAGE") {
+    return node.config.mediaUrl?.trim() ? "Image configured" : "Image URL missing";
+  }
   if (node.type === "CONDITION") {
     const count = node.config.conditionRules?.length ?? 0;
     return `${count} rule${count === 1 ? "" : "s"}`;
@@ -5337,6 +5570,7 @@ function friendlyBlockName(type: VisualFlowBlockType) {
   const labels: Record<VisualFlowBlockType, string> = {
     START: "Entry point",
     SEND_MESSAGE: "Message",
+    SEND_IMAGE: "Image reply",
     LANGUAGE_SELECTION: "Language selection",
     MAIN_MENU: "Main menu",
     STORE_INFO: "Store info",
@@ -5371,6 +5605,9 @@ function stepPrimaryText(node: VisualFlowNode) {
     return "Entry routing step.";
   }
   if (node.type === "QUESTION") return node.config.question?.label.en ?? "";
+  if (node.type === "SEND_IMAGE") {
+    return node.config.mediaCaption?.en ?? node.config.mediaUrl ?? "Image reply";
+  }
   if (node.type === "CONDITION") {
     return node.config.conditionSource
       ? `Checks ${node.config.conditionSource}`
@@ -5398,6 +5635,13 @@ function previewMessageForBlock(block: VisualFlowNode, language: "en" | "ar" = "
       block.config.question?.label[language] ||
         block.config.question?.label.en ||
         "No question configured yet."
+    );
+  }
+  if (block.type === "SEND_IMAGE") {
+    return (
+      block.config.mediaCaption?.[language]?.trim() ||
+      block.config.mediaCaption?.en?.trim() ||
+      (block.config.mediaUrl?.trim() ? "Image message" : "No image configured yet.")
     );
   }
   if (block.type === "MAIN_MENU" || block.config.menuOptions?.length) {
@@ -5595,6 +5839,8 @@ function stepDescription(block: VisualFlowNode) {
     return "Lets customers choose a product. Variants, required product questions, quantity, and add-to-cart are enforced automatically.";
   if (block.type === "PRODUCT_DETAILS")
     return "Shows the selected product. Ordering this item always runs required variants, product questions, quantity, and add-to-cart before cart.";
+  if (block.type === "SEND_IMAGE")
+    return "Sends a WhatsApp image message, then follows the configured next step.";
   if (block.config.menuOptions?.length)
     return "Shows a message and lets the customer choose an option.";
   if (block.type === "QUESTION")

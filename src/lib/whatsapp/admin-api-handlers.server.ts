@@ -16,6 +16,7 @@ import {
   type ReviewConnectionSummary,
 } from "./app-review-demo.server";
 import { getWhatsAppServerConfig } from "./config.server";
+import { uploadWaFlowImage } from "./dashboard-store.server";
 import { listWaMessageEvents } from "./message-events.server";
 import { sendWhatsAppText } from "./sender.server";
 import {
@@ -627,6 +628,36 @@ export function createInternalAdminBusinessFlowHandlers() {
         requireAdmin(request);
         const data = await getBusinessFlowDetails(params.businessId);
         return Response.json({ ok: true, data });
+      } catch (error) {
+        return adminApiError(error);
+      }
+    },
+  };
+}
+
+export function createInternalAdminBusinessFlowImageUploadHandlers() {
+  return {
+    POST: async ({ request, params }: { request: Request; params: { businessId: string } }) => {
+      try {
+        const session = requireAdmin(request);
+        const formData = await request.formData();
+        const file = formData.get("file");
+        if (!(file instanceof File)) {
+          return Response.json({ ok: false, error: "Choose an image to upload." }, { status: 400 });
+        }
+
+        const image = await uploadWaFlowImage(file, params.businessId);
+        await recordAdminAuditLog({
+          adminUser: session.username,
+          request,
+          businessId: params.businessId,
+          action: "FLOW_IMAGE_UPLOADED",
+          targetType: "WA_FLOW_IMAGE",
+          targetId: image.path,
+          newValue: image,
+        });
+
+        return Response.json({ ok: true, data: image });
       } catch (error) {
         return adminApiError(error);
       }

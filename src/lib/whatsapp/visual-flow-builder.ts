@@ -15,6 +15,7 @@ import type {
 export type VisualFlowBlockType =
   | "START"
   | "SEND_MESSAGE"
+  | "SEND_IMAGE"
   | "LANGUAGE_SELECTION"
   | "MAIN_MENU"
   | "STORE_INFO"
@@ -46,6 +47,8 @@ export type VisualFlowNode = {
   config: {
     messages?: Partial<Record<FlowLanguage, string>>;
     labels?: Partial<Record<FlowLanguage, string>>;
+    mediaUrl?: string;
+    mediaCaption?: Partial<Record<FlowLanguage, string>>;
     question?: FlowCustomQuestion;
     questionNextNodeId?: string;
     questionFallbackNodeId?: string;
@@ -150,6 +153,7 @@ export const visualBlockPalette: Array<{
 }> = [
   { type: "START", title: "Start", category: "Core" },
   { type: "SEND_MESSAGE", title: "Send message", category: "Core" },
+  { type: "SEND_IMAGE", title: "Send image", category: "Core" },
   { type: "LANGUAGE_SELECTION", title: "Language", category: "Core" },
   { type: "MAIN_MENU", title: "Main menu", category: "Core" },
   { type: "STORE_INFO", title: "Store info", category: "Core" },
@@ -252,13 +256,15 @@ export function addConfiguredVisualNode(
     config: {
       ...created.config,
       messageBehavior:
-        type === "SEND_MESSAGE"
+        type === "SEND_MESSAGE" || type === "SEND_IMAGE"
           ? options.nextNodeId
             ? "next"
             : "end"
           : created.config.messageBehavior,
       messageNextNodeId:
-        type === "SEND_MESSAGE" ? options.nextNodeId : created.config.messageNextNodeId,
+        type === "SEND_MESSAGE" || type === "SEND_IMAGE"
+          ? options.nextNodeId
+          : created.config.messageNextNodeId,
       questionNextNodeId:
         type === "QUESTION" ? options.nextNodeId : created.config.questionNextNodeId,
       conditionFallbackNodeId:
@@ -367,6 +373,8 @@ export function compileVisualFlowToRuntimeFlow(
       type,
       messages: node.config.messages,
       labels: node.config.labels,
+      mediaUrl: node.config.mediaUrl,
+      mediaCaption: node.config.mediaCaption,
       options: node.config.menuOptions?.map((option, index) => ({
         key: visualOptionKey(option, index),
         label: option.label,
@@ -700,7 +708,12 @@ function configFromRuntimeNode(flow: FlowDefinition, node: FlowNode): VisualFlow
       },
     };
   }
-  return { messages: node.messages, labels: node.labels };
+  return {
+    messages: node.messages,
+    labels: node.labels,
+    mediaUrl: node.mediaUrl,
+    mediaCaption: node.mediaCaption,
+  };
 }
 
 function defaultConfig(type: VisualFlowBlockType): VisualFlowNode["config"] {
@@ -738,6 +751,14 @@ function defaultConfig(type: VisualFlowBlockType): VisualFlowNode["config"] {
   if (type === "SEND_MESSAGE") {
     return {
       messages: { en: "Write the message customers will see.", ar: "" },
+      messageBehavior: "next",
+    };
+  }
+  if (type === "SEND_IMAGE") {
+    return {
+      messages: { en: "", ar: "" },
+      mediaUrl: "",
+      mediaCaption: { en: "", ar: "" },
       messageBehavior: "next",
     };
   }
@@ -1122,6 +1143,7 @@ function runtimeTypeToVisual(type: FlowNodeType, id: string): VisualFlowBlockTyp
   if (id === "start") return "START";
   if (type === "LANGUAGE_SELECT") return "LANGUAGE_SELECTION";
   if (type === "MAIN_MENU") return "MAIN_MENU";
+  if (type === "IMAGE_MESSAGE") return "SEND_IMAGE";
   if (type === "CATEGORY_SELECT") return "CATEGORY_SELECTION";
   if (type === "PRODUCT_SELECT") return "PRODUCT_SELECTION";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
@@ -1140,6 +1162,7 @@ function runtimeTypeToVisual(type: FlowNodeType, id: string): VisualFlowBlockTyp
 function visualTypeToRuntime(type: VisualFlowBlockType): FlowNodeType {
   if (type === "LANGUAGE_SELECTION") return "LANGUAGE_SELECT";
   if (type === "MAIN_MENU") return "MAIN_MENU";
+  if (type === "SEND_IMAGE") return "IMAGE_MESSAGE";
   if (type === "CATEGORY_SELECTION") return "CATEGORY_SELECT";
   if (type === "PRODUCT_SELECTION") return "PRODUCT_SELECT";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";

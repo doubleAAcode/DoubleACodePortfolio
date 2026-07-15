@@ -33,6 +33,14 @@ registerRuntimeNodeHandler({
 });
 
 registerRuntimeNodeHandler({
+  type: "IMAGE_MESSAGE",
+  enter: ({ flow, node }) => ({
+    nextNodeId: firstRuntimeTarget(flow, node.id),
+    waitsForInput: !firstRuntimeTarget(flow, node.id),
+  }),
+});
+
+registerRuntimeNodeHandler({
   type: "MAIN_MENU",
   enter: () => ({ waitsForInput: true }),
   handleInput: () => ({ waitsForInput: false }),

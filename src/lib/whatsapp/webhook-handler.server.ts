@@ -23,6 +23,7 @@ import {
 import { maskCustomerIdentifier } from "@/lib/whatsapp/reliability";
 import {
   sendWhatsAppButtons,
+  sendWhatsAppImage,
   sendWhatsAppList,
   sendWhatsAppText,
 } from "@/lib/whatsapp/sender.server";
@@ -378,6 +379,19 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
                     senderType: "BOT",
                   },
                 })
+              : response.type === "image"
+                ? sendWhatsAppImage({
+                    phoneNumberId: message.phoneNumberId,
+                    recipient: message.sender,
+                    imageUrl: response.imageUrl,
+                    caption: response.caption,
+                    config: connection.config,
+                    logContext: {
+                      businessId: connection.businessId,
+                      connectionId: connection.connectionId,
+                      senderType: "BOT",
+                    },
+                  })
               : sendWhatsAppText({
                   phoneNumberId: message.phoneNumberId,
                   recipient: message.sender,

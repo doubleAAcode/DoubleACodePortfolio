@@ -44,6 +44,15 @@ export type SendWhatsAppListInput = {
   logContext?: OutboundLogContext;
 };
 
+export type SendWhatsAppImageInput = {
+  phoneNumberId: string;
+  recipient: string;
+  imageUrl: string;
+  caption?: string;
+  config?: WhatsAppServerConfig;
+  logContext?: OutboundLogContext;
+};
+
 type OutboundLogContext = {
   businessId?: string;
   connectionId?: string;
@@ -199,6 +208,40 @@ export async function sendWhatsAppList({
   return result;
 }
 
+export async function sendWhatsAppImage({
+  phoneNumberId,
+  recipient,
+  imageUrl,
+  caption,
+  config,
+  logContext,
+}: SendWhatsAppImageInput): Promise<SendResult> {
+  const result = await sendWhatsAppPayload({
+    phoneNumberId,
+    config,
+    payload: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient,
+      type: "image",
+      image: {
+        link: imageUrl,
+        ...(caption ? { caption } : {}),
+      },
+    },
+  });
+  await logOutboundMessage({
+    result,
+    phoneNumberId,
+    recipient,
+    messageType: "image",
+    body: caption || imageUrl,
+    summary: caption ? `${caption} Image: ${imageUrl}` : `Image: ${imageUrl}`,
+    logContext,
+  });
+  return result;
+}
+
 async function sendWhatsAppPayload({
   phoneNumberId,
   config = getWhatsAppServerConfig(),
@@ -312,7 +355,7 @@ async function logOutboundMessage({
   result: SendResult;
   phoneNumberId: string;
   recipient: string;
-  messageType: "text" | "button" | "list";
+  messageType: "text" | "button" | "list" | "image";
   body: string;
   summary: string;
   logContext?: OutboundLogContext;

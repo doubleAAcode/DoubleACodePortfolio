@@ -32,6 +32,8 @@ export type CanonicalFlowNode = {
   title?: string;
   messages?: Partial<Record<FlowLanguage, string>>;
   labels?: Partial<Record<FlowLanguage, string>>;
+  mediaUrl?: string;
+  mediaCaption?: Partial<Record<FlowLanguage, string>>;
   options?: FlowNode["options"];
   protectedAction?: string;
   optional?: boolean;
@@ -67,6 +69,8 @@ const canonicalNodeSchema = z.object({
   title: z.string().optional(),
   messages: languageCopySchema.partial().optional(),
   labels: languageCopySchema.partial().optional(),
+  mediaUrl: z.string().optional(),
+  mediaCaption: languageCopySchema.partial().optional(),
   options: z
     .array(
       z.object({
@@ -178,6 +182,8 @@ export function convertLegacyRuntimeFlowToCanonical(flow: FlowDefinition): Canon
         title: visualTitleForNode(flow.visualFlow, node.id),
         messages: node.messages,
         labels: node.labels,
+        mediaUrl: node.mediaUrl,
+        mediaCaption: node.mediaCaption,
         options: node.options?.map((option, index) => ({
           key: option.key,
           label: option.label,
@@ -225,6 +231,8 @@ export function convertLegacyVisualFlowToCanonical(
         title: node.title,
         messages: node.config.messages ?? runtimeNode?.messages,
         labels: node.config.labels ?? runtimeNode?.labels,
+        mediaUrl: node.config.mediaUrl ?? runtimeNode?.mediaUrl,
+        mediaCaption: node.config.mediaCaption ?? runtimeNode?.mediaCaption,
         options: node.config.menuOptions?.map((option, index) => ({
           key: option.key || option.action?.toLowerCase() || `option_${index + 1}`,
           label: option.label,
@@ -273,6 +281,8 @@ export function canonicalFlowToRuntimeFlow(
       type: node.type,
       messages: node.messages,
       labels: node.labels,
+      mediaUrl: node.mediaUrl,
+      mediaCaption: node.mediaCaption,
       options: node.options?.map((option, index) => ({
         key: option.key,
         label: option.label,
@@ -376,6 +386,7 @@ function visualToCanonicalType(
   if (type === "LANGUAGE_SELECTION") return "LANGUAGE_SELECT";
   if (type === "MAIN_MENU") return "MAIN_MENU";
   if (type === "SEND_MESSAGE" && messageBehavior === "options") return "MAIN_MENU";
+  if (type === "SEND_IMAGE") return "IMAGE_MESSAGE";
   if (type === "CATEGORY_SELECTION") return "CATEGORY_SELECT";
   if (type === "PRODUCT_SELECTION") return "PRODUCT_SELECT";
   if (type === "PRODUCT_DETAILS") return "PRODUCT_DETAILS";
@@ -395,6 +406,7 @@ function visualToCanonicalType(
 
 const runtimeNodeTypes: ReadonlySet<string> = new Set([
   "MESSAGE",
+  "IMAGE_MESSAGE",
   "LANGUAGE_SELECT",
   "MAIN_MENU",
   "CATEGORY_SELECT",

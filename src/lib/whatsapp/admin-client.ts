@@ -193,6 +193,20 @@ export async function getBusinessFlowDetails(businessId: string) {
   return result.data;
 }
 
+export async function uploadAdminFlowImage(businessId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const result = await apiFetch<ApiResult<{ path: string; url: string }>>(
+    `/api/wa-admin/businesses/${encodeURIComponent(businessId)}/flow-image`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
 export async function getAdminLogs(businessId?: string) {
   const query = businessId ? `?businessId=${encodeURIComponent(businessId)}` : "";
   const result = await apiFetch<ApiResult<{ webhooks: unknown[]; audit: unknown[] }>>(
@@ -281,12 +295,15 @@ export async function createWhatsAppTemplateSubmission(input: {
 }
 
 async function apiFetch<T>(path: string, init: RequestInit = {}) {
+  const isFormData = init.body instanceof FormData;
   const response = await fetch(path, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
+    headers: isFormData
+      ? init.headers
+      : {
+          "Content-Type": "application/json",
+          ...init.headers,
+        },
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;

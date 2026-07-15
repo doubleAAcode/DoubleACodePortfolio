@@ -27,7 +27,7 @@ export type CanonicalFlowValidationResult = {
 
 const WHATSAPP_MAX_BUTTONS = 3;
 const WHATSAPP_BUTTON_TITLE_MAX = 20;
-const AUTO_TRANSITION_TYPES = new Set(["MESSAGE"]);
+const AUTO_TRANSITION_TYPES = new Set(["MESSAGE", "IMAGE_MESSAGE"]);
 const TERMINAL_TYPES = new Set(["END", "HUMAN_HANDOFF"]);
 const WAIT_FOR_INPUT_TYPES = new Set([
   "LANGUAGE_SELECT",
@@ -174,6 +174,7 @@ function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnos
     if (isMessageLike(node) && !messageText(node)) {
       diagnostics.push(warning("EMPTY_MESSAGE", `${node.id} has no message text yet.`, node.id));
     }
+    if (node.type === "IMAGE_MESSAGE") validateImageDraft(node, diagnostics);
     if (node.type === "MAIN_MENU") {
       validateChoiceDraft(node, diagnostics);
     }
@@ -229,6 +230,7 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
     if (isMessageLike(node) && !messageText(node)) {
       diagnostics.push(error("PUBLISH_MESSAGE_EMPTY", `${node.id} needs message text.`, node.id));
     }
+    if (node.type === "IMAGE_MESSAGE") validateImagePublish(node, diagnostics);
     if (node.type === "MAIN_MENU") validateChoicePublish(document, node, diagnostics);
     if (!isExecutableTerminal(node) && !outgoing(document.edges, node.id).length) {
       diagnostics.push(
@@ -320,6 +322,40 @@ function validateChoicePublish(
   }
 }
 
+function validateImageDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic[]) {
+  const imageUrl = imageUrlForNode(node);
+  if (!imageUrl) {
+    diagnostics.push(
+      warning("IMAGE_URL_MISSING", `${nodeName(node)} needs an image URL.`, node.id),
+    );
+  } else if (!isHttpUrl(imageUrl)) {
+    diagnostics.push(
+      warning(
+        "IMAGE_URL_INVALID",
+        `${nodeName(node)} image URL must start with http:// or https://.`,
+        node.id,
+      ),
+    );
+  }
+}
+
+function validateImagePublish(node: CanonicalFlowNode, diagnostics: FlowDiagnostic[]) {
+  const imageUrl = imageUrlForNode(node);
+  if (!imageUrl) {
+    diagnostics.push(error("PUBLISH_IMAGE_URL_MISSING", `${nodeName(node)} needs an image URL.`, node.id));
+    return;
+  }
+  if (!isHttpUrl(imageUrl)) {
+    diagnostics.push(
+      error(
+        "PUBLISH_IMAGE_URL_INVALID",
+        `${nodeName(node)} image URL must start with http:// or https://.`,
+        node.id,
+      ),
+    );
+  }
+}
+
 function detectGuaranteedAutomaticCycle(
   document: CanonicalFlowDocument,
   diagnostics: FlowDiagnostic[],
@@ -387,7 +423,20 @@ function messageText(node: CanonicalFlowNode) {
 }
 
 function isExecutableTerminal(node: CanonicalFlowNode) {
-  return node.type === "MESSAGE" || TERMINAL_TYPES.has(node.type) || WAIT_FOR_INPUT_TYPES.has(node.type);
+  return node.type === "MESSAGE" || node.type === "IMAGE_MESSAGE" || TERMINAL_TYPES.has(node.type) || WAIT_FOR_INPUT_TYPES.has(node.type);
+}
+
+function imageUrlForNode(node: CanonicalFlowNode) {
+  return typeof node.mediaUrl === "string" ? node.mediaUrl.trim() : "";
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function error(

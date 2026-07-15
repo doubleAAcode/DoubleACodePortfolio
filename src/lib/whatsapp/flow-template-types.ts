@@ -13,6 +13,7 @@ export type FlowCategory =
 
 export type FlowNodeType =
   | "MESSAGE"
+  | "IMAGE_MESSAGE"
   | "LANGUAGE_SELECT"
   | "MAIN_MENU"
   | "CATEGORY_SELECT"
@@ -43,6 +44,8 @@ export type FlowNode = {
   type: FlowNodeType;
   messages?: Partial<Record<FlowLanguage, string>>;
   labels?: Partial<Record<FlowLanguage, string>>;
+  mediaUrl?: string;
+  mediaCaption?: Partial<Record<FlowLanguage, string>>;
   options?: FlowNodeOption[];
   next?: string;
   protectedAction?: string;
@@ -200,6 +203,7 @@ export type FlowValidationResult = {
 
 const supportedNodeTypes: ReadonlySet<FlowNodeType> = new Set([
   "MESSAGE",
+  "IMAGE_MESSAGE",
   "LANGUAGE_SELECT",
   "MAIN_MENU",
   "CATEGORY_SELECT",

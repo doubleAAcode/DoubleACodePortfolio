@@ -773,7 +773,12 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
   return getWaDashboardData(businessId);
 }
 
-export async function uploadWaProductImage(file: File, businessId: string) {
+async function uploadWaImage(
+  file: File,
+  businessId: string,
+  folder: "products" | "flow-images",
+  fallbackName: string,
+) {
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
     throw new Error("Upload a JPG, PNG, or WebP image.");
   }
@@ -794,7 +799,7 @@ export async function uploadWaProductImage(file: File, businessId: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
-  const path = `${businessId}/products/${Date.now()}-${name || "product"}.${extension}`;
+  const path = `${businessId}/${folder}/${Date.now()}-${name || fallbackName}.${extension}`;
   const arrayBuffer = await file.arrayBuffer();
   const response = await fetch(`${config.url}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
     method: "POST",
@@ -816,6 +821,14 @@ export async function uploadWaProductImage(file: File, businessId: string) {
     path,
     url: `${config.url}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`,
   };
+}
+
+export async function uploadWaProductImage(file: File, businessId: string) {
+  return uploadWaImage(file, businessId, "products", "product");
+}
+
+export async function uploadWaFlowImage(file: File, businessId: string) {
+  return uploadWaImage(file, businessId, "flow-images", "flow-image");
 }
 
 async function upsertRow(path: string, row: Record<string, unknown>) {

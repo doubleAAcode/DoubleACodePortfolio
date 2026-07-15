@@ -8,7 +8,10 @@ import {
   type FlowDefinition,
 } from "../../src/lib/whatsapp/flow-template-types.ts";
 import { validateFlow } from "../../src/lib/whatsapp/flow-validation.ts";
-import { convertLegacyVisualFlowToCanonical } from "../../src/lib/whatsapp/flow-document.ts";
+import {
+  canonicalFlowToRuntimeFlow,
+  convertLegacyVisualFlowToCanonical,
+} from "../../src/lib/whatsapp/flow-document.ts";
 import { validateFlowForEditor } from "../../src/lib/whatsapp/flow-editor.ts";
 import {
   addVisualNode,
@@ -106,6 +109,121 @@ test("ecommerce template clone preserves protected purchase pipeline nodes", () 
     "CUSTOM_FIELDS",
   );
   assert.equal(legacyCompiled.flow?.nodes.find((node) => node.id === "quantity")?.type, "QUANTITY");
+});
+
+test("image reply option preserves media and can return to the previous options message", () => {
+  const baseFlow = createDefaultFlowDefinition("GREETING_STORE_INFO");
+  const now = "2026-07-15T00:00:00.000Z";
+  const visual = {
+    version: 1 as const,
+    metadata: {
+      name: "Price lists",
+      languageSupport: ["en", "ar"] as const,
+      defaultLanguage: "en" as const,
+    },
+    nodes: [
+      {
+        id: "price_menu",
+        type: "SEND_MESSAGE" as const,
+        title: "Price list menu",
+        position: { x: 0, y: 0 },
+        config: {
+          messages: { en: "Choose a price list", ar: "" },
+          messageBehavior: "options" as const,
+          menuOptions: [
+            {
+              key: "iphone_prices",
+              label: { en: "iPhone prices", ar: "" },
+              targetNodeId: "iphone_price_image",
+              active: true,
+            },
+          ],
+        },
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "iphone_price_image",
+        type: "SEND_IMAGE" as const,
+        title: "iPhone price list image",
+        position: { x: 240, y: 0 },
+        config: {
+          mediaUrl: "https://www.doubleacode.com/sample/iphone-prices.jpg",
+          mediaCaption: { en: "iPhone price list", ar: "" },
+          messageBehavior: "next" as const,
+          messageNextNodeId: "price_menu",
+        },
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    edges: [],
+  };
+
+  const visualValidation = validateVisualFlow(visual);
+  const canonical = convertLegacyVisualFlowToCanonical(visual, baseFlow);
+  const draftValidation = validateFlow(canonical, { mode: "draft" });
+  const publishValidation = validateFlow(canonical, { mode: "publish" });
+  const runtime = canonicalFlowToRuntimeFlow(canonical, baseFlow);
+
+  assert.equal(visualValidation.ok, true);
+  assert.equal(draftValidation.ok, true);
+  assert.equal(publishValidation.ok, true);
+  assert.equal(canonical.nodes.find((node) => node.id === "iphone_price_image")?.type, "IMAGE_MESSAGE");
+  assert.equal(
+    canonical.nodes.find((node) => node.id === "iphone_price_image")?.mediaUrl,
+    "https://www.doubleacode.com/sample/iphone-prices.jpg",
+  );
+  assert.equal(
+    runtime.nodes.find((node) => node.id === "iphone_price_image")?.mediaCaption?.en,
+    "iPhone price list",
+  );
+  assert.equal(
+    runtime.edges.some(
+      (edge) =>
+        edge.from === "price_menu" &&
+        edge.to === "iphone_price_image" &&
+        edge.condition === "iphone_prices",
+    ),
+    true,
+  );
+  assert.equal(
+    runtime.edges.some((edge) => edge.from === "iphone_price_image" && edge.to === "price_menu"),
+    true,
+  );
+});
+
+test("image reply publish validation requires a public image URL", () => {
+  const baseFlow = createDefaultFlowDefinition("GREETING_STORE_INFO");
+  const canonical = convertLegacyVisualFlowToCanonical(
+    {
+      version: 1,
+      metadata: {
+        name: "Missing image",
+        languageSupport: ["en", "ar"],
+        defaultLanguage: "en",
+      },
+      nodes: [
+        {
+          id: "missing_image",
+          type: "SEND_IMAGE",
+          title: "Missing image",
+          position: { x: 0, y: 0 },
+          config: { mediaUrl: "", mediaCaption: { en: "Missing image", ar: "" }, messageBehavior: "end" },
+          createdAt: "2026-07-15T00:00:00.000Z",
+          updatedAt: "2026-07-15T00:00:00.000Z",
+        },
+      ],
+      edges: [],
+    },
+    baseFlow,
+  );
+  const validation = validateFlow(canonical, { mode: "publish" });
+
+  assert.equal(
+    validation.diagnostics.some((diagnostic) => diagnostic.code === "PUBLISH_IMAGE_URL_MISSING"),
+    true,
+  );
 });
 
 test("rejects broken flow templates before publishing", () => {
