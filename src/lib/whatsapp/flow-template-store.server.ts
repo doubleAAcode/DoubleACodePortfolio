@@ -258,44 +258,56 @@ export async function cloneTemplateToBusiness({
   businessId,
   templateId,
   adminUser,
+  publish = false,
 }: {
   businessId: string;
   templateId: string;
   adminUser: string;
+  publish?: boolean;
 }) {
   const template = await getFlowTemplateDetails(templateId);
   const sourceVersion = template.versions.find((version) => version.status === "PUBLISHED");
   if (!sourceVersion) throw new Error("Template has no published version to clone.");
   const flowJson = withCanonicalFlowDocument(sourceVersion.flow_json);
-  const validation = validateForPersistence(flowJson, "publish");
+  const validation = validateForPersistence(flowJson, publish ? "publish" : "draft");
   if (!validation.ok) throw new Error(formatValidationError(validation));
   const now = new Date().toISOString();
-  const flowId = `bf-${slug(businessId)}`;
-  const versionId = `${flowId}-v1`;
+  const existingFlow = (await listBusinessFlows(businessId))[0] ?? null;
+  const existingVersions = existingFlow ? await listBusinessFlowVersions(existingFlow.id) : [];
+  const flowId = existingFlow?.id ?? `bf-${slug(businessId)}`;
+  const draft = existingVersions.find((version) => version.status === "DRAFT");
+  const versionNumber = publish
+    ? Math.max(0, ...existingVersions.map((version) => version.version_number)) + 1
+    : draft?.version_number ??
+      Math.max(0, ...existingVersions.map((version) => version.version_number)) + 1;
+  const versionId = publish ? `${flowId}-v${versionNumber}` : draft?.id ?? `${flowId}-v${versionNumber}`;
   const flow: BusinessFlowRow = {
     id: flowId,
     business_id: businessId,
     source_template_id: template.template.id,
     name: `${template.template.name} for ${businessId}`,
-    status: "PUBLISHED",
-    active_version_id: null,
-    created_at: now,
+    status: publish ? "PUBLISHED" : existingFlow?.status ?? "DRAFT",
+    active_version_id: publish ? null : existingFlow?.active_version_id ?? null,
+    created_at: existingFlow?.created_at ?? now,
     updated_at: now,
   };
   const version: BusinessFlowVersionRow = {
     id: versionId,
     business_flow_id: flowId,
-    version_number: 1,
-    status: "PUBLISHED",
+    version_number: versionNumber,
+    status: publish ? "PUBLISHED" : "DRAFT",
     flow_json: flowJson,
     validation_result: validation,
     created_by_user_id: adminUser,
-    published_at: now,
-    created_at: now,
+    published_at: publish ? now : null,
+    created_at: publish ? now : draft?.created_at ?? now,
   };
   await upsertBusinessFlow(flow);
   await upsertBusinessFlowVersion(version);
-  await upsertBusinessFlow({ ...flow, active_version_id: versionId, updated_at: now });
+  if (publish) {
+    await archiveOtherBusinessVersions(flowId, versionId);
+    await upsertBusinessFlow({ ...flow, active_version_id: versionId, updated_at: now });
+  }
   return getBusinessFlowDetails(businessId);
 }
 
@@ -307,6 +319,7 @@ export async function getBusinessFlowDetails(businessId: string): Promise<Busine
       businessId,
       templateId: "ecommerce",
       adminUser: "system",
+      publish: true,
     });
     flows = await listBusinessFlows(businessId);
   }

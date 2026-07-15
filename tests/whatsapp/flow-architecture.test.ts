@@ -243,6 +243,18 @@ test("business flow publishing creates a new published snapshot in source", () =
   assert.doesNotMatch(source, /version\.status = "PUBLISHED"/);
 });
 
+test("admin template cloning creates an editable draft without replacing the live version", () => {
+  const source = readFileSync("src/lib/whatsapp/flow-template-store.server.ts", "utf8");
+  const route = readFileSync("src/routes/admin.businesses.$businessId.flow-builder.tsx", "utf8");
+
+  assert.match(source, /publish = false/);
+  assert.match(source, /status: publish \? "PUBLISHED" : "DRAFT"/);
+  assert.match(source, /active_version_id: publish \? null : existingFlow\?\.active_version_id \?\? null/);
+  assert.match(source, /if \(publish\) \{/);
+  assert.match(source, /publish: true/);
+  assert.match(route, /latest\.versions\.find\(\(version\) => version\.status === "DRAFT"\)\?\.id/);
+});
+
 test("session runtime loading uses pinned flow versions in source", () => {
   const source = readFileSync("src/lib/whatsapp/conversation-engine.server.ts", "utf8");
 

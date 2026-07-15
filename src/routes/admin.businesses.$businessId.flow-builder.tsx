@@ -176,7 +176,7 @@ function BusinessFlowBuilderPage() {
       templateId,
     });
     const latest = await getBusinessFlowDetails(businessId);
-    return selectVersion(latest, "")?.id;
+    return latest.versions.find((version) => version.status === "DRAFT")?.id ?? selectVersion(latest, "")?.id;
   }
 
   async function saveCheckoutSettings() {
