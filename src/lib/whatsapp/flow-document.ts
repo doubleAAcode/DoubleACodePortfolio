@@ -224,7 +224,11 @@ export function convertLegacyVisualFlowToCanonical(
       const type =
         node.type === "SEND_MESSAGE" && runtimeNode?.protectedAction
           ? runtimeNode.type
-          : visualToCanonicalType(node.type, node.config.messageBehavior);
+          : visualToCanonicalType(
+              node.type,
+              node.config.messageBehavior,
+              Boolean(node.config.menuOptions?.length),
+            );
       return {
         id: node.id,
         type,
@@ -382,9 +386,11 @@ function visualTitleForNode(visualFlow: unknown, nodeId: string) {
 function visualToCanonicalType(
   type: VisualFlowBlockType,
   messageBehavior?: string,
+  hasMenuOptions = false,
 ): CanonicalFlowNodeType {
   if (type === "LANGUAGE_SELECTION") return "LANGUAGE_SELECT";
   if (type === "MAIN_MENU") return "MAIN_MENU";
+  if (type === "START" && hasMenuOptions) return "MAIN_MENU";
   if (type === "SEND_MESSAGE" && messageBehavior === "options") return "MAIN_MENU";
   if (type === "SEND_IMAGE") return "IMAGE_MESSAGE";
   if (type === "CATEGORY_SELECTION") return "CATEGORY_SELECT";

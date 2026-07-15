@@ -72,6 +72,8 @@ test("greeting template clone preserves start options and targets in the visual 
   const effectiveEdges = getEffectiveVisualEdges(visual);
   const visualValidation = validateVisualFlow(visual);
   const compiled = compileVisualFlowToRuntimeFlow(visual, greeting);
+  const canonical = convertLegacyVisualFlowToCanonical(visual, greeting);
+  const canonicalRuntime = canonicalFlowToRuntimeFlow(canonical, greeting);
 
   assert.equal(start?.type, "START");
   assert.deepEqual(
@@ -116,6 +118,17 @@ test("greeting template clone preserves start options and targets in the visual 
   );
   assert.equal(compiled.ok, true);
   assert.equal(compiled.flow?.nodes.find((node) => node.id === "start")?.type, "MAIN_MENU");
+  assert.equal(canonical.nodes.find((node) => node.id === "start")?.type, "MAIN_MENU");
+  assert.equal(canonicalRuntime.nodes.find((node) => node.id === "start")?.type, "MAIN_MENU");
+  assert.equal(
+    canonicalRuntime.edges.some(
+      (edge) =>
+        edge.from === "start" &&
+        edge.to === "store_info" &&
+        edge.condition === "store_info",
+    ),
+    true,
+  );
   assert.deepEqual(
     compiled.flow?.editor?.mainMenuOptions?.map((option) => ({
       key: option.key,

@@ -3591,6 +3591,9 @@ function EntryPointSettings({
     (edge) => edge.sourceNodeId === block.id,
   );
   const behavior = block.config.startBehavior ?? "welcome_then_next";
+  const hasWelcomeOptions = (block.config.menuOptions ?? []).some(
+    (option) => option.active !== false,
+  );
   return (
     <div className="space-y-4">
       <SettingsSection title="Entry point">
@@ -3644,21 +3647,28 @@ function EntryPointSettings({
               })
             }
           />
-          <NextBlockSelect
-            label="Next step"
-            nodes={nodes}
-            value={block.config.messageNextNodeId ?? outgoing?.targetNodeId ?? ""}
-            onChange={(targetNodeId) =>
-              onChange({
-                ...block,
-                config: {
-                  ...block.config,
-                  messageNextNodeId: targetNodeId,
-                  startBehavior: "welcome_then_next",
-                },
-              })
-            }
-          />
+          {hasWelcomeOptions ? (
+            <p className="rounded-md border border-border bg-surface/40 px-3 py-2 text-xs text-muted-foreground">
+              This welcome message waits for the customer to tap an option. Edit each option below
+              to choose what happens next.
+            </p>
+          ) : (
+            <NextBlockSelect
+              label="Next step after welcome"
+              nodes={nodes}
+              value={block.config.messageNextNodeId ?? outgoing?.targetNodeId ?? ""}
+              onChange={(targetNodeId) =>
+                onChange({
+                  ...block,
+                  config: {
+                    ...block.config,
+                    messageNextNodeId: targetNodeId,
+                    startBehavior: "welcome_then_next",
+                  },
+                })
+              }
+            />
+          )}
         </SettingsSection>
       ) : null}
       {block.config.menuOptions?.length ? (
@@ -4850,12 +4860,18 @@ function AfterResponseSelect({
           }
           className="w-full rounded-md border border-input bg-background px-3 py-2"
         >
-          <option value="return_here">Return to these options</option>
+          <option value="return_here">Resend these options</option>
           <option value="end">End conversation</option>
           <option value="main_menu">Go to main menu</option>
           <option value="next">Go to another step</option>
         </select>
       </label>
+      {behavior === "return_here" ? (
+        <p className="rounded-md border border-border bg-surface/40 px-3 py-2 text-xs text-muted-foreground">
+          WhatsApp cannot reopen old buttons after the customer taps them. This sends the same
+          options message again after this reply.
+        </p>
+      ) : null}
       {behavior === "next" ? (
         <NextBlockSelect
           label="Next step"
@@ -5848,6 +5864,13 @@ function LivePreviewColumn({
     : "Select a block to preview.";
   const options = block ? previewOptionsForBlock(block, language) : [];
   const nextBlock = block ? nextBlockForPreview(visualFlow, block.id) : undefined;
+  const returnedOptionsBlock =
+    block && nextBlock && previous && nextBlock.id === previous.id && hasVisiblePreviewOptions(nextBlock)
+      ? nextBlock
+      : undefined;
+  const returnedOptions = returnedOptionsBlock
+    ? previewOptionsForBlock(returnedOptionsBlock, language)
+    : [];
 
   return (
     <aside className="min-h-0 min-w-0 overflow-y-auto rounded-md border border-border bg-background p-4">
@@ -5931,17 +5954,37 @@ function LivePreviewColumn({
             ))}
           </div>
         ) : null}
+        {returnedOptionsBlock ? (
+          <div className="mt-2 max-w-[86%] rounded-lg bg-[#1f2c34] px-3 py-2">
+            <div className="text-[11px] text-white/45">Options message sent again</div>
+            <div className="mt-1 whitespace-pre-wrap">
+              {previewMessageForBlockWithRuntime(
+                returnedOptionsBlock,
+                language,
+                botFlowSettings,
+                orderConfirmationEnglish,
+                orderConfirmationArabic,
+              )}
+            </div>
+            {returnedOptions.length ? (
+              <div className="mt-2 space-y-1">
+                {returnedOptions.map((option) => (
+                  <div
+                    key={option}
+                    className="rounded-md border border-[#2a3942] px-3 py-2 text-[#53bdeb]"
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 rounded-md border border-border bg-surface/30 p-3 text-xs text-muted-foreground">
         <div className="font-medium text-foreground">What happens next</div>
-        <div className="mt-1">
-          {nextBlock
-            ? `Continues to ${nextBlock.title || friendlyBlockName(nextBlock.type)}.`
-            : block && isProtectedCommerceBlock(block)
-              ? "Protected commerce logic continues internally until variants, required product questions, quantity, and add-to-cart are complete."
-              : "No next block is configured yet."}
-        </div>
+        <div className="mt-1">{nextPreviewDescription(block, nextBlock, previous)}</div>
       </div>
     </aside>
   );
@@ -6431,6 +6474,13 @@ function previewOptionsForBlock(block: VisualFlowNode, language: "en" | "ar") {
   return [];
 }
 
+function hasVisiblePreviewOptions(block: VisualFlowNode) {
+  return (
+    previewOptionsForBlock(block, "en").length > 0 ||
+    previewOptionsForBlock(block, "ar").length > 0
+  );
+}
+
 function previousBlockForPreview(visualFlow: VisualFlowDefinition, blockId: string) {
   const edge = getEffectiveVisualEdges(visualFlow).find((entry) => entry.targetNodeId === blockId);
   return edge ? visualFlow.nodes.find((node) => node.id === edge.sourceNodeId) : undefined;
@@ -6439,6 +6489,32 @@ function previousBlockForPreview(visualFlow: VisualFlowDefinition, blockId: stri
 function nextBlockForPreview(visualFlow: VisualFlowDefinition, blockId: string) {
   const edge = primaryNextEdge(blockId, getEffectiveVisualEdges(visualFlow));
   return edge ? visualFlow.nodes.find((node) => node.id === edge.targetNodeId) : undefined;
+}
+
+function nextPreviewDescription(
+  block: VisualFlowNode | undefined,
+  nextBlock: VisualFlowNode | undefined,
+  previousBlock: VisualFlowNode | undefined,
+) {
+  if (!block) return "Select a block to see its next step.";
+  if (hasVisiblePreviewOptions(block)) {
+    return "Waits for the customer to tap one of the options shown above.";
+  }
+  if (
+    nextBlock &&
+    previousBlock &&
+    nextBlock.id === previousBlock.id &&
+    hasVisiblePreviewOptions(nextBlock)
+  ) {
+    return `Sends ${nextBlock.title || friendlyBlockName(nextBlock.type)} again so the customer can choose another option.`;
+  }
+  if (nextBlock) {
+    return `Continues to ${nextBlock.title || friendlyBlockName(nextBlock.type)}.`;
+  }
+  if (isProtectedCommerceBlock(block)) {
+    return "Protected commerce logic continues internally until variants, required product questions, quantity, and add-to-cart are complete.";
+  }
+  return "No next block is configured yet.";
 }
 
 function sampleReplyForBlock(
