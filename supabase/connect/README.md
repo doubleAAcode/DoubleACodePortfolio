@@ -23,6 +23,11 @@ RLS is enabled without browser-facing policies. Connect server routes use the
 existing Supabase service-role environment variables and must authorize the
 business before every query or mutation.
 
+After the core schema, run `wa_messaging_operations_rpc.sql`. It adds the
+atomic inbound-message ingest and processing lease used by the live Meta
+webhook, plus monotonic outbound delivery-status updates. Deploy this database
+migration before deploying application code that calls these RPCs.
+
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the
 durable customer timeline. Their runtime and diagnostic responsibilities remain
 separate.

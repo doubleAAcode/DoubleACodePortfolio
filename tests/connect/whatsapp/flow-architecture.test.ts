@@ -304,6 +304,12 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   const clientLayout = readFileSync("src/routes/connect/client.tsx", "utf8");
   const adminLayout = readFileSync("src/routes/connect.admin.tsx", "utf8");
   const automations = readFileSync("src/routes/connect/client/automations.tsx", "utf8");
+  const adminBusinesses = readFileSync("src/routes/connect.admin.businesses.index.tsx", "utf8");
+  const adminBusinessLayout = readFileSync("src/routes/connect.admin.businesses.$id.tsx", "utf8");
+  const adminBusinessSetup = readFileSync(
+    "src/routes/connect.admin.businesses.$id.index.tsx",
+    "utf8",
+  );
   const previewBoundary = readFileSync(
     "src/features/connect/flow-manager-ui/preview-boundary.tsx",
     "utf8",
@@ -332,17 +338,29 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(automations, /getWaDashboardFlow/);
   assert.match(automations, /features\/connect\/shared\/dashboard-client/);
   assert.match(automations, /data-flow-manager-live="true"/);
+  assert.match(adminBusinesses, /getAdminBusinesses/);
+  assert.match(adminBusinesses, /toBusinessListItem/);
+  assert.doesNotMatch(adminBusinesses, /const filtered = businesses\.filter/);
+  assert.match(adminBusinessLayout, /getAdminBusinessDetails/);
+  assert.match(adminBusinessLayout, /BusinessDetailsContext\.Provider/);
+  assert.match(adminBusinessSetup, /useBusinessDetails/);
+  assert.match(adminBusinessSetup, /details\.checklist/);
   assert.match(previewBoundary, /UI preview only\. Data is illustrative/);
+  assert.match(previewBoundary, /Business records, search, status filters/);
   assert.match(previewBoundary, /workflow list uses the authorized business backend/);
   assert.match(previewBoundary, /data-flow-manager-status=\{status\}/);
   assert.match(featureStatus, /liveFlowManagerRoutes: FlowManagerRouteRule\[\] = \[\]/);
+  assert.match(featureStatus, /path: "\/connect\/admin\/businesses", includeChildren: true/);
   assert.match(featureStatus, /path: "\/connect\/client\/automations"/);
   assert.match(clientSidebar, /FlowManagerFutureBadge route=\{item\.url\}/);
   assert.match(adminSidebar, /FlowManagerFutureBadge route=\{item\.url\}/);
   assert.match(styles, /data-flow-manager-status="future"/);
   assert.match(styles, /\[role="tab"\]:not\(\[data-flow-manager-live="true"\]\)::after/);
   assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
+  assert.match(portTool, /connectedAdminRouteFiles = new Set/);
+  assert.match(portTool, /connect\.admin\.businesses\.index\.tsx/);
   assert.match(portTool, /connectedClientRoutes\.has\(sourceName\.slice\("client\."\.length\)\)/);
+  assert.match(portTool, /connectedAdminRouteFiles\.has\(path\.basename\(destination\)\)/);
   assert.match(portTool, /enhancePresentationComponent/);
   assert.doesNotMatch(clientLayout, /ConnectWorkspaceShell|CanonicalFlowManagerEditor/);
   assert.doesNotMatch(adminLayout, /ConnectWorkspaceShell|VisualFlowBuilderEditor/);
@@ -380,6 +398,55 @@ test("Flow Manager core schema adds tenant-scoped WhatsApp operations tables", (
   assert.match(schema, /from public\.wa_customer_profiles as profile/);
   assert.match(schema, /'OWNER', 'MANAGER', 'STAFF', 'VIEWER'/);
   assert.doesNotMatch(schema, /\bto (anon|authenticated)\b/i);
+});
+
+test("messaging operations migration provides atomic idempotent inbound ingestion", () => {
+  const migration = readFileSync("supabase/connect/wa_messaging_operations_rpc.sql", "utf8");
+
+  assert.match(migration, /create table if not exists public\.wa_inbound_message_processing/);
+  assert.match(migration, /create or replace function public\.wa_ingest_inbound_message/);
+  assert.match(
+    migration,
+    /create or replace function public\.wa_finish_inbound_message_processing/,
+  );
+  assert.match(migration, /create or replace function public\.wa_apply_message_status/);
+  assert.match(migration, /on conflict \(business_id, phone_e164\) do update/);
+  assert.match(migration, /on conflict \(business_id, meta_message_id\)[\s\S]*?do nothing/);
+  assert.match(migration, /if v_inserted then[\s\S]*?unread_count = unread_count \+ 1/);
+  assert.match(migration, /processing\.status = 'PROCESSING'[\s\S]*?lease_expires_at <= now\(\)/);
+  assert.match(migration, /where message\.business_id = p_business_id/);
+  assert.match(
+    migration,
+    /grant execute on function public\.wa_ingest_inbound_message[\s\S]*?to service_role/,
+  );
+  assert.match(
+    migration,
+    /revoke all on function public\.wa_ingest_inbound_message[\s\S]*?from public, anon, authenticated/,
+  );
+});
+
+test("Meta webhook persists and claims inbound messages before running the flow engine", () => {
+  const webhook = readFileSync("src/features/connect/shared/webhook-handler.server.ts", "utf8");
+  const messagingStore = readFileSync(
+    "src/features/connect/shared/messaging-store.server.ts",
+    "utf8",
+  );
+  const persistenceIndex = webhook.indexOf("const persistence = await measureWebhookPhase");
+  const processingIndex = webhook.indexOf("processIncomingMessage({", persistenceIndex);
+
+  assert.ok(persistenceIndex >= 0);
+  assert.ok(processingIndex > persistenceIndex);
+  assert.match(
+    webhook,
+    /connection\.source === "database" \? connection\.connectionId : undefined/,
+  );
+  assert.match(webhook, /persistence\.available\s*\? !persistence\.shouldProcess/);
+  assert.match(webhook, /finishInboundWhatsAppMessageProcessing\(\{[\s\S]*?succeeded: true/);
+  assert.match(webhook, /recordInboundProcessingFailure/);
+  assert.match(webhook, /applyWhatsAppMessageStatus\(\{ businessId: connection\.businessId/);
+  assert.match(messagingStore, /"\/rpc\/wa_ingest_inbound_message"/);
+  assert.match(messagingStore, /"\/rpc\/wa_finish_inbound_message_processing"/);
+  assert.match(messagingStore, /"\/rpc\/wa_apply_message_status"/);
 });
 
 function canonicalOneMessageDocument(id: string, text: string): CanonicalFlowDocument {

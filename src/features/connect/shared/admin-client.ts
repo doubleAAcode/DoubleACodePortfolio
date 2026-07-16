@@ -117,6 +117,9 @@ export async function getAdminBusinessDetails(businessId: string) {
   return result.data;
 }
 
+export type AdminBusinessSummaryResult = Awaited<ReturnType<typeof getAdminBusinesses>>[number];
+export type AdminBusinessDetailsResult = Awaited<ReturnType<typeof getAdminBusinessDetails>>;
+
 export async function applyAdminBusinessAction(
   businessId: string,
   action:

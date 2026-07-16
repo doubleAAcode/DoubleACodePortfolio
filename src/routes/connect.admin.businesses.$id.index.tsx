@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { setupChecklist, type ChecklistState } from "@/features/connect/flow-manager-ui/preview-data/mock-data";
+import {
+  setupChecklist,
+  type ChecklistState,
+} from "@/features/connect/flow-manager-ui/preview-data/mock-data";
+import { useBusinessDetails } from "@/features/connect/admin/businesses/business-details-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
@@ -13,19 +17,36 @@ export const Route = createFileRoute("/connect/admin/businesses/$id/")({
 function stateMeta(s: ChecklistState) {
   switch (s) {
     case "complete":
-      return { tone: "success" as const, label: "Complete", icon: <CheckCircle2 className="h-3 w-3" /> };
+      return {
+        tone: "success" as const,
+        label: "Complete",
+        icon: <CheckCircle2 className="h-3 w-3" />,
+      };
     case "attention":
-      return { tone: "warning" as const, label: "Needs attention", icon: <AlertTriangle className="h-3 w-3" /> };
+      return {
+        tone: "warning" as const,
+        label: "Needs attention",
+        icon: <AlertTriangle className="h-3 w-3" />,
+      };
     case "blocking":
-      return { tone: "destructive" as const, label: "Blocking", icon: <XCircle className="h-3 w-3" /> };
+      return {
+        tone: "destructive" as const,
+        label: "Blocking",
+        icon: <XCircle className="h-3 w-3" />,
+      };
     case "pending":
-      return { tone: "neutral" as const, label: "Not started", icon: <Circle className="h-3 w-3" /> };
+      return {
+        tone: "neutral" as const,
+        label: "Not started",
+        icon: <Circle className="h-3 w-3" />,
+      };
   }
 }
 
 function SetupHubPage() {
   const { id } = Route.useParams();
-  const items = setupChecklist(id);
+  const details = useBusinessDetails();
+  const items = details ? toConnectedChecklist(id, details.checklist) : setupChecklist(id);
   const complete = items.filter((i) => i.state === "complete").length;
   const total = items.length;
   const pct = Math.round((complete / total) * 100);
@@ -40,7 +61,9 @@ function SetupHubPage() {
               <CardDescription>Complete every item before publishing the flow.</CardDescription>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-semibold tabular-nums">{complete}/{total}</div>
+              <div className="text-2xl font-semibold tabular-nums">
+                {complete}/{total}
+              </div>
               <div className="text-xs text-muted-foreground">items complete</div>
             </div>
           </div>
@@ -81,4 +104,74 @@ function SetupHubPage() {
       </div>
     </div>
   );
+}
+
+function toConnectedChecklist(
+  businessId: string,
+  checklist: Array<{ label: string; complete: boolean }>,
+) {
+  return checklist.map((item, index) => {
+    const destination = checklistDestination(businessId, item.label);
+    return {
+      id: `live-check-${index + 1}`,
+      title: item.label,
+      detail: item.complete
+        ? "Verified from the current business configuration."
+        : destination.detail,
+      state: (item.complete ? "complete" : "pending") as ChecklistState,
+      action: destination.action,
+      to: destination.to,
+    };
+  });
+}
+
+function checklistDestination(businessId: string, label: string) {
+  const base = `/connect/admin/businesses/${businessId}`;
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes("owner user")) {
+    return {
+      to: "/connect/admin/settings/team",
+      action: "Open team",
+      detail: "Assign an active owner to this business.",
+    };
+  }
+  if (normalized.includes("whatsapp")) {
+    return {
+      to: `${base}/whatsapp`,
+      action: "Configure",
+      detail: "Connect and verify the business WhatsApp number.",
+    };
+  }
+  if (normalized.includes("catalog")) {
+    return {
+      to: `${base}/products`,
+      action: "Open catalog",
+      detail: "Add at least one active category and product.",
+    };
+  }
+  if (
+    normalized.includes("checkout") ||
+    normalized.includes("payment") ||
+    normalized.includes("notification")
+  ) {
+    return {
+      to: `${base}/checkout`,
+      action: "Configure",
+      detail: "Finish the required checkout and order settings.",
+    };
+  }
+  if (normalized.includes("test")) {
+    return {
+      to: `${base}/live-test`,
+      action: "Open test",
+      detail: "Complete this check using a real WhatsApp test conversation.",
+    };
+  }
+
+  return {
+    to: base,
+    action: "Review",
+    detail: "Review the current business configuration.",
+  };
 }

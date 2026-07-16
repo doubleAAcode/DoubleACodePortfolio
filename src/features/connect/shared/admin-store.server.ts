@@ -66,8 +66,10 @@ export type AdminBusinessUserRow = {
   id: string;
   business_id: string;
   email: string;
-  role: "OWNER" | "MANAGER" | "STAFF";
+  display_name: string | null;
+  role: "OWNER" | "MANAGER" | "STAFF" | "VIEWER";
   status: "INVITED" | "ACTIVE" | "REMOVED";
+  last_active_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -124,6 +126,7 @@ type WebhookLogRow = {
 };
 
 export type AdminBusinessSummary = AdminBusinessRow & {
+  ownerName: string | null;
   ownerEmail: string | null;
   connectionStatus: string;
   displayPhoneNumber: string | null;
@@ -285,6 +288,9 @@ export async function getAdminBusinesses(): Promise<AdminBusinessSummary[]> {
     const connection = businessConnections[0];
     return {
       ...business,
+      ownerName:
+        businessUsers.find((user) => user.role === "OWNER" && user.status !== "REMOVED")
+          ?.display_name ?? null,
       ownerEmail:
         businessUsers.find((user) => user.role === "OWNER" && user.status !== "REMOVED")?.email ??
         null,

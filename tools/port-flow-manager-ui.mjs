@@ -10,6 +10,11 @@ const featureRoot = path.join(repoRoot, "src", "features", "connect", "flow-mana
 const componentsRoot = path.join(featureRoot, "components");
 const previewDataRoot = path.join(featureRoot, "preview-data");
 const connectedClientRoutes = new Set(["automations.tsx"]);
+const connectedAdminRouteFiles = new Set([
+  "connect.admin.businesses.index.tsx",
+  "connect.admin.businesses.$id.tsx",
+  "connect.admin.businesses.$id.index.tsx",
+]);
 
 const adminRoots = [
   "analytics",
@@ -36,7 +41,8 @@ async function removeOldConnectUiRoutes() {
     const isOldAdminRoute =
       entry.isFile() &&
       entry.name.startsWith("connect.admin.") &&
-      entry.name !== "connect.admin.tsx";
+      entry.name !== "connect.admin.tsx" &&
+      !connectedAdminRouteFiles.has(entry.name);
     const isGeneratedClientRoute = entry.isFile() && entry.name.startsWith("connect.client.");
     if (isOldAdminRoute || isGeneratedClientRoute) {
       await rm(path.join(routesRoot, entry.name));
@@ -127,6 +133,7 @@ async function portRoutes() {
           routesRoot,
           sourceName === "index.tsx" ? "connect.admin.index.tsx" : `connect.admin.${sourceName}`,
         );
+    if (isAdmin && connectedAdminRouteFiles.has(path.basename(destination))) continue;
     const input = await readFile(path.join(sourceRoutes, sourceName), "utf8");
     const transformed = transformSource(
       transformRouteSource(input, isClient ? "client" : "admin"),

@@ -8,6 +8,8 @@ const mutationLabel =
   /\b(save|send|submit|create|invite|export|import|pause|resume|assign|resolve|snooze|transfer|tag|delete|revoke|rotate|refund|remind|install|connect|re-index|redeploy|generate|queue|publish|test run|try it|new workflow|new api key|add endpoint)\b/i;
 
 const partialRouteMessages: Record<string, string> = {
+  "/connect/admin/businesses":
+    "Business records, search, status filters, and setup checks use live admin data. Creation and configuration actions remain future work.",
   "/connect/client/automations":
     "The workflow list uses the authorized business backend. Canvas data, editing, and actions remain preview-only.",
 };
@@ -15,7 +17,9 @@ const partialRouteMessages: Record<string, string> = {
 export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const status = getFlowManagerFeatureStatus(pathname);
-  const partialMessage = partialRouteMessages[pathname];
+  const partialMessage = pathname.startsWith("/connect/admin/businesses")
+    ? partialRouteMessages["/connect/admin/businesses"]
+    : partialRouteMessages[pathname];
 
   if (status === "live") return <>{children}</>;
 

@@ -48,6 +48,16 @@ Roadmap update rules:
     authoritative, keep new schemas additive and tenant-scoped, and route all
     browser access through authenticated server adapters rather than exposing
     Supabase service-role credentials or direct table access.
+12. Work only from the active milestone and work-package sequence in `plan.md`.
+    Do not begin a queued milestone merely because one of its screens or backend
+    helpers is easy to connect.
+13. Apply the roadmap Definition of Ready before implementation and its full
+    verification ladder before marking work complete. A local test pass does not
+    replace deployed database, browser, authorization, or real-provider evidence
+    when those gates apply.
+14. Record release evidence, residual risk, rollback readiness, and the next
+    authorized work package in the Roadmap Changelog. Do not promote the next
+    milestone until the current completion gate is accepted.
 
 `.agents/ChatBot Plan.md` is historical milestone and brainstorming context.
 Do not treat it as the current roadmap when it conflicts with `plan.md`.
