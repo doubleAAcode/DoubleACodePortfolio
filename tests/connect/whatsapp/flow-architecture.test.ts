@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   CANONICAL_FLOW_SCHEMA_VERSION,
@@ -257,12 +257,8 @@ test("business flow publishing creates a new published snapshot in source", () =
   assert.doesNotMatch(source, /version\.status = "PUBLISHED"/);
 });
 
-test("admin template cloning creates an editable draft without replacing the live version", () => {
+test("admin template cloning backend creates a draft without replacing the live version", () => {
   const source = readFileSync("src/features/connect/shared/flow-template-store.server.ts", "utf8");
-  const route = readFileSync(
-    "src/routes/connect.admin.businesses.$businessId.flow-builder.tsx",
-    "utf8",
-  );
 
   assert.match(source, /publish = false/);
   assert.match(source, /const versionId = `\$\{flowId\}-v\$\{versionNumber\}`/);
@@ -276,7 +272,6 @@ test("admin template cloning creates an editable draft without replacing the liv
   assert.match(source, /if \(publish\) \{/);
   assert.match(source, /publish: true/);
   assert.doesNotMatch(source, /draft\?\.id \?\? `\$\{flowId\}-v\$\{versionNumber\}`/);
-  assert.match(route, /latest\.versions\.find\(\(version\) => version\.status === "DRAFT"\)\?\.id/);
 });
 
 test("session runtime loading uses pinned flow versions in source", () => {
@@ -294,7 +289,6 @@ test("client flow API scopes every mutation to the signed dashboard business", (
     "utf8",
   );
   const client = readFileSync("src/features/connect/shared/dashboard-client.ts", "utf8");
-  const builder = readFileSync("src/routes/connect/client/automations/builder.tsx", "utf8");
 
   assert.match(handlers, /createDashboardFlowHandlers\(envSuffix = ""\)/);
   assert.match(handlers, /getDashboardSessionFromRequest\(request, envSuffix\)/);
@@ -304,28 +298,66 @@ test("client flow API scopes every mutation to the signed dashboard business", (
   assert.match(handlers, /saveWaDashboardFlowSettings\(session\.businessId, action\)/);
   assert.doesNotMatch(handlers, /body\?\.businessId/);
   assert.match(client, /dashboardApiPath\("\/flow"\)/);
-  assert.match(builder, /applyWaDashboardFlowAction\(\{/);
 });
 
-test("client Flow Manager does not embed the legacy admin editor or mock flow data", () => {
-  const builder = readFileSync("src/routes/connect/client/automations/builder.tsx", "utf8");
-  const editor = readFileSync(
-    "src/features/connect/flow-manager/canonical-flow-editor.tsx",
+test("Connect routes mount Flow Manager presentation without legacy UI components", () => {
+  const clientLayout = readFileSync("src/routes/connect/client.tsx", "utf8");
+  const adminLayout = readFileSync("src/routes/connect.admin.tsx", "utf8");
+  const automations = readFileSync("src/routes/connect/client/automations.tsx", "utf8");
+  const previewBoundary = readFileSync(
+    "src/features/connect/flow-manager-ui/preview-boundary.tsx",
     "utf8",
   );
-  const canvas = readFileSync(
-    "src/features/connect/flow-manager/canonical-flow-canvas.tsx",
-    "utf8",
-  );
+  const portTool = readFileSync("tools/port-flow-manager-ui.mjs", "utf8");
+  const legacyDashboardProducts = readFileSync("src/routes/connect.dashboard.products.tsx", "utf8");
+  const submoduleConfig = readFileSync(".gitmodules", "utf8");
 
-  assert.match(builder, /CanonicalFlowManagerEditor/);
-  assert.doesNotMatch(builder, /VisualFlowBuilderEditor/);
-  assert.doesNotMatch(builder, /connect\.admin\.businesses/);
-  assert.doesNotMatch(editor, /mock-data|mock-client|flowSteps/);
-  assert.match(editor, /Guided/);
-  assert.match(editor, /Selected Step/);
-  assert.match(editor, /Validation/);
-  assert.match(canvas, /from "@xyflow\/react"/);
+  assert.match(clientLayout, /flow-manager-ui\/components\/client-sidebar/);
+  assert.match(adminLayout, /flow-manager-ui\/components\/app-sidebar/);
+  assert.match(automations, /flow-manager-ui\/components\/workflow-canvas/);
+  assert.match(automations, /flow-manager-ui\/preview-data\/mock-client/);
+  assert.match(automations, /getWaDashboardFlow/);
+  assert.match(automations, /features\/connect\/shared\/dashboard-client/);
+  assert.match(previewBoundary, /UI preview only\. Data is illustrative/);
+  assert.match(previewBoundary, /workflow list uses the authorized business backend/);
+  assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
+  assert.match(portTool, /connectedClientRoutes\.has\(sourceName\.slice\("client\."\.length\)\)/);
+  assert.doesNotMatch(clientLayout, /ConnectWorkspaceShell|CanonicalFlowManagerEditor/);
+  assert.doesNotMatch(adminLayout, /ConnectWorkspaceShell|VisualFlowBuilderEditor/);
+  assert.match(legacyDashboardProducts, /redirect\(\{ href: "\/connect\/client\/catalog" \}\)/);
+  assert.doesNotMatch(legacyDashboardProducts, /ProductsPage|dashboard-client/);
+  assert.match(submoduleConfig, /url = https:\/\/github\.com\/Alawieh\/flow-manager\.git/);
+  assert.equal(existsSync("src/features/connect/shell"), false);
+  assert.equal(existsSync("src/features/connect/flow-manager"), false);
+});
+
+test("Flow Manager core schema adds tenant-scoped WhatsApp operations tables", () => {
+  const schema = readFileSync("supabase/connect/wa_flow_manager_core_schema.sql", "utf8");
+
+  for (const table of [
+    "wa_contacts",
+    "wa_tags",
+    "wa_contact_tags",
+    "wa_media_assets",
+    "wa_conversations",
+    "wa_conversation_messages",
+    "wa_conversation_events",
+    "wa_canned_replies",
+  ]) {
+    assert.match(schema, new RegExp(`create table if not exists public\\.${table}\\b`));
+    assert.match(schema, new RegExp(`alter table public\\.${table} enable row level security`));
+    assert.match(
+      schema,
+      new RegExp(`grant select, insert, update, delete on public\\.${table} to service_role`),
+    );
+  }
+
+  assert.match(schema, /check \(channel = 'WHATSAPP'\)/);
+  assert.match(schema, /foreign key \(business_id, conversation_id\)/);
+  assert.match(schema, /foreign key \(business_id, contact_id\)/);
+  assert.match(schema, /from public\.wa_customer_profiles as profile/);
+  assert.match(schema, /'OWNER', 'MANAGER', 'STAFF', 'VIEWER'/);
+  assert.doesNotMatch(schema, /\bto (anon|authenticated)\b/i);
 });
 
 function canonicalOneMessageDocument(id: string, text: string): CanonicalFlowDocument {

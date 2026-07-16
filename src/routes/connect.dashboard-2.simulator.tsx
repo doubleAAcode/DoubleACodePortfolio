@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { SimulatorPage } from "./connect.dashboard.simulator";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/connect/dashboard-2/simulator")({
-  component: SimulatorPage,
+  beforeLoad: () => {
+    throw redirect({ href: "/connect/client/automations" });
+  },
 });

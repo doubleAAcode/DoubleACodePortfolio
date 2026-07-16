@@ -158,6 +158,11 @@
   --border: oklch(0.92 0.01 250);
   --input: oklch(0.92 0.01 250);
   --ring: oklch(0.55 0.17 250);
+  --chart-1: oklch(0.55 0.17 250);
+  --chart-2: oklch(0.65 0.13 200);
+  --chart-3: oklch(0.62 0.15 155);
+  --chart-4: oklch(0.75 0.15 75);
+  --chart-5: oklch(0.6 0.18 300);
   --sidebar: oklch(0.99 0.003 250);
   --sidebar-foreground: oklch(0.3 0.03 260);
   --sidebar-primary: oklch(0.55 0.17 250);
@@ -184,6 +189,24 @@
 .connect-flow-manager-surface h4 {
   font-family: var(--font-sans);
   letter-spacing: 0;
+}
+
+html:has(.connect-flow-manager-surface)::-webkit-scrollbar-track,
+html:has(.connect-flow-manager-surface) *::-webkit-scrollbar-track {
+  background: oklch(0.995 0.002 250);
+}
+
+html:has(.connect-flow-manager-surface)::-webkit-scrollbar-thumb,
+html:has(.connect-flow-manager-surface) *::-webkit-scrollbar-thumb {
+  background: oklch(0.78 0.01 250);
+}
+
+.connect-flow-manager-surface [role="tablist"] {
+  scrollbar-width: none;
+}
+
+.connect-flow-manager-surface [role="tablist"]::-webkit-scrollbar {
+  display: none;
 }
 
 .pavone-store {

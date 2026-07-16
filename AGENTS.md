@@ -38,6 +38,16 @@ Roadmap update rules:
    system. New `/connect/admin` and `/connect/client` screens may reuse legacy
    services, schemas, authorization, and domain helpers, but must not import,
    embed, or cosmetically wrap legacy route/page components.
+10. Treat the checked-out `flow-manager/` route and component tree as the
+    canonical UI baseline. Use `tools/port-flow-manager-ui.mjs` to refresh the
+    namespaced copy, and connect real data and actions through adapters without
+    redesigning or replacing the cloned screen composition unless a product
+    decision is recorded in `plan.md`.
+11. Consult `docs/connect/flow-manager-backend-map.md` before connecting a
+    Flow Manager screen. Extend an existing `wa_*` domain when one is already
+    authoritative, keep new schemas additive and tenant-scoped, and route all
+    browser access through authenticated server adapters rather than exposing
+    Supabase service-role credentials or direct table access.
 
 `.agents/ChatBot Plan.md` is historical milestone and brainstorming context.
 Do not treat it as the current roadmap when it conflicts with `plan.md`.

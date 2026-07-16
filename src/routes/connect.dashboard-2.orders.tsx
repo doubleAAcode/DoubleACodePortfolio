@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { OrdersPage } from "./connect.dashboard.orders";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/connect/dashboard-2/orders")({
-  component: OrdersPage,
+  beforeLoad: () => {
+    throw redirect({ href: "/connect/client" });
+  },
 });

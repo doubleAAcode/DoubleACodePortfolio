@@ -84,58 +84,67 @@ Explicitly deferred:
 - [x] Persistent conversation sessions for the deterministic commerce bot.
 - [x] English and Arabic bot copy and language selection.
 - [x] Categories, catalog groups, products, options, variants, custom fields,
-  stock, and images.
+      stock, and images.
 - [x] Cart calculation and stock-aware quantity validation.
 - [x] Delivery areas, pickup locations, payment-method choices, and checkout
-  settings.
+      settings.
 - [x] Atomic pending-order creation with idempotency and stock reservations.
 - [x] Order acceptance, rejection, lifecycle transitions, history, and saved
-  order snapshots.
+      order snapshots.
 - [x] Owner notification records, reminders, read state, and health checks.
 - [x] Internal admin session, overview, business onboarding, status controls,
-  business users, WhatsApp connection setup, and audit records.
+      business users, WhatsApp connection setup, and audit records.
 - [x] Flow templates, draft versions, publishing, cloning to businesses, and
-  business-specific versions.
+      business-specific versions.
 - [x] Canonical v2 flow documents, legacy conversion, validation, protected
-  commerce actions, and runtime compilation.
+      commerce actions, and runtime compilation.
 - [x] Business and conversation diagnostics, webhook logs, and message logs.
 - [x] Meta WhatsApp template submission and local submission records.
-- [x] Automated Connect suite: 39 tests passing on 2026-07-16.
+- [x] Automated Connect suite: 40 tests passing on 2026-07-16.
 
 ### Working but temporary or incomplete product layers
 
-- [~] Current admin functionality now runs inside the shared Connect shell;
-  individual legacy screens still need to migrate to the target visual system.
-- [~] `/connect/client` now has an authenticated shared shell and live home
-  summary; catalog, order, and settings tools still bridge to the legacy
-  dashboard during migration.
+- [~] The exact Flow Manager admin and client route trees now own
+  `/connect/admin` and `/connect/client`. Their page data and actions are still
+  illustrative previews until each screen receives a backend adapter.
+- [x] The discarded custom Connect shell and canonical-editor approximation are
+      no longer mounted. Legacy dashboard entry points redirect into the new client
+      workspace, while existing backend services and APIs remain available for
+      migration.
+- [~] Existing admin and client authentication gates still use the deployed
+  Vercel environment contracts. Local development also has a development-only
+  `?preview=1` UI inspection path that is unavailable in production builds.
 - [~] Client access still uses temporary environment-based credentials tied to
   configured businesses.
 - [~] Customer profiles are derived from completed checkout data; there is no
   complete contact-management domain yet.
 - [~] Message events provide an audit trail, but there is no durable support
   inbox with conversation lifecycle, assignment, notes, tags, or human outbox.
-- [~] Client Automations now uses a Flow Manager-native light workspace and
-  canonical editor with Guided, Canvas, Selected Step, Preview, Validation, and
-  Advanced views. It loads the authorized business's real flow and templates,
-  supports real visual edits and media upload, tracks unsaved changes, saves a
-  draft, and publishes immutable versions. General workflow nodes, controlled
-  simulation, execution traces, and granular roles remain incomplete.
-- [x] The main project dependency install includes `@xyflow/react`; production
-  build and typecheck pass locally.
+- [~] The exact Flow Manager Automations list now reads the authorized
+  business's canonical flow and version summary through the existing client
+  API. The supplied Lovable canvas remains illustrative; real document mapping,
+  draft save, validation, publishing, and execution metrics are still pending.
+- [~] An additive Flow Manager Supabase migration now defines tenant-scoped
+  contacts, tags, durable inbox conversations/messages/events, canned replies,
+  workspace role metadata, and reusable media assets. It is authored and tested
+  locally but has not yet been applied to the deployed Supabase project or
+  connected to route-level adapters.
+- [x] The main project includes the cloned canvas dependency, `reactflow`;
+      production build and typecheck pass locally.
 
 ### Flow Manager UI prototype
 
 - [x] A separate Lovable-generated UI reference exists in `flow-manager/`.
 - [x] It contains admin, client, flow-builder, inbox, contact, analytics,
-  template, settings, and future-product screen designs.
-- [~] Its shell and client Automations destination are being migrated into the
-  main application; most prototype route screens are still not connected to a
-  real route-level backend.
-- [ ] Mock imports, hardcoded values, local state, and fake success toasts must
-  be removed or explicitly contained inside Future Work previews.
-- [ ] Its nested app shell, route tree, styles, and duplicate project setup must
-  not replace the main application's root configuration.
+      template, settings, and future-product screen designs.
+- [x] Its exact route and presentation component tree is namespaced inside the
+      main application and mounted under the Connect admin and client routes.
+- [x] Prototype links are rebased under `/connect`; the nested project does not
+      replace the main router, build, or deployment configuration.
+- [~] Mock imports, hardcoded values, and local state are contained behind a
+  persistent preview notice and mutation guard. They must be replaced screen by
+  screen as real backend adapters are implemented.
+- [x] Fake prototype success toasts are disabled in the ported UI.
 
 ## Target Product Experience
 
@@ -309,22 +318,23 @@ response.
 - [x] Confirm clickable Future Work previews.
 - [x] Create this living roadmap and workspace update rule.
 - [x] Synchronize installed dependencies and restore a clean typecheck.
-- [x] Keep the existing 37-test Connect suite green during migration.
+- [x] Keep the existing Connect suite green during migration; 40 tests pass.
 
 Completion gate: current functionality has a reproducible green baseline and
 the new UI can be introduced without deleting working behavior.
 
 ### Phase 1 - Integrate the Flow Manager shell
 
-- [x] Add centralized feature status: `live`, `building`, and `future`.
-- [x] Add shared Live, Building, and Future Work page treatment.
-- [x] Mount the new admin shell under `/connect/admin`.
-- [x] Mount the new client shell under `/connect/client`.
-- [ ] Rebase all prototype links under `/connect`.
-- [x] Reuse the main UI component library and one `@xyflow/react` version.
+- [x] Mount the exact cloned admin shell under `/connect/admin`.
+- [x] Mount the exact cloned client shell under `/connect/client`.
+- [x] Rebase all prototype links under `/connect`.
+- [x] Namespace the cloned presentation components and use one `reactflow`
+      dependency from the main project.
 - [x] Isolate Connect styling without replacing the public website styles.
-- [ ] Preserve temporary redirects for legacy admin and dashboard URLs.
+- [x] Preserve redirects for legacy admin and dashboard entry points.
 - [x] Keep future screens clickable, illustrative, and mutation-free.
+- [~] Preserve the existing Vercel-backed auth boundaries; production behavior
+  still requires verification with deployed environment values.
 
 Completion gate: both new shells run in the main app, route correctly, preserve
 authentication boundaries, and do not regress the public portfolio.
@@ -338,14 +348,19 @@ authentication boundaries, and do not regress the public portfolio.
 - [ ] Add invitations, activation, removal, and audit events.
 - [ ] Make workspace switching real and tenant-safe.
 - [ ] Retain separate internal Double A admin authorization.
+- [~] Extend existing business-user records with display name, last activity,
+  and Viewer role support; migration authored, deployment and auth integration
+  pending.
 
 Completion gate: users can access only authorized businesses and every server
 mutation enforces permissions independently of the UI.
 
 ### Phase 3 - Durable messaging and WhatsApp inbox
 
-- [ ] Add conversation records separate from runtime flow sessions.
-- [ ] Add durable inbound and outbound message records and status updates.
+- [~] Add contacts and conversation records separate from checkout profiles and
+  runtime flow sessions; schema authored, deployment and adapters pending.
+- [~] Add durable inbound and outbound message records and status updates;
+  schema authored, webhook/outbox dual-write pending.
 - [ ] Add an idempotent outbound outbox with retries and failure visibility.
 - [ ] Add open, pending, snoozed, closed, and reopened lifecycle behavior.
 - [ ] Add assignment, transfer, notes, tags, unread state, and SLA timestamps.
@@ -359,22 +374,22 @@ handed to a human, replied to, delivered, and audited end to end.
 
 ### Phase 4 - Workflow-grade visual builder
 
-- [~] Client Automations now edits the canonical versioned document through a
-  Flow Manager-native editor; remaining admin and client Flow Manager screens
-  still need the same service-level migration.
+- [~] Connect the exact client Automations screen to the authorized business's
+  canonical versioned flow document and template APIs. The workflow list and
+  current-version summary are connected; canvas mapping and template actions
+  remain pending.
 - [ ] Implement real trigger configuration.
 - [ ] Implement text, image, template, question, menu, and handoff nodes.
 - [ ] Implement typed answer storage and deterministic branches.
 - [ ] Implement contact-field and tag actions.
 - [ ] Implement assignment, open, close, wait, jump, and subflow nodes.
-- [~] Existing protected catalog, cart, checkout, and order actions are exposed
-  in the migrated client editor; the broader general workflow palette remains.
-- [~] Canonical validation and server-side publishing prevent invalid commerce
-  paths in the migrated slice; every new node type still needs equivalent tests.
-- [~] Draft save, validation, and publishing are connected; controlled runtime
-  simulation still needs to move into the client builder.
-- [~] Live and draft versions are visible; add reliable unsaved-change state and
-  navigation protection.
+- [~] Existing canonical validation, immutable publishing, protected catalog,
+  cart, checkout, and order actions remain backend foundations ready for the UI
+  adapter. The exact cloned builder does not invoke them yet.
+- [ ] Connect draft save, node-level validation, publishing, and version history
+      without changing the cloned builder composition.
+- [ ] Add controlled runtime simulation, reliable unsaved-change state, and
+      navigation protection.
 - [ ] Add per-contact execution traces and stop/restart controls.
 - [ ] Add admin and client permissions for templates and business flows.
 - [ ] Extend automated tests for every node and protected transition.
@@ -384,7 +399,8 @@ publish, execute, and diagnose a real WhatsApp workflow.
 
 ### Phase 5 - Media library and voice-note transcription
 
-- [ ] Add tenant-owned media assets and retention rules.
+- [~] Add tenant-owned image, document, and prerecorded-audio assets; schema
+  authored, storage policies, retention jobs, and upload adapter pending.
 - [ ] Add upload validation and secure media access.
 - [ ] Add outbound prerecorded-audio sender support and delivery logs.
 - [ ] Add a prerecorded-audio flow node.
@@ -406,7 +422,8 @@ customer voice note can be transcribed and continue that flow safely.
 - [ ] Connect owner notifications and reminders.
 - [ ] Expand customer profiles into managed contacts with consent and history.
 - [ ] Connect logs, diagnostics, and practical operational analytics.
-- [ ] Remove superseded legacy UI only after parity is verified.
+- [x] Remove the superseded custom Connect shell and editor from visible routes;
+      retain backend behavior for adapter work.
 
 Completion gate: every currently working legacy workflow is available through
 the new UI with equal or better behavior.
@@ -457,23 +474,30 @@ the active roadmap:
 
 ## Decision Log
 
-| Date | Decision | Reason |
-| --- | --- | --- |
-| 2026-07-16 | Flow Manager is the target UI, not a second deployed app. | The main app already owns working routes, APIs, auth, Supabase, and deployment. |
-| 2026-07-16 | Current product scope is WhatsApp only. | Focus engineering on a complete messaging and workflow product. |
-| 2026-07-16 | AI agents are deferred. | Deterministic flow reliability and operations come first. |
-| 2026-07-16 | Audio means prerecorded outbound responses plus inbound transcription. | No generated voice or AI phone calls are required. |
-| 2026-07-16 | Future features stay clickable as labeled previews. | Keep the product vision visible without claiming fake functionality. |
-| 2026-07-16 | Order behavior uses protected backend actions with constrained admin configuration. | Preserve price, inventory, idempotency, and order-state integrity. |
-| 2026-07-16 | Target workflow quality is respond.io-grade for WhatsApp, not omnichannel parity. | Build strong triggers, steps, branches, operations, testing, and execution history around WhatsApp. |
-| 2026-07-16 | New Connect routes reuse the legacy server-side Vercel environment contract. | Preserve deployed dashboard, Supabase, and WhatsApp configuration without exposing secrets to the browser or creating a second configuration system. |
-| 2026-07-16 | Flow Manager owns the new UI; legacy route components cannot be embedded in it. | Reuse proven backend behavior without creating a visually inconsistent hybrid product. |
+| Date       | Decision                                                                            | Reason                                                                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-16 | Flow Manager is the target UI, not a second deployed app.                           | The main app already owns working routes, APIs, auth, Supabase, and deployment.                                                                      |
+| 2026-07-16 | Current product scope is WhatsApp only.                                             | Focus engineering on a complete messaging and workflow product.                                                                                      |
+| 2026-07-16 | AI agents are deferred.                                                             | Deterministic flow reliability and operations come first.                                                                                            |
+| 2026-07-16 | Audio means prerecorded outbound responses plus inbound transcription.              | No generated voice or AI phone calls are required.                                                                                                   |
+| 2026-07-16 | Future features stay clickable as labeled previews.                                 | Keep the product vision visible without claiming fake functionality.                                                                                 |
+| 2026-07-16 | Order behavior uses protected backend actions with constrained admin configuration. | Preserve price, inventory, idempotency, and order-state integrity.                                                                                   |
+| 2026-07-16 | Target workflow quality is respond.io-grade for WhatsApp, not omnichannel parity.   | Build strong triggers, steps, branches, operations, testing, and execution history around WhatsApp.                                                  |
+| 2026-07-16 | New Connect routes reuse the legacy server-side Vercel environment contract.        | Preserve deployed dashboard, Supabase, and WhatsApp configuration without exposing secrets to the browser or creating a second configuration system. |
+| 2026-07-16 | Flow Manager owns the new UI; legacy route components cannot be embedded in it.     | Reuse proven backend behavior without creating a visually inconsistent hybrid product.                                                               |
+| 2026-07-16 | The checked-out Flow Manager route/component tree is the canonical UI baseline.     | Backend adapters must make the supplied product functional without substituting a custom shell or redesigned page composition.                       |
 
 ## Roadmap Changelog
 
-| Date | Change | Verification |
-| --- | --- | --- |
-| 2026-07-16 | Created the living roadmap from the existing implementation audit and product-scope decisions. | Existing Connect suite: 37 tests passed. Current typecheck blocked by missing local `@xyflow/react` installation. |
-| 2026-07-16 | Synchronized dependencies; added the shared Connect feature registry, status treatments, admin/client shells, authenticated client home, legacy tool bridges, and clickable Future Work previews; repaired `/connect` route nesting so child workspaces render. | Production build passed; typecheck passed; 37 tests passed; `/connect`, `/connect/client`, and `/connect/admin` verified in desktop and 390px mobile browser layouts with no current console errors. |
-| 2026-07-16 | Connected client Automations to business-scoped canonical flow APIs using the existing `WA_DASHBOARD_*`, Supabase, and WhatsApp Vercel contracts; added real template cloning, visual editing, image upload, draft save, checkout-setting save, validation, version display, and publishing. Expanded `.env.example` with the legacy primary, partner, and internal-admin variable names. | Production build passed; typecheck passed; 38 tests passed; scoped ESLint passed, including a tenant-authorization regression test. |
-| 2026-07-16 | Corrected the UI migration boundary: removed the embedded legacy admin editor from the client route, restored legacy admin media handling to its own route, ported the Flow Manager light workspace theme and navigation, and added a Flow Manager-native canonical editor with real data and mutations. | Production build, typecheck, and scoped ESLint passed; 39 tests passed, including a regression test forbidding legacy editor and mock-data imports in the client Flow Manager; login verified at desktop and 390px mobile with no overflow or browser errors. |
+Earlier entries preserve the migration history. The latest entry and the
+current-status sections above define the active implementation state.
+
+| Date       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Verification                                                                                                                                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-16 | Created the living roadmap from the existing implementation audit and product-scope decisions.                                                                                                                                                                                                                                                                                                                                                                      | Existing Connect suite: 37 tests passed. Current typecheck blocked by missing local `@xyflow/react` installation.                                                                                                                                             |
+| 2026-07-16 | Synchronized dependencies; added the shared Connect feature registry, status treatments, admin/client shells, authenticated client home, legacy tool bridges, and clickable Future Work previews; repaired `/connect` route nesting so child workspaces render.                                                                                                                                                                                                     | Production build passed; typecheck passed; 37 tests passed; `/connect`, `/connect/client`, and `/connect/admin` verified in desktop and 390px mobile browser layouts with no current console errors.                                                          |
+| 2026-07-16 | Connected client Automations to business-scoped canonical flow APIs using the existing `WA_DASHBOARD_*`, Supabase, and WhatsApp Vercel contracts; added real template cloning, visual editing, image upload, draft save, checkout-setting save, validation, version display, and publishing. Expanded `.env.example` with the legacy primary, partner, and internal-admin variable names.                                                                           | Production build passed; typecheck passed; 38 tests passed; scoped ESLint passed, including a tenant-authorization regression test.                                                                                                                           |
+| 2026-07-16 | Corrected the UI migration boundary: removed the embedded legacy admin editor from the client route, restored legacy admin media handling to its own route, ported the Flow Manager light workspace theme and navigation, and added a Flow Manager-native canonical editor with real data and mutations.                                                                                                                                                            | Production build, typecheck, and scoped ESLint passed; 39 tests passed, including a regression test forbidding legacy editor and mock-data imports in the client Flow Manager; login verified at desktop and 390px mobile with no overflow or browser errors. |
+| 2026-07-16 | Reset the Connect presentation to the exact checked-out Flow Manager UI: registered the source as the `flow-manager/` submodule, ported its admin/client routes and components under `/connect`, removed the custom shell/editor approximation, replaced old dashboard child pages with redirect-only compatibility shims, preserved existing auth and backend foundations, disabled mock success toasts, and added persistent Preview/Future Work mutation guards. | Production build, typecheck, and scoped ESLint passed; 39 tests passed; client login boundary, exact Home, Automations list/canvas, mutation blocking, Future Work labeling, and 390px responsive containment verified in browser.                            |
+| 2026-07-16 | Mapped every exact Lovable admin/client route to an existing backend, additive schema, derived read model, new domain, or Future Work status. Added the idempotent `wa_flow_manager_core_schema.sql` migration for tenant-scoped contacts, tags, inbox conversations/messages/events, canned replies, user metadata, and reusable media, including checkout-customer backfill and service-role-only RLS access.                                                     | Static schema contract test added; 40 tests pass. Migration deployment and live Supabase verification remain pending.                                                                                                                                         |
+| 2026-07-16 | Promoted the exact Lovable client Automations route to its first real adapter: authenticated workspaces now load the authorized business's canonical flow/version summary through the existing Vercel-backed dashboard API, while the supplied canvas and mutations remain visibly preview-only. Updated the mechanical port tool to preserve promoted connected routes during future Lovable refreshes.                                                            | Port refresh preserved the connected route byte-for-byte; production build, typecheck, scoped ESLint, and all 40 Connect tests passed.                                                                                                                        |

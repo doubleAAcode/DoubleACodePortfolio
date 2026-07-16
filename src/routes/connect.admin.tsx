@@ -2,11 +2,13 @@ import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/re
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
-import { ConnectWorkspaceShell } from "@/features/connect/shell/connect-shell";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/features/connect/flow-manager-ui/components/app-sidebar";
+import { CommandPalette } from "@/features/connect/flow-manager-ui/components/command-palette";
+import { FlowManagerPreviewBoundary } from "@/features/connect/flow-manager-ui/preview-boundary";
 import {
   getInternalAdminSession,
   loginInternalAdmin,
-  logoutInternalAdmin,
   type InternalAdminSessionResult,
 } from "@/features/connect/shared/admin-client";
 
@@ -16,8 +18,8 @@ export const Route = createFileRoute("/connect/admin")({
 
 function AdminLayout() {
   const router = useRouter();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isFlowBuilder = pathname.endsWith("/flow-builder");
+  const search = useRouterState({ select: (state) => state.location.searchStr });
+  const localPreview = import.meta.env.DEV && new URLSearchParams(search).get("preview") === "1";
   const [sessionResult, setSessionResult] = useState<InternalAdminSessionResult>();
   const [error, setError] = useState("");
 
@@ -27,25 +29,19 @@ function AdminLayout() {
       .then((result) => {
         if (mounted) setSessionResult(result);
       })
-      .catch((err) => {
-        if (mounted) setError(err instanceof Error ? err.message : "Could not load admin session.");
+      .catch((caught) => {
+        if (mounted) {
+          setError(caught instanceof Error ? caught.message : "Could not load admin session.");
+        }
       });
     return () => {
       mounted = false;
     };
   }, []);
 
-  async function signOut() {
-    await logoutInternalAdmin();
-    setSessionResult((current) =>
-      current ? { ...current, authenticated: false, session: null } : current,
-    );
-    router.invalidate();
-  }
+  if (localPreview) return <AdminWorkspace />;
 
-  if (!sessionResult && !error) {
-    return <AdminState text="Loading admin..." />;
-  }
+  if (!sessionResult && !error) return <AdminState text="Loading admin..." />;
 
   if (error || !sessionResult?.authenticated) {
     return (
@@ -61,16 +57,22 @@ function AdminLayout() {
     );
   }
 
+  return <AdminWorkspace />;
+}
+
+function AdminWorkspace() {
   return (
-    <ConnectWorkspaceShell
-      workspace="admin"
-      pathname={pathname}
-      username={sessionResult.session?.username ?? "admin"}
-      onSignOut={() => void signOut()}
-      fullBleed={isFlowBuilder}
-    >
-      <Outlet />
-    </ConnectWorkspaceShell>
+    <div className="connect-flow-manager-surface min-h-svh bg-background text-foreground">
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="min-w-0">
+          <FlowManagerPreviewBoundary>
+            <Outlet />
+          </FlowManagerPreviewBoundary>
+        </SidebarInset>
+        <CommandPalette />
+      </SidebarProvider>
+    </div>
   );
 }
 
@@ -95,8 +97,8 @@ function AdminLogin({
     try {
       await loginInternalAdmin(username, password);
       onLogin(await getInternalAdminSession());
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Could not sign in.");
+    } catch (caught) {
+      setFormError(caught instanceof Error ? caught.message : "Could not sign in.");
     } finally {
       setLoading(false);
     }
@@ -104,16 +106,12 @@ function AdminLogin({
 
   return (
     <main className="connect-flow-manager-surface flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <form
-        onSubmit={submit}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow"
-      >
-        <h1 className="font-display text-2xl font-semibold">Double A Internal Admin</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Restricted manual onboarding console.</p>
+      <form onSubmit={submit} className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold">WA Business Admin</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Internal console</p>
         {!configured ? (
           <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            Configure WA_INTERNAL_ADMIN_PASSWORD or WA_INTERNAL_REVIEWER_PASSWORD, plus
-            WA_INTERNAL_ADMIN_SESSION_SECRET.
+            Configure the existing internal admin credentials and session secret in Vercel.
           </p>
         ) : null}
         {formError ? (
@@ -141,7 +139,7 @@ function AdminLogin({
         <button
           type="submit"
           disabled={loading || !configured}
-          className="mt-5 inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          className="mt-5 inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>

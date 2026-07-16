@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { CategoriesPage } from "./connect.dashboard.categories";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/connect/dashboard-2/categories")({
-  component: CategoriesPage,
+  beforeLoad: () => {
+    throw redirect({ href: "/connect/client/catalog" });
+  },
 });

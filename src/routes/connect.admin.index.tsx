@@ -1,139 +1,49 @@
-import { createFileRoute } from "@tanstack/react-router";
-import {
-  Activity,
-  AlertTriangle,
-  Building2,
-  ClipboardList,
-  MessageCircleWarning,
-  Phone,
-  ShoppingCart,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { TopBar } from "@/features/connect/flow-manager-ui/components/top-bar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAdminOverview, type AdminOverview } from "@/features/connect/shared/admin-client";
+import { BusinessStatusBadge, StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
+import { businesses, logs, overviewStats } from "@/features/connect/flow-manager-ui/preview-data/mock-data";
+import { ArrowUpRight, Building2, MessageSquare, AlertTriangle, Activity, PlusCircle, ExternalLink, Sparkles } from "lucide-react";
+import { formatDistanceToNow } from "@/features/connect/flow-manager-ui/preview-data/format";
 
 export const Route = createFileRoute("/connect/admin/")({
-  component: AdminOverviewPage,
+  head: () => ({
+    meta: [{ title: "Overview — WhatsApp Business Admin" }],
+  }),
+  component: OverviewPage,
 });
 
-function AdminOverviewPage() {
-  const [overview, setOverview] = useState<AdminOverview>();
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    getAdminOverview()
-      .then(setOverview)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load overview."));
-  }, []);
-
-  if (error) return <PageState text={error} />;
-  if (!overview) return <PageState text="Loading admin overview..." />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button asChild size="sm">
-          <a href="/connect/admin/businesses/new">New business</a>
-        </Button>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Businesses" value={overview.totalBusinesses} icon={Building2} />
-        <Metric label="Active" value={overview.activeBusinesses} icon={Activity} />
-        <Metric label="Connected numbers" value={overview.connectedWhatsAppNumbers} icon={Phone} />
-        <Metric label="Orders today" value={overview.ordersToday} icon={ShoppingCart} />
-        <Metric
-          label="Paused or suspended"
-          value={overview.suspendedBusinesses}
-          icon={AlertTriangle}
-        />
-        <Metric
-          label="Config issues"
-          value={overview.businessesWithConfigurationIssues}
-          icon={MessageCircleWarning}
-        />
-        <Metric
-          label="Failed notifications"
-          value={overview.failedNotifications}
-          icon={AlertTriangle}
-        />
-        <Metric
-          label="Unknown phone events"
-          value={overview.unknownPhoneEvents}
-          icon={ClipboardList}
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-          <CardTitle className="text-base">Recent admin activity</CardTitle>
-          <Button asChild variant="outline" size="sm">
-            <a href="/connect/admin/logs">View logs</a>
-          </Button>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="border-b border-border py-3 font-medium">Action</th>
-                <th className="border-b border-border py-3 font-medium">Business</th>
-                <th className="border-b border-border py-3 font-medium">Target</th>
-                <th className="border-b border-border py-3 font-medium">Admin</th>
-                <th className="border-b border-border py-3 text-right font-medium">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overview.recentAudit.length ? (
-                overview.recentAudit.map((row) => (
-                  <tr key={row.id} className="border-b border-border/70 last:border-0">
-                    <td className="py-3 font-medium">{row.action}</td>
-                    <td className="py-3 text-muted-foreground">{row.business_id || "Global"}</td>
-                    <td className="py-3 text-muted-foreground">
-                      {row.target_type}
-                      {row.target_id ? ` / ${row.target_id}` : ""}
-                    </td>
-                    <td className="py-3 text-muted-foreground">{row.admin_user_id}</td>
-                    <td className="py-3 text-right text-muted-foreground">
-                      {formatDate(row.created_at)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-6 text-muted-foreground">
-                    No admin activity recorded yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Metric({
+function StatCard({
   label,
   value,
+  hint,
   icon: Icon,
+  tone,
 }: {
   label: string;
-  value: number | string;
+  value: string;
+  hint: string;
   icon: typeof Building2;
+  tone?: "default" | "warning" | "success";
 }) {
+  const toneClass =
+    tone === "warning"
+      ? "text-warning-foreground bg-warning/10"
+      : tone === "success"
+        ? "text-success bg-success/10"
+        : "text-primary bg-primary/10";
   return (
     <Card>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+          <div className="min-w-0">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
             <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
           </div>
-          <div className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
-            <Icon className="size-4" />
+          <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${toneClass}`}>
+            <Icon className="h-4 w-4" />
           </div>
         </div>
       </CardContent>
@@ -141,17 +51,137 @@ function Metric({
   );
 }
 
-function PageState({ text }: { text: string }) {
+function OverviewPage() {
   return (
-    <Card>
-      <CardContent className="p-8 text-muted-foreground">{text}</CardContent>
-    </Card>
-  );
-}
+    <>
+      <TopBar
+        title="Overview"
+        subtitle="What's happening across all WhatsApp business accounts you manage."
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/connect/admin/logs">
+                <Activity className="h-4 w-4" />
+                Open logs
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/connect/admin/businesses">
+                <PlusCircle className="h-4 w-4" />
+                New business
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      <div className="space-y-6 px-4 sm:px-6 pb-10">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Active businesses" value={String(overviewStats.activeBusinesses)} hint="Live and messaging" icon={Building2} tone="success" />
+          <StatCard label="In onboarding" value={String(overviewStats.onboarding)} hint="Waiting on setup" icon={PlusCircle} />
+          <StatCard label="Conversations 24h" value={overviewStats.liveConversations24h.toLocaleString()} hint="Across all live flows" icon={MessageSquare} />
+          <StatCard label="Failed sends 24h" value={String(overviewStats.failedSends24h)} hint="Meta API errors" icon={AlertTriangle} tone="warning" />
+        </div>
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+        {/* Client dashboard preview banner */}
+        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+          <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold">Client Dashboard preview</div>
+                <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-medium">PHASE 2</span>
+              </div>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Preview the respond.io-tier surface your clients will log into — omnichannel inbox, AI agent, workflow canvas, integrations marketplace.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/connect/client">
+                Open preview <ExternalLink className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              <div>
+                <CardTitle>Businesses needing attention</CardTitle>
+                <CardDescription>Onboarding or draft changes not yet published.</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/connect/admin/businesses">
+                  View all
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ul className="divide-y">
+                {businesses
+                  .filter((b) => b.status !== "live" || b.draftVersion > b.liveVersion)
+                  .slice(0, 5)
+                  .map((b) => (
+                    <li key={b.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 sm:flex sm:items-center sm:gap-4">
+                      <div className="min-w-0">
+                        <Link to="/connect/admin/businesses/$id" params={{ id: b.id }} className="truncate text-sm font-medium hover:underline">
+                          {b.name}
+                        </Link>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {b.category} · {b.waNumber}
+                        </div>
+                      </div>
+                      <div className="hidden sm:flex sm:flex-1 items-center gap-2 justify-end">
+                        <BusinessStatusBadge status={b.status} />
+                        <span className="text-xs text-muted-foreground tabular-nums">{b.progress}%</span>
+                      </div>
+                      <div className="sm:hidden justify-self-end">
+                        <BusinessStatusBadge status={b.status} />
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent activity</CardTitle>
+              <CardDescription>Last events across the console.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {logs.slice(0, 5).map((l) => (
+                  <li key={l.id} className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <StatusBadge
+                        tone={
+                          l.level === "error"
+                            ? "destructive"
+                            : l.level === "warning"
+                              ? "warning"
+                              : l.level === "success"
+                                ? "success"
+                                : "info"
+                        }
+                      >
+                        {l.level}
+                      </StatusBadge>
+                      <span className="text-xs text-muted-foreground">{formatDistanceToNow(l.ts)}</span>
+                    </div>
+                    <div className="mt-1 truncate font-medium">{l.business}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">{l.message}</div>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
+  );
 }

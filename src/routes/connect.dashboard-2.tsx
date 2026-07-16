@@ -1,9 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { DashboardLayout } from "./connect.dashboard";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/connect/dashboard-2")({
-  component: () => (
-    <DashboardLayout basePath="/connect/dashboard-2" title="Partner Bot" appearance="light" />
-  ),
+  beforeLoad: () => {
+    throw redirect({ to: "/connect/client" });
+  },
 });
