@@ -103,10 +103,10 @@ function AdminLogin({
   }
 
   return (
-    <main className="dark flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+    <main className="connect-flow-manager-surface flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <form
         onSubmit={submit}
-        className="w-full max-w-md rounded-lg border border-border bg-surface/70 p-6"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow"
       >
         <h1 className="font-display text-2xl font-semibold">Double A Internal Admin</h1>
         <p className="mt-2 text-sm text-muted-foreground">Restricted manual onboarding console.</p>
@@ -141,7 +141,7 @@ function AdminLogin({
         <button
           type="submit"
           disabled={loading || !configured}
-          className="studio-button-primary mt-5 w-full"
+          className="mt-5 inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
@@ -152,7 +152,7 @@ function AdminLogin({
 
 function AdminState({ text }: { text: string }) {
   return (
-    <div className="dark flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+    <div className="connect-flow-manager-surface flex min-h-screen items-center justify-center bg-background text-muted-foreground">
       {text}
     </div>
   );

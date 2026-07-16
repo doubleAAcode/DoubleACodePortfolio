@@ -34,6 +34,20 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-accent-glow: var(--accent-glow);
@@ -112,6 +126,64 @@
   --shadow-glow: 0 0 80px -10px oklch(0.65 0.27 5 / 0.45);
   --shadow-brand: 0 30px 80px -20px oklch(0.55 0.24 305 / 0.45);
   --shadow-elevated: 0 30px 80px -20px oklch(0 0 0 / 0.6);
+}
+
+:root.connect-flow-manager-theme,
+.connect-flow-manager-surface {
+  --radius: 0.625rem;
+  --background: oklch(0.995 0.002 250);
+  --surface: oklch(0.985 0.004 250);
+  --surface-2: oklch(0.965 0.008 250);
+  --foreground: oklch(0.22 0.03 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 260);
+  --primary: oklch(0.55 0.17 250);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --secondary: oklch(0.965 0.008 250);
+  --secondary-foreground: oklch(0.3 0.03 260);
+  --muted: oklch(0.965 0.008 250);
+  --muted-foreground: oklch(0.52 0.02 260);
+  --accent: oklch(0.955 0.02 240);
+  --accent-foreground: oklch(0.3 0.06 250);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --success: oklch(0.62 0.15 155);
+  --success-foreground: oklch(0.99 0.005 155);
+  --warning: oklch(0.75 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 75);
+  --info: oklch(0.65 0.13 230);
+  --info-foreground: oklch(0.99 0.005 230);
+  --border: oklch(0.92 0.01 250);
+  --input: oklch(0.92 0.01 250);
+  --ring: oklch(0.55 0.17 250);
+  --sidebar: oklch(0.99 0.003 250);
+  --sidebar-foreground: oklch(0.3 0.03 260);
+  --sidebar-primary: oklch(0.55 0.17 250);
+  --sidebar-primary-foreground: oklch(0.99 0.005 250);
+  --sidebar-accent: oklch(0.955 0.015 250);
+  --sidebar-accent-foreground: oklch(0.3 0.06 250);
+  --sidebar-border: oklch(0.92 0.01 250);
+  --sidebar-ring: oklch(0.55 0.17 250);
+  color-scheme: light;
+}
+
+:root.connect-flow-manager-theme body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+:root.connect-flow-manager-theme h1,
+:root.connect-flow-manager-theme h2,
+:root.connect-flow-manager-theme h3,
+:root.connect-flow-manager-theme h4,
+.connect-flow-manager-surface h1,
+.connect-flow-manager-surface h2,
+.connect-flow-manager-surface h3,
+.connect-flow-manager-surface h4 {
+  font-family: var(--font-sans);
+  letter-spacing: 0;
 }
 
 .pavone-store {

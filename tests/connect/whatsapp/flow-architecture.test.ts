@@ -307,6 +307,27 @@ test("client flow API scopes every mutation to the signed dashboard business", (
   assert.match(builder, /applyWaDashboardFlowAction\(\{/);
 });
 
+test("client Flow Manager does not embed the legacy admin editor or mock flow data", () => {
+  const builder = readFileSync("src/routes/connect/client/automations/builder.tsx", "utf8");
+  const editor = readFileSync(
+    "src/features/connect/flow-manager/canonical-flow-editor.tsx",
+    "utf8",
+  );
+  const canvas = readFileSync(
+    "src/features/connect/flow-manager/canonical-flow-canvas.tsx",
+    "utf8",
+  );
+
+  assert.match(builder, /CanonicalFlowManagerEditor/);
+  assert.doesNotMatch(builder, /VisualFlowBuilderEditor/);
+  assert.doesNotMatch(builder, /connect\.admin\.businesses/);
+  assert.doesNotMatch(editor, /mock-data|mock-client|flowSteps/);
+  assert.match(editor, /Guided/);
+  assert.match(editor, /Selected Step/);
+  assert.match(editor, /Validation/);
+  assert.match(canvas, /from "@xyflow\/react"/);
+});
+
 function canonicalOneMessageDocument(id: string, text: string): CanonicalFlowDocument {
   return {
     schemaVersion: 2,

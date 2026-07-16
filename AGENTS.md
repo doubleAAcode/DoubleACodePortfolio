@@ -34,6 +34,10 @@ Roadmap update rules:
    conversation copy and supported business policies, but never pricing,
    inventory, idempotency, tenant isolation, or order-state invariants.
 8. Add material product decisions to the decision log in `plan.md`.
+9. Treat `flow-manager/` as the target Connect presentation and interaction
+   system. New `/connect/admin` and `/connect/client` screens may reuse legacy
+   services, schemas, authorization, and domain helpers, but must not import,
+   embed, or cosmetically wrap legacy route/page components.
 
 `.agents/ChatBot Plan.md` is historical milestone and brainstorming context.
 Do not treat it as the current roadmap when it conflicts with `plan.md`.

@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAdminOverview, type AdminOverview } from "@/features/connect/shared/admin-client";
 
 export const Route = createFileRoute("/connect/admin/")({
@@ -31,19 +33,10 @@ function AdminOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Milestone 14</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            Internal Admin
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Manual onboarding, tenant controls, WhatsApp connection health, and audit visibility.
-          </p>
-        </div>
-        <a href="/connect/admin/businesses/new" className="studio-button-primary w-fit">
-          New business
-        </a>
+      <div className="flex justify-end">
+        <Button asChild size="sm">
+          <a href="/connect/admin/businesses/new">New business</a>
+        </Button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -73,16 +66,16 @@ function AdminOverviewPage() {
         />
       </div>
 
-      <section className="rounded-lg border border-border bg-surface/60 p-5">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="font-display text-xl font-semibold">Recent admin activity</h2>
-          <a href="/connect/admin/logs" className="studio-button-secondary">
-            View logs
-          </a>
-        </div>
-        <div className="mt-4 overflow-x-auto">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+          <CardTitle className="text-base">Recent admin activity</CardTitle>
+          <Button asChild variant="outline" size="sm">
+            <a href="/connect/admin/logs">View logs</a>
+          </Button>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <thead className="text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="border-b border-border py-3 font-medium">Action</th>
                 <th className="border-b border-border py-3 font-medium">Business</th>
@@ -116,8 +109,8 @@ function AdminOverviewPage() {
               )}
             </tbody>
           </table>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -132,21 +125,27 @@ function Metric({
   icon: typeof Building2;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface/60 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-primary" />
-      </div>
-      <div className="mt-3 font-display text-3xl font-semibold">{value}</div>
-    </div>
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+          </div>
+          <div className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
+            <Icon className="size-4" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function PageState({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface/60 p-8 text-muted-foreground">
-      {text}
-    </div>
+    <Card>
+      <CardContent className="p-8 text-muted-foreground">{text}</CardContent>
+    </Card>
   );
 }
 

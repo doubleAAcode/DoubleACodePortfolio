@@ -42,7 +42,7 @@ export function ClientWorkspaceGate({ children }: { children: React.ReactNode })
 
   if (!sessionResult && !error) {
     return (
-      <div className="dark flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <div className="connect-flow-manager-surface flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Loading client workspace...
       </div>
     );
@@ -104,8 +104,8 @@ function ClientWorkspaceLogin({
   }
 
   return (
-    <main className="dark flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <section className="w-full max-w-md rounded-lg border border-border bg-surface/70 p-6">
+    <main className="connect-flow-manager-surface flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <section className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Bot className="size-5" />
@@ -146,7 +146,7 @@ function ClientWorkspaceLogin({
           <button
             type="submit"
             disabled={loading || !configured}
-            className="studio-button-primary w-full"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

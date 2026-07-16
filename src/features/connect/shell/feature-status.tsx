@@ -6,11 +6,11 @@ import type { ConnectFeatureStatus } from "./feature-registry";
 const statusCopy: Record<ConnectFeatureStatus, { label: string; className: string }> = {
   live: {
     label: "Live",
-    className: "border-emerald-500/35 bg-emerald-500/10 text-emerald-300",
+    className: "border-emerald-500/35 bg-emerald-500/10 text-emerald-700",
   },
   building: {
     label: "Building",
-    className: "border-amber-500/35 bg-amber-500/10 text-amber-200",
+    className: "border-amber-500/35 bg-amber-500/10 text-amber-800",
   },
   future: {
     label: "Future work",
@@ -45,7 +45,7 @@ export function FeatureStatusNotice({ status }: { status: ConnectFeatureStatus }
         "border-y px-4 py-3 text-sm md:px-6",
         future
           ? "border-border bg-muted/25 text-muted-foreground"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-100",
+          : "border-amber-500/30 bg-amber-500/10 text-amber-900",
       )}
     >
       <span className="font-semibold">{future ? "Future work." : "Being connected."}</span>{" "}

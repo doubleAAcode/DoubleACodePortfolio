@@ -1,9 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Box, ChevronRight, CircleAlert, ShoppingCart, Store } from "lucide-react";
+import {
+  Bell,
+  Box,
+  ChevronRight,
+  CircleAlert,
+  MessageSquare,
+  ShoppingCart,
+  Store,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getWaDashboardCatalog,
   getWaDashboardOrders,
@@ -31,8 +41,9 @@ function ClientHomePage() {
         if (mounted) setSnapshot({ catalog, orders, notifications });
       })
       .catch((err) => {
-        if (mounted)
+        if (mounted) {
           setError(err instanceof Error ? err.message : "Could not load workspace data.");
+        }
       });
     return () => {
       mounted = false;
@@ -41,19 +52,19 @@ function ClientHomePage() {
 
   if (error) {
     return (
-      <section className="border border-destructive/35 bg-destructive/10 p-5 text-sm text-destructive">
-        <div className="flex items-center gap-2 font-semibold">
-          <CircleAlert className="size-4" />
-          Client data could not be loaded
-        </div>
-        <p className="mt-2 text-destructive/85">{error}</p>
-      </section>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="flex items-start gap-3 p-5 text-sm text-destructive">
+          <CircleAlert className="mt-0.5 size-4" />
+          <div>
+            <div className="font-semibold">Client data could not be loaded</div>
+            <p className="mt-1">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (!snapshot) {
-    return <p className="text-sm text-muted-foreground">Loading business data...</p>;
-  }
+  if (!snapshot) return <p className="text-sm text-muted-foreground">Loading business data...</p>;
 
   const { catalog, orders, notifications } = snapshot;
   const activeProducts = catalog.products.filter(
@@ -65,32 +76,27 @@ function ClientHomePage() {
   const recentOrders = orders.slice(0, 5);
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Store className="size-4 text-primary" />
-            Business workspace
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+              <Store className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-lg font-semibold">{catalog.business.name}</div>
+              <p className="text-xs text-muted-foreground">
+                Live WhatsApp commerce data from the authorized workspace.
+              </p>
+            </div>
           </div>
-          <h1 className="mt-2 font-display text-3xl font-semibold">{catalog.business.name}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Live commerce data from the current WhatsApp backend. Flow authoring will move into this
-            workspace without replacing protected order and inventory rules.
-          </p>
-        </div>
-        <Badge
-          variant="outline"
-          className={
-            catalog.business.is_active
-              ? "w-fit border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
-              : "w-fit border-amber-500/35 bg-amber-500/10 text-amber-200"
-          }
-        >
-          {catalog.business.is_active ? "Business active" : "Business paused"}
-        </Badge>
-      </header>
+          <Badge variant={catalog.business.is_active ? "default" : "secondary"} className="w-fit">
+            {catalog.business.is_active ? "Business active" : "Business paused"}
+          </Badge>
+        </CardContent>
+      </Card>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={Box}
           label="Active products"
@@ -107,64 +113,69 @@ function ClientHomePage() {
           icon={CircleAlert}
           label="Awaiting approval"
           value={pendingOrders}
-          href="/connect/dashboard/orders"
+          href="/connect/client/orders"
         />
-        <MetricCard
-          icon={Bell}
-          label="Unread alerts"
-          value={notifications.unreadCount}
-          href="/connect/dashboard"
-        />
-      </section>
+        <MetricCard icon={Bell} label="Unread alerts" value={notifications.unreadCount} />
+      </div>
 
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-display text-xl font-semibold">Recent orders</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Real orders from the current backend.
-            </p>
-          </div>
-          <a
-            href="/connect/dashboard/orders"
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            Open orders
-            <ChevronRight className="size-4" />
-          </a>
-        </div>
-
-        <div className="mt-4 overflow-hidden border border-border">
-          {recentOrders.length ? (
-            <div className="divide-y divide-border">
-              {recentOrders.map((order) => (
-                <a
-                  key={order.id}
-                  href={`/connect/dashboard/orders/${order.id}`}
-                  className="grid gap-2 bg-surface/35 px-4 py-3 transition hover:bg-surface md:grid-cols-[1fr_1fr_auto_auto] md:items-center md:gap-4"
-                >
-                  <div>
-                    <div className="text-sm font-medium">Order {order.order_number}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      {order.customer_name}
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{formatStatus(order.status)}</div>
-                  <div className="text-sm font-medium tabular-nums">
-                    {Number(order.total).toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
-                    {catalog.business.currency}
-                  </div>
-                  <ChevronRight className="hidden size-4 text-muted-foreground md:block" />
-                </a>
-              ))}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <Card>
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+            <div>
+              <CardTitle className="text-base">Recent orders</CardTitle>
+              <CardDescription>Latest protected WhatsApp checkout records.</CardDescription>
             </div>
-          ) : (
-            <p className="bg-surface/35 px-4 py-8 text-center text-sm text-muted-foreground">
-              No orders yet.
+            <Button asChild variant="ghost" size="sm">
+              <a href="/connect/client/orders">
+                View all <ChevronRight className="size-4" />
+              </a>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {recentOrders.length ? (
+              <div className="divide-y">
+                {recentOrders.map((order) => (
+                  <a
+                    key={order.id}
+                    href="/connect/client/orders"
+                    className="grid gap-2 py-3 text-sm transition hover:bg-muted/30 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:px-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">Order {order.order_number}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {order.customer_name}
+                      </div>
+                    </div>
+                    <Badge variant="secondary">{formatStatus(order.status)}</Badge>
+                    <div className="font-medium tabular-nums">
+                      {Number(order.total).toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
+                      {catalog.business.currency}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">No orders yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">WhatsApp scope</CardTitle>
+            <CardDescription>Current product focus.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex gap-2 rounded-md border bg-muted/25 p-3">
+              <MessageSquare className="mt-0.5 size-4 shrink-0 text-primary" />
+              <span>Deterministic messaging, commerce flows, and human handoff.</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              AI agents and additional channels remain visible as labeled Future work screens.
             </p>
-          )}
-        </div>
-      </section>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -178,20 +189,25 @@ function MetricCard({
   icon: LucideIcon;
   label: string;
   value: number;
-  href: string;
+  href?: string;
 }) {
-  return (
-    <a
-      href={href}
-      className="group rounded-md border border-border bg-surface/45 p-4 transition hover:border-primary/45 hover:bg-surface"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <Icon className="size-4 text-primary" />
-        <ChevronRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+  const content = (
+    <CardContent className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs font-medium uppercase text-muted-foreground">{label}</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+        </div>
+        <div className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
+          <Icon className="size-4" />
+        </div>
       </div>
-      <div className="mt-5 text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
-    </a>
+    </CardContent>
+  );
+  return (
+    <Card className={href ? "transition hover:shadow-md" : ""}>
+      {href ? <a href={href}>{content}</a> : content}
+    </Card>
   );
 }
 
