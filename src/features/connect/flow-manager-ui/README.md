@@ -10,6 +10,9 @@ are a namespaced integration copy used by the main TanStack application.
   screen still needs a backend adapter.
 - `client-auth-gate.tsx` preserves the existing Vercel-backed client session.
 - `preview-boundary.tsx` labels illustrative screens and blocks fake mutations.
+- `feature-status.ts` is the single registry for `Future` labels. Move a route
+  to the live list only after its real reads, mutations, permissions, and tests
+  are complete.
 - `tools/port-flow-manager-ui.mjs` is the only supported refresh path.
 
 Connected routes are promoted from generated files and listed in the port tool

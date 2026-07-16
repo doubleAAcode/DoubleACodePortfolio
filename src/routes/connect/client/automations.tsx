@@ -90,10 +90,16 @@ function ClientAutomations() {
       <div className="min-w-0 px-4 pb-28 sm:px-6 sm:pb-10">
         <Tabs className="min-w-0" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="max-w-full justify-start overflow-x-auto">
-            <TabsTrigger value="list">All workflows</TabsTrigger>
+            <TabsTrigger value="list" data-flow-manager-live="true">
+              All workflows
+            </TabsTrigger>
             <TabsTrigger value="canvas" disabled={!selected}>
               Canvas
-              {selected ? ` \u2014 ${selected.name.slice(0, 40)}\u2026` : ""}
+              {selected ? (
+                <span className="hidden sm:inline">
+                  {` \u2014 ${selected.name.slice(0, 40)}\u2026`}
+                </span>
+              ) : null}
             </TabsTrigger>
           </TabsList>
 

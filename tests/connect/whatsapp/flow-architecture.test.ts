@@ -308,6 +308,19 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/features/connect/flow-manager-ui/preview-boundary.tsx",
     "utf8",
   );
+  const featureStatus = readFileSync(
+    "src/features/connect/flow-manager-ui/feature-status.ts",
+    "utf8",
+  );
+  const clientSidebar = readFileSync(
+    "src/features/connect/flow-manager-ui/components/client-sidebar.tsx",
+    "utf8",
+  );
+  const adminSidebar = readFileSync(
+    "src/features/connect/flow-manager-ui/components/app-sidebar.tsx",
+    "utf8",
+  );
+  const styles = readFileSync("src/styles.css", "utf8");
   const portTool = readFileSync("tools/port-flow-manager-ui.mjs", "utf8");
   const legacyDashboardProducts = readFileSync("src/routes/connect.dashboard.products.tsx", "utf8");
   const submoduleConfig = readFileSync(".gitmodules", "utf8");
@@ -318,10 +331,19 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(automations, /flow-manager-ui\/preview-data\/mock-client/);
   assert.match(automations, /getWaDashboardFlow/);
   assert.match(automations, /features\/connect\/shared\/dashboard-client/);
+  assert.match(automations, /data-flow-manager-live="true"/);
   assert.match(previewBoundary, /UI preview only\. Data is illustrative/);
   assert.match(previewBoundary, /workflow list uses the authorized business backend/);
+  assert.match(previewBoundary, /data-flow-manager-status=\{status\}/);
+  assert.match(featureStatus, /liveFlowManagerRoutes: FlowManagerRouteRule\[\] = \[\]/);
+  assert.match(featureStatus, /path: "\/connect\/client\/automations"/);
+  assert.match(clientSidebar, /FlowManagerFutureBadge route=\{item\.url\}/);
+  assert.match(adminSidebar, /FlowManagerFutureBadge route=\{item\.url\}/);
+  assert.match(styles, /data-flow-manager-status="future"/);
+  assert.match(styles, /\[role="tab"\]:not\(\[data-flow-manager-live="true"\]\)::after/);
   assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
   assert.match(portTool, /connectedClientRoutes\.has\(sourceName\.slice\("client\."\.length\)\)/);
+  assert.match(portTool, /enhancePresentationComponent/);
   assert.doesNotMatch(clientLayout, /ConnectWorkspaceShell|CanonicalFlowManagerEditor/);
   assert.doesNotMatch(adminLayout, /ConnectWorkspaceShell|VisualFlowBuilderEditor/);
   assert.match(legacyDashboardProducts, /redirect\(\{ href: "\/connect\/client\/catalog" \}\)/);

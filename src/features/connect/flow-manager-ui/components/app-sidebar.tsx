@@ -1,3 +1,4 @@
+import { FlowManagerFutureBadge } from "@/features/connect/flow-manager-ui/future-badge";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -36,7 +37,11 @@ const primary = [
 ];
 const configure = [
   { title: "Flow templates", url: "/connect/admin/flow-templates", icon: Workflow },
-  { title: "WhatsApp templates", url: "/connect/admin/whatsapp-templates", icon: MessageSquareText },
+  {
+    title: "WhatsApp templates",
+    url: "/connect/admin/whatsapp-templates",
+    icon: MessageSquareText,
+  },
 ];
 const insights = [
   { title: "Analytics", url: "/connect/admin/analytics", icon: BarChart3 },
@@ -50,7 +55,9 @@ const system = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) =>
-    url === "/connect/admin" ? pathname === "/connect/admin" : pathname === url || pathname.startsWith(url + "/");
+    url === "/connect/admin"
+      ? pathname === "/connect/admin"
+      : pathname === url || pathname.startsWith(url + "/");
 
   const section = (label: string, items: typeof primary) => (
     <SidebarGroup>
@@ -63,6 +70,7 @@ export function AppSidebar() {
                 <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
+                  <FlowManagerFutureBadge route={item.url} />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -1,17 +1,8 @@
 import { useRouterState } from "@tanstack/react-router";
-import { Clock3, Construction } from "lucide-react";
+import { Clock3 } from "lucide-react";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 
-const futureRoutes = [
-  "/connect/admin/developers",
-  "/connect/client/ai-agent",
-  "/connect/client/voice",
-  "/connect/client/payments",
-  "/connect/client/channels",
-  "/connect/client/integrations",
-  "/connect/client/developers",
-  "/connect/client/enterprise",
-];
+import { getFlowManagerFeatureStatus } from "@/features/connect/flow-manager-ui/feature-status";
 
 const mutationLabel =
   /\b(save|send|submit|create|invite|export|import|pause|resume|assign|resolve|snooze|transfer|tag|delete|revoke|rotate|refund|remind|install|connect|re-index|redeploy|generate|queue|publish|test run|try it|new workflow|new api key|add endpoint)\b/i;
@@ -23,10 +14,10 @@ const partialRouteMessages: Record<string, string> = {
 
 export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const future = futureRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
+  const status = getFlowManagerFeatureStatus(pathname);
   const partialMessage = partialRouteMessages[pathname];
+
+  if (status === "live") return <>{children}</>;
 
   function blockPreviewMutation(event: MouseEvent<HTMLDivElement>) {
     const target = event.target;
@@ -48,22 +39,20 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
   }
 
   return (
-    <div onClickCapture={blockPreviewMutation} onSubmitCapture={blockPreviewSubmit}>
+    <div
+      data-flow-manager-status={status}
+      onClickCapture={blockPreviewMutation}
+      onSubmitCapture={blockPreviewSubmit}
+    >
       {children}
       <aside className="fixed bottom-4 right-4 z-50 max-w-[min(22rem,calc(100vw-2rem))] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg">
         <div className="flex items-start gap-2.5">
-          {future ? (
-            <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600" />
-          ) : (
-            <Construction className="mt-0.5 size-4 shrink-0 text-primary" />
-          )}
+          <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase text-muted-foreground">
-              {future ? "Future work" : "Backend hookup in progress"}
-            </div>
+            <div className="text-xs font-semibold uppercase text-muted-foreground">Future</div>
             <p className="mt-0.5 text-xs leading-5">
               {partialMessage ??
-                "UI preview only. Data is illustrative, and actions do not save or send."}
+                "Future work. UI preview only. Data is illustrative, and actions do not save or send."}
             </p>
           </div>
         </div>

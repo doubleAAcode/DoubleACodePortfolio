@@ -1,13 +1,35 @@
+import { FlowManagerFutureBadge } from "@/features/connect/flow-manager-ui/future-badge";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home, Inbox, Users, Megaphone, Workflow, MessageSquareText,
-  BarChart3, Radio, Sparkles, Blocks, Code2, Settings, ArrowLeft,
-  Mic, Package, CreditCard, ShieldCheck,
+  Home,
+  Inbox,
+  Users,
+  Megaphone,
+  Workflow,
+  MessageSquareText,
+  BarChart3,
+  Radio,
+  Sparkles,
+  Blocks,
+  Code2,
+  Settings,
+  ArrowLeft,
+  Mic,
+  Package,
+  CreditCard,
+  ShieldCheck,
 } from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
-  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
-  SidebarMenuItem, SidebarFooter,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,7 +63,9 @@ const dev = [
 export function ClientSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) =>
-    url === "/connect/client" ? pathname === "/connect/client" : pathname === url || pathname.startsWith(url + "/");
+    url === "/connect/client"
+      ? pathname === "/connect/client"
+      : pathname === url || pathname.startsWith(url + "/");
 
   const section = (label: string, items: typeof workspace) => (
     <SidebarGroup>
@@ -54,6 +78,7 @@ export function ClientSidebar() {
                 <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
+                  <FlowManagerFutureBadge route={item.url} />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -73,7 +98,9 @@ export function ClientSidebar() {
           <div className="min-w-0 group-data-[collapsible=icon]:hidden flex-1">
             <div className="truncate text-sm font-semibold">Atlas Electronics</div>
             <div className="flex items-center gap-1">
-              <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">PREVIEW</Badge>
+              <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
+                PREVIEW
+              </Badge>
               <span className="truncate text-[10px] text-muted-foreground">Client dashboard</span>
             </div>
           </div>

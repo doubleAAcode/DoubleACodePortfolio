@@ -69,10 +69,21 @@ async function copyPresentationComponents() {
     const input = await readFile(path.join(source, entry.name), "utf8");
     await writeFile(
       path.join(componentsRoot, entry.name),
-      transformSource(input, componentNames),
+      enhancePresentationComponent(transformSource(input, componentNames), entry.name),
       "utf8",
     );
   }
+}
+
+function enhancePresentationComponent(source, componentName) {
+  if (componentName !== "app-sidebar.tsx" && componentName !== "client-sidebar.tsx") {
+    return source;
+  }
+
+  return `import { FlowManagerFutureBadge } from "@/features/connect/flow-manager-ui/future-badge";\n${source}`.replace(
+    "<span>{item.title}</span>",
+    "<span>{item.title}</span>\n                  <FlowManagerFutureBadge route={item.url} />",
+  );
 }
 
 async function copyPreviewData() {

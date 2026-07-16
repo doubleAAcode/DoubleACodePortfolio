@@ -116,19 +116,20 @@ Explicitly deferred:
   `?preview=1` UI inspection path that is unavailable in production builds.
 - [~] Client access still uses temporary environment-based credentials tied to
   configured businesses.
-- [~] Customer profiles are derived from completed checkout data; there is no
-  complete contact-management domain yet.
-- [~] Message events provide an audit trail, but there is no durable support
-  inbox with conversation lifecycle, assignment, notes, tags, or human outbox.
+- [~] Deployed customer profiles are backfilled into the new tenant-scoped
+  contact domain. Contact-management route adapters and operations remain
+  pending.
+- [~] The deployed schema now provides durable inbox conversations, messages,
+  events, assignment fields, notes, tags, and canned replies. Webhook dual-write,
+  human outbox, and route adapters remain pending.
 - [~] The exact Flow Manager Automations list now reads the authorized
   business's canonical flow and version summary through the existing client
   API. The supplied Lovable canvas remains illustrative; real document mapping,
   draft save, validation, publishing, and execution metrics are still pending.
-- [~] An additive Flow Manager Supabase migration now defines tenant-scoped
-  contacts, tags, durable inbox conversations/messages/events, canned replies,
-  workspace role metadata, and reusable media assets. It is authored and tested
-  locally but has not yet been applied to the deployed Supabase project or
-  connected to route-level adapters.
+- [~] The additive Flow Manager Supabase migration for tenant-scoped contacts,
+  tags, durable inbox conversations/messages/events, canned replies, workspace
+  role metadata, and reusable media assets was deployed and verified on
+  2026-07-17. Route-level adapters remain pending.
 - [x] The main project includes the cloned canvas dependency, `reactflow`;
       production build and typecheck pass locally.
 
@@ -144,6 +145,10 @@ Explicitly deferred:
 - [~] Mock imports, hardcoded values, and local state are contained behind a
   persistent preview notice and mutation guard. They must be replaced screen by
   screen as real backend adapters are implemented.
+- [x] Every incomplete Lovable destination and page is marked `Future` from a
+      central route-status registry. Incomplete internal tabs inherit the same
+      marker; routes graduate to live only after their reads, mutations,
+      permissions, and tests are complete.
 - [x] Fake prototype success toasts are disabled in the ported UI.
 
 ## Target Product Experience
@@ -348,19 +353,19 @@ authentication boundaries, and do not regress the public portfolio.
 - [ ] Add invitations, activation, removal, and audit events.
 - [ ] Make workspace switching real and tenant-safe.
 - [ ] Retain separate internal Double A admin authorization.
-- [~] Extend existing business-user records with display name, last activity,
-  and Viewer role support; migration authored, deployment and auth integration
-  pending.
+- [~] Existing business-user records now support display name, last activity,
+  and the Viewer role in the deployed schema; auth and permissions integration
+  remain pending.
 
 Completion gate: users can access only authorized businesses and every server
 mutation enforces permissions independently of the UI.
 
 ### Phase 3 - Durable messaging and WhatsApp inbox
 
-- [~] Add contacts and conversation records separate from checkout profiles and
-  runtime flow sessions; schema authored, deployment and adapters pending.
-- [~] Add durable inbound and outbound message records and status updates;
-  schema authored, webhook/outbox dual-write pending.
+- [~] Contacts and conversation records are deployed separately from checkout
+  profiles and runtime flow sessions; route adapters remain pending.
+- [~] Durable inbound and outbound message records and status fields are
+  deployed; webhook/outbox dual-write remains pending.
 - [ ] Add an idempotent outbound outbox with retries and failure visibility.
 - [ ] Add open, pending, snoozed, closed, and reopened lifecycle behavior.
 - [ ] Add assignment, transfer, notes, tags, unread state, and SLA timestamps.
@@ -399,8 +404,9 @@ publish, execute, and diagnose a real WhatsApp workflow.
 
 ### Phase 5 - Media library and voice-note transcription
 
-- [~] Add tenant-owned image, document, and prerecorded-audio assets; schema
-  authored, storage policies, retention jobs, and upload adapter pending.
+- [~] Tenant-owned image, document, and prerecorded-audio asset metadata is
+  deployed; storage policies, retention jobs, and the upload adapter remain
+  pending.
 - [ ] Add upload validation and secure media access.
 - [ ] Add outbound prerecorded-audio sender support and delivery logs.
 - [ ] Add a prerecorded-audio flow node.
@@ -501,3 +507,5 @@ current-status sections above define the active implementation state.
 | 2026-07-16 | Reset the Connect presentation to the exact checked-out Flow Manager UI: registered the source as the `flow-manager/` submodule, ported its admin/client routes and components under `/connect`, removed the custom shell/editor approximation, replaced old dashboard child pages with redirect-only compatibility shims, preserved existing auth and backend foundations, disabled mock success toasts, and added persistent Preview/Future Work mutation guards. | Production build, typecheck, and scoped ESLint passed; 39 tests passed; client login boundary, exact Home, Automations list/canvas, mutation blocking, Future Work labeling, and 390px responsive containment verified in browser.                            |
 | 2026-07-16 | Mapped every exact Lovable admin/client route to an existing backend, additive schema, derived read model, new domain, or Future Work status. Added the idempotent `wa_flow_manager_core_schema.sql` migration for tenant-scoped contacts, tags, inbox conversations/messages/events, canned replies, user metadata, and reusable media, including checkout-customer backfill and service-role-only RLS access.                                                     | Static schema contract test added; 40 tests pass. Migration deployment and live Supabase verification remain pending.                                                                                                                                         |
 | 2026-07-16 | Promoted the exact Lovable client Automations route to its first real adapter: authenticated workspaces now load the authorized business's canonical flow/version summary through the existing Vercel-backed dashboard API, while the supplied canvas and mutations remain visibly preview-only. Updated the mechanical port tool to preserve promoted connected routes during future Lovable refreshes.                                                            | Port refresh preserved the connected route byte-for-byte; production build, typecheck, scoped ESLint, and all 40 Connect tests passed.                                                                                                                        |
+| 2026-07-16 | Added a central Flow Manager feature-status registry and visible `Future` markers to every incomplete admin/client navigation destination, page, and internal tab. The connected Automations list tab is exempt while its unfinished Canvas remains marked. The port tool now reapplies sidebar badges after every canonical Lovable refresh.                                                                                                                       | Port refresh retained the status treatment; typecheck, scoped ESLint, and all 40 Connect tests passed. Desktop/mobile browser and production-build verification recorded with this change.                                                                    |
+| 2026-07-17 | Deployed `wa_flow_manager_core_schema.sql` to the live Supabase project after prerequisite checks and a scoped snapshot of the existing business-user and customer-profile tables. The migration added the Flow Manager contact, tag, media, inbox conversation/message/event, canned-reply, and workspace metadata foundations without replacing the existing WhatsApp business data.                                                                          | Transaction completed successfully. All eight new tables are REST-accessible, RLS-enabled, and granted to `service_role`; two customer profiles were backfilled to two contacts; the existing active business and active WhatsApp connection remained active. |
