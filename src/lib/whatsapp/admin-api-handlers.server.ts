@@ -16,8 +16,13 @@ import {
   type ReviewConnectionSummary,
 } from "./app-review-demo.server";
 import { getWhatsAppServerConfig } from "./config.server";
+import {
+  deleteConversationSession,
+  getActiveConversationSession,
+} from "./conversation-store.server";
 import { uploadWaFlowImage } from "./dashboard-store.server";
 import { listWaMessageEvents } from "./message-events.server";
+import { maskCustomerIdentifier } from "./reliability";
 import { sendWhatsAppText } from "./sender.server";
 import {
   assignBusinessUser,
@@ -207,6 +212,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
           flowJson?: unknown;
           flowName?: string;
           versionId?: string;
+          customerPhone?: string;
         } | null;
 
         if (body?.action === "set_status" && body.status) {
@@ -497,6 +503,81 @@ export function createInternalAdminBusinessDetailsHandlers() {
           return Response.json({
             ok: true,
             data: await getAdminBusinessDetails(params.businessId),
+          });
+        }
+
+        if (body?.action === "inspect_customer_conversation" && body.customerPhone) {
+          const customerPhone = String(body.customerPhone).trim();
+          const [sessionData, events] = await Promise.all([
+            getActiveConversationSession({
+              businessId: params.businessId,
+              customerPhone,
+            }),
+            listWaMessageEvents({
+              businessId: params.businessId,
+              customerPhone,
+              limit: 75,
+            }),
+          ]);
+          await recordAdminAuditLog({
+            adminUser: session.username,
+            request,
+            businessId: params.businessId,
+            action: "CUSTOMER_CONVERSATION_INSPECTED",
+            targetType: "WA_CONVERSATION_SESSION",
+            targetId: maskCustomerIdentifier(customerPhone),
+          });
+          return Response.json({
+            ok: true,
+            data: {
+              customerPhoneMasked: maskCustomerIdentifier(customerPhone),
+              session: sessionData
+                ? {
+                    currentStep: sessionData.currentStep,
+                    language: sessionData.language,
+                    businessFlowId: sessionData.businessFlowId,
+                    flowVersionId: sessionData.flowVersionId,
+                    currentNodeId: sessionData.currentNodeId,
+                    context: sessionData.context,
+                    flowVariables: sessionData.flowVariables,
+                    lastCustomerMessageAt: sessionData.lastCustomerMessageAt,
+                    expiresAt: sessionData.expiresAt,
+                    createdAt: sessionData.createdAt,
+                    updatedAt: sessionData.updatedAt,
+                  }
+                : null,
+              events,
+            },
+          });
+        }
+
+        if (body?.action === "reset_customer_conversation" && body.customerPhone) {
+          const customerPhone = String(body.customerPhone).trim();
+          await deleteConversationSession({
+            businessId: params.businessId,
+            customerPhone,
+          });
+          const events = await listWaMessageEvents({
+            businessId: params.businessId,
+            customerPhone,
+            limit: 25,
+          });
+          await recordAdminAuditLog({
+            adminUser: session.username,
+            request,
+            businessId: params.businessId,
+            action: "CUSTOMER_CONVERSATION_RESET",
+            targetType: "WA_CONVERSATION_SESSION",
+            targetId: maskCustomerIdentifier(customerPhone),
+          });
+          return Response.json({
+            ok: true,
+            data: {
+              customerPhoneMasked: maskCustomerIdentifier(customerPhone),
+              session: null,
+              events,
+              resetAt: new Date().toISOString(),
+            },
           });
         }
 

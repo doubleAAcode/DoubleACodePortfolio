@@ -13,10 +13,12 @@ const adminHandlers = read("src/lib/whatsapp/admin-api-handlers.server.ts");
 const adminClient = read("src/lib/whatsapp/admin-client.ts");
 const dashboardStore = read("src/lib/whatsapp/dashboard-store.server.ts");
 const flowImageRoute = read("src/routes/api.wa-admin.businesses.$businessId.flow-image.ts");
+const businessFlowBuilderRoute = read("src/routes/admin.businesses.$businessId.flow-builder.tsx");
 const sender = read("src/lib/whatsapp/sender.server.ts");
 const reliability = read("src/lib/whatsapp/reliability.ts");
 const sessionStore = read("src/lib/whatsapp/conversation-store.server.ts");
 const conversationEngine = read("src/lib/whatsapp/conversation-engine.server.ts");
+const webhookHandler = read("src/lib/whatsapp/webhook-handler.server.ts");
 
 test("order creation RPC locks stock rows before inserting reservations", () => {
   assert.match(hardeningSql, /create or replace function public\.wa_create_pending_order/);
@@ -158,6 +160,34 @@ test("admin flow image uploads use authenticated FormData storage route", () => 
   assert.match(adminClient, /body:\s*formData/);
   assert.match(adminClient, /init\.body instanceof FormData/);
   assert.match(flowImageRoute, /\/api\/wa-admin\/businesses\/\$businessId\/flow-image/);
+});
+
+test("admin support diagnostics can inspect and reset a customer conversation", () => {
+  assert.match(adminHandlers, /inspect_customer_conversation/);
+  assert.match(adminHandlers, /reset_customer_conversation/);
+  assert.match(adminHandlers, /getActiveConversationSession/);
+  assert.match(adminHandlers, /deleteConversationSession/);
+  assert.match(adminHandlers, /listWaMessageEvents\(\{\s*businessId:\s*params\.businessId,\s*customerPhone/);
+  assert.match(adminHandlers, /CUSTOMER_CONVERSATION_RESET/);
+  assert.match(adminClient, /export async function inspectAdminCustomerConversation/);
+  assert.match(adminClient, /export async function resetAdminCustomerConversation/);
+  assert.match(adminClient, /AdminConversationDiagnostics/);
+});
+
+test("normal business flow builder only exposes approved template families", () => {
+  assert.match(businessFlowBuilderRoute, /approvedTemplateCategories/);
+  assert.match(businessFlowBuilderRoute, /"ECOMMERCE"/);
+  assert.match(businessFlowBuilderRoute, /"RESTAURANT"/);
+  assert.match(businessFlowBuilderRoute, /"GREETING_STORE_INFO"/);
+  assert.match(businessFlowBuilderRoute, /template\.status === "PUBLISHED" && approvedTemplateCategories\.has\(template\.category\)/);
+  assert.doesNotMatch(businessFlowBuilderRoute, /Start from scratch/);
+});
+
+test("image replies pause before follow-up messages to keep deterministic WhatsApp ordering", () => {
+  assert.match(webhookHandler, /WHATSAPP_IMAGE_FOLLOWUP_DELAY_MS/);
+  assert.match(webhookHandler, /shouldPauseAfterWhatsAppResponse\(response, nextResponse\)/);
+  assert.match(webhookHandler, /response\.type === "image" && Boolean\(nextResponse\)/);
+  assert.match(webhookHandler, /webhook\.timing\.media_ordering_pause/);
 });
 
 function read(path) {

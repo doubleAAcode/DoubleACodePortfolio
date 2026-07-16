@@ -54,6 +54,25 @@ export type AdminOverview = {
 
 type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+export type AdminConversationDiagnostics = {
+  customerPhoneMasked: string;
+  session: {
+    currentStep: string;
+    language?: "en" | "ar";
+    businessFlowId?: string;
+    flowVersionId?: string;
+    currentNodeId?: string;
+    context: Record<string, unknown>;
+    flowVariables: Record<string, unknown>;
+    lastCustomerMessageAt: string;
+    expiresAt: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  events: WaMessageEventRow[];
+  resetAt?: string;
+};
+
 export async function getInternalAdminSession() {
   return apiFetch<InternalAdminSessionResult>("/api/wa-admin/session");
 }
@@ -132,6 +151,42 @@ export async function applyAdminBusinessAction(
     {
       method: "POST",
       body: JSON.stringify(action),
+    },
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function inspectAdminCustomerConversation(
+  businessId: string,
+  customerPhone: string,
+) {
+  const result = await apiFetch<ApiResult<AdminConversationDiagnostics>>(
+    `/api/wa-admin/businesses/${encodeURIComponent(businessId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        action: "inspect_customer_conversation",
+        customerPhone,
+      }),
+    },
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function resetAdminCustomerConversation(
+  businessId: string,
+  customerPhone: string,
+) {
+  const result = await apiFetch<ApiResult<AdminConversationDiagnostics>>(
+    `/api/wa-admin/businesses/${encodeURIComponent(businessId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        action: "reset_customer_conversation",
+        customerPhone,
+      }),
     },
   );
   if (!result.ok) throw new Error(result.error);

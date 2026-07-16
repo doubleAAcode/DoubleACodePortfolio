@@ -7,7 +7,10 @@ import {
   getWhatsAppServerConfig,
 } from "@/lib/whatsapp/config.server";
 import { resolveWhatsAppConnectionByPhoneNumber } from "@/lib/whatsapp/connections.server";
-import { processIncomingMessage } from "@/lib/whatsapp/conversation-engine.server";
+import {
+  processIncomingMessage,
+  type BotResponse,
+} from "@/lib/whatsapp/conversation-engine.server";
 import { hasProcessedWhatsAppMessage } from "@/lib/whatsapp/duplicates.server";
 import {
   createCorrelationId,
@@ -40,6 +43,8 @@ type WebhookTimingEntry = {
   durationMs: number;
   result: "ok" | "error";
 };
+
+const WHATSAPP_IMAGE_FOLLOWUP_DELAY_MS = 2500;
 
 export function createWhatsAppWebhookHandlers(options: WhatsAppWebhookOptions) {
   return {
@@ -338,7 +343,9 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
         }),
     );
 
-    for (const response of responses) {
+    for (let responseIndex = 0; responseIndex < responses.length; responseIndex += 1) {
+      const response = responses[responseIndex];
+      const nextResponse = responses[responseIndex + 1];
       const result = await measureWebhookPhase(
         timings,
         "send_whatsapp_response",
@@ -423,6 +430,27 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
           },
         });
       }
+
+      if (result.ok && shouldPauseAfterWhatsAppResponse(response, nextResponse)) {
+        await measureWebhookPhase(
+          timings,
+          "media_ordering_pause",
+          {
+            correlationId,
+            operation: "webhook.timing.media_ordering_pause",
+            businessId: connection.businessId,
+            metaMessageId: message.messageId,
+            customerPhone: message.sender,
+            phoneNumberId: message.phoneNumberId,
+            details: {
+              responseType: response.type,
+              nextResponseType: nextResponse?.type,
+              delayMs: WHATSAPP_IMAGE_FOLLOWUP_DELAY_MS,
+            },
+          },
+          () => sleep(WHATSAPP_IMAGE_FOLLOWUP_DELAY_MS),
+        );
+      }
     }
   }
 
@@ -464,6 +492,19 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
   });
 
   return Response.json({ ok: true, processed: messages.length });
+}
+
+function shouldPauseAfterWhatsAppResponse(
+  response: BotResponse,
+  nextResponse: BotResponse | undefined,
+) {
+  return response.type === "image" && Boolean(nextResponse);
+}
+
+function sleep(durationMs: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
 }
 
 async function recordStatusEvents(

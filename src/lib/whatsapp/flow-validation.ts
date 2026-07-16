@@ -18,6 +18,7 @@ export type FlowDiagnostic = {
   nodeId?: string;
   edgeId?: string;
   path?: string;
+  suggestedFix?: string;
 };
 
 export type CanonicalFlowValidationResult = {
@@ -58,6 +59,7 @@ export function validateFlow(
         path: diagnostic.path,
         severity: "error",
         phase: "structural",
+        suggestedFix: "Open the Advanced tab and confirm the saved flow JSON is valid.",
       })),
     };
   }
@@ -88,6 +90,7 @@ export function flowDiagnosticsToLegacyResult(diagnostics: FlowDiagnostic[]) {
       nodeId: diagnostic.nodeId,
       edgeId: diagnostic.edgeId,
       path: diagnostic.path,
+      suggestedFix: diagnostic.suggestedFix,
     })),
   };
 }
@@ -162,17 +165,36 @@ function validateStructure(document: CanonicalFlowDocument, diagnostics: FlowDia
 function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnostic[]) {
   const reachable = getReachableNodes(document);
   if (!document.startNodeId) {
-    diagnostics.push(warning("START_MISSING", "Choose a first WhatsApp step before publishing."));
+    diagnostics.push(
+      warning(
+        "START_MISSING",
+        "Choose a first WhatsApp step before publishing.",
+        undefined,
+        "Open the Conversation map and connect the first customer-facing step.",
+      ),
+    );
   }
 
   for (const node of document.nodes) {
     if (document.startNodeId && !reachable.has(node.id)) {
       diagnostics.push(
-        warning("UNREACHABLE_NODE", `${node.id} is not reachable from the first step.`, node.id),
+        warning(
+          "UNREACHABLE_NODE",
+          `${node.id} is not reachable from the first step.`,
+          node.id,
+          "Connect this step from the main path or remove it if it is no longer used.",
+        ),
       );
     }
     if (isMessageLike(node) && !messageText(node)) {
-      diagnostics.push(warning("EMPTY_MESSAGE", `${node.id} has no message text yet.`, node.id));
+      diagnostics.push(
+        warning(
+          "EMPTY_MESSAGE",
+          `${nodeName(node)} has no message text yet.`,
+          node.id,
+          "Select this step and add the WhatsApp message text.",
+        ),
+      );
     }
     if (node.type === "IMAGE_MESSAGE") validateImageDraft(node, diagnostics);
     if (node.type === "MAIN_MENU") {
@@ -184,11 +206,19 @@ function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnos
           "CONDITION_UNSUPPORTED",
           "Condition blocks are not publishable until runtime condition handling is implemented.",
           node.id,
+          "Use supported template actions instead: options, message, image, catalog browse, purchase, handoff, or end.",
         ),
       );
     }
     if (!TERMINAL_TYPES.has(node.type) && !outgoing(document.edges, node.id).length) {
-      diagnostics.push(warning("DEAD_END", `${node.id} has no next step.`, node.id));
+      diagnostics.push(
+        warning(
+          "DEAD_END",
+          `${nodeName(node)} has no next step.`,
+          node.id,
+          "Choose what happens after this step, or end the conversation here.",
+        ),
+      );
     }
   }
 }
@@ -197,12 +227,26 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
   const nodeById = new Map(document.nodes.map((node) => [node.id, node]));
   const startNode = document.startNodeId ? nodeById.get(document.startNodeId) : undefined;
   if (!document.startNodeId) {
-    diagnostics.push(error("PUBLISH_START_REQUIRED", "Publish requires a first WhatsApp step."));
+    diagnostics.push(
+      error(
+        "PUBLISH_START_REQUIRED",
+        "Publish requires a first WhatsApp step.",
+        undefined,
+        undefined,
+        "Open the Conversation map and choose the first customer-facing step.",
+      ),
+    );
     return;
   }
   if (!startNode) {
     diagnostics.push(
-      error("PUBLISH_START_MISSING", "The configured first WhatsApp step does not exist."),
+      error(
+        "PUBLISH_START_MISSING",
+        "The configured first WhatsApp step does not exist.",
+        undefined,
+        undefined,
+        "Reconnect the start step or clone a supported template again.",
+      ),
     );
     return;
   }
@@ -217,24 +261,46 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
           "CONDITION_UNSUPPORTED_FOR_PUBLISH",
           "Condition blocks cannot be published until runtime condition handling is implemented.",
           node.id,
+          undefined,
+          "Replace this condition with a supported options step.",
         ),
       );
       continue;
     }
     if (!isRuntimeNodeType(node.type)) {
       diagnostics.push(
-        error("PUBLISH_NODE_UNSUPPORTED", `${node.id} cannot execute at runtime.`, node.id),
+        error(
+          "PUBLISH_NODE_UNSUPPORTED",
+          `${nodeName(node)} cannot execute at runtime.`,
+          node.id,
+          undefined,
+          "Replace this block with a supported template action.",
+        ),
       );
       continue;
     }
     if (isMessageLike(node) && !messageText(node)) {
-      diagnostics.push(error("PUBLISH_MESSAGE_EMPTY", `${node.id} needs message text.`, node.id));
+      diagnostics.push(
+        error(
+          "PUBLISH_MESSAGE_EMPTY",
+          `${nodeName(node)} needs message text.`,
+          node.id,
+          undefined,
+          "Select this step and add the WhatsApp message text.",
+        ),
+      );
     }
     if (node.type === "IMAGE_MESSAGE") validateImagePublish(node, diagnostics);
     if (node.type === "MAIN_MENU") validateChoicePublish(document, node, diagnostics);
     if (!isExecutableTerminal(node) && !outgoing(document.edges, node.id).length) {
       diagnostics.push(
-        error("PUBLISH_DEAD_END", `${node.id} has no deterministic next step.`, node.id),
+        error(
+          "PUBLISH_DEAD_END",
+          `${nodeName(node)} has no deterministic next step.`,
+          node.id,
+          undefined,
+          "Choose the next step, return to a menu, or end the conversation.",
+        ),
       );
     }
   }
@@ -246,7 +312,12 @@ function validateChoiceDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnosti
   const options = activeOptions(node);
   if (!options.length) {
     diagnostics.push(
-      warning("CHOICE_OPTIONS_MISSING", `${nodeName(node)} needs at least one active option.`, node.id),
+      warning(
+        "CHOICE_OPTIONS_MISSING",
+        `${nodeName(node)} needs at least one active option.`,
+        node.id,
+        "Add an active WhatsApp option or change this step to a text/image reply.",
+      ),
     );
   }
   for (const option of options) {
@@ -256,6 +327,7 @@ function validateChoiceDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnosti
           "CHOICE_LABEL_MISSING",
           `${nodeName(node)} has an option without an English label.`,
           node.id,
+          "Add the button text customers should see.",
         ),
       );
     }
@@ -274,6 +346,8 @@ function validateChoicePublish(
         "PUBLISH_CHOICE_OPTIONS_MISSING",
         `${nodeName(node)} needs at least one active option.`,
         node.id,
+        undefined,
+        "Add an active WhatsApp option or change this step to a text/image reply.",
       ),
     );
   }
@@ -283,6 +357,8 @@ function validateChoicePublish(
         "PUBLISH_WHATSAPP_BUTTON_LIMIT",
         `${nodeName(node)} has ${options.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
         node.id,
+        undefined,
+        "Deactivate or remove extra options so only three active WhatsApp buttons remain.",
       ),
     );
   }
@@ -295,6 +371,8 @@ function validateChoicePublish(
           "PUBLISH_CHOICE_LABEL_MISSING",
           `${nodeName(node)} has an option without an English label.`,
           node.id,
+          undefined,
+          "Add the button text customers should see.",
         ),
       );
     } else {
@@ -305,18 +383,34 @@ function validateChoicePublish(
             "PUBLISH_CHOICE_LABEL_DUPLICATE",
             `${nodeName(node)} has duplicate option label ${label}.`,
             node.id,
+            undefined,
+            "Rename one of the duplicated active options.",
           ),
         );
       }
       labels.add(key);
       if (label.length > WHATSAPP_BUTTON_TITLE_MAX) {
-        diagnostics.push(error("PUBLISH_CHOICE_LABEL_TOO_LONG", `${label} is too long for a WhatsApp button.`, node.id));
+        diagnostics.push(
+          error(
+            "PUBLISH_CHOICE_LABEL_TOO_LONG",
+            `${label} is too long for a WhatsApp button.`,
+            node.id,
+            undefined,
+            `Shorten this button to ${WHATSAPP_BUTTON_TITLE_MAX} characters or fewer.`,
+          ),
+        );
       }
     }
     const key = option.key?.trim();
     if (key && !outgoing(document.edges, node.id).some((edge) => edge.condition === key)) {
       diagnostics.push(
-        error("PUBLISH_CHOICE_TARGET_MISSING", `${nodeName(node)} option ${key} needs a target.`, node.id),
+        error(
+          "PUBLISH_CHOICE_TARGET_MISSING",
+          `${nodeName(node)} option ${key} needs a target.`,
+          node.id,
+          undefined,
+          "Choose what should happen after the customer taps this option.",
+        ),
       );
     }
   }
@@ -326,7 +420,12 @@ function validateImageDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic
   const imageUrl = imageUrlForNode(node);
   if (!imageUrl) {
     diagnostics.push(
-      warning("IMAGE_URL_MISSING", `${nodeName(node)} needs an image URL.`, node.id),
+      warning(
+        "IMAGE_URL_MISSING",
+        `${nodeName(node)} needs an image URL.`,
+        node.id,
+        "Upload an image or paste a public image URL.",
+      ),
     );
   } else if (!isHttpUrl(imageUrl)) {
     diagnostics.push(
@@ -334,6 +433,7 @@ function validateImageDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic
         "IMAGE_URL_INVALID",
         `${nodeName(node)} image URL must start with http:// or https://.`,
         node.id,
+        "Upload the image through the admin tool or use a public HTTPS URL.",
       ),
     );
   }
@@ -342,7 +442,15 @@ function validateImageDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic
 function validateImagePublish(node: CanonicalFlowNode, diagnostics: FlowDiagnostic[]) {
   const imageUrl = imageUrlForNode(node);
   if (!imageUrl) {
-    diagnostics.push(error("PUBLISH_IMAGE_URL_MISSING", `${nodeName(node)} needs an image URL.`, node.id));
+    diagnostics.push(
+      error(
+        "PUBLISH_IMAGE_URL_MISSING",
+        `${nodeName(node)} needs an image URL.`,
+        node.id,
+        undefined,
+        "Upload an image or paste a public image URL.",
+      ),
+    );
     return;
   }
   if (!isHttpUrl(imageUrl)) {
@@ -351,6 +459,8 @@ function validateImagePublish(node: CanonicalFlowNode, diagnostics: FlowDiagnost
         "PUBLISH_IMAGE_URL_INVALID",
         `${nodeName(node)} image URL must start with http:// or https://.`,
         node.id,
+        undefined,
+        "Upload the image through the admin tool or use a public HTTPS URL.",
       ),
     );
   }
@@ -383,6 +493,9 @@ function detectGuaranteedAutomaticCycle(
       error(
         "PUBLISH_AUTOMATIC_CYCLE",
         "This flow can loop through automatic message steps without waiting for customer input.",
+        undefined,
+        undefined,
+        "Insert a customer choice step or end the conversation before the loop repeats.",
       ),
     );
   }
@@ -444,12 +557,18 @@ function error(
   message: string,
   nodeId?: string,
   edgeId?: string,
+  suggestedFix?: string,
 ): FlowDiagnostic {
-  return { code, message, severity: "error", phase: "structural", nodeId, edgeId };
+  return { code, message, severity: "error", phase: "structural", nodeId, edgeId, suggestedFix };
 }
 
-function warning(code: string, message: string, nodeId?: string): FlowDiagnostic {
-  return { code, message, severity: "warning", phase: "draft", nodeId };
+function warning(
+  code: string,
+  message: string,
+  nodeId?: string,
+  suggestedFix?: string,
+): FlowDiagnostic {
+  return { code, message, severity: "warning", phase: "draft", nodeId, suggestedFix };
 }
 
 function text(value: unknown): value is string {

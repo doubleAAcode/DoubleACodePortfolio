@@ -28,6 +28,29 @@ export const Route = createFileRoute("/admin/businesses/$businessId/flow-builder
   component: BusinessFlowBuilderPage,
 });
 
+const approvedTemplateCategories = new Set([
+  "ECOMMERCE",
+  "RESTAURANT",
+  "GREETING_STORE_INFO",
+]);
+
+const supportedTemplateFamilies = [
+  "Greeting + Store Info / Price Lists",
+  "E-commerce",
+  "Restaurant",
+];
+
+const supportedNormalActions = [
+  "Text",
+  "Image / price list",
+  "Options, max 3",
+  "Return to menu",
+  "Catalog browse",
+  "Product purchase",
+  "Talk to human",
+  "End",
+];
+
 function BusinessFlowBuilderPage() {
   const { businessId } = Route.useParams();
   const [details, setDetails] = useState<BusinessFlowDetails>();
@@ -57,7 +80,8 @@ function BusinessFlowBuilderPage() {
           getFlowTemplates(),
         ]);
         const publishedTemplates = templateRows.filter(
-          (template) => template.status === "PUBLISHED",
+          (template) =>
+            template.status === "PUBLISHED" && approvedTemplateCategories.has(template.category),
         );
         setTemplates(publishedTemplates);
         setTemplateId((current) =>
@@ -93,6 +117,7 @@ function BusinessFlowBuilderPage() {
   const selectedVersion = details ? selectVersion(details, selectedVersionId) : undefined;
   const liveVersion = details?.activeVersion;
   const draftVersion = details?.versions.find((version) => version.status === "DRAFT");
+  const selectedTemplate = templates.find((template) => template.id === templateId);
   const visualValidation = visualFlow ? validateVisualFlow(visualFlow) : undefined;
   const busy = Boolean(saving || loading);
   const baseFlowForCompile =
@@ -326,6 +351,7 @@ function BusinessFlowBuilderPage() {
           onSelectBlock={setSelectedBlockId}
         />
       ) : null}
+      <TemplateCapabilityStrip selectedTemplate={selectedTemplate} />
 
       {!visualFlow ? (
         <div className="rounded-md border border-border bg-surface/60 p-6 text-sm">
@@ -415,6 +441,31 @@ function BusinessFlowBuilderPage() {
           onConfirm={() => void confirmNamedAction()}
         />
       ) : null}
+    </div>
+  );
+}
+
+function TemplateCapabilityStrip({ selectedTemplate }: { selectedTemplate?: FlowTemplateRow }) {
+  return (
+    <div className="shrink-0 rounded-md border border-border bg-surface/40 px-3 py-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="font-medium text-foreground">Normal builder:</span>
+        <span>
+          template-based editing for {supportedTemplateFamilies.join(", ")}
+          {selectedTemplate ? `; selected template: ${selectedTemplate.name}` : ""}.
+        </span>
+        <span className="hidden text-muted-foreground/70 md:inline">Supported actions:</span>
+        <div className="flex flex-wrap gap-1.5">
+          {supportedNormalActions.map((action) => (
+            <span
+              key={action}
+              className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
+            >
+              {action}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -594,6 +645,11 @@ function FlowValidationSummary({
               <div className="mt-1 text-muted-foreground">
                 {humanizeValidationIssue(issue.message)}
               </div>
+              {issue.suggestedFix ? (
+                <div className="mt-2 rounded-md border border-border/70 bg-surface/40 px-3 py-2 text-xs text-muted-foreground">
+                  Fix: {issue.suggestedFix}
+                </div>
+              ) : null}
               {target ? (
                 <button
                   type="button"

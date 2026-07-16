@@ -11,6 +11,16 @@ export type FlowCategory =
   | "ACCESSORIES"
   | "CUSTOM_PRODUCTS";
 
+export type AdminFlowActionType =
+  | "text_message"
+  | "image_message"
+  | "options_menu"
+  | "catalog_browse"
+  | "product_purchase"
+  | "human_handoff"
+  | "end"
+  | "return_to_menu";
+
 export type FlowNodeType =
   | "MESSAGE"
   | "IMAGE_MESSAGE"
@@ -194,6 +204,7 @@ export type FlowValidationIssue = {
   nodeId?: string;
   edgeId?: string;
   path?: string;
+  suggestedFix?: string;
 };
 
 export type FlowValidationResult = {

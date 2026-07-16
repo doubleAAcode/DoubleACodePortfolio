@@ -86,19 +86,23 @@ export async function recordWaMessageEvent(input: WaMessageEventInput) {
 export async function listWaMessageEvents({
   connectionId,
   businessId,
+  customerPhone,
   limit = 50,
 }: {
   connectionId?: string;
   businessId?: string;
+  customerPhone?: string;
   limit?: number;
 }) {
   const safeLimit = Math.min(Math.max(limit, 1), MAX_EVENTS);
+  const customerPhoneHash = customerPhone ? hashPhone(customerPhone) : "";
 
   if (!isServerSupabaseConfigured()) {
     return inMemoryEvents
       .filter((event) => {
         if (connectionId && event.connection_id !== connectionId) return false;
         if (businessId && event.business_id !== businessId) return false;
+        if (customerPhoneHash && event.customer_phone_hash !== customerPhoneHash) return false;
         return true;
       })
       .slice(0, safeLimit);
@@ -107,10 +111,11 @@ export async function listWaMessageEvents({
   const filters = [
     connectionId ? `connection_id=eq.${encodeURIComponent(connectionId)}` : "",
     businessId ? `business_id=eq.${encodeURIComponent(businessId)}` : "",
+    customerPhoneHash ? `customer_phone_hash=eq.${encodeURIComponent(customerPhoneHash)}` : "",
   ].filter(Boolean);
   const query = filters.length ? `&${filters.join("&")}` : "";
   return supabaseServerRest<WaMessageEventRow[]>(
-    `/wa_message_events?select=id,business_id,connection_id,phone_number_id,customer_phone_masked,direction,sender_type,message_type,body,summary,meta_message_id,status,error_code,error_message,created_at&order=created_at.desc&limit=${safeLimit}${query}`,
+    `/wa_message_events?select=id,business_id,connection_id,phone_number_id,customer_phone_masked,customer_phone_hash,direction,sender_type,message_type,body,summary,meta_message_id,status,error_code,error_message,created_at&order=created_at.desc&limit=${safeLimit}${query}`,
   );
 }
 

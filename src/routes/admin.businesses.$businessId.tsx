@@ -21,7 +21,10 @@ import {
   getAdminBusinessDetails,
   getBusinessFlowDetails,
   getFlowTemplates,
+  inspectAdminCustomerConversation,
+  resetAdminCustomerConversation,
   uploadAdminFlowImage,
+  type AdminConversationDiagnostics,
 } from "@/lib/whatsapp/admin-client";
 import {
   applyFlowEditorModel,
@@ -92,13 +95,17 @@ function AdminBusinessDetailPage() {
     pathname.endsWith("/catalog-route-values") ||
     pathname.endsWith("/products");
   const [details, setDetails] = useState<AdminBusinessDetails>();
+  const [flowDetails, setFlowDetails] = useState<BusinessFlowDetails>();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
 
   const load = useCallback(() => {
     setError("");
-    getAdminBusinessDetails(businessId)
-      .then(setDetails)
+    Promise.all([getAdminBusinessDetails(businessId), getBusinessFlowDetails(businessId)])
+      .then(([nextDetails, nextFlowDetails]) => {
+        setDetails(nextDetails);
+        setFlowDetails(nextFlowDetails);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load business."));
   }, [businessId]);
 
@@ -113,6 +120,7 @@ function AdminBusinessDetailPage() {
     setError("");
     try {
       setDetails(await action());
+      setFlowDetails(await getBusinessFlowDetails(businessId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Admin action failed.");
     } finally {
@@ -244,7 +252,7 @@ function AdminBusinessDetailPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <FlowSection businessId={details.business.id} saving={saving} setSaving={setSaving} />
+        <FlowSection businessId={details.business.id} details={details} flowDetails={flowDetails} />
         <ConnectionForm
           connection={primaryConnection}
           saving={saving}
@@ -258,6 +266,8 @@ function AdminBusinessDetailPage() {
           }
         />
       </div>
+
+      <SupportDiagnosticsPanel businessId={details.business.id} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <UserForm
@@ -319,28 +329,51 @@ function AdminBusinessDetailPage() {
 
 function FlowSection({
   businessId,
-  saving,
-  setSaving,
+  details,
+  flowDetails,
 }: {
   businessId: string;
-  saving: string;
-  setSaving: (value: string) => void;
+  details: AdminBusinessDetails;
+  flowDetails?: BusinessFlowDetails;
 }) {
-  void saving;
-  void setSaving;
+  const setupSteps = getBusinessSetupSteps(details, flowDetails);
+  const blockingCount = setupSteps.filter((step) => step.status === "blocking").length;
+  const incompleteCount = setupSteps.filter((step) => step.status === "incomplete").length;
 
   return (
     <section className="rounded-lg border border-border bg-surface/60 p-5">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <div>
-          <h2 className="font-display text-xl font-semibold">Admin onboarding controls</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Prepare routes, route values, products, then build and publish the WhatsApp
-            conversation. Owner dashboard permissions can stay secondary until the admin setup is
-            stable.
+        <div className="max-w-xl">
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+            Admin setup hub
           </p>
+          <h2 className="mt-2 font-display text-xl font-semibold">WhatsApp onboarding path</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Complete these sections before client onboarding. The normal path is template-first:
+            choose a supported template, prepare catalog data, edit the flow, test, then publish.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full border border-border px-2.5 py-1 text-muted-foreground">
+              {blockingCount} blocking
+            </span>
+            <span className="rounded-full border border-border px-2.5 py-1 text-muted-foreground">
+              {incompleteCount} incomplete
+            </span>
+            {flowDetails?.activeVersion ? (
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-primary">
+                Live v{flowDetails.activeVersion.version_number}
+              </span>
+            ) : (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-amber-100">
+                No live flow
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
+            Open Flow builder
+          </a>
           <a
             href={`/admin/businesses/${businessId}/catalog-routes`}
             className="studio-button-secondary"
@@ -356,13 +389,378 @@ function FlowSection({
           <a href={`/admin/businesses/${businessId}/products`} className="studio-button-secondary">
             Manage products
           </a>
-          <a href={`/admin/businesses/${businessId}/flow-builder`} className="studio-button-primary">
-            Open Flow builder
-          </a>
         </div>
+      </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {setupSteps.map((step) => (
+          <a
+            key={step.id}
+            href={step.href}
+            className="rounded-md border border-border bg-background/70 p-3 transition hover:border-primary/70"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-medium">{step.title}</div>
+                <div className="mt-1 text-sm text-muted-foreground">{step.description}</div>
+              </div>
+              <SetupStatusPill status={step.status} />
+            </div>
+            {step.detail ? <div className="mt-2 text-xs text-muted-foreground">{step.detail}</div> : null}
+          </a>
+        ))}
       </div>
     </section>
   );
+}
+
+type SetupStepStatus = "complete" | "incomplete" | "blocking";
+
+type SetupStep = {
+  id: string;
+  title: string;
+  description: string;
+  detail?: string;
+  href: string;
+  status: SetupStepStatus;
+};
+
+function getBusinessSetupSteps(
+  details: AdminBusinessDetails,
+  flowDetails?: BusinessFlowDetails,
+): SetupStep[] {
+  const businessId = details.business.id;
+  const primaryConnection = details.connections[0];
+  const connectionComplete = Boolean(
+    primaryConnection?.phone_number_id &&
+      primaryConnection?.display_phone_number &&
+      primaryConnection?.access_token_ref,
+  );
+  const activeRoutes = details.catalogGroups.filter((group) => group.is_active);
+  const activeRouteValues = details.catalogGroupValues.filter((value) => value.is_active);
+  const activeProducts = details.catalogProducts.filter((product) => product.is_active);
+  const productsWithRouteValues = new Set(details.productGroupValues.map((entry) => entry.product_id));
+  const productsWithoutRouteValue = activeProducts.filter(
+    (product) => !productsWithRouteValues.has(product.id),
+  );
+  const productsWithChoices = new Set([
+    ...details.productOptions.map((entry) => entry.product_id),
+    ...details.productCustomFields.map((entry) => entry.product_id),
+    ...details.productVariants.map((entry) => entry.product_id),
+  ]);
+  const checkoutReady =
+    Boolean(details.business.allow_delivery || details.business.allow_pickup) &&
+    Boolean(details.business.order_confirmation_message_english?.trim());
+  const draftVersion = flowDetails?.versions.find((version) => version.status === "DRAFT");
+  const liveVersion = flowDetails?.activeVersion;
+  const publishIssues =
+    liveVersion?.validation_result?.issues?.filter((issue) => issue.severity === "ERROR") ?? [];
+
+  return [
+    {
+      id: "connection",
+      title: "Business connection and WhatsApp status",
+      description: "Phone number, token references, webhook path, and status.",
+      href: `#connection`,
+      status: connectionComplete ? "complete" : "blocking",
+      detail: connectionComplete
+        ? `${primaryConnection?.display_phone_number ?? "WhatsApp"} is configured.`
+        : "Missing phone number, display number, or access-token reference.",
+    },
+    {
+      id: "template",
+      title: "Template selection / clone",
+      description: "Use E-commerce, Restaurant, or Greeting + Store Info / Price Lists.",
+      href: `/admin/businesses/${businessId}/flow-builder`,
+      status: draftVersion || liveVersion ? "complete" : "blocking",
+      detail: draftVersion
+        ? `Draft v${draftVersion.version_number} is ready to edit.`
+        : liveVersion
+          ? `Live v${liveVersion.version_number} exists.`
+          : "Clone an approved template before editing.",
+    },
+    {
+      id: "catalog-routes",
+      title: "Catalog routes",
+      description: "Top-level browse paths such as categories, brands, offers, or menus.",
+      href: `/admin/businesses/${businessId}/catalog-routes`,
+      status: activeRoutes.length ? "complete" : "incomplete",
+      detail: `${activeRoutes.length} active route${activeRoutes.length === 1 ? "" : "s"}.`,
+    },
+    {
+      id: "route-values",
+      title: "Route values",
+      description: "The choices customers see under each route.",
+      href: `/admin/businesses/${businessId}/catalog-route-values`,
+      status: activeRoutes.length && !activeRouteValues.length ? "blocking" : "complete",
+      detail: `${activeRouteValues.length} active value${activeRouteValues.length === 1 ? "" : "s"}.`,
+    },
+    {
+      id: "products",
+      title: "Products",
+      description: "Admin-owned products, prices, stock, and route assignment.",
+      href: `/admin/businesses/${businessId}/products`,
+      status:
+        activeProducts.length && productsWithoutRouteValue.length === 0
+          ? "complete"
+          : activeProducts.length
+            ? "blocking"
+            : "incomplete",
+      detail: productsWithoutRouteValue.length
+        ? `${productsWithoutRouteValue.length} active product(s) need at least one route value.`
+        : `${activeProducts.length} active product${activeProducts.length === 1 ? "" : "s"}.`,
+    },
+    {
+      id: "product-options",
+      title: "Product variants/questions",
+      description: "Required item choices and custom questions before checkout.",
+      href: `/admin/businesses/${businessId}/products`,
+      status: activeProducts.length ? "complete" : "incomplete",
+      detail: `${productsWithChoices.size} product${productsWithChoices.size === 1 ? "" : "s"} have variants, options, or questions.`,
+    },
+    {
+      id: "checkout",
+      title: "Checkout and fulfillment settings",
+      description: "Delivery/pickup, notes, payment method, and confirmation copy.",
+      href: `/admin/businesses/${businessId}/flow-builder`,
+      status: checkoutReady ? "complete" : "blocking",
+      detail: checkoutReady
+        ? "Fulfillment and confirmation message are configured."
+        : "Enable delivery or pickup and add the confirmation message.",
+    },
+    {
+      id: "flow-builder",
+      title: "Flow builder",
+      description: "Edit supported WhatsApp actions and preview customer behavior.",
+      href: `/admin/businesses/${businessId}/flow-builder`,
+      status: draftVersion || liveVersion ? "complete" : "blocking",
+      detail: draftVersion
+        ? `Continue editing draft v${draftVersion.version_number}.`
+        : "Open the builder and clone a template.",
+    },
+    {
+      id: "live-test",
+      title: "Live WhatsApp test",
+      description: "Send real messages and inspect the resulting session.",
+      href: `#conversation-diagnostics`,
+      status: liveVersion ? "complete" : "incomplete",
+      detail: liveVersion ? "Use diagnostics below after a test message." : "Publish a flow before live testing.",
+    },
+    {
+      id: "publish",
+      title: "Publish readiness",
+      description: "Published version validates without blockers.",
+      href: `/admin/businesses/${businessId}/flow-builder`,
+      status: publishIssues.length ? "blocking" : liveVersion ? "complete" : "incomplete",
+      detail: publishIssues.length
+        ? `${publishIssues.length} publish blocker(s) remain.`
+        : liveVersion
+          ? "Live flow has no saved publish errors."
+          : "No live flow yet.",
+    },
+  ];
+}
+
+function SetupStatusPill({ status }: { status: SetupStepStatus }) {
+  const classes: Record<SetupStepStatus, string> = {
+    complete: "border-primary/40 bg-primary/10 text-primary",
+    incomplete: "border-amber-500/40 bg-amber-500/10 text-amber-100",
+    blocking: "border-destructive/40 bg-destructive/10 text-destructive",
+  };
+  const labels: Record<SetupStepStatus, string> = {
+    complete: "Complete",
+    incomplete: "Incomplete",
+    blocking: "Blocking",
+  };
+  return (
+    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] ${classes[status]}`}>
+      {labels[status]}
+    </span>
+  );
+}
+
+function SupportDiagnosticsPanel({ businessId }: { businessId: string }) {
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [loading, setLoading] = useState("");
+  const [error, setError] = useState("");
+  const [diagnostics, setDiagnostics] = useState<AdminConversationDiagnostics>();
+
+  async function inspect(event?: FormEvent) {
+    event?.preventDefault();
+    const cleanPhone = customerPhone.trim();
+    if (!cleanPhone) {
+      setError("Enter the customer WhatsApp number in E.164 format.");
+      return;
+    }
+    setLoading("inspect");
+    setError("");
+    try {
+      setDiagnostics(await inspectAdminCustomerConversation(businessId, cleanPhone));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not inspect conversation.");
+    } finally {
+      setLoading("");
+    }
+  }
+
+  async function resetSession() {
+    const cleanPhone = customerPhone.trim();
+    if (!cleanPhone) {
+      setError("Enter the customer WhatsApp number before resetting.");
+      return;
+    }
+    if (!window.confirm(`Reset the WhatsApp session for ${cleanPhone}?`)) return;
+    setLoading("reset");
+    setError("");
+    try {
+      setDiagnostics(await resetAdminCustomerConversation(businessId, cleanPhone));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not reset conversation.");
+    } finally {
+      setLoading("");
+    }
+  }
+
+  const session = diagnostics?.session;
+
+  return (
+    <section
+      id="conversation-diagnostics"
+      className="rounded-lg border border-border bg-surface/60 p-5"
+    >
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+            Support diagnostics
+          </p>
+          <h2 className="mt-2 font-display text-xl font-semibold">Customer conversation debug</h2>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Inspect one customer session, recent bot/customer events, flow pinning, current node,
+            and cart/order context. Use reset only after confirming the customer should restart.
+          </p>
+        </div>
+      </div>
+      <form onSubmit={inspect} className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          value={customerPhone}
+          onChange={(event) => setCustomerPhone(event.target.value)}
+          placeholder="+96171255749"
+          className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={Boolean(loading)}
+          className="studio-button-primary disabled:cursor-wait disabled:opacity-60"
+        >
+          {loading === "inspect" ? "Inspecting..." : "Inspect conversation"}
+        </button>
+        <button
+          type="button"
+          disabled={Boolean(loading)}
+          onClick={() => void resetSession()}
+          className="studio-button-secondary disabled:cursor-wait disabled:opacity-60"
+        >
+          {loading === "reset" ? "Resetting..." : "Reset session"}
+        </button>
+      </form>
+      {error ? (
+        <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+      {diagnostics ? (
+        <div className="mt-5 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-md border border-border bg-background/70 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="font-medium">Session summary</div>
+              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                {diagnostics.customerPhoneMasked}
+              </span>
+            </div>
+            {session ? (
+              <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                <DebugInfo label="Current step" value={session.currentStep} />
+                <DebugInfo label="Current node" value={session.currentNodeId || "Not pinned"} />
+                <DebugInfo label="Language" value={session.language || "Not selected"} />
+                <DebugInfo label="Flow version" value={session.flowVersionId || "Not pinned"} />
+                <DebugInfo label="Last inbound" value={formatDate(session.lastCustomerMessageAt)} />
+                <DebugInfo label="Expires" value={formatDate(session.expiresAt)} />
+              </dl>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">
+                No active session found for this customer. The next inbound message should start a
+                fresh conversation.
+              </p>
+            )}
+            {diagnostics.resetAt ? (
+              <p className="mt-3 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-primary">
+                Session reset at {formatDate(diagnostics.resetAt)}.
+              </p>
+            ) : null}
+            {session ? (
+              <details className="mt-4 rounded-md border border-border p-3">
+                <summary className="cursor-pointer text-sm font-medium">Context snapshot</summary>
+                <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                  {formatJsonSummary({
+                    context: session.context,
+                    flowVariables: session.flowVariables,
+                  })}
+                </pre>
+              </details>
+            ) : null}
+          </div>
+          <div className="rounded-md border border-border bg-background/70 p-4">
+            <div className="font-medium">Recent customer events</div>
+            <div className="mt-3 max-h-96 space-y-2 overflow-auto pr-1">
+              {diagnostics.events.length ? (
+                diagnostics.events.map((event) => (
+                  <div key={event.id} className="rounded-md border border-border p-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">
+                        {event.direction} · {event.sender_type} · {event.message_type}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(event.created_at)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-muted-foreground">
+                      {event.summary || event.body || event.status || "No summary recorded."}
+                    </div>
+                    {event.error_message ? (
+                      <div className="mt-2 text-destructive">
+                        {event.error_code ? `${event.error_code}: ` : ""}
+                        {event.error_message}
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No message events were found for this customer yet.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function DebugInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</dt>
+      <dd className="mt-1 break-words text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function formatJsonSummary(value: unknown) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "Could not render context snapshot.";
+  }
 }
 
 /*
@@ -1508,7 +1906,6 @@ function ConversationMap({
     sourceNodeId: string;
     optionKey: string;
   }>();
-  const [showFirstStepWizard, setShowFirstStepWizard] = useState(false);
   const nodeById = new Map(visualFlow.nodes.map((node) => [node.id, node]));
   const startNode = visualFlow.nodes.find((node) => node.type === "START") ?? visualFlow.nodes[0];
   const visited = new Set<string>();
@@ -1623,30 +2020,12 @@ function ConversationMap({
       <div className="mt-5 min-w-0">
         <div className="rounded-md border border-dashed border-primary/50 bg-primary/5 p-6">
           <div className="max-w-xl">
-            <div className="font-display text-xl font-semibold">Start from a blank canvas</div>
+            <div className="font-display text-xl font-semibold">Choose a supported template</div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Add the first WhatsApp block, then keep adding the next block one by one.
+              Normal admin setup starts from E-commerce, Restaurant, or Greeting + Store Info /
+              Price Lists. Use the More menu to clone one before editing the conversation.
             </p>
-            <button
-              type="button"
-              className="studio-button-primary mt-4"
-              onClick={() => setShowFirstStepWizard((value) => !value)}
-            >
-              Add first block
-            </button>
           </div>
-          {showFirstStepWizard ? (
-            <GuidedAddStepWizard
-              visualFlow={visualFlow}
-              selectedBlockId=""
-              defaultKind="options"
-              onCancel={() => setShowFirstStepWizard(false)}
-              onCreate={(next, createdNodeId) => {
-                setShowFirstStepWizard(false);
-                onCreateStep(next, createdNodeId);
-              }}
-            />
-          ) : null}
         </div>
       </div>
     );
@@ -1835,6 +2214,16 @@ type ConversationOptionRoute = {
   target?: VisualFlowNode;
 };
 
+function optionTargetSummary(target: VisualFlowNode) {
+  if (target.type === "SEND_IMAGE") return "sends an image or price list";
+  if (target.type === "SEND_MESSAGE" || target.type === "STORE_INFO") return "sends a text message";
+  if (target.type === "HUMAN_HANDOFF") return "sends the customer to human support";
+  if (target.type === "END") return "ends the conversation";
+  if (target.type === "CATEGORY_SELECTION") return "opens catalog browsing";
+  if (target.type === "PRODUCT_SELECTION") return "continues the product purchase path";
+  return `opens ${target.title || friendlyBlockName(target.type)}`;
+}
+
 function OptionBranchCard({
   route,
   onOpen,
@@ -1852,10 +2241,10 @@ function OptionBranchCard({
           onClick={onOpen}
           className="block w-full rounded-md px-2 py-1.5 text-left transition hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span className="block text-muted-foreground">Option</span>
+          <span className="block text-muted-foreground">Customer taps</span>
           <span className="mt-0.5 block font-medium">{route.label}</span>
           <span className="mt-1 block text-muted-foreground">
-            Opens {route.target.title || friendlyBlockName(route.target.type)}
+            Then {optionTargetSummary(route.target)}
           </span>
         </button>
       ) : (
@@ -1865,7 +2254,7 @@ function OptionBranchCard({
           className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 px-3 py-2 text-primary transition hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <span className="text-lg leading-none">+</span>
-          Add target block
+          Choose what happens
         </button>
       )}
     </div>
@@ -1959,9 +2348,10 @@ function FocusedBranchCanvas({
         <div className="mb-4 max-w-3xl rounded-md border border-primary/30 bg-primary/5 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="font-medium">This WhatsApp option</div>
+              <div className="font-medium">Button customer taps</div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Edit the button/list text customers see before this branch opens.
+                First edit the WhatsApp button text, then choose the action that happens after the
+                customer taps it.
               </p>
             </div>
             <button
@@ -2648,6 +3038,7 @@ function StepSettingsColumn({
         <div className="mt-3 space-y-3">
           <SettingsSection title="Step identity">
             <StepExplanation block={selectedBlock} />
+            <StepActionGuide block={selectedBlock} />
             <TextField
               label="Admin title"
               value={selectedBlock.title}
@@ -3013,7 +3404,6 @@ type AddStepKind =
   | "products"
   | "cart"
   | "checkout"
-  | "condition"
   | "handoff"
   | "end";
 
@@ -3027,7 +3417,6 @@ const addStepKinds: Array<{ id: AddStepKind; label: string; type: VisualFlowBloc
   { id: "products", label: "Product purchase", type: "PRODUCT_SELECTION" },
   { id: "cart", label: "Show cart", type: "CART_REVIEW" },
   { id: "checkout", label: "Start checkout", type: "CHECKOUT_FULFILLMENT" },
-  { id: "condition", label: "Add condition", type: "CONDITION" },
   { id: "handoff", label: "Talk to human", type: "HUMAN_HANDOFF" },
   { id: "end", label: "End conversation", type: "END" },
 ];
@@ -4375,10 +4764,13 @@ function MenuOptionsEditor({
   };
   return (
     <SettingsSection title={title}>
-      <p className="text-xs text-muted-foreground">
-        Edit the button/list text the customer sees in WhatsApp, then choose where each option sends
-        them.
-      </p>
+      <div className="rounded-md border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground">
+        <div className="font-medium text-foreground">For each WhatsApp button:</div>
+        <div className="mt-1">
+          1. Set the text customers see. 2. Choose the action after tap. 3. Decide whether the menu
+          returns, ends, or continues.
+        </div>
+      </div>
       <p
         className={
           activeOptionCount > WHATSAPP_MAX_VISIBLE_OPTIONS
@@ -4396,7 +4788,7 @@ function MenuOptionsEditor({
             key={`menu-option-${index}`}
             className="space-y-3 rounded-md border border-border p-3"
           >
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-2">
               <div className="text-sm font-medium">{option.label.en || `Option ${index + 1}`}</div>
               <div className="flex gap-1">
                 <button
@@ -4432,14 +4824,14 @@ function MenuOptionsEditor({
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <TextField
-                label="WhatsApp button text EN"
+                label="Customer sees EN"
                 value={option.label.en}
                 onChange={(value) =>
                   updateOption(index, { ...option, label: { ...option.label, en: value } })
                 }
               />
               <TextField
-                label="WhatsApp button text AR"
+                label="Customer sees AR"
                 value={option.label.ar}
                 dir="rtl"
                 onChange={(value) =>
@@ -4522,28 +4914,28 @@ type ResponseAfterBehavior = "return_here" | "end" | "main_menu" | "next";
 const optionResponseKinds: Array<{ id: OptionResponseKind; label: string; help: string }> = [
   {
     id: "send_text",
-    label: "Send text reply",
-    help: "Customer taps the option and receives a normal WhatsApp text message.",
+    label: "Send a text message",
+    help: "Use this when the option should answer with normal WhatsApp text.",
   },
   {
     id: "send_image",
-    label: "Send image + caption",
-    help: "Use for price lists, menus, flyers, or any image-based answer.",
+    label: "Send an image or price list",
+    help: "Use this for price lists, menus, flyers, or any image-based answer.",
   },
   {
     id: "talk_to_human",
-    label: "Talk to human",
-    help: "Pause automation and send the customer to support.",
+    label: "Send to human support",
+    help: "Pause automation and tell the customer that a team member will help.",
   },
   {
     id: "end",
-    label: "End conversation",
+    label: "End the conversation",
     help: "Stop the automated flow after this option is tapped.",
   },
   {
     id: "go_to_step",
-    label: "Go to existing step",
-    help: "Advanced: send this option to another block in the map.",
+    label: "Open another existing step",
+    help: "Use this when the option should continue to a step already in this flow.",
   },
 ];
 
@@ -4568,6 +4960,7 @@ function OptionResponseEditor({
   const responseKind = inferOptionResponseKind(target);
   const selectedKind =
     optionResponseKinds.find((entry) => entry.id === responseKind) ?? optionResponseKinds[0];
+  const [showCreateTarget, setShowCreateTarget] = useState(false);
 
   function applyKind(kind: OptionResponseKind) {
     if (kind === "go_to_step") return;
@@ -4583,8 +4976,14 @@ function OptionResponseEditor({
 
   return (
     <div className="space-y-3 rounded-md border border-primary/25 bg-primary/5 p-3">
+      <div>
+        <div className="text-sm font-medium">After the customer taps it</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This is the actual action behind the WhatsApp button above.
+        </p>
+      </div>
       <label className="block text-sm">
-        <span className="mb-1 block font-medium">When customer taps this option</span>
+        <span className="mb-1 block text-muted-foreground">Button action</span>
         <select
           value={responseKind}
           onChange={(event) => applyKind(event.target.value as OptionResponseKind)}
@@ -4597,7 +4996,9 @@ function OptionResponseEditor({
           ))}
         </select>
       </label>
-      <p className="text-xs text-muted-foreground">{selectedKind.help}</p>
+      <p className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+        {selectedKind.help}
+      </p>
 
       {responseKind === "send_text" && target ? (
         <TextOptionResponseFields
@@ -4621,7 +5022,7 @@ function OptionResponseEditor({
       {responseKind === "talk_to_human" ? (
         <p className="rounded-md border border-border/80 bg-background px-3 py-2 text-xs text-muted-foreground">
           This option will pause the bot and send the configured human handoff message. Select the
-          handoff step in the map to edit that support message.
+          Talk to human step in the map to edit that support message.
         </p>
       ) : null}
       {responseKind === "end" ? (
@@ -4631,17 +5032,145 @@ function OptionResponseEditor({
         </p>
       ) : null}
       {responseKind === "go_to_step" ? (
-        <NextBlockSelect
-          label="Existing step"
-          nodes={nodes}
-          value={option.targetNodeId ?? ""}
-          onChange={(targetNodeId) =>
-            onFlowChange(setOptionTarget(visualFlow, sourceNode.id, optionIndex, targetNodeId))
-          }
-        />
+        <div className="space-y-3">
+          <NextBlockSelect
+            label="Existing step"
+            nodes={nodes}
+            value={option.targetNodeId ?? ""}
+            onChange={(targetNodeId) =>
+              onFlowChange(setOptionTarget(visualFlow, sourceNode.id, optionIndex, targetNodeId))
+            }
+            onCreateNew={() => setShowCreateTarget(true)}
+          />
+          {showCreateTarget ? (
+            <OptionTargetStepCreator
+              visualFlow={visualFlow}
+              sourceNodeId={sourceNode.id}
+              optionIndex={optionIndex}
+              optionLabel={option.label.en || option.key || `Option ${optionIndex + 1}`}
+              onCancel={() => setShowCreateTarget(false)}
+              onCreate={(next) => {
+                setShowCreateTarget(false);
+                onFlowChange(next);
+              }}
+            />
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
+}
+
+function OptionTargetStepCreator({
+  visualFlow,
+  sourceNodeId,
+  optionIndex,
+  optionLabel,
+  onCreate,
+  onCancel,
+}: {
+  visualFlow: VisualFlowDefinition;
+  sourceNodeId: string;
+  optionIndex: number;
+  optionLabel: string;
+  onCreate: (flow: VisualFlowDefinition) => void;
+  onCancel: () => void;
+}) {
+  const availableKinds = addStepKinds.filter((entry) => entry.id !== "start");
+  const [kind, setKind] = useState<AddStepKind>("message");
+  const [title, setTitle] = useState(`${optionLabel} reply`);
+  const selectedKind = availableKinds.find((entry) => entry.id === kind) ?? availableKinds[0];
+
+  function createAndConnect() {
+    const next = addConfiguredVisualNode(visualFlow, selectedKind.type, {
+      title: title.trim() || selectedKind.label,
+      nextNodeId: kind === "image_return" ? sourceNodeId : undefined,
+    });
+    const created = next.nodes[next.nodes.length - 1];
+    const configured = configureCreatedTargetStep(created, kind, sourceNodeId, title, selectedKind);
+    const withConfiguredNode: VisualFlowDefinition = {
+      ...next,
+      nodes: next.nodes.map((node) => (node.id === configured.id ? configured : node)),
+    };
+    onCreate(setOptionTarget(withConfiguredNode, sourceNodeId, optionIndex, configured.id));
+  }
+
+  return (
+    <div className="rounded-md border border-primary/40 bg-background p-3">
+      <div className="font-medium">Create and connect a new step</div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        This creates the target for this WhatsApp option and connects it immediately.
+      </p>
+      <div className="mt-3 grid gap-3">
+        <label className="block text-sm">
+          <span className="mb-1 block text-muted-foreground">Step type</span>
+          <select
+            value={kind}
+            onChange={(event) => setKind(event.target.value as AddStepKind)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          >
+            {availableKinds.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <TextField label="Step title" value={title} onChange={setTitle} />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" className="studio-button-primary" onClick={createAndConnect}>
+          Create and connect
+        </button>
+        <button type="button" className="studio-button-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function configureCreatedTargetStep(
+  node: VisualFlowNode,
+  kind: AddStepKind,
+  sourceNodeId: string,
+  title: string,
+  selectedKind: { label: string },
+): VisualFlowNode {
+  if (kind === "options") {
+    return {
+      ...node,
+      config: {
+        ...node.config,
+        messageBehavior: "options",
+        menuOptions: [
+          {
+            key: "option_1",
+            label: { en: "First option", ar: "" },
+            active: true,
+          },
+        ],
+      },
+    };
+  }
+  if (kind === "message_end") {
+    return {
+      ...node,
+      config: { ...node.config, messageBehavior: "end", messageNextNodeId: undefined },
+    };
+  }
+  if (kind === "image_return") {
+    return {
+      ...node,
+      config: {
+        ...node.config,
+        mediaCaption: node.config.mediaCaption ?? { en: title.trim() || selectedKind.label, ar: "" },
+        messageBehavior: "next",
+        messageNextNodeId: sourceNodeId,
+      },
+    };
+  }
+  return node;
 }
 
 function TextOptionResponseFields({
@@ -4847,7 +5376,7 @@ function AfterResponseSelect({
   return (
     <div className="space-y-3">
       <label className="block text-sm">
-        <span className="mb-1 block text-muted-foreground">After sending this reply</span>
+        <span className="mb-1 block text-muted-foreground">After this reply</span>
         <select
           value={behavior}
           onChange={(event) =>
@@ -4860,16 +5389,16 @@ function AfterResponseSelect({
           }
           className="w-full rounded-md border border-input bg-background px-3 py-2"
         >
-          <option value="return_here">Resend these options</option>
-          <option value="end">End conversation</option>
-          <option value="main_menu">Go to main menu</option>
+          <option value="return_here">Show this same menu again</option>
+          <option value="end">Stop here</option>
+          <option value="main_menu">Show main menu</option>
           <option value="next">Go to another step</option>
         </select>
       </label>
       {behavior === "return_here" ? (
         <p className="rounded-md border border-border bg-surface/40 px-3 py-2 text-xs text-muted-foreground">
-          WhatsApp cannot reopen old buttons after the customer taps them. This sends the same
-          options message again after this reply.
+          The bot sends this reply first, then sends the same options message again so the customer
+          can choose another button.
         </p>
       ) : null}
       {behavior === "next" ? (
@@ -5714,6 +6243,20 @@ function StepExplanation({ block }: { block: VisualFlowNode }) {
   );
 }
 
+function StepActionGuide({ block }: { block: VisualFlowNode }) {
+  const guide = stepActionGuide(block);
+  if (!guide) return null;
+  return (
+    <div className="rounded-md border border-border/80 bg-background/70 p-3 text-sm">
+      <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        Customer experience
+      </div>
+      <div className="mt-1 font-medium">{guide.action}</div>
+      <p className="mt-1 text-muted-foreground">{guide.adminControls}</p>
+    </div>
+  );
+}
+
 function StepIssueList({
   issues,
   visualFlow,
@@ -5734,6 +6277,9 @@ function StepIssueList({
               {issue.severity === "ERROR" ? "Error" : "Warning"}:
             </span>{" "}
             <span className="text-muted-foreground">{humanizeValidationIssue(issue.message)}</span>
+            {issue.suggestedFix ? (
+              <div className="mt-1 text-xs text-muted-foreground">Fix: {issue.suggestedFix}</div>
+            ) : null}
             {target && onSelectBlock ? (
               <button
                 type="button"
@@ -6237,7 +6783,9 @@ function NextBlockSelect({
         className="w-full rounded-md border border-input bg-background px-3 py-2"
       >
         <option value="">Select block</option>
-        {onCreateNew ? <option value="__create_new_block__">+ Create new block...</option> : null}
+        {onCreateNew ? (
+          <option value="__create_new_block__">+ Create a new reply/action...</option>
+        ) : null}
         {nodes.map((node) => (
           <option key={node.id} value={node.id}>
             {node.title || friendlyBlockName(node.type)} ({friendlyBlockName(node.type)})
@@ -6612,6 +7160,70 @@ function stepDescription(block: VisualFlowNode) {
   if (block.type === "HUMAN_HANDOFF")
     return "Pauses automation and directs the customer to a human.";
   return "Shows content or moves the customer to the next step.";
+}
+
+function stepActionGuide(block: VisualFlowNode) {
+  if (block.type === "START") {
+    return {
+      action: "Chooses the first visible WhatsApp message.",
+      adminControls: "Set whether the bot asks language first, sends a welcome message, or starts from a selected step.",
+    };
+  }
+  if (block.type === "SEND_IMAGE") {
+    return {
+      action: "Sends an image message, usually with a caption.",
+      adminControls: "Upload or paste the image URL, edit the caption, then choose whether to stop or continue.",
+    };
+  }
+  if (block.config.menuOptions?.length || block.config.messageBehavior === "options") {
+    return {
+      action: "Sends a message with WhatsApp buttons.",
+      adminControls: "Edit the message, button labels, and what happens after each button is tapped.",
+    };
+  }
+  if (block.type === "CATEGORY_SELECTION") {
+    return {
+      action: "Shows the customer browse choices such as categories, brands, offers, or collections.",
+      adminControls: "Choose which admin-managed catalog routes appear, then send the customer into product purchase.",
+    };
+  }
+  if (block.type === "PRODUCT_SELECTION") {
+    return {
+      action: "Runs the protected product purchase path.",
+      adminControls: "Products, variants, required questions, quantity, stock, and cart are enforced from catalog data.",
+    };
+  }
+  if (isCheckoutRuntimeBlock(block)) {
+    return {
+      action: "Collects checkout information using protected runtime prompts.",
+      adminControls: "Edit checkout prompt text and fulfillment settings from this panel; product/order logic remains protected.",
+    };
+  }
+  if (block.type === "HUMAN_HANDOFF") {
+    return {
+      action: "Pauses automation and tells the customer a team member will help.",
+      adminControls: "Edit the handoff message, owner alert, pause behavior, and return behavior.",
+    };
+  }
+  if (block.type === "END") {
+    return {
+      action: "Stops this automated conversation path.",
+      adminControls: "Use this when the customer has received enough information and no next action is needed.",
+    };
+  }
+  if (block.type === "QUESTION") {
+    return {
+      action: "Asks the customer for an answer.",
+      adminControls: "Choose free-text, number, or choice behavior, then decide where the flow goes after the answer.",
+    };
+  }
+  if (block.type === "SEND_MESSAGE" || block.type === "STORE_INFO") {
+    return {
+      action: "Sends a normal text message.",
+      adminControls: "Edit the text, then choose whether to continue, show options, send to main menu, or stop.",
+    };
+  }
+  return undefined;
 }
 
 function humanizeValidationIssue(message: string) {
@@ -7663,7 +8275,11 @@ function ConnectionForm({
   }
 
   return (
-    <form onSubmit={submit} className="rounded-lg border border-border bg-surface/60 p-5">
+    <form
+      id="connection"
+      onSubmit={submit}
+      className="rounded-lg border border-border bg-surface/60 p-5"
+    >
       <h2 className="font-display text-xl font-semibold">WhatsApp connection</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Use secret reference names only. The admin panel does not store raw token values.
