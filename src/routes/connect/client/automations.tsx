@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/connect")({
+export const Route = createFileRoute("/connect/client/automations")({
   component: Outlet,
 });

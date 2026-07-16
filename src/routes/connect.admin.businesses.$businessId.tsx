@@ -23,9 +23,9 @@ import {
   getFlowTemplates,
   inspectAdminCustomerConversation,
   resetAdminCustomerConversation,
-  uploadAdminFlowImage,
   type AdminConversationDiagnostics,
 } from "@/features/connect/shared/admin-client";
+import { uploadConnectFlowImage } from "@/features/connect/shared/flow-image-client";
 import {
   applyFlowEditorModel,
   createFlowEditorModel,
@@ -4392,7 +4392,7 @@ function ImageStepSettings({
     setUploading(true);
     setUploadError("");
     try {
-      const image = await uploadAdminFlowImage(businessId, file);
+      const image = await uploadConnectFlowImage(businessId, file);
       onChange({ ...block, config: { ...block.config, mediaUrl: image.url } });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Image upload failed.");
@@ -5269,7 +5269,7 @@ function ImageOptionResponseFields({
     setUploading(true);
     setUploadError("");
     try {
-      const image = await uploadAdminFlowImage(businessId, file);
+      const image = await uploadConnectFlowImage(businessId, file);
       onFlowChange(
         updateVisualFlowNode(visualFlow, {
           ...block,

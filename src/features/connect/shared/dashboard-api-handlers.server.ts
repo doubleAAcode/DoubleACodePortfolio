@@ -11,9 +11,19 @@ import { getWaDiagnostics } from "./diagnostics.server";
 import {
   applyWaDashboardAction,
   getWaDashboardData,
+  saveWaDashboardFlowSettings,
   type DashboardCatalogAction,
+  type DashboardFlowSettingsInput,
   uploadWaProductImage,
 } from "./dashboard-store.server";
+import {
+  cloneTemplateToBusiness,
+  getBusinessFlowDetails,
+  listFlowTemplates,
+  publishBusinessFlowVersion,
+  saveBusinessFlowDraft,
+} from "./flow-template-store.server";
+import type { FlowDefinition } from "./flow-template-types";
 import {
   acceptDashboardOrder,
   getDashboardOrderDetails,
@@ -129,6 +139,101 @@ export function createDashboardCatalogHandlers(envSuffix = "") {
         return dashboardApiError(error);
       }
     },
+  };
+}
+
+export function createDashboardFlowHandlers(envSuffix = "") {
+  return {
+    GET: async ({ request }: { request: Request }) => {
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+        return Response.json({
+          ok: true,
+          data: await getDashboardFlowSnapshot(session.businessId),
+        });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
+    },
+    POST: async ({ request }: { request: Request }) => {
+      try {
+        const session = getDashboardSessionFromRequest(request, envSuffix);
+        if (!session) {
+          return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+        }
+
+        const action = (await request.json().catch(() => null)) as
+          | { action: "save_draft"; flowJson: FlowDefinition; flowName?: string }
+          | { action: "publish_version"; versionId: string }
+          | { action: "clone_template"; templateId: string }
+          | ({ action: "save_checkout_settings" } & DashboardFlowSettingsInput)
+          | null;
+
+        if (!action?.action) {
+          return Response.json({ ok: false, error: "A flow action is required." }, { status: 400 });
+        }
+
+        const actor = `dashboard:${session.username}`;
+        if (action.action === "save_draft") {
+          if (!action.flowJson || typeof action.flowJson !== "object") {
+            return Response.json({ ok: false, error: "Flow data is required." }, { status: 400 });
+          }
+          await saveBusinessFlowDraft({
+            businessId: session.businessId,
+            flowJson: action.flowJson,
+            flowName: action.flowName,
+            adminUser: actor,
+          });
+        } else if (action.action === "publish_version") {
+          if (!action.versionId?.trim()) {
+            return Response.json(
+              { ok: false, error: "A draft version is required." },
+              { status: 400 },
+            );
+          }
+          await publishBusinessFlowVersion({
+            businessId: session.businessId,
+            versionId: action.versionId,
+          });
+        } else if (action.action === "clone_template") {
+          if (!action.templateId?.trim()) {
+            return Response.json({ ok: false, error: "A template is required." }, { status: 400 });
+          }
+          await cloneTemplateToBusiness({
+            businessId: session.businessId,
+            templateId: action.templateId,
+            adminUser: actor,
+          });
+        } else if (action.action === "save_checkout_settings") {
+          await saveWaDashboardFlowSettings(session.businessId, action);
+        } else {
+          return Response.json({ ok: false, error: "Unsupported flow action." }, { status: 400 });
+        }
+
+        return Response.json({
+          ok: true,
+          data: await getDashboardFlowSnapshot(session.businessId),
+        });
+      } catch (error) {
+        return dashboardApiError(error);
+      }
+    },
+  };
+}
+
+async function getDashboardFlowSnapshot(businessId: string) {
+  const [details, templates, catalog] = await Promise.all([
+    getBusinessFlowDetails(businessId),
+    listFlowTemplates(),
+    getWaDashboardData(businessId),
+  ]);
+  return {
+    details,
+    templates: templates.filter((template) => template.status === "PUBLISHED"),
+    catalog,
   };
 }
 

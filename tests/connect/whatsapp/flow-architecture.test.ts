@@ -288,6 +288,25 @@ test("session runtime loading uses pinned flow versions in source", () => {
   assert.doesNotMatch(source, /flow\.edges\.length > 0/);
 });
 
+test("client flow API scopes every mutation to the signed dashboard business", () => {
+  const handlers = readFileSync(
+    "src/features/connect/shared/dashboard-api-handlers.server.ts",
+    "utf8",
+  );
+  const client = readFileSync("src/features/connect/shared/dashboard-client.ts", "utf8");
+  const builder = readFileSync("src/routes/connect/client/automations/builder.tsx", "utf8");
+
+  assert.match(handlers, /createDashboardFlowHandlers\(envSuffix = ""\)/);
+  assert.match(handlers, /getDashboardSessionFromRequest\(request, envSuffix\)/);
+  assert.match(handlers, /saveBusinessFlowDraft\(\{\s*businessId: session\.businessId/);
+  assert.match(handlers, /publishBusinessFlowVersion\(\{\s*businessId: session\.businessId/);
+  assert.match(handlers, /cloneTemplateToBusiness\(\{\s*businessId: session\.businessId/);
+  assert.match(handlers, /saveWaDashboardFlowSettings\(session\.businessId, action\)/);
+  assert.doesNotMatch(handlers, /body\?\.businessId/);
+  assert.match(client, /dashboardApiPath\("\/flow"\)/);
+  assert.match(builder, /applyWaDashboardFlowAction\(\{/);
+});
+
 function canonicalOneMessageDocument(id: string, text: string): CanonicalFlowDocument {
   return {
     schemaVersion: 2,

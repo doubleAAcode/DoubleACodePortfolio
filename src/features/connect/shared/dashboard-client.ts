@@ -1,4 +1,7 @@
 import type { DashboardCatalogAction, WaDashboardData } from "./dashboard-store.server";
+import type { BotFlowSettingsInput } from "./bot-flow-settings.server";
+import type { BusinessFlowDetails, FlowTemplateRow } from "./flow-template-store.server";
+import type { FlowDefinition } from "./flow-template-types";
 import type {
   DashboardLifecycleAction,
   DashboardOrderDetails,
@@ -20,6 +23,22 @@ export type OwnerNotificationDashboardSnapshot = {
   notifications: OwnerNotificationRow[];
   unreadCount: number;
 };
+export type WaDashboardFlowSnapshot = {
+  details: BusinessFlowDetails;
+  templates: FlowTemplateRow[];
+  catalog: WaDashboardData;
+};
+
+export type WaDashboardFlowAction =
+  | { action: "save_draft"; flowJson: FlowDefinition; flowName?: string }
+  | { action: "publish_version"; versionId: string }
+  | { action: "clone_template"; templateId: string }
+  | {
+      action: "save_checkout_settings";
+      botFlowSettings: BotFlowSettingsInput;
+      orderConfirmationMessageEnglish: string;
+      orderConfirmationMessageArabic: string;
+    };
 
 export async function getWaDashboardSession() {
   return apiFetch<WaDashboardSessionResult>(dashboardApiPath("/session"));
@@ -38,6 +57,21 @@ export async function logoutWaDashboard() {
 
 export async function getWaDashboardCatalog() {
   const result = await apiFetch<ApiResult<WaDashboardData>>(dashboardApiPath("/catalog"));
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function getWaDashboardFlow() {
+  const result = await apiFetch<ApiResult<WaDashboardFlowSnapshot>>(dashboardApiPath("/flow"));
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
+export async function applyWaDashboardFlowAction(action: WaDashboardFlowAction) {
+  const result = await apiFetch<ApiResult<WaDashboardFlowSnapshot>>(dashboardApiPath("/flow"), {
+    method: "POST",
+    body: JSON.stringify(action),
+  });
   if (!result.ok) throw new Error(result.error);
   return result.data;
 }

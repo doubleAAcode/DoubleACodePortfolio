@@ -1,16 +1,8 @@
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import {
-  Building2,
-  ClipboardList,
-  FileText,
-  GitBranch,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-} from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
+import { ConnectWorkspaceShell } from "@/features/connect/shell/connect-shell";
 import {
   getInternalAdminSession,
   loginInternalAdmin,
@@ -21,15 +13,6 @@ import {
 export const Route = createFileRoute("/connect/admin")({
   component: AdminLayout,
 });
-
-const navItems = [
-  { href: "/connect/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/connect/admin/businesses", label: "Businesses", icon: Building2 },
-  { href: "/connect/admin/app-review-demo", label: "App review demo", icon: MessageSquare },
-  { href: "/connect/admin/whatsapp-templates", label: "WA templates", icon: FileText },
-  { href: "/connect/admin/flow-templates", label: "Flow templates", icon: GitBranch },
-  { href: "/connect/admin/logs", label: "Logs", icon: ClipboardList },
-];
 
 function AdminLayout() {
   const router = useRouter();
@@ -79,59 +62,15 @@ function AdminLayout() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
-        <aside
-          className={`hidden w-64 shrink-0 border-r border-border bg-surface/70 md:flex-col ${
-            isFlowBuilder ? "md:hidden" : "md:flex"
-          }`}
-        >
-          <div className="border-b border-border px-5 py-5">
-            <div className="font-display text-lg font-semibold">Double A Admin</div>
-            <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-              Internal only
-            </div>
-          </div>
-          <nav className="flex-1 space-y-1 p-3">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition hover:bg-surface-2 hover:text-foreground"
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
-          <div className="border-t border-border p-3">
-            <div className="px-3 pb-2 text-xs text-muted-foreground">
-              {sessionResult.session?.username}
-            </div>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition hover:bg-surface-2 hover:text-foreground"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </div>
-        </aside>
-        <main
-          className={
-            isFlowBuilder
-              ? "h-screen w-full overflow-hidden px-3 py-3"
-              : "mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8"
-          }
-        >
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <ConnectWorkspaceShell
+      workspace="admin"
+      pathname={pathname}
+      username={sessionResult.session?.username ?? "admin"}
+      onSignOut={() => void signOut()}
+      fullBleed={isFlowBuilder}
+    >
+      <Outlet />
+    </ConnectWorkspaceShell>
   );
 }
 

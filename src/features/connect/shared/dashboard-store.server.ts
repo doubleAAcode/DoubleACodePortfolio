@@ -4,6 +4,8 @@ import { getServerSupabaseConfig, supabaseServerRest } from "@/lib/supabase/serv
 
 import {
   getBusinessBotFlowSettings,
+  saveBusinessBotFlowSettings,
+  type BotFlowSettingsInput,
   type BusinessBotFlowSettings,
 } from "./bot-flow-settings.server";
 
@@ -183,6 +185,12 @@ export type WaDashboardData = {
   deliveryAreas: WaDeliveryAreaRow[];
   pickupLocations: WaPickupLocationRow[];
   paymentMethods: WaPaymentMethodRow[];
+};
+
+export type DashboardFlowSettingsInput = {
+  botFlowSettings: BotFlowSettingsInput;
+  orderConfirmationMessageEnglish: string;
+  orderConfirmationMessageArabic: string;
 };
 
 export type SaveCategoryInput = {
@@ -437,6 +445,26 @@ export async function getWaDashboardData(businessId: string): Promise<WaDashboar
     pickupLocations,
     paymentMethods,
   };
+}
+
+export async function saveWaDashboardFlowSettings(
+  businessId: string,
+  input: DashboardFlowSettingsInput,
+) {
+  await saveBusinessBotFlowSettings(businessId, input.botFlowSettings);
+  await supabaseServerRest(`/wa_businesses?id=eq.${encodeURIComponent(businessId)}`, {
+    method: "PATCH",
+    prefer: "return=minimal",
+    body: JSON.stringify({
+      order_confirmation_message_english: requiredText(
+        input.orderConfirmationMessageEnglish,
+        "English confirmation message",
+      ),
+      order_confirmation_message_arabic: input.orderConfirmationMessageArabic.trim(),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  return getWaDashboardData(businessId);
 }
 
 export async function applyWaDashboardAction(businessId: string, action: DashboardCatalogAction) {
