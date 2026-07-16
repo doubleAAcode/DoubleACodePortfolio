@@ -58,6 +58,11 @@ Roadmap update rules:
 14. Record release evidence, residual risk, rollback readiness, and the next
     authorized work package in the Roadmap Changelog. Do not promote the next
     milestone until the current completion gate is accepted.
+15. Use `https://doubleacode.com` as the canonical production origin for
+    deployed Connect browser, API, webhook, and release verification. A redirect
+    to `https://www.doubleacode.com` may be observed as hosting behavior, but do
+    not substitute localhost, a preview URL, or another hostname for production
+    acceptance evidence.
 
 `.agents/ChatBot Plan.md` is historical milestone and brainstorming context.
 Do not treat it as the current roadmap when it conflicts with `plan.md`.
