@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { createInternalAdminLoginHandlers } from "@/lib/whatsapp/admin-api-handlers.server";
+import { createInternalAdminLoginHandlers } from "@/features/connect/shared/admin-api-handlers.server";
 
 export const Route = createFileRoute("/api/wa-admin/login")({
   server: {

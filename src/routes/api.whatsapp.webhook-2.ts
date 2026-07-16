@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import process from "node:process";
 
-import { createWhatsAppWebhookHandlers } from "@/lib/whatsapp/webhook-handler.server";
+import { createWhatsAppWebhookHandlers } from "@/features/connect/shared/webhook-handler.server";
 
 const DEFAULT_SECOND_WHATSAPP_BUSINESS_ID = "double-a-partner-test-business";
 

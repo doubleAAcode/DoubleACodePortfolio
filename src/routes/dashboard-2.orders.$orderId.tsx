@@ -1,12 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { OrderDetailsPage } from "./dashboard.orders.$orderId";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard-2/orders/$orderId")({
-  component: DashboardPartnerOrderDetailsRoute,
+  beforeLoad: ({ location }) => {
+    throw redirect({ href: location.href.replace("/dashboard-2", "/connect/dashboard-2") });
+  },
 });
-
-function DashboardPartnerOrderDetailsRoute() {
-  const { orderId } = Route.useParams();
-  return <OrderDetailsPage orderId={orderId} />;
-}

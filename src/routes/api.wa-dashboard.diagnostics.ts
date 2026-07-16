@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { createDashboardDiagnosticsHandlers } from "@/lib/whatsapp/dashboard-api-handlers.server";
+import { createDashboardDiagnosticsHandlers } from "@/features/connect/shared/dashboard-api-handlers.server";
 
 export const Route = createFileRoute("/api/wa-dashboard/diagnostics")({
   server: {

@@ -19,6 +19,7 @@ import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as Dashboard2RouteImport } from './routes/dashboard-2'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
@@ -46,12 +47,19 @@ import { Route as Dashboard2ProductsRouteImport } from './routes/dashboard-2.pro
 import { Route as Dashboard2OrdersRouteImport } from './routes/dashboard-2.orders'
 import { Route as Dashboard2DeliveryRouteImport } from './routes/dashboard-2.delivery'
 import { Route as Dashboard2CategoriesRouteImport } from './routes/dashboard-2.categories'
+import { Route as ConnectLogsRouteImport } from './routes/connect.logs'
+import { Route as ConnectDashboard2RouteImport } from './routes/connect.dashboard-2'
+import { Route as ConnectDashboardRouteImport } from './routes/connect.dashboard'
+import { Route as ConnectAdminRouteImport } from './routes/connect.admin'
 import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
 import { Route as AdminLogsRouteImport } from './routes/admin.logs'
 import { Route as AdminFlowTemplatesRouteImport } from './routes/admin.flow-templates'
 import { Route as AdminBusinessesRouteImport } from './routes/admin.businesses'
 import { Route as AdminAppReviewDemoRouteImport } from './routes/admin.app-review-demo'
 import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
+import { Route as ConnectDashboardIndexRouteImport } from './routes/connect.dashboard.index'
+import { Route as ConnectDashboard2IndexRouteImport } from './routes/connect.dashboard-2.index'
+import { Route as ConnectAdminIndexRouteImport } from './routes/connect.admin.index'
 import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
 import { Route as StoresPavoneCheckoutRouteImport } from './routes/stores/pavone.checkout'
@@ -59,6 +67,23 @@ import { Route as StoresPavoneCartRouteImport } from './routes/stores/pavone.car
 import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
 import { Route as DashboardOrdersOrderIdRouteImport } from './routes/dashboard.orders.$orderId'
 import { Route as Dashboard2OrdersOrderIdRouteImport } from './routes/dashboard-2.orders.$orderId'
+import { Route as ConnectDashboardSimulatorRouteImport } from './routes/connect.dashboard.simulator'
+import { Route as ConnectDashboardSettingsRouteImport } from './routes/connect.dashboard.settings'
+import { Route as ConnectDashboardProductsRouteImport } from './routes/connect.dashboard.products'
+import { Route as ConnectDashboardOrdersRouteImport } from './routes/connect.dashboard.orders'
+import { Route as ConnectDashboardDeliveryRouteImport } from './routes/connect.dashboard.delivery'
+import { Route as ConnectDashboardCategoriesRouteImport } from './routes/connect.dashboard.categories'
+import { Route as ConnectDashboard2SimulatorRouteImport } from './routes/connect.dashboard-2.simulator'
+import { Route as ConnectDashboard2SettingsRouteImport } from './routes/connect.dashboard-2.settings'
+import { Route as ConnectDashboard2ProductsRouteImport } from './routes/connect.dashboard-2.products'
+import { Route as ConnectDashboard2OrdersRouteImport } from './routes/connect.dashboard-2.orders'
+import { Route as ConnectDashboard2DeliveryRouteImport } from './routes/connect.dashboard-2.delivery'
+import { Route as ConnectDashboard2CategoriesRouteImport } from './routes/connect.dashboard-2.categories'
+import { Route as ConnectAdminWhatsappTemplatesRouteImport } from './routes/connect.admin.whatsapp-templates'
+import { Route as ConnectAdminLogsRouteImport } from './routes/connect.admin.logs'
+import { Route as ConnectAdminFlowTemplatesRouteImport } from './routes/connect.admin.flow-templates'
+import { Route as ConnectAdminBusinessesRouteImport } from './routes/connect.admin.businesses'
+import { Route as ConnectAdminAppReviewDemoRouteImport } from './routes/connect.admin.app-review-demo'
 import { Route as ApiWhatsappWebhook2RouteImport } from './routes/api.whatsapp.webhook-2'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
 import { Route as ApiWaDashboardUploadRouteImport } from './routes/api.wa-dashboard.upload'
@@ -101,18 +126,63 @@ import { Route as StoresPavoneAdminLoginRouteImport } from './routes/stores/pavo
 import { Route as StoresPavoneAdminInspirationsRouteImport } from './routes/stores/pavone.admin.inspirations'
 import { Route as StoresPavoneAdminCategoriesRouteImport } from './routes/stores/pavone.admin.categories'
 import { Route as StoresPavoneAdminBrandsRouteImport } from './routes/stores/pavone.admin.brands'
+import { Route as ConnectDashboardOrdersOrderIdRouteImport } from './routes/connect.dashboard.orders.$orderId'
+import { Route as ConnectDashboard2OrdersOrderIdRouteImport } from './routes/connect.dashboard-2.orders.$orderId'
+import { Route as ConnectAdminFlowTemplatesNewRouteImport } from './routes/connect.admin.flow-templates.new'
+import { Route as ConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/connect.admin.flow-templates.$templateId'
+import { Route as ConnectAdminBusinessesNewRouteImport } from './routes/connect.admin.businesses.new'
+import { Route as ConnectAdminBusinessesBusinessIdRouteImport } from './routes/connect.admin.businesses.$businessId'
 import { Route as ApiWaDashboardOrdersOrderIdRouteImport } from './routes/api.wa-dashboard.orders.$orderId'
 import { Route as ApiWaDashboard2OrdersOrderIdRouteImport } from './routes/api.wa-dashboard-2.orders.$orderId'
 import { Route as ApiWaAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.wa-admin.flow-templates.$templateId'
 import { Route as ApiWaAdminBusinessesBusinessIdRouteImport } from './routes/api.wa-admin.businesses.$businessId'
+import { Route as ApiConnectWhatsappWebhookRouteImport } from './routes/api.connect.whatsapp.webhook'
+import { Route as ApiConnectDashboardUploadRouteImport } from './routes/api.connect.dashboard.upload'
+import { Route as ApiConnectDashboardSessionRouteImport } from './routes/api.connect.dashboard.session'
+import { Route as ApiConnectDashboardOrdersRouteImport } from './routes/api.connect.dashboard.orders'
+import { Route as ApiConnectDashboardNotificationsRouteImport } from './routes/api.connect.dashboard.notifications'
+import { Route as ApiConnectDashboardLogoutRouteImport } from './routes/api.connect.dashboard.logout'
+import { Route as ApiConnectDashboardLoginRouteImport } from './routes/api.connect.dashboard.login'
+import { Route as ApiConnectDashboardDiagnosticsRouteImport } from './routes/api.connect.dashboard.diagnostics'
+import { Route as ApiConnectDashboardCatalogRouteImport } from './routes/api.connect.dashboard.catalog'
+import { Route as ApiConnectDashboard2UploadRouteImport } from './routes/api.connect.dashboard-2.upload'
+import { Route as ApiConnectDashboard2SessionRouteImport } from './routes/api.connect.dashboard-2.session'
+import { Route as ApiConnectDashboard2OrdersRouteImport } from './routes/api.connect.dashboard-2.orders'
+import { Route as ApiConnectDashboard2LogoutRouteImport } from './routes/api.connect.dashboard-2.logout'
+import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.connect.dashboard-2.login'
+import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
+import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
+import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
+import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
+import { Route as ApiConnectAdminSendReviewMessageRouteImport } from './routes/api.connect.admin.send-review-message'
+import { Route as ApiConnectAdminReviewConnectionsRouteImport } from './routes/api.connect.admin.review-connections'
+import { Route as ApiConnectAdminOverviewRouteImport } from './routes/api.connect.admin.overview'
+import { Route as ApiConnectAdminMessageEventsRouteImport } from './routes/api.connect.admin.message-events'
+import { Route as ApiConnectAdminLogsRouteImport } from './routes/api.connect.admin.logs'
+import { Route as ApiConnectAdminLogoutRouteImport } from './routes/api.connect.admin.logout'
+import { Route as ApiConnectAdminLoginRouteImport } from './routes/api.connect.admin.login'
+import { Route as ApiConnectAdminFlowTemplatesRouteImport } from './routes/api.connect.admin.flow-templates'
+import { Route as ApiConnectAdminBusinessesRouteImport } from './routes/api.connect.admin.businesses'
 import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
 import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
 import { Route as AdminBusinessesBusinessIdCategoriesRouteImport } from './routes/admin.businesses.$businessId.categories'
 import { Route as AdminBusinessesBusinessIdCatalogRoutesRouteImport } from './routes/admin.businesses.$businessId.catalog-routes'
 import { Route as AdminBusinessesBusinessIdCatalogRouteValuesRouteImport } from './routes/admin.businesses.$businessId.catalog-route-values'
+import { Route as ConnectAdminBusinessesBusinessIdProductsRouteImport } from './routes/connect.admin.businesses.$businessId.products'
+import { Route as ConnectAdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/connect.admin.businesses.$businessId.flow-builder'
+import { Route as ConnectAdminBusinessesBusinessIdCategoriesRouteImport } from './routes/connect.admin.businesses.$businessId.categories'
+import { Route as ConnectAdminBusinessesBusinessIdCatalogRoutesRouteImport } from './routes/connect.admin.businesses.$businessId.catalog-routes'
+import { Route as ConnectAdminBusinessesBusinessIdCatalogRouteValuesRouteImport } from './routes/connect.admin.businesses.$businessId.catalog-route-values'
 import { Route as ApiWaAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow-image'
 import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
+import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/api.connect.dashboard.orders.$orderId'
+import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
+import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
+import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
+import { Route as ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/connect.admin.flow-templates.$templateId.versions.$versionId'
+import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
+import { Route as ApiConnectAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -162,6 +232,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectRoute = ConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -299,6 +374,26 @@ const Dashboard2CategoriesRoute = Dashboard2CategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => Dashboard2Route,
 } as any)
+const ConnectLogsRoute = ConnectLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectDashboard2Route = ConnectDashboard2RouteImport.update({
+  id: '/dashboard-2',
+  path: '/dashboard-2',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectDashboardRoute = ConnectDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectAdminRoute = ConnectAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ConnectRoute,
+} as any)
 const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
   id: '/whatsapp-templates',
   path: '/whatsapp-templates',
@@ -328,6 +423,21 @@ const StoresPavoneIndexRoute = StoresPavoneIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => StoresPavoneRoute,
+} as any)
+const ConnectDashboardIndexRoute = ConnectDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectDashboardRoute,
+} as any)
+const ConnectDashboard2IndexRoute = ConnectDashboard2IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectDashboard2Route,
+} as any)
+const ConnectAdminIndexRoute = ConnectAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectAdminRoute,
 } as any)
 const StoresPavoneWishlistRoute = StoresPavoneWishlistRouteImport.update({
   id: '/wishlist',
@@ -364,6 +474,104 @@ const Dashboard2OrdersOrderIdRoute = Dashboard2OrdersOrderIdRouteImport.update({
   path: '/$orderId',
   getParentRoute: () => Dashboard2OrdersRoute,
 } as any)
+const ConnectDashboardSimulatorRoute =
+  ConnectDashboardSimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardSettingsRoute =
+  ConnectDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardProductsRoute =
+  ConnectDashboardProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardOrdersRoute = ConnectDashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => ConnectDashboardRoute,
+} as any)
+const ConnectDashboardDeliveryRoute =
+  ConnectDashboardDeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardCategoriesRoute =
+  ConnectDashboardCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboard2SimulatorRoute =
+  ConnectDashboard2SimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2SettingsRoute =
+  ConnectDashboard2SettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2ProductsRoute =
+  ConnectDashboard2ProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2OrdersRoute = ConnectDashboard2OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => ConnectDashboard2Route,
+} as any)
+const ConnectDashboard2DeliveryRoute =
+  ConnectDashboard2DeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2CategoriesRoute =
+  ConnectDashboard2CategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectAdminWhatsappTemplatesRoute =
+  ConnectAdminWhatsappTemplatesRouteImport.update({
+    id: '/whatsapp-templates',
+    path: '/whatsapp-templates',
+    getParentRoute: () => ConnectAdminRoute,
+  } as any)
+const ConnectAdminLogsRoute = ConnectAdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminFlowTemplatesRoute =
+  ConnectAdminFlowTemplatesRouteImport.update({
+    id: '/flow-templates',
+    path: '/flow-templates',
+    getParentRoute: () => ConnectAdminRoute,
+  } as any)
+const ConnectAdminBusinessesRoute = ConnectAdminBusinessesRouteImport.update({
+  id: '/businesses',
+  path: '/businesses',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminAppReviewDemoRoute =
+  ConnectAdminAppReviewDemoRouteImport.update({
+    id: '/app-review-demo',
+    path: '/app-review-demo',
+    getParentRoute: () => ConnectAdminRoute,
+  } as any)
 const ApiWhatsappWebhook2Route = ApiWhatsappWebhook2RouteImport.update({
   id: '/api/whatsapp/webhook-2',
   path: '/api/whatsapp/webhook-2',
@@ -587,6 +795,42 @@ const StoresPavoneAdminBrandsRoute = StoresPavoneAdminBrandsRouteImport.update({
   path: '/brands',
   getParentRoute: () => StoresPavoneAdminRoute,
 } as any)
+const ConnectDashboardOrdersOrderIdRoute =
+  ConnectDashboardOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ConnectDashboardOrdersRoute,
+  } as any)
+const ConnectDashboard2OrdersOrderIdRoute =
+  ConnectDashboard2OrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ConnectDashboard2OrdersRoute,
+  } as any)
+const ConnectAdminFlowTemplatesNewRoute =
+  ConnectAdminFlowTemplatesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => ConnectAdminFlowTemplatesRoute,
+  } as any)
+const ConnectAdminFlowTemplatesTemplateIdRoute =
+  ConnectAdminFlowTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => ConnectAdminFlowTemplatesRoute,
+  } as any)
+const ConnectAdminBusinessesNewRoute =
+  ConnectAdminBusinessesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => ConnectAdminBusinessesRoute,
+  } as any)
+const ConnectAdminBusinessesBusinessIdRoute =
+  ConnectAdminBusinessesBusinessIdRouteImport.update({
+    id: '/$businessId',
+    path: '/$businessId',
+    getParentRoute: () => ConnectAdminBusinessesRoute,
+  } as any)
 const ApiWaDashboardOrdersOrderIdRoute =
   ApiWaDashboardOrdersOrderIdRouteImport.update({
     id: '/$orderId',
@@ -610,6 +854,163 @@ const ApiWaAdminBusinessesBusinessIdRoute =
     id: '/$businessId',
     path: '/$businessId',
     getParentRoute: () => ApiWaAdminBusinessesRoute,
+  } as any)
+const ApiConnectWhatsappWebhookRoute =
+  ApiConnectWhatsappWebhookRouteImport.update({
+    id: '/api/connect/whatsapp/webhook',
+    path: '/api/connect/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardUploadRoute =
+  ApiConnectDashboardUploadRouteImport.update({
+    id: '/api/connect/dashboard/upload',
+    path: '/api/connect/dashboard/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardSessionRoute =
+  ApiConnectDashboardSessionRouteImport.update({
+    id: '/api/connect/dashboard/session',
+    path: '/api/connect/dashboard/session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardOrdersRoute =
+  ApiConnectDashboardOrdersRouteImport.update({
+    id: '/api/connect/dashboard/orders',
+    path: '/api/connect/dashboard/orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardNotificationsRoute =
+  ApiConnectDashboardNotificationsRouteImport.update({
+    id: '/api/connect/dashboard/notifications',
+    path: '/api/connect/dashboard/notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardLogoutRoute =
+  ApiConnectDashboardLogoutRouteImport.update({
+    id: '/api/connect/dashboard/logout',
+    path: '/api/connect/dashboard/logout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardLoginRoute =
+  ApiConnectDashboardLoginRouteImport.update({
+    id: '/api/connect/dashboard/login',
+    path: '/api/connect/dashboard/login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardDiagnosticsRoute =
+  ApiConnectDashboardDiagnosticsRouteImport.update({
+    id: '/api/connect/dashboard/diagnostics',
+    path: '/api/connect/dashboard/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardCatalogRoute =
+  ApiConnectDashboardCatalogRouteImport.update({
+    id: '/api/connect/dashboard/catalog',
+    path: '/api/connect/dashboard/catalog',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2UploadRoute =
+  ApiConnectDashboard2UploadRouteImport.update({
+    id: '/api/connect/dashboard-2/upload',
+    path: '/api/connect/dashboard-2/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2SessionRoute =
+  ApiConnectDashboard2SessionRouteImport.update({
+    id: '/api/connect/dashboard-2/session',
+    path: '/api/connect/dashboard-2/session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2OrdersRoute =
+  ApiConnectDashboard2OrdersRouteImport.update({
+    id: '/api/connect/dashboard-2/orders',
+    path: '/api/connect/dashboard-2/orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2LogoutRoute =
+  ApiConnectDashboard2LogoutRouteImport.update({
+    id: '/api/connect/dashboard-2/logout',
+    path: '/api/connect/dashboard-2/logout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2LoginRoute =
+  ApiConnectDashboard2LoginRouteImport.update({
+    id: '/api/connect/dashboard-2/login',
+    path: '/api/connect/dashboard-2/login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2DiagnosticsRoute =
+  ApiConnectDashboard2DiagnosticsRouteImport.update({
+    id: '/api/connect/dashboard-2/diagnostics',
+    path: '/api/connect/dashboard-2/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2CatalogRoute =
+  ApiConnectDashboard2CatalogRouteImport.update({
+    id: '/api/connect/dashboard-2/catalog',
+    path: '/api/connect/dashboard-2/catalog',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminWhatsappTemplatesRoute =
+  ApiConnectAdminWhatsappTemplatesRouteImport.update({
+    id: '/api/connect/admin/whatsapp-templates',
+    path: '/api/connect/admin/whatsapp-templates',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminSessionRoute = ApiConnectAdminSessionRouteImport.update({
+  id: '/api/connect/admin/session',
+  path: '/api/connect/admin/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminSendReviewMessageRoute =
+  ApiConnectAdminSendReviewMessageRouteImport.update({
+    id: '/api/connect/admin/send-review-message',
+    path: '/api/connect/admin/send-review-message',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminReviewConnectionsRoute =
+  ApiConnectAdminReviewConnectionsRouteImport.update({
+    id: '/api/connect/admin/review-connections',
+    path: '/api/connect/admin/review-connections',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminOverviewRoute = ApiConnectAdminOverviewRouteImport.update({
+  id: '/api/connect/admin/overview',
+  path: '/api/connect/admin/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminMessageEventsRoute =
+  ApiConnectAdminMessageEventsRouteImport.update({
+    id: '/api/connect/admin/message-events',
+    path: '/api/connect/admin/message-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminLogsRoute = ApiConnectAdminLogsRouteImport.update({
+  id: '/api/connect/admin/logs',
+  path: '/api/connect/admin/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminLogoutRoute = ApiConnectAdminLogoutRouteImport.update({
+  id: '/api/connect/admin/logout',
+  path: '/api/connect/admin/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminLoginRoute = ApiConnectAdminLoginRouteImport.update({
+  id: '/api/connect/admin/login',
+  path: '/api/connect/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminFlowTemplatesRoute =
+  ApiConnectAdminFlowTemplatesRouteImport.update({
+    id: '/api/connect/admin/flow-templates',
+    path: '/api/connect/admin/flow-templates',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminBusinessesRoute =
+  ApiConnectAdminBusinessesRouteImport.update({
+    id: '/api/connect/admin/businesses',
+    path: '/api/connect/admin/businesses',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdminBusinessesBusinessIdProductsRoute =
   AdminBusinessesBusinessIdProductsRouteImport.update({
@@ -641,6 +1042,36 @@ const AdminBusinessesBusinessIdCatalogRouteValuesRoute =
     path: '/catalog-route-values',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
+const ConnectAdminBusinessesBusinessIdProductsRoute =
+  ConnectAdminBusinessesBusinessIdProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => ConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ConnectAdminBusinessesBusinessIdFlowBuilderRoute =
+  ConnectAdminBusinessesBusinessIdFlowBuilderRouteImport.update({
+    id: '/flow-builder',
+    path: '/flow-builder',
+    getParentRoute: () => ConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ConnectAdminBusinessesBusinessIdCategoriesRoute =
+  ConnectAdminBusinessesBusinessIdCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => ConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ConnectAdminBusinessesBusinessIdCatalogRoutesRoute =
+  ConnectAdminBusinessesBusinessIdCatalogRoutesRouteImport.update({
+    id: '/catalog-routes',
+    path: '/catalog-routes',
+    getParentRoute: () => ConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute =
+  ConnectAdminBusinessesBusinessIdCatalogRouteValuesRouteImport.update({
+    id: '/catalog-route-values',
+    path: '/catalog-route-values',
+    getParentRoute: () => ConnectAdminBusinessesBusinessIdRoute,
+  } as any)
 const ApiWaAdminBusinessesBusinessIdFlowImageRoute =
   ApiWaAdminBusinessesBusinessIdFlowImageRouteImport.update({
     id: '/flow-image',
@@ -653,16 +1084,59 @@ const ApiWaAdminBusinessesBusinessIdFlowRoute =
     path: '/flow',
     getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
   } as any)
+const ApiConnectDashboardOrdersOrderIdRoute =
+  ApiConnectDashboardOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiConnectDashboardOrdersRoute,
+  } as any)
+const ApiConnectDashboard2OrdersOrderIdRoute =
+  ApiConnectDashboard2OrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiConnectDashboard2OrdersRoute,
+  } as any)
+const ApiConnectAdminFlowTemplatesTemplateIdRoute =
+  ApiConnectAdminFlowTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => ApiConnectAdminFlowTemplatesRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdRoute =
+  ApiConnectAdminBusinessesBusinessIdRouteImport.update({
+    id: '/$businessId',
+    path: '/$businessId',
+    getParentRoute: () => ApiConnectAdminBusinessesRoute,
+  } as any)
 const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
   AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport.update({
     id: '/versions/$versionId',
     path: '/versions/$versionId',
     getParentRoute: () => AdminFlowTemplatesTemplateIdRoute,
   } as any)
+const ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
+  ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport.update({
+    id: '/versions/$versionId',
+    path: '/versions/$versionId',
+    getParentRoute: () => ConnectAdminFlowTemplatesTemplateIdRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdFlowImageRoute =
+  ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport.update({
+    id: '/flow-image',
+    path: '/flow-image',
+    getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdFlowRoute =
+  ApiConnectAdminBusinessesBusinessIdFlowRouteImport.update({
+    id: '/flow',
+    path: '/flow',
+    getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/connect': typeof ConnectRouteWithChildren
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
@@ -678,6 +1152,10 @@ export interface FileRoutesByFullPath {
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
   '/admin/logs': typeof AdminLogsRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
+  '/connect/admin': typeof ConnectAdminRouteWithChildren
+  '/connect/dashboard': typeof ConnectDashboardRouteWithChildren
+  '/connect/dashboard-2': typeof ConnectDashboard2RouteWithChildren
+  '/connect/logs': typeof ConnectLogsRoute
   '/dashboard-2/categories': typeof Dashboard2CategoriesRoute
   '/dashboard-2/delivery': typeof Dashboard2DeliveryRoute
   '/dashboard-2/orders': typeof Dashboard2OrdersRouteWithChildren
@@ -735,6 +1213,23 @@ export interface FileRoutesByFullPath {
   '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/api/whatsapp/webhook-2': typeof ApiWhatsappWebhook2Route
+  '/connect/admin/app-review-demo': typeof ConnectAdminAppReviewDemoRoute
+  '/connect/admin/businesses': typeof ConnectAdminBusinessesRouteWithChildren
+  '/connect/admin/flow-templates': typeof ConnectAdminFlowTemplatesRouteWithChildren
+  '/connect/admin/logs': typeof ConnectAdminLogsRoute
+  '/connect/admin/whatsapp-templates': typeof ConnectAdminWhatsappTemplatesRoute
+  '/connect/dashboard-2/categories': typeof ConnectDashboard2CategoriesRoute
+  '/connect/dashboard-2/delivery': typeof ConnectDashboard2DeliveryRoute
+  '/connect/dashboard-2/orders': typeof ConnectDashboard2OrdersRouteWithChildren
+  '/connect/dashboard-2/products': typeof ConnectDashboard2ProductsRoute
+  '/connect/dashboard-2/settings': typeof ConnectDashboard2SettingsRoute
+  '/connect/dashboard-2/simulator': typeof ConnectDashboard2SimulatorRoute
+  '/connect/dashboard/categories': typeof ConnectDashboardCategoriesRoute
+  '/connect/dashboard/delivery': typeof ConnectDashboardDeliveryRoute
+  '/connect/dashboard/orders': typeof ConnectDashboardOrdersRouteWithChildren
+  '/connect/dashboard/products': typeof ConnectDashboardProductsRoute
+  '/connect/dashboard/settings': typeof ConnectDashboardSettingsRoute
+  '/connect/dashboard/simulator': typeof ConnectDashboardSimulatorRoute
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
@@ -742,16 +1237,52 @@ export interface FileRoutesByFullPath {
   '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
+  '/connect/admin/': typeof ConnectAdminIndexRoute
+  '/connect/dashboard-2/': typeof ConnectDashboard2IndexRoute
+  '/connect/dashboard/': typeof ConnectDashboardIndexRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
   '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
   '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
+  '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
+  '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
+  '/api/connect/admin/message-events': typeof ApiConnectAdminMessageEventsRoute
+  '/api/connect/admin/overview': typeof ApiConnectAdminOverviewRoute
+  '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
+  '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
+  '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
+  '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
+  '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
+  '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
+  '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
+  '/api/connect/dashboard-2/session': typeof ApiConnectDashboard2SessionRoute
+  '/api/connect/dashboard-2/upload': typeof ApiConnectDashboard2UploadRoute
+  '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
+  '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
+  '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
+  '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
+  '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
+  '/api/connect/dashboard/orders': typeof ApiConnectDashboardOrdersRouteWithChildren
+  '/api/connect/dashboard/session': typeof ApiConnectDashboardSessionRoute
+  '/api/connect/dashboard/upload': typeof ApiConnectDashboardUploadRoute
+  '/api/connect/whatsapp/webhook': typeof ApiConnectWhatsappWebhookRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/connect/admin/businesses/$businessId': typeof ConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/connect/admin/businesses/new': typeof ConnectAdminBusinessesNewRoute
+  '/connect/admin/flow-templates/$templateId': typeof ConnectAdminFlowTemplatesTemplateIdRouteWithChildren
+  '/connect/admin/flow-templates/new': typeof ConnectAdminFlowTemplatesNewRoute
+  '/connect/dashboard-2/orders/$orderId': typeof ConnectDashboard2OrdersOrderIdRoute
+  '/connect/dashboard/orders/$orderId': typeof ConnectDashboardOrdersOrderIdRoute
   '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
@@ -763,11 +1294,24 @@ export interface FileRoutesByFullPath {
   '/stores/pavone/product/$slug': typeof StoresPavoneProductSlugRoute
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
+  '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
+  '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/businesses/$businessId/catalog-route-values': typeof ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute
+  '/connect/admin/businesses/$businessId/catalog-routes': typeof ConnectAdminBusinessesBusinessIdCatalogRoutesRoute
+  '/connect/admin/businesses/$businessId/categories': typeof ConnectAdminBusinessesBusinessIdCategoriesRoute
+  '/connect/admin/businesses/$businessId/flow-builder': typeof ConnectAdminBusinessesBusinessIdFlowBuilderRoute
+  '/connect/admin/businesses/$businessId/products': typeof ConnectAdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
+  '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/flow-templates/$templateId/versions/$versionId': typeof ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/connect': typeof ConnectRouteWithChildren
   '/contact': typeof ContactRoute
   '/data-deletion': typeof DataDeletionRoute
   '/logsWABot': typeof LogsWABotRoute
@@ -780,6 +1324,7 @@ export interface FileRoutesByTo {
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
   '/admin/logs': typeof AdminLogsRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
+  '/connect/logs': typeof ConnectLogsRoute
   '/dashboard-2/categories': typeof Dashboard2CategoriesRoute
   '/dashboard-2/delivery': typeof Dashboard2DeliveryRoute
   '/dashboard-2/orders': typeof Dashboard2OrdersRouteWithChildren
@@ -836,22 +1381,75 @@ export interface FileRoutesByTo {
   '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/api/whatsapp/webhook-2': typeof ApiWhatsappWebhook2Route
+  '/connect/admin/app-review-demo': typeof ConnectAdminAppReviewDemoRoute
+  '/connect/admin/businesses': typeof ConnectAdminBusinessesRouteWithChildren
+  '/connect/admin/flow-templates': typeof ConnectAdminFlowTemplatesRouteWithChildren
+  '/connect/admin/logs': typeof ConnectAdminLogsRoute
+  '/connect/admin/whatsapp-templates': typeof ConnectAdminWhatsappTemplatesRoute
+  '/connect/dashboard-2/categories': typeof ConnectDashboard2CategoriesRoute
+  '/connect/dashboard-2/delivery': typeof ConnectDashboard2DeliveryRoute
+  '/connect/dashboard-2/orders': typeof ConnectDashboard2OrdersRouteWithChildren
+  '/connect/dashboard-2/products': typeof ConnectDashboard2ProductsRoute
+  '/connect/dashboard-2/settings': typeof ConnectDashboard2SettingsRoute
+  '/connect/dashboard-2/simulator': typeof ConnectDashboard2SimulatorRoute
+  '/connect/dashboard/categories': typeof ConnectDashboardCategoriesRoute
+  '/connect/dashboard/delivery': typeof ConnectDashboardDeliveryRoute
+  '/connect/dashboard/orders': typeof ConnectDashboardOrdersRouteWithChildren
+  '/connect/dashboard/products': typeof ConnectDashboardProductsRoute
+  '/connect/dashboard/settings': typeof ConnectDashboardSettingsRoute
+  '/connect/dashboard/simulator': typeof ConnectDashboardSimulatorRoute
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
   '/stores/pavone/cart': typeof StoresPavoneCartRoute
   '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
+  '/connect/admin': typeof ConnectAdminIndexRoute
+  '/connect/dashboard-2': typeof ConnectDashboard2IndexRoute
+  '/connect/dashboard': typeof ConnectDashboardIndexRoute
   '/stores/pavone': typeof StoresPavoneIndexRoute
   '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
   '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
+  '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
+  '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
+  '/api/connect/admin/message-events': typeof ApiConnectAdminMessageEventsRoute
+  '/api/connect/admin/overview': typeof ApiConnectAdminOverviewRoute
+  '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
+  '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
+  '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
+  '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
+  '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
+  '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
+  '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
+  '/api/connect/dashboard-2/session': typeof ApiConnectDashboard2SessionRoute
+  '/api/connect/dashboard-2/upload': typeof ApiConnectDashboard2UploadRoute
+  '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
+  '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
+  '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
+  '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
+  '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
+  '/api/connect/dashboard/orders': typeof ApiConnectDashboardOrdersRouteWithChildren
+  '/api/connect/dashboard/session': typeof ApiConnectDashboardSessionRoute
+  '/api/connect/dashboard/upload': typeof ApiConnectDashboardUploadRoute
+  '/api/connect/whatsapp/webhook': typeof ApiConnectWhatsappWebhookRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/connect/admin/businesses/$businessId': typeof ConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/connect/admin/businesses/new': typeof ConnectAdminBusinessesNewRoute
+  '/connect/admin/flow-templates/$templateId': typeof ConnectAdminFlowTemplatesTemplateIdRouteWithChildren
+  '/connect/admin/flow-templates/new': typeof ConnectAdminFlowTemplatesNewRoute
+  '/connect/dashboard-2/orders/$orderId': typeof ConnectDashboard2OrdersOrderIdRoute
+  '/connect/dashboard/orders/$orderId': typeof ConnectDashboardOrdersOrderIdRoute
   '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
@@ -863,13 +1461,26 @@ export interface FileRoutesByTo {
   '/stores/pavone/product/$slug': typeof StoresPavoneProductSlugRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
+  '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
+  '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/businesses/$businessId/catalog-route-values': typeof ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute
+  '/connect/admin/businesses/$businessId/catalog-routes': typeof ConnectAdminBusinessesBusinessIdCatalogRoutesRoute
+  '/connect/admin/businesses/$businessId/categories': typeof ConnectAdminBusinessesBusinessIdCategoriesRoute
+  '/connect/admin/businesses/$businessId/flow-builder': typeof ConnectAdminBusinessesBusinessIdFlowBuilderRoute
+  '/connect/admin/businesses/$businessId/products': typeof ConnectAdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
+  '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/flow-templates/$templateId/versions/$versionId': typeof ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/connect': typeof ConnectRouteWithChildren
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
@@ -885,6 +1496,10 @@ export interface FileRoutesById {
   '/admin/flow-templates': typeof AdminFlowTemplatesRouteWithChildren
   '/admin/logs': typeof AdminLogsRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
+  '/connect/admin': typeof ConnectAdminRouteWithChildren
+  '/connect/dashboard': typeof ConnectDashboardRouteWithChildren
+  '/connect/dashboard-2': typeof ConnectDashboard2RouteWithChildren
+  '/connect/logs': typeof ConnectLogsRoute
   '/dashboard-2/categories': typeof Dashboard2CategoriesRoute
   '/dashboard-2/delivery': typeof Dashboard2DeliveryRoute
   '/dashboard-2/orders': typeof Dashboard2OrdersRouteWithChildren
@@ -942,6 +1557,23 @@ export interface FileRoutesById {
   '/api/wa-dashboard/upload': typeof ApiWaDashboardUploadRoute
   '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
   '/api/whatsapp/webhook-2': typeof ApiWhatsappWebhook2Route
+  '/connect/admin/app-review-demo': typeof ConnectAdminAppReviewDemoRoute
+  '/connect/admin/businesses': typeof ConnectAdminBusinessesRouteWithChildren
+  '/connect/admin/flow-templates': typeof ConnectAdminFlowTemplatesRouteWithChildren
+  '/connect/admin/logs': typeof ConnectAdminLogsRoute
+  '/connect/admin/whatsapp-templates': typeof ConnectAdminWhatsappTemplatesRoute
+  '/connect/dashboard-2/categories': typeof ConnectDashboard2CategoriesRoute
+  '/connect/dashboard-2/delivery': typeof ConnectDashboard2DeliveryRoute
+  '/connect/dashboard-2/orders': typeof ConnectDashboard2OrdersRouteWithChildren
+  '/connect/dashboard-2/products': typeof ConnectDashboard2ProductsRoute
+  '/connect/dashboard-2/settings': typeof ConnectDashboard2SettingsRoute
+  '/connect/dashboard-2/simulator': typeof ConnectDashboard2SimulatorRoute
+  '/connect/dashboard/categories': typeof ConnectDashboardCategoriesRoute
+  '/connect/dashboard/delivery': typeof ConnectDashboardDeliveryRoute
+  '/connect/dashboard/orders': typeof ConnectDashboardOrdersRouteWithChildren
+  '/connect/dashboard/products': typeof ConnectDashboardProductsRoute
+  '/connect/dashboard/settings': typeof ConnectDashboardSettingsRoute
+  '/connect/dashboard/simulator': typeof ConnectDashboardSimulatorRoute
   '/dashboard-2/orders/$orderId': typeof Dashboard2OrdersOrderIdRoute
   '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
   '/stores/pavone/admin': typeof StoresPavoneAdminRouteWithChildren
@@ -949,16 +1581,52 @@ export interface FileRoutesById {
   '/stores/pavone/checkout': typeof StoresPavoneCheckoutRoute
   '/stores/pavone/shop': typeof StoresPavoneShopRoute
   '/stores/pavone/wishlist': typeof StoresPavoneWishlistRoute
+  '/connect/admin/': typeof ConnectAdminIndexRoute
+  '/connect/dashboard-2/': typeof ConnectDashboard2IndexRoute
+  '/connect/dashboard/': typeof ConnectDashboardIndexRoute
   '/stores/pavone/': typeof StoresPavoneIndexRoute
   '/admin/businesses/$businessId/catalog-route-values': typeof AdminBusinessesBusinessIdCatalogRouteValuesRoute
   '/admin/businesses/$businessId/catalog-routes': typeof AdminBusinessesBusinessIdCatalogRoutesRoute
   '/admin/businesses/$businessId/categories': typeof AdminBusinessesBusinessIdCategoriesRoute
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
+  '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
+  '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
+  '/api/connect/admin/message-events': typeof ApiConnectAdminMessageEventsRoute
+  '/api/connect/admin/overview': typeof ApiConnectAdminOverviewRoute
+  '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
+  '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
+  '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
+  '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
+  '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
+  '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
+  '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
+  '/api/connect/dashboard-2/session': typeof ApiConnectDashboard2SessionRoute
+  '/api/connect/dashboard-2/upload': typeof ApiConnectDashboard2UploadRoute
+  '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
+  '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
+  '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
+  '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
+  '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
+  '/api/connect/dashboard/orders': typeof ApiConnectDashboardOrdersRouteWithChildren
+  '/api/connect/dashboard/session': typeof ApiConnectDashboardSessionRoute
+  '/api/connect/dashboard/upload': typeof ApiConnectDashboardUploadRoute
+  '/api/connect/whatsapp/webhook': typeof ApiConnectWhatsappWebhookRoute
   '/api/wa-admin/businesses/$businessId': typeof ApiWaAdminBusinessesBusinessIdRouteWithChildren
   '/api/wa-admin/flow-templates/$templateId': typeof ApiWaAdminFlowTemplatesTemplateIdRoute
   '/api/wa-dashboard-2/orders/$orderId': typeof ApiWaDashboard2OrdersOrderIdRoute
   '/api/wa-dashboard/orders/$orderId': typeof ApiWaDashboardOrdersOrderIdRoute
+  '/connect/admin/businesses/$businessId': typeof ConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/connect/admin/businesses/new': typeof ConnectAdminBusinessesNewRoute
+  '/connect/admin/flow-templates/$templateId': typeof ConnectAdminFlowTemplatesTemplateIdRouteWithChildren
+  '/connect/admin/flow-templates/new': typeof ConnectAdminFlowTemplatesNewRoute
+  '/connect/dashboard-2/orders/$orderId': typeof ConnectDashboard2OrdersOrderIdRoute
+  '/connect/dashboard/orders/$orderId': typeof ConnectDashboardOrdersOrderIdRoute
   '/stores/pavone/admin/brands': typeof StoresPavoneAdminBrandsRoute
   '/stores/pavone/admin/categories': typeof StoresPavoneAdminCategoriesRoute
   '/stores/pavone/admin/inspirations': typeof StoresPavoneAdminInspirationsRoute
@@ -970,14 +1638,27 @@ export interface FileRoutesById {
   '/stores/pavone/product/$slug': typeof StoresPavoneProductSlugRoute
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
+  '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
+  '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/businesses/$businessId/catalog-route-values': typeof ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute
+  '/connect/admin/businesses/$businessId/catalog-routes': typeof ConnectAdminBusinessesBusinessIdCatalogRoutesRoute
+  '/connect/admin/businesses/$businessId/categories': typeof ConnectAdminBusinessesBusinessIdCategoriesRoute
+  '/connect/admin/businesses/$businessId/flow-builder': typeof ConnectAdminBusinessesBusinessIdFlowBuilderRoute
+  '/connect/admin/businesses/$businessId/products': typeof ConnectAdminBusinessesBusinessIdProductsRoute
+  '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
+  '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/connect/admin/flow-templates/$templateId/versions/$versionId': typeof ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/connect'
     | '/contact'
     | '/dashboard'
     | '/dashboard-2'
@@ -993,6 +1674,10 @@ export interface FileRouteTypes {
     | '/admin/flow-templates'
     | '/admin/logs'
     | '/admin/whatsapp-templates'
+    | '/connect/admin'
+    | '/connect/dashboard'
+    | '/connect/dashboard-2'
+    | '/connect/logs'
     | '/dashboard-2/categories'
     | '/dashboard-2/delivery'
     | '/dashboard-2/orders'
@@ -1050,6 +1735,23 @@ export interface FileRouteTypes {
     | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/api/whatsapp/webhook-2'
+    | '/connect/admin/app-review-demo'
+    | '/connect/admin/businesses'
+    | '/connect/admin/flow-templates'
+    | '/connect/admin/logs'
+    | '/connect/admin/whatsapp-templates'
+    | '/connect/dashboard-2/categories'
+    | '/connect/dashboard-2/delivery'
+    | '/connect/dashboard-2/orders'
+    | '/connect/dashboard-2/products'
+    | '/connect/dashboard-2/settings'
+    | '/connect/dashboard-2/simulator'
+    | '/connect/dashboard/categories'
+    | '/connect/dashboard/delivery'
+    | '/connect/dashboard/orders'
+    | '/connect/dashboard/products'
+    | '/connect/dashboard/settings'
+    | '/connect/dashboard/simulator'
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
     | '/stores/pavone/admin'
@@ -1057,16 +1759,52 @@ export interface FileRouteTypes {
     | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
+    | '/connect/admin/'
+    | '/connect/dashboard-2/'
+    | '/connect/dashboard/'
     | '/stores/pavone/'
     | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
     | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses'
+    | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/login'
+    | '/api/connect/admin/logout'
+    | '/api/connect/admin/logs'
+    | '/api/connect/admin/message-events'
+    | '/api/connect/admin/overview'
+    | '/api/connect/admin/review-connections'
+    | '/api/connect/admin/send-review-message'
+    | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/dashboard-2/catalog'
+    | '/api/connect/dashboard-2/diagnostics'
+    | '/api/connect/dashboard-2/login'
+    | '/api/connect/dashboard-2/logout'
+    | '/api/connect/dashboard-2/orders'
+    | '/api/connect/dashboard-2/session'
+    | '/api/connect/dashboard-2/upload'
+    | '/api/connect/dashboard/catalog'
+    | '/api/connect/dashboard/diagnostics'
+    | '/api/connect/dashboard/login'
+    | '/api/connect/dashboard/logout'
+    | '/api/connect/dashboard/notifications'
+    | '/api/connect/dashboard/orders'
+    | '/api/connect/dashboard/session'
+    | '/api/connect/dashboard/upload'
+    | '/api/connect/whatsapp/webhook'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/connect/admin/businesses/$businessId'
+    | '/connect/admin/businesses/new'
+    | '/connect/admin/flow-templates/$templateId'
+    | '/connect/admin/flow-templates/new'
+    | '/connect/dashboard-2/orders/$orderId'
+    | '/connect/dashboard/orders/$orderId'
     | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
@@ -1078,11 +1816,24 @@ export interface FileRouteTypes {
     | '/stores/pavone/product/$slug'
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
+    | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/dashboard-2/orders/$orderId'
+    | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/connect/admin/businesses/$businessId/catalog-route-values'
+    | '/connect/admin/businesses/$businessId/catalog-routes'
+    | '/connect/admin/businesses/$businessId/categories'
+    | '/connect/admin/businesses/$businessId/flow-builder'
+    | '/connect/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses/$businessId/flow'
+    | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/connect/admin/flow-templates/$templateId/versions/$versionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/connect'
     | '/contact'
     | '/data-deletion'
     | '/logsWABot'
@@ -1095,6 +1846,7 @@ export interface FileRouteTypes {
     | '/admin/flow-templates'
     | '/admin/logs'
     | '/admin/whatsapp-templates'
+    | '/connect/logs'
     | '/dashboard-2/categories'
     | '/dashboard-2/delivery'
     | '/dashboard-2/orders'
@@ -1151,22 +1903,75 @@ export interface FileRouteTypes {
     | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/api/whatsapp/webhook-2'
+    | '/connect/admin/app-review-demo'
+    | '/connect/admin/businesses'
+    | '/connect/admin/flow-templates'
+    | '/connect/admin/logs'
+    | '/connect/admin/whatsapp-templates'
+    | '/connect/dashboard-2/categories'
+    | '/connect/dashboard-2/delivery'
+    | '/connect/dashboard-2/orders'
+    | '/connect/dashboard-2/products'
+    | '/connect/dashboard-2/settings'
+    | '/connect/dashboard-2/simulator'
+    | '/connect/dashboard/categories'
+    | '/connect/dashboard/delivery'
+    | '/connect/dashboard/orders'
+    | '/connect/dashboard/products'
+    | '/connect/dashboard/settings'
+    | '/connect/dashboard/simulator'
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
     | '/stores/pavone/cart'
     | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
+    | '/connect/admin'
+    | '/connect/dashboard-2'
+    | '/connect/dashboard'
     | '/stores/pavone'
     | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
     | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses'
+    | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/login'
+    | '/api/connect/admin/logout'
+    | '/api/connect/admin/logs'
+    | '/api/connect/admin/message-events'
+    | '/api/connect/admin/overview'
+    | '/api/connect/admin/review-connections'
+    | '/api/connect/admin/send-review-message'
+    | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/dashboard-2/catalog'
+    | '/api/connect/dashboard-2/diagnostics'
+    | '/api/connect/dashboard-2/login'
+    | '/api/connect/dashboard-2/logout'
+    | '/api/connect/dashboard-2/orders'
+    | '/api/connect/dashboard-2/session'
+    | '/api/connect/dashboard-2/upload'
+    | '/api/connect/dashboard/catalog'
+    | '/api/connect/dashboard/diagnostics'
+    | '/api/connect/dashboard/login'
+    | '/api/connect/dashboard/logout'
+    | '/api/connect/dashboard/notifications'
+    | '/api/connect/dashboard/orders'
+    | '/api/connect/dashboard/session'
+    | '/api/connect/dashboard/upload'
+    | '/api/connect/whatsapp/webhook'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/connect/admin/businesses/$businessId'
+    | '/connect/admin/businesses/new'
+    | '/connect/admin/flow-templates/$templateId'
+    | '/connect/admin/flow-templates/new'
+    | '/connect/dashboard-2/orders/$orderId'
+    | '/connect/dashboard/orders/$orderId'
     | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
@@ -1178,12 +1983,25 @@ export interface FileRouteTypes {
     | '/stores/pavone/product/$slug'
     | '/stores/pavone/admin'
     | '/admin/flow-templates/$templateId/versions/$versionId'
+    | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/dashboard-2/orders/$orderId'
+    | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/connect/admin/businesses/$businessId/catalog-route-values'
+    | '/connect/admin/businesses/$businessId/catalog-routes'
+    | '/connect/admin/businesses/$businessId/categories'
+    | '/connect/admin/businesses/$businessId/flow-builder'
+    | '/connect/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses/$businessId/flow'
+    | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/connect/admin/flow-templates/$templateId/versions/$versionId'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/connect'
     | '/contact'
     | '/dashboard'
     | '/dashboard-2'
@@ -1199,6 +2017,10 @@ export interface FileRouteTypes {
     | '/admin/flow-templates'
     | '/admin/logs'
     | '/admin/whatsapp-templates'
+    | '/connect/admin'
+    | '/connect/dashboard'
+    | '/connect/dashboard-2'
+    | '/connect/logs'
     | '/dashboard-2/categories'
     | '/dashboard-2/delivery'
     | '/dashboard-2/orders'
@@ -1256,6 +2078,23 @@ export interface FileRouteTypes {
     | '/api/wa-dashboard/upload'
     | '/api/whatsapp/webhook'
     | '/api/whatsapp/webhook-2'
+    | '/connect/admin/app-review-demo'
+    | '/connect/admin/businesses'
+    | '/connect/admin/flow-templates'
+    | '/connect/admin/logs'
+    | '/connect/admin/whatsapp-templates'
+    | '/connect/dashboard-2/categories'
+    | '/connect/dashboard-2/delivery'
+    | '/connect/dashboard-2/orders'
+    | '/connect/dashboard-2/products'
+    | '/connect/dashboard-2/settings'
+    | '/connect/dashboard-2/simulator'
+    | '/connect/dashboard/categories'
+    | '/connect/dashboard/delivery'
+    | '/connect/dashboard/orders'
+    | '/connect/dashboard/products'
+    | '/connect/dashboard/settings'
+    | '/connect/dashboard/simulator'
     | '/dashboard-2/orders/$orderId'
     | '/dashboard/orders/$orderId'
     | '/stores/pavone/admin'
@@ -1263,16 +2102,52 @@ export interface FileRouteTypes {
     | '/stores/pavone/checkout'
     | '/stores/pavone/shop'
     | '/stores/pavone/wishlist'
+    | '/connect/admin/'
+    | '/connect/dashboard-2/'
+    | '/connect/dashboard/'
     | '/stores/pavone/'
     | '/admin/businesses/$businessId/catalog-route-values'
     | '/admin/businesses/$businessId/catalog-routes'
     | '/admin/businesses/$businessId/categories'
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses'
+    | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/login'
+    | '/api/connect/admin/logout'
+    | '/api/connect/admin/logs'
+    | '/api/connect/admin/message-events'
+    | '/api/connect/admin/overview'
+    | '/api/connect/admin/review-connections'
+    | '/api/connect/admin/send-review-message'
+    | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/dashboard-2/catalog'
+    | '/api/connect/dashboard-2/diagnostics'
+    | '/api/connect/dashboard-2/login'
+    | '/api/connect/dashboard-2/logout'
+    | '/api/connect/dashboard-2/orders'
+    | '/api/connect/dashboard-2/session'
+    | '/api/connect/dashboard-2/upload'
+    | '/api/connect/dashboard/catalog'
+    | '/api/connect/dashboard/diagnostics'
+    | '/api/connect/dashboard/login'
+    | '/api/connect/dashboard/logout'
+    | '/api/connect/dashboard/notifications'
+    | '/api/connect/dashboard/orders'
+    | '/api/connect/dashboard/session'
+    | '/api/connect/dashboard/upload'
+    | '/api/connect/whatsapp/webhook'
     | '/api/wa-admin/businesses/$businessId'
     | '/api/wa-admin/flow-templates/$templateId'
     | '/api/wa-dashboard-2/orders/$orderId'
     | '/api/wa-dashboard/orders/$orderId'
+    | '/connect/admin/businesses/$businessId'
+    | '/connect/admin/businesses/new'
+    | '/connect/admin/flow-templates/$templateId'
+    | '/connect/admin/flow-templates/new'
+    | '/connect/dashboard-2/orders/$orderId'
+    | '/connect/dashboard/orders/$orderId'
     | '/stores/pavone/admin/brands'
     | '/stores/pavone/admin/categories'
     | '/stores/pavone/admin/inspirations'
@@ -1284,13 +2159,26 @@ export interface FileRouteTypes {
     | '/stores/pavone/product/$slug'
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
+    | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/dashboard-2/orders/$orderId'
+    | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/connect/admin/businesses/$businessId/catalog-route-values'
+    | '/connect/admin/businesses/$businessId/catalog-routes'
+    | '/connect/admin/businesses/$businessId/categories'
+    | '/connect/admin/businesses/$businessId/flow-builder'
+    | '/connect/admin/businesses/$businessId/products'
+    | '/api/connect/admin/businesses/$businessId/flow'
+    | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/connect/admin/flow-templates/$templateId/versions/$versionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ConnectRoute: typeof ConnectRouteWithChildren
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   Dashboard2Route: typeof Dashboard2RouteWithChildren
@@ -1337,6 +2225,33 @@ export interface RootRouteChildren {
   ApiWaDashboardUploadRoute: typeof ApiWaDashboardUploadRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiWhatsappWebhook2Route: typeof ApiWhatsappWebhook2Route
+  ApiConnectAdminBusinessesRoute: typeof ApiConnectAdminBusinessesRouteWithChildren
+  ApiConnectAdminFlowTemplatesRoute: typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  ApiConnectAdminLoginRoute: typeof ApiConnectAdminLoginRoute
+  ApiConnectAdminLogoutRoute: typeof ApiConnectAdminLogoutRoute
+  ApiConnectAdminLogsRoute: typeof ApiConnectAdminLogsRoute
+  ApiConnectAdminMessageEventsRoute: typeof ApiConnectAdminMessageEventsRoute
+  ApiConnectAdminOverviewRoute: typeof ApiConnectAdminOverviewRoute
+  ApiConnectAdminReviewConnectionsRoute: typeof ApiConnectAdminReviewConnectionsRoute
+  ApiConnectAdminSendReviewMessageRoute: typeof ApiConnectAdminSendReviewMessageRoute
+  ApiConnectAdminSessionRoute: typeof ApiConnectAdminSessionRoute
+  ApiConnectAdminWhatsappTemplatesRoute: typeof ApiConnectAdminWhatsappTemplatesRoute
+  ApiConnectDashboard2CatalogRoute: typeof ApiConnectDashboard2CatalogRoute
+  ApiConnectDashboard2DiagnosticsRoute: typeof ApiConnectDashboard2DiagnosticsRoute
+  ApiConnectDashboard2LoginRoute: typeof ApiConnectDashboard2LoginRoute
+  ApiConnectDashboard2LogoutRoute: typeof ApiConnectDashboard2LogoutRoute
+  ApiConnectDashboard2OrdersRoute: typeof ApiConnectDashboard2OrdersRouteWithChildren
+  ApiConnectDashboard2SessionRoute: typeof ApiConnectDashboard2SessionRoute
+  ApiConnectDashboard2UploadRoute: typeof ApiConnectDashboard2UploadRoute
+  ApiConnectDashboardCatalogRoute: typeof ApiConnectDashboardCatalogRoute
+  ApiConnectDashboardDiagnosticsRoute: typeof ApiConnectDashboardDiagnosticsRoute
+  ApiConnectDashboardLoginRoute: typeof ApiConnectDashboardLoginRoute
+  ApiConnectDashboardLogoutRoute: typeof ApiConnectDashboardLogoutRoute
+  ApiConnectDashboardNotificationsRoute: typeof ApiConnectDashboardNotificationsRoute
+  ApiConnectDashboardOrdersRoute: typeof ApiConnectDashboardOrdersRouteWithChildren
+  ApiConnectDashboardSessionRoute: typeof ApiConnectDashboardSessionRoute
+  ApiConnectDashboardUploadRoute: typeof ApiConnectDashboardUploadRoute
+  ApiConnectWhatsappWebhookRoute: typeof ApiConnectWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1409,6 +2324,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect': {
+      id: '/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof ConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1600,6 +2522,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Dashboard2CategoriesRouteImport
       parentRoute: typeof Dashboard2Route
     }
+    '/connect/logs': {
+      id: '/connect/logs'
+      path: '/logs'
+      fullPath: '/connect/logs'
+      preLoaderRoute: typeof ConnectLogsRouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/dashboard-2': {
+      id: '/connect/dashboard-2'
+      path: '/dashboard-2'
+      fullPath: '/connect/dashboard-2'
+      preLoaderRoute: typeof ConnectDashboard2RouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/dashboard': {
+      id: '/connect/dashboard'
+      path: '/dashboard'
+      fullPath: '/connect/dashboard'
+      preLoaderRoute: typeof ConnectDashboardRouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/admin': {
+      id: '/connect/admin'
+      path: '/admin'
+      fullPath: '/connect/admin'
+      preLoaderRoute: typeof ConnectAdminRouteImport
+      parentRoute: typeof ConnectRoute
+    }
     '/admin/whatsapp-templates': {
       id: '/admin/whatsapp-templates'
       path: '/whatsapp-templates'
@@ -1641,6 +2591,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/stores/pavone/'
       preLoaderRoute: typeof StoresPavoneIndexRouteImport
       parentRoute: typeof StoresPavoneRoute
+    }
+    '/connect/dashboard/': {
+      id: '/connect/dashboard/'
+      path: '/'
+      fullPath: '/connect/dashboard/'
+      preLoaderRoute: typeof ConnectDashboardIndexRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard-2/': {
+      id: '/connect/dashboard-2/'
+      path: '/'
+      fullPath: '/connect/dashboard-2/'
+      preLoaderRoute: typeof ConnectDashboard2IndexRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/admin/': {
+      id: '/connect/admin/'
+      path: '/'
+      fullPath: '/connect/admin/'
+      preLoaderRoute: typeof ConnectAdminIndexRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
     '/stores/pavone/wishlist': {
       id: '/stores/pavone/wishlist'
@@ -1690,6 +2661,125 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard-2/orders/$orderId'
       preLoaderRoute: typeof Dashboard2OrdersOrderIdRouteImport
       parentRoute: typeof Dashboard2OrdersRoute
+    }
+    '/connect/dashboard/simulator': {
+      id: '/connect/dashboard/simulator'
+      path: '/simulator'
+      fullPath: '/connect/dashboard/simulator'
+      preLoaderRoute: typeof ConnectDashboardSimulatorRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/settings': {
+      id: '/connect/dashboard/settings'
+      path: '/settings'
+      fullPath: '/connect/dashboard/settings'
+      preLoaderRoute: typeof ConnectDashboardSettingsRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/products': {
+      id: '/connect/dashboard/products'
+      path: '/products'
+      fullPath: '/connect/dashboard/products'
+      preLoaderRoute: typeof ConnectDashboardProductsRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/orders': {
+      id: '/connect/dashboard/orders'
+      path: '/orders'
+      fullPath: '/connect/dashboard/orders'
+      preLoaderRoute: typeof ConnectDashboardOrdersRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/delivery': {
+      id: '/connect/dashboard/delivery'
+      path: '/delivery'
+      fullPath: '/connect/dashboard/delivery'
+      preLoaderRoute: typeof ConnectDashboardDeliveryRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/categories': {
+      id: '/connect/dashboard/categories'
+      path: '/categories'
+      fullPath: '/connect/dashboard/categories'
+      preLoaderRoute: typeof ConnectDashboardCategoriesRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard-2/simulator': {
+      id: '/connect/dashboard-2/simulator'
+      path: '/simulator'
+      fullPath: '/connect/dashboard-2/simulator'
+      preLoaderRoute: typeof ConnectDashboard2SimulatorRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/settings': {
+      id: '/connect/dashboard-2/settings'
+      path: '/settings'
+      fullPath: '/connect/dashboard-2/settings'
+      preLoaderRoute: typeof ConnectDashboard2SettingsRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/products': {
+      id: '/connect/dashboard-2/products'
+      path: '/products'
+      fullPath: '/connect/dashboard-2/products'
+      preLoaderRoute: typeof ConnectDashboard2ProductsRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/orders': {
+      id: '/connect/dashboard-2/orders'
+      path: '/orders'
+      fullPath: '/connect/dashboard-2/orders'
+      preLoaderRoute: typeof ConnectDashboard2OrdersRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/delivery': {
+      id: '/connect/dashboard-2/delivery'
+      path: '/delivery'
+      fullPath: '/connect/dashboard-2/delivery'
+      preLoaderRoute: typeof ConnectDashboard2DeliveryRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/categories': {
+      id: '/connect/dashboard-2/categories'
+      path: '/categories'
+      fullPath: '/connect/dashboard-2/categories'
+      preLoaderRoute: typeof ConnectDashboard2CategoriesRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/admin/whatsapp-templates': {
+      id: '/connect/admin/whatsapp-templates'
+      path: '/whatsapp-templates'
+      fullPath: '/connect/admin/whatsapp-templates'
+      preLoaderRoute: typeof ConnectAdminWhatsappTemplatesRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/logs': {
+      id: '/connect/admin/logs'
+      path: '/logs'
+      fullPath: '/connect/admin/logs'
+      preLoaderRoute: typeof ConnectAdminLogsRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/flow-templates': {
+      id: '/connect/admin/flow-templates'
+      path: '/flow-templates'
+      fullPath: '/connect/admin/flow-templates'
+      preLoaderRoute: typeof ConnectAdminFlowTemplatesRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/businesses': {
+      id: '/connect/admin/businesses'
+      path: '/businesses'
+      fullPath: '/connect/admin/businesses'
+      preLoaderRoute: typeof ConnectAdminBusinessesRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/app-review-demo': {
+      id: '/connect/admin/app-review-demo'
+      path: '/app-review-demo'
+      fullPath: '/connect/admin/app-review-demo'
+      preLoaderRoute: typeof ConnectAdminAppReviewDemoRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
     '/api/whatsapp/webhook-2': {
       id: '/api/whatsapp/webhook-2'
@@ -1985,6 +3075,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresPavoneAdminBrandsRouteImport
       parentRoute: typeof StoresPavoneAdminRoute
     }
+    '/connect/dashboard/orders/$orderId': {
+      id: '/connect/dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/connect/dashboard/orders/$orderId'
+      preLoaderRoute: typeof ConnectDashboardOrdersOrderIdRouteImport
+      parentRoute: typeof ConnectDashboardOrdersRoute
+    }
+    '/connect/dashboard-2/orders/$orderId': {
+      id: '/connect/dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/connect/dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof ConnectDashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof ConnectDashboard2OrdersRoute
+    }
+    '/connect/admin/flow-templates/new': {
+      id: '/connect/admin/flow-templates/new'
+      path: '/new'
+      fullPath: '/connect/admin/flow-templates/new'
+      preLoaderRoute: typeof ConnectAdminFlowTemplatesNewRouteImport
+      parentRoute: typeof ConnectAdminFlowTemplatesRoute
+    }
+    '/connect/admin/flow-templates/$templateId': {
+      id: '/connect/admin/flow-templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/connect/admin/flow-templates/$templateId'
+      preLoaderRoute: typeof ConnectAdminFlowTemplatesTemplateIdRouteImport
+      parentRoute: typeof ConnectAdminFlowTemplatesRoute
+    }
+    '/connect/admin/businesses/new': {
+      id: '/connect/admin/businesses/new'
+      path: '/new'
+      fullPath: '/connect/admin/businesses/new'
+      preLoaderRoute: typeof ConnectAdminBusinessesNewRouteImport
+      parentRoute: typeof ConnectAdminBusinessesRoute
+    }
+    '/connect/admin/businesses/$businessId': {
+      id: '/connect/admin/businesses/$businessId'
+      path: '/$businessId'
+      fullPath: '/connect/admin/businesses/$businessId'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdRouteImport
+      parentRoute: typeof ConnectAdminBusinessesRoute
+    }
     '/api/wa-dashboard/orders/$orderId': {
       id: '/api/wa-dashboard/orders/$orderId'
       path: '/$orderId'
@@ -2012,6 +3144,195 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/wa-admin/businesses/$businessId'
       preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdRouteImport
       parentRoute: typeof ApiWaAdminBusinessesRoute
+    }
+    '/api/connect/whatsapp/webhook': {
+      id: '/api/connect/whatsapp/webhook'
+      path: '/api/connect/whatsapp/webhook'
+      fullPath: '/api/connect/whatsapp/webhook'
+      preLoaderRoute: typeof ApiConnectWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/upload': {
+      id: '/api/connect/dashboard/upload'
+      path: '/api/connect/dashboard/upload'
+      fullPath: '/api/connect/dashboard/upload'
+      preLoaderRoute: typeof ApiConnectDashboardUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/session': {
+      id: '/api/connect/dashboard/session'
+      path: '/api/connect/dashboard/session'
+      fullPath: '/api/connect/dashboard/session'
+      preLoaderRoute: typeof ApiConnectDashboardSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/orders': {
+      id: '/api/connect/dashboard/orders'
+      path: '/api/connect/dashboard/orders'
+      fullPath: '/api/connect/dashboard/orders'
+      preLoaderRoute: typeof ApiConnectDashboardOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/notifications': {
+      id: '/api/connect/dashboard/notifications'
+      path: '/api/connect/dashboard/notifications'
+      fullPath: '/api/connect/dashboard/notifications'
+      preLoaderRoute: typeof ApiConnectDashboardNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/logout': {
+      id: '/api/connect/dashboard/logout'
+      path: '/api/connect/dashboard/logout'
+      fullPath: '/api/connect/dashboard/logout'
+      preLoaderRoute: typeof ApiConnectDashboardLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/login': {
+      id: '/api/connect/dashboard/login'
+      path: '/api/connect/dashboard/login'
+      fullPath: '/api/connect/dashboard/login'
+      preLoaderRoute: typeof ApiConnectDashboardLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/diagnostics': {
+      id: '/api/connect/dashboard/diagnostics'
+      path: '/api/connect/dashboard/diagnostics'
+      fullPath: '/api/connect/dashboard/diagnostics'
+      preLoaderRoute: typeof ApiConnectDashboardDiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/catalog': {
+      id: '/api/connect/dashboard/catalog'
+      path: '/api/connect/dashboard/catalog'
+      fullPath: '/api/connect/dashboard/catalog'
+      preLoaderRoute: typeof ApiConnectDashboardCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/upload': {
+      id: '/api/connect/dashboard-2/upload'
+      path: '/api/connect/dashboard-2/upload'
+      fullPath: '/api/connect/dashboard-2/upload'
+      preLoaderRoute: typeof ApiConnectDashboard2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/session': {
+      id: '/api/connect/dashboard-2/session'
+      path: '/api/connect/dashboard-2/session'
+      fullPath: '/api/connect/dashboard-2/session'
+      preLoaderRoute: typeof ApiConnectDashboard2SessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/orders': {
+      id: '/api/connect/dashboard-2/orders'
+      path: '/api/connect/dashboard-2/orders'
+      fullPath: '/api/connect/dashboard-2/orders'
+      preLoaderRoute: typeof ApiConnectDashboard2OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/logout': {
+      id: '/api/connect/dashboard-2/logout'
+      path: '/api/connect/dashboard-2/logout'
+      fullPath: '/api/connect/dashboard-2/logout'
+      preLoaderRoute: typeof ApiConnectDashboard2LogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/login': {
+      id: '/api/connect/dashboard-2/login'
+      path: '/api/connect/dashboard-2/login'
+      fullPath: '/api/connect/dashboard-2/login'
+      preLoaderRoute: typeof ApiConnectDashboard2LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/diagnostics': {
+      id: '/api/connect/dashboard-2/diagnostics'
+      path: '/api/connect/dashboard-2/diagnostics'
+      fullPath: '/api/connect/dashboard-2/diagnostics'
+      preLoaderRoute: typeof ApiConnectDashboard2DiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/catalog': {
+      id: '/api/connect/dashboard-2/catalog'
+      path: '/api/connect/dashboard-2/catalog'
+      fullPath: '/api/connect/dashboard-2/catalog'
+      preLoaderRoute: typeof ApiConnectDashboard2CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/whatsapp-templates': {
+      id: '/api/connect/admin/whatsapp-templates'
+      path: '/api/connect/admin/whatsapp-templates'
+      fullPath: '/api/connect/admin/whatsapp-templates'
+      preLoaderRoute: typeof ApiConnectAdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/session': {
+      id: '/api/connect/admin/session'
+      path: '/api/connect/admin/session'
+      fullPath: '/api/connect/admin/session'
+      preLoaderRoute: typeof ApiConnectAdminSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/send-review-message': {
+      id: '/api/connect/admin/send-review-message'
+      path: '/api/connect/admin/send-review-message'
+      fullPath: '/api/connect/admin/send-review-message'
+      preLoaderRoute: typeof ApiConnectAdminSendReviewMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/review-connections': {
+      id: '/api/connect/admin/review-connections'
+      path: '/api/connect/admin/review-connections'
+      fullPath: '/api/connect/admin/review-connections'
+      preLoaderRoute: typeof ApiConnectAdminReviewConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/overview': {
+      id: '/api/connect/admin/overview'
+      path: '/api/connect/admin/overview'
+      fullPath: '/api/connect/admin/overview'
+      preLoaderRoute: typeof ApiConnectAdminOverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/message-events': {
+      id: '/api/connect/admin/message-events'
+      path: '/api/connect/admin/message-events'
+      fullPath: '/api/connect/admin/message-events'
+      preLoaderRoute: typeof ApiConnectAdminMessageEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/logs': {
+      id: '/api/connect/admin/logs'
+      path: '/api/connect/admin/logs'
+      fullPath: '/api/connect/admin/logs'
+      preLoaderRoute: typeof ApiConnectAdminLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/logout': {
+      id: '/api/connect/admin/logout'
+      path: '/api/connect/admin/logout'
+      fullPath: '/api/connect/admin/logout'
+      preLoaderRoute: typeof ApiConnectAdminLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/login': {
+      id: '/api/connect/admin/login'
+      path: '/api/connect/admin/login'
+      fullPath: '/api/connect/admin/login'
+      preLoaderRoute: typeof ApiConnectAdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/flow-templates': {
+      id: '/api/connect/admin/flow-templates'
+      path: '/api/connect/admin/flow-templates'
+      fullPath: '/api/connect/admin/flow-templates'
+      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/businesses': {
+      id: '/api/connect/admin/businesses'
+      path: '/api/connect/admin/businesses'
+      fullPath: '/api/connect/admin/businesses'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/businesses/$businessId/products': {
       id: '/admin/businesses/$businessId/products'
@@ -2048,6 +3369,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRouteValuesRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
+    '/connect/admin/businesses/$businessId/products': {
+      id: '/connect/admin/businesses/$businessId/products'
+      path: '/products'
+      fullPath: '/connect/admin/businesses/$businessId/products'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdProductsRouteImport
+      parentRoute: typeof ConnectAdminBusinessesBusinessIdRoute
+    }
+    '/connect/admin/businesses/$businessId/flow-builder': {
+      id: '/connect/admin/businesses/$businessId/flow-builder'
+      path: '/flow-builder'
+      fullPath: '/connect/admin/businesses/$businessId/flow-builder'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdFlowBuilderRouteImport
+      parentRoute: typeof ConnectAdminBusinessesBusinessIdRoute
+    }
+    '/connect/admin/businesses/$businessId/categories': {
+      id: '/connect/admin/businesses/$businessId/categories'
+      path: '/categories'
+      fullPath: '/connect/admin/businesses/$businessId/categories'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdCategoriesRouteImport
+      parentRoute: typeof ConnectAdminBusinessesBusinessIdRoute
+    }
+    '/connect/admin/businesses/$businessId/catalog-routes': {
+      id: '/connect/admin/businesses/$businessId/catalog-routes'
+      path: '/catalog-routes'
+      fullPath: '/connect/admin/businesses/$businessId/catalog-routes'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdCatalogRoutesRouteImport
+      parentRoute: typeof ConnectAdminBusinessesBusinessIdRoute
+    }
+    '/connect/admin/businesses/$businessId/catalog-route-values': {
+      id: '/connect/admin/businesses/$businessId/catalog-route-values'
+      path: '/catalog-route-values'
+      fullPath: '/connect/admin/businesses/$businessId/catalog-route-values'
+      preLoaderRoute: typeof ConnectAdminBusinessesBusinessIdCatalogRouteValuesRouteImport
+      parentRoute: typeof ConnectAdminBusinessesBusinessIdRoute
+    }
     '/api/wa-admin/businesses/$businessId/flow-image': {
       id: '/api/wa-admin/businesses/$businessId/flow-image'
       path: '/flow-image'
@@ -2062,12 +3418,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdFlowRouteImport
       parentRoute: typeof ApiWaAdminBusinessesBusinessIdRoute
     }
+    '/api/connect/dashboard/orders/$orderId': {
+      id: '/api/connect/dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/connect/dashboard/orders/$orderId'
+      preLoaderRoute: typeof ApiConnectDashboardOrdersOrderIdRouteImport
+      parentRoute: typeof ApiConnectDashboardOrdersRoute
+    }
+    '/api/connect/dashboard-2/orders/$orderId': {
+      id: '/api/connect/dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/connect/dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof ApiConnectDashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof ApiConnectDashboard2OrdersRoute
+    }
+    '/api/connect/admin/flow-templates/$templateId': {
+      id: '/api/connect/admin/flow-templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/api/connect/admin/flow-templates/$templateId'
+      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRouteImport
+      parentRoute: typeof ApiConnectAdminFlowTemplatesRoute
+    }
+    '/api/connect/admin/businesses/$businessId': {
+      id: '/api/connect/admin/businesses/$businessId'
+      path: '/$businessId'
+      fullPath: '/api/connect/admin/businesses/$businessId'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdRouteImport
+      parentRoute: typeof ApiConnectAdminBusinessesRoute
+    }
     '/admin/flow-templates/$templateId/versions/$versionId': {
       id: '/admin/flow-templates/$templateId/versions/$versionId'
       path: '/versions/$versionId'
       fullPath: '/admin/flow-templates/$templateId/versions/$versionId'
       preLoaderRoute: typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
       parentRoute: typeof AdminFlowTemplatesTemplateIdRoute
+    }
+    '/connect/admin/flow-templates/$templateId/versions/$versionId': {
+      id: '/connect/admin/flow-templates/$templateId/versions/$versionId'
+      path: '/versions/$versionId'
+      fullPath: '/connect/admin/flow-templates/$templateId/versions/$versionId'
+      preLoaderRoute: typeof ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
+      parentRoute: typeof ConnectAdminFlowTemplatesTemplateIdRoute
+    }
+    '/api/connect/admin/businesses/$businessId/flow-image': {
+      id: '/api/connect/admin/businesses/$businessId/flow-image'
+      path: '/flow-image'
+      fullPath: '/api/connect/admin/businesses/$businessId/flow-image'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport
+      parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
+    }
+    '/api/connect/admin/businesses/$businessId/flow': {
+      id: '/api/connect/admin/businesses/$businessId/flow'
+      path: '/flow'
+      fullPath: '/api/connect/admin/businesses/$businessId/flow'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRouteImport
+      parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
     }
   }
 }
@@ -2161,6 +3566,195 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ConnectAdminBusinessesBusinessIdRouteChildren {
+  ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute: typeof ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute
+  ConnectAdminBusinessesBusinessIdCatalogRoutesRoute: typeof ConnectAdminBusinessesBusinessIdCatalogRoutesRoute
+  ConnectAdminBusinessesBusinessIdCategoriesRoute: typeof ConnectAdminBusinessesBusinessIdCategoriesRoute
+  ConnectAdminBusinessesBusinessIdFlowBuilderRoute: typeof ConnectAdminBusinessesBusinessIdFlowBuilderRoute
+  ConnectAdminBusinessesBusinessIdProductsRoute: typeof ConnectAdminBusinessesBusinessIdProductsRoute
+}
+
+const ConnectAdminBusinessesBusinessIdRouteChildren: ConnectAdminBusinessesBusinessIdRouteChildren =
+  {
+    ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute:
+      ConnectAdminBusinessesBusinessIdCatalogRouteValuesRoute,
+    ConnectAdminBusinessesBusinessIdCatalogRoutesRoute:
+      ConnectAdminBusinessesBusinessIdCatalogRoutesRoute,
+    ConnectAdminBusinessesBusinessIdCategoriesRoute:
+      ConnectAdminBusinessesBusinessIdCategoriesRoute,
+    ConnectAdminBusinessesBusinessIdFlowBuilderRoute:
+      ConnectAdminBusinessesBusinessIdFlowBuilderRoute,
+    ConnectAdminBusinessesBusinessIdProductsRoute:
+      ConnectAdminBusinessesBusinessIdProductsRoute,
+  }
+
+const ConnectAdminBusinessesBusinessIdRouteWithChildren =
+  ConnectAdminBusinessesBusinessIdRoute._addFileChildren(
+    ConnectAdminBusinessesBusinessIdRouteChildren,
+  )
+
+interface ConnectAdminBusinessesRouteChildren {
+  ConnectAdminBusinessesBusinessIdRoute: typeof ConnectAdminBusinessesBusinessIdRouteWithChildren
+  ConnectAdminBusinessesNewRoute: typeof ConnectAdminBusinessesNewRoute
+}
+
+const ConnectAdminBusinessesRouteChildren: ConnectAdminBusinessesRouteChildren =
+  {
+    ConnectAdminBusinessesBusinessIdRoute:
+      ConnectAdminBusinessesBusinessIdRouteWithChildren,
+    ConnectAdminBusinessesNewRoute: ConnectAdminBusinessesNewRoute,
+  }
+
+const ConnectAdminBusinessesRouteWithChildren =
+  ConnectAdminBusinessesRoute._addFileChildren(
+    ConnectAdminBusinessesRouteChildren,
+  )
+
+interface ConnectAdminFlowTemplatesTemplateIdRouteChildren {
+  ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute: typeof ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute
+}
+
+const ConnectAdminFlowTemplatesTemplateIdRouteChildren: ConnectAdminFlowTemplatesTemplateIdRouteChildren =
+  {
+    ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute:
+      ConnectAdminFlowTemplatesTemplateIdVersionsVersionIdRoute,
+  }
+
+const ConnectAdminFlowTemplatesTemplateIdRouteWithChildren =
+  ConnectAdminFlowTemplatesTemplateIdRoute._addFileChildren(
+    ConnectAdminFlowTemplatesTemplateIdRouteChildren,
+  )
+
+interface ConnectAdminFlowTemplatesRouteChildren {
+  ConnectAdminFlowTemplatesTemplateIdRoute: typeof ConnectAdminFlowTemplatesTemplateIdRouteWithChildren
+  ConnectAdminFlowTemplatesNewRoute: typeof ConnectAdminFlowTemplatesNewRoute
+}
+
+const ConnectAdminFlowTemplatesRouteChildren: ConnectAdminFlowTemplatesRouteChildren =
+  {
+    ConnectAdminFlowTemplatesTemplateIdRoute:
+      ConnectAdminFlowTemplatesTemplateIdRouteWithChildren,
+    ConnectAdminFlowTemplatesNewRoute: ConnectAdminFlowTemplatesNewRoute,
+  }
+
+const ConnectAdminFlowTemplatesRouteWithChildren =
+  ConnectAdminFlowTemplatesRoute._addFileChildren(
+    ConnectAdminFlowTemplatesRouteChildren,
+  )
+
+interface ConnectAdminRouteChildren {
+  ConnectAdminAppReviewDemoRoute: typeof ConnectAdminAppReviewDemoRoute
+  ConnectAdminBusinessesRoute: typeof ConnectAdminBusinessesRouteWithChildren
+  ConnectAdminFlowTemplatesRoute: typeof ConnectAdminFlowTemplatesRouteWithChildren
+  ConnectAdminLogsRoute: typeof ConnectAdminLogsRoute
+  ConnectAdminWhatsappTemplatesRoute: typeof ConnectAdminWhatsappTemplatesRoute
+  ConnectAdminIndexRoute: typeof ConnectAdminIndexRoute
+}
+
+const ConnectAdminRouteChildren: ConnectAdminRouteChildren = {
+  ConnectAdminAppReviewDemoRoute: ConnectAdminAppReviewDemoRoute,
+  ConnectAdminBusinessesRoute: ConnectAdminBusinessesRouteWithChildren,
+  ConnectAdminFlowTemplatesRoute: ConnectAdminFlowTemplatesRouteWithChildren,
+  ConnectAdminLogsRoute: ConnectAdminLogsRoute,
+  ConnectAdminWhatsappTemplatesRoute: ConnectAdminWhatsappTemplatesRoute,
+  ConnectAdminIndexRoute: ConnectAdminIndexRoute,
+}
+
+const ConnectAdminRouteWithChildren = ConnectAdminRoute._addFileChildren(
+  ConnectAdminRouteChildren,
+)
+
+interface ConnectDashboardOrdersRouteChildren {
+  ConnectDashboardOrdersOrderIdRoute: typeof ConnectDashboardOrdersOrderIdRoute
+}
+
+const ConnectDashboardOrdersRouteChildren: ConnectDashboardOrdersRouteChildren =
+  {
+    ConnectDashboardOrdersOrderIdRoute: ConnectDashboardOrdersOrderIdRoute,
+  }
+
+const ConnectDashboardOrdersRouteWithChildren =
+  ConnectDashboardOrdersRoute._addFileChildren(
+    ConnectDashboardOrdersRouteChildren,
+  )
+
+interface ConnectDashboardRouteChildren {
+  ConnectDashboardCategoriesRoute: typeof ConnectDashboardCategoriesRoute
+  ConnectDashboardDeliveryRoute: typeof ConnectDashboardDeliveryRoute
+  ConnectDashboardOrdersRoute: typeof ConnectDashboardOrdersRouteWithChildren
+  ConnectDashboardProductsRoute: typeof ConnectDashboardProductsRoute
+  ConnectDashboardSettingsRoute: typeof ConnectDashboardSettingsRoute
+  ConnectDashboardSimulatorRoute: typeof ConnectDashboardSimulatorRoute
+  ConnectDashboardIndexRoute: typeof ConnectDashboardIndexRoute
+}
+
+const ConnectDashboardRouteChildren: ConnectDashboardRouteChildren = {
+  ConnectDashboardCategoriesRoute: ConnectDashboardCategoriesRoute,
+  ConnectDashboardDeliveryRoute: ConnectDashboardDeliveryRoute,
+  ConnectDashboardOrdersRoute: ConnectDashboardOrdersRouteWithChildren,
+  ConnectDashboardProductsRoute: ConnectDashboardProductsRoute,
+  ConnectDashboardSettingsRoute: ConnectDashboardSettingsRoute,
+  ConnectDashboardSimulatorRoute: ConnectDashboardSimulatorRoute,
+  ConnectDashboardIndexRoute: ConnectDashboardIndexRoute,
+}
+
+const ConnectDashboardRouteWithChildren =
+  ConnectDashboardRoute._addFileChildren(ConnectDashboardRouteChildren)
+
+interface ConnectDashboard2OrdersRouteChildren {
+  ConnectDashboard2OrdersOrderIdRoute: typeof ConnectDashboard2OrdersOrderIdRoute
+}
+
+const ConnectDashboard2OrdersRouteChildren: ConnectDashboard2OrdersRouteChildren =
+  {
+    ConnectDashboard2OrdersOrderIdRoute: ConnectDashboard2OrdersOrderIdRoute,
+  }
+
+const ConnectDashboard2OrdersRouteWithChildren =
+  ConnectDashboard2OrdersRoute._addFileChildren(
+    ConnectDashboard2OrdersRouteChildren,
+  )
+
+interface ConnectDashboard2RouteChildren {
+  ConnectDashboard2CategoriesRoute: typeof ConnectDashboard2CategoriesRoute
+  ConnectDashboard2DeliveryRoute: typeof ConnectDashboard2DeliveryRoute
+  ConnectDashboard2OrdersRoute: typeof ConnectDashboard2OrdersRouteWithChildren
+  ConnectDashboard2ProductsRoute: typeof ConnectDashboard2ProductsRoute
+  ConnectDashboard2SettingsRoute: typeof ConnectDashboard2SettingsRoute
+  ConnectDashboard2SimulatorRoute: typeof ConnectDashboard2SimulatorRoute
+  ConnectDashboard2IndexRoute: typeof ConnectDashboard2IndexRoute
+}
+
+const ConnectDashboard2RouteChildren: ConnectDashboard2RouteChildren = {
+  ConnectDashboard2CategoriesRoute: ConnectDashboard2CategoriesRoute,
+  ConnectDashboard2DeliveryRoute: ConnectDashboard2DeliveryRoute,
+  ConnectDashboard2OrdersRoute: ConnectDashboard2OrdersRouteWithChildren,
+  ConnectDashboard2ProductsRoute: ConnectDashboard2ProductsRoute,
+  ConnectDashboard2SettingsRoute: ConnectDashboard2SettingsRoute,
+  ConnectDashboard2SimulatorRoute: ConnectDashboard2SimulatorRoute,
+  ConnectDashboard2IndexRoute: ConnectDashboard2IndexRoute,
+}
+
+const ConnectDashboard2RouteWithChildren =
+  ConnectDashboard2Route._addFileChildren(ConnectDashboard2RouteChildren)
+
+interface ConnectRouteChildren {
+  ConnectAdminRoute: typeof ConnectAdminRouteWithChildren
+  ConnectDashboardRoute: typeof ConnectDashboardRouteWithChildren
+  ConnectDashboard2Route: typeof ConnectDashboard2RouteWithChildren
+  ConnectLogsRoute: typeof ConnectLogsRoute
+}
+
+const ConnectRouteChildren: ConnectRouteChildren = {
+  ConnectAdminRoute: ConnectAdminRouteWithChildren,
+  ConnectDashboardRoute: ConnectDashboardRouteWithChildren,
+  ConnectDashboard2Route: ConnectDashboard2RouteWithChildren,
+  ConnectLogsRoute: ConnectLogsRoute,
+}
+
+const ConnectRouteWithChildren =
+  ConnectRoute._addFileChildren(ConnectRouteChildren)
 
 interface DashboardOrdersRouteChildren {
   DashboardOrdersOrderIdRoute: typeof DashboardOrdersOrderIdRoute
@@ -2366,9 +3960,88 @@ const ApiWaDashboardOrdersRouteChildren: ApiWaDashboardOrdersRouteChildren = {
 const ApiWaDashboardOrdersRouteWithChildren =
   ApiWaDashboardOrdersRoute._addFileChildren(ApiWaDashboardOrdersRouteChildren)
 
+interface ApiConnectAdminBusinessesBusinessIdRouteChildren {
+  ApiConnectAdminBusinessesBusinessIdFlowRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
+  ApiConnectAdminBusinessesBusinessIdFlowImageRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+}
+
+const ApiConnectAdminBusinessesBusinessIdRouteChildren: ApiConnectAdminBusinessesBusinessIdRouteChildren =
+  {
+    ApiConnectAdminBusinessesBusinessIdFlowRoute:
+      ApiConnectAdminBusinessesBusinessIdFlowRoute,
+    ApiConnectAdminBusinessesBusinessIdFlowImageRoute:
+      ApiConnectAdminBusinessesBusinessIdFlowImageRoute,
+  }
+
+const ApiConnectAdminBusinessesBusinessIdRouteWithChildren =
+  ApiConnectAdminBusinessesBusinessIdRoute._addFileChildren(
+    ApiConnectAdminBusinessesBusinessIdRouteChildren,
+  )
+
+interface ApiConnectAdminBusinessesRouteChildren {
+  ApiConnectAdminBusinessesBusinessIdRoute: typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+}
+
+const ApiConnectAdminBusinessesRouteChildren: ApiConnectAdminBusinessesRouteChildren =
+  {
+    ApiConnectAdminBusinessesBusinessIdRoute:
+      ApiConnectAdminBusinessesBusinessIdRouteWithChildren,
+  }
+
+const ApiConnectAdminBusinessesRouteWithChildren =
+  ApiConnectAdminBusinessesRoute._addFileChildren(
+    ApiConnectAdminBusinessesRouteChildren,
+  )
+
+interface ApiConnectAdminFlowTemplatesRouteChildren {
+  ApiConnectAdminFlowTemplatesTemplateIdRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+}
+
+const ApiConnectAdminFlowTemplatesRouteChildren: ApiConnectAdminFlowTemplatesRouteChildren =
+  {
+    ApiConnectAdminFlowTemplatesTemplateIdRoute:
+      ApiConnectAdminFlowTemplatesTemplateIdRoute,
+  }
+
+const ApiConnectAdminFlowTemplatesRouteWithChildren =
+  ApiConnectAdminFlowTemplatesRoute._addFileChildren(
+    ApiConnectAdminFlowTemplatesRouteChildren,
+  )
+
+interface ApiConnectDashboard2OrdersRouteChildren {
+  ApiConnectDashboard2OrdersOrderIdRoute: typeof ApiConnectDashboard2OrdersOrderIdRoute
+}
+
+const ApiConnectDashboard2OrdersRouteChildren: ApiConnectDashboard2OrdersRouteChildren =
+  {
+    ApiConnectDashboard2OrdersOrderIdRoute:
+      ApiConnectDashboard2OrdersOrderIdRoute,
+  }
+
+const ApiConnectDashboard2OrdersRouteWithChildren =
+  ApiConnectDashboard2OrdersRoute._addFileChildren(
+    ApiConnectDashboard2OrdersRouteChildren,
+  )
+
+interface ApiConnectDashboardOrdersRouteChildren {
+  ApiConnectDashboardOrdersOrderIdRoute: typeof ApiConnectDashboardOrdersOrderIdRoute
+}
+
+const ApiConnectDashboardOrdersRouteChildren: ApiConnectDashboardOrdersRouteChildren =
+  {
+    ApiConnectDashboardOrdersOrderIdRoute:
+      ApiConnectDashboardOrdersOrderIdRoute,
+  }
+
+const ApiConnectDashboardOrdersRouteWithChildren =
+  ApiConnectDashboardOrdersRoute._addFileChildren(
+    ApiConnectDashboardOrdersRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ConnectRoute: ConnectRouteWithChildren,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRouteWithChildren,
   Dashboard2Route: Dashboard2RouteWithChildren,
@@ -2415,6 +4088,34 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWaDashboardUploadRoute: ApiWaDashboardUploadRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiWhatsappWebhook2Route: ApiWhatsappWebhook2Route,
+  ApiConnectAdminBusinessesRoute: ApiConnectAdminBusinessesRouteWithChildren,
+  ApiConnectAdminFlowTemplatesRoute:
+    ApiConnectAdminFlowTemplatesRouteWithChildren,
+  ApiConnectAdminLoginRoute: ApiConnectAdminLoginRoute,
+  ApiConnectAdminLogoutRoute: ApiConnectAdminLogoutRoute,
+  ApiConnectAdminLogsRoute: ApiConnectAdminLogsRoute,
+  ApiConnectAdminMessageEventsRoute: ApiConnectAdminMessageEventsRoute,
+  ApiConnectAdminOverviewRoute: ApiConnectAdminOverviewRoute,
+  ApiConnectAdminReviewConnectionsRoute: ApiConnectAdminReviewConnectionsRoute,
+  ApiConnectAdminSendReviewMessageRoute: ApiConnectAdminSendReviewMessageRoute,
+  ApiConnectAdminSessionRoute: ApiConnectAdminSessionRoute,
+  ApiConnectAdminWhatsappTemplatesRoute: ApiConnectAdminWhatsappTemplatesRoute,
+  ApiConnectDashboard2CatalogRoute: ApiConnectDashboard2CatalogRoute,
+  ApiConnectDashboard2DiagnosticsRoute: ApiConnectDashboard2DiagnosticsRoute,
+  ApiConnectDashboard2LoginRoute: ApiConnectDashboard2LoginRoute,
+  ApiConnectDashboard2LogoutRoute: ApiConnectDashboard2LogoutRoute,
+  ApiConnectDashboard2OrdersRoute: ApiConnectDashboard2OrdersRouteWithChildren,
+  ApiConnectDashboard2SessionRoute: ApiConnectDashboard2SessionRoute,
+  ApiConnectDashboard2UploadRoute: ApiConnectDashboard2UploadRoute,
+  ApiConnectDashboardCatalogRoute: ApiConnectDashboardCatalogRoute,
+  ApiConnectDashboardDiagnosticsRoute: ApiConnectDashboardDiagnosticsRoute,
+  ApiConnectDashboardLoginRoute: ApiConnectDashboardLoginRoute,
+  ApiConnectDashboardLogoutRoute: ApiConnectDashboardLogoutRoute,
+  ApiConnectDashboardNotificationsRoute: ApiConnectDashboardNotificationsRoute,
+  ApiConnectDashboardOrdersRoute: ApiConnectDashboardOrdersRouteWithChildren,
+  ApiConnectDashboardSessionRoute: ApiConnectDashboardSessionRoute,
+  ApiConnectDashboardUploadRoute: ApiConnectDashboardUploadRoute,
+  ApiConnectWhatsappWebhookRoute: ApiConnectWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

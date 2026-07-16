@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { DashboardLayout } from "./dashboard";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard-2")({
-  component: () => <DashboardLayout basePath="/dashboard-2" title="Partner Bot" appearance="light" />,
+  beforeLoad: ({ location }) => {
+    throw redirect({ href: location.href.replace("/dashboard-2", "/connect/dashboard-2") });
+  },
 });

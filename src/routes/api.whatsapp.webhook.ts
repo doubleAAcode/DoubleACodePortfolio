@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import process from "node:process";
 
-import { DOUBLE_A_TEST_BUSINESS_ID } from "@/lib/whatsapp/catalog-repository.server";
-import { createWhatsAppWebhookHandlers } from "@/lib/whatsapp/webhook-handler.server";
+import { DOUBLE_A_TEST_BUSINESS_ID } from "@/features/connect/shared/catalog-repository.server";
+import { createWhatsAppWebhookHandlers } from "@/features/connect/shared/webhook-handler.server";
 
 export const Route = createFileRoute("/api/whatsapp/webhook")({
   server: {
