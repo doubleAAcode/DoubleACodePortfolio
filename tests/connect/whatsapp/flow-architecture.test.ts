@@ -402,6 +402,10 @@ test("Flow Manager core schema adds tenant-scoped WhatsApp operations tables", (
 
 test("messaging operations migration provides atomic idempotent inbound ingestion", () => {
   const migration = readFileSync("supabase/connect/wa_messaging_operations_rpc.sql", "utf8");
+  const messageIdFix = readFileSync(
+    "supabase/connect/wa_messaging_operations_rpc_message_id_fix.sql",
+    "utf8",
+  );
 
   assert.match(migration, /create table if not exists public\.wa_inbound_message_processing/);
   assert.match(migration, /create or replace function public\.wa_ingest_inbound_message/);
@@ -412,6 +416,12 @@ test("messaging operations migration provides atomic idempotent inbound ingestio
   assert.match(migration, /create or replace function public\.wa_apply_message_status/);
   assert.match(migration, /on conflict \(business_id, phone_e164\) do update/);
   assert.match(migration, /on conflict \(business_id, meta_message_id\)[\s\S]*?do nothing/);
+  assert.match(migration, /on conflict on constraint wa_inbound_message_processing_pkey do update/);
+  assert.doesNotMatch(migration, /on conflict \(business_id, message_id\) do update/);
+  assert.match(
+    messageIdFix,
+    /on conflict on constraint wa_inbound_message_processing_pkey do update/,
+  );
   assert.match(migration, /if v_inserted then[\s\S]*?unread_count = unread_count \+ 1/);
   assert.match(migration, /processing\.status = 'PROCESSING'[\s\S]*?lease_expires_at <= now\(\)/);
   assert.match(migration, /where message\.business_id = p_business_id/);

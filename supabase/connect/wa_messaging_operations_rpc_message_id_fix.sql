@@ -1,32 +1,8 @@
--- Atomic message ingestion and monotonic provider-status updates for the
--- Flow Manager conversation timeline.
---
--- Prerequisite: wa_flow_manager_core_schema.sql
+-- Repair the deployed inbound-ingest RPC after production exposed an ambiguous
+-- reference between its message_id return column and processing-table column.
+-- Prerequisite: wa_messaging_operations_rpc.sql
 
 begin;
-
-create table if not exists public.wa_inbound_message_processing (
-  business_id text not null references public.wa_businesses(id) on delete cascade,
-  message_id uuid not null,
-  status text not null default 'PENDING',
-  attempts integer not null default 0,
-  lease_expires_at timestamptz,
-  processed_at timestamptz,
-  last_error text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  primary key (business_id, message_id),
-  foreign key (business_id, message_id)
-    references public.wa_conversation_messages(business_id, id) on delete cascade,
-  check (status in ('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED')),
-  check (attempts >= 0)
-);
-
-create index if not exists wa_inbound_message_processing_retry_idx
-  on public.wa_inbound_message_processing (status, lease_expires_at, updated_at)
-  where status in ('PENDING', 'PROCESSING', 'FAILED');
-
-alter table public.wa_inbound_message_processing enable row level security;
 
 create or replace function public.wa_ingest_inbound_message(
   p_business_id text,
@@ -189,7 +165,6 @@ begin
     where message.business_id = p_business_id
       and message.meta_message_id = trim(p_meta_message_id)
     limit 1;
-
   else
     v_inserted := true;
   end if;
@@ -266,96 +241,6 @@ begin
 end;
 $$;
 
-create or replace function public.wa_finish_inbound_message_processing(
-  p_business_id text,
-  p_meta_message_id text,
-  p_succeeded boolean,
-  p_error_message text default null
-)
-returns uuid
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_message_id uuid;
-begin
-  update public.wa_inbound_message_processing as processing
-  set
-    status = case when p_succeeded then 'PROCESSED' else 'FAILED' end,
-    lease_expires_at = null,
-    processed_at = case when p_succeeded then now() else processing.processed_at end,
-    last_error = case when p_succeeded then null else left(p_error_message, 1000) end,
-    updated_at = now()
-  from public.wa_conversation_messages as message
-  where processing.business_id = p_business_id
-    and message.business_id = processing.business_id
-    and message.id = processing.message_id
-    and message.meta_message_id = trim(p_meta_message_id)
-    and processing.status = 'PROCESSING'
-  returning processing.message_id into v_message_id;
-
-  return v_message_id;
-end;
-$$;
-
-create or replace function public.wa_apply_message_status(
-  p_business_id text,
-  p_meta_message_id text,
-  p_status text,
-  p_occurred_at timestamptz,
-  p_error_code text default null,
-  p_error_message text default null
-)
-returns uuid
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_message_id uuid;
-  v_occurred_at timestamptz := coalesce(p_occurred_at, now());
-begin
-  if p_status not in ('SENT', 'DELIVERED', 'READ', 'FAILED') then
-    return null;
-  end if;
-
-  update public.wa_conversation_messages as message
-  set
-    status = case
-      when message.status in ('READ', 'FAILED') then message.status
-      when p_status = 'FAILED' then 'FAILED'
-      when p_status = 'READ' then 'READ'
-      when message.status = 'DELIVERED' then 'DELIVERED'
-      when p_status = 'DELIVERED' then 'DELIVERED'
-      when message.status = 'SENT' then 'SENT'
-      else p_status
-    end,
-    sent_at = case
-      when p_status = 'SENT' then coalesce(message.sent_at, v_occurred_at)
-      else message.sent_at
-    end,
-    delivered_at = case
-      when p_status = 'DELIVERED' then coalesce(message.delivered_at, v_occurred_at)
-      else message.delivered_at
-    end,
-    read_at = case
-      when p_status = 'READ' then coalesce(message.read_at, v_occurred_at)
-      else message.read_at
-    end,
-    error_code = case when p_status = 'FAILED' then left(p_error_code, 120) else message.error_code end,
-    error_message = case
-      when p_status = 'FAILED' then left(p_error_message, 1000)
-      else message.error_message
-    end
-  where message.business_id = p_business_id
-    and message.meta_message_id = trim(p_meta_message_id)
-  returning message.id into v_message_id;
-
-  return v_message_id;
-end;
-$$;
-
 revoke all on function public.wa_ingest_inbound_message(
   text,
   text,
@@ -365,22 +250,6 @@ revoke all on function public.wa_ingest_inbound_message(
   text,
   timestamptz,
   jsonb
-) from public, anon, authenticated;
-
-revoke all on function public.wa_apply_message_status(
-  text,
-  text,
-  text,
-  timestamptz,
-  text,
-  text
-) from public, anon, authenticated;
-
-revoke all on function public.wa_finish_inbound_message_processing(
-  text,
-  text,
-  boolean,
-  text
 ) from public, anon, authenticated;
 
 grant execute on function public.wa_ingest_inbound_message(
@@ -393,23 +262,5 @@ grant execute on function public.wa_ingest_inbound_message(
   timestamptz,
   jsonb
 ) to service_role;
-
-grant execute on function public.wa_apply_message_status(
-  text,
-  text,
-  text,
-  timestamptz,
-  text,
-  text
-) to service_role;
-
-grant execute on function public.wa_finish_inbound_message_processing(
-  text,
-  text,
-  boolean,
-  text
-) to service_role;
-
-grant select, insert, update, delete on public.wa_inbound_message_processing to service_role;
 
 commit;
