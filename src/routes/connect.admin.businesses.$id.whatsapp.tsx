@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
   CheckCircle2,
+  Link2,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useBusinessDetails } from "@/features/connect/admin/businesses/business-details-context";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
 import {
+  ensureAdminWhatsAppSubscription,
   getAdminWhatsAppHealth,
   type AdminBusinessDetailsResult,
 } from "@/features/connect/shared/admin-client";
@@ -47,6 +49,7 @@ function WAConnectionPage() {
   const details = useBusinessDetails();
   const [health, setHealth] = useState<WhatsAppConnectionHealth | null>(null);
   const [checking, setChecking] = useState(false);
+  const [repairing, setRepairing] = useState(false);
   const [checkError, setCheckError] = useState("");
 
   if (!details)
@@ -70,6 +73,18 @@ function WAConnectionPage() {
       setCheckError(error instanceof Error ? error.message : "Could not verify this connection.");
     } finally {
       setChecking(false);
+    }
+  }
+
+  async function repairSubscription() {
+    setRepairing(true);
+    setCheckError("");
+    try {
+      setHealth(await ensureAdminWhatsAppSubscription(connection.id));
+    } catch (error) {
+      setCheckError(error instanceof Error ? error.message : "Could not subscribe the Meta app.");
+    } finally {
+      setRepairing(false);
     }
   }
 
@@ -128,6 +143,21 @@ function WAConnectionPage() {
                 Database health check: {formatCheckedAt(connection.last_health_check_at)}
               </div>
               <div className="flex gap-2">
+                {health && !health.subscription.wabaSubscribed ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={repairSubscription}
+                    disabled={repairing || checking}
+                  >
+                    {repairing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Link2 className="h-4 w-4" />
+                    )}
+                    Subscribe app
+                  </Button>
+                ) : null}
                 <Button variant="outline" size="sm" onClick={verifyConnection} disabled={checking}>
                   {checking ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -228,8 +258,14 @@ function ConnectionHealthResult({ health }: { health: WhatsAppConnectionHealth }
           value={health.meta.identityMatches ? "Matched" : "Not verified"}
         />
         <HealthValue
-          label="WABA app subscription"
-          value={health.subscription.wabaSubscribed ? "Subscribed" : "Not subscribed"}
+          label="Current app on WABA"
+          value={
+            health.subscription.wabaSubscribed
+              ? "Subscribed"
+              : health.subscription.wabaAppCount
+                ? "Different app subscribed"
+                : "Not subscribed"
+          }
         />
         <HealthValue
           label="Webhook callback"

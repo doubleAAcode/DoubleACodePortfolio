@@ -89,6 +89,18 @@ export async function getAdminWhatsAppHealth(connectionId: string) {
   return result.data;
 }
 
+export async function ensureAdminWhatsAppSubscription(connectionId: string) {
+  const result = await apiFetch<ApiResult<WhatsAppConnectionHealth>>(
+    "/api/connect/admin/whatsapp-health",
+    {
+      method: "POST",
+      body: JSON.stringify({ connectionId }),
+    },
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
 export async function loginInternalAdmin(username: string, password: string) {
   return apiFetch<{ ok: true }>("/api/connect/admin/login", {
     method: "POST",

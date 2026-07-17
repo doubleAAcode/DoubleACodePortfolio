@@ -813,15 +813,16 @@ Milestone 1 work-package contract:
 Current authorized next action: finish the 1A real-provider smoke gate. Test
 marker `LIVE-1A-0717-A1` was sent to the active Meta test number, but a
 secret-safe two-hour production audit found no signed Meta `POST`, durable
-message, processing claim, or message event for it. Deploy and run the expanded
-connection health check to verify the app callback, `messages` field, and WABA
-app subscription; repair the missing subscription layer, then resend a unique
-marker and record tenant routing, durable inbound, duplicate/retry behavior,
-deterministic response, and status-hook evidence. Do not use the static Live
-Test or Diagnostics pages as proof. Do not advance to 1B until that evidence is
-recorded or a discovered 1A defect is fixed and re-verified. Outbound timeline
-insertion and end-to-end delivery state remain in 1C and the Milestone 1
-completion gate.
+message, processing claim, or message event for it. The first expanded health
+check confirmed the active callback and `messages` field, while a 90-day audit
+showed proven traffic on a different historical phone-number ID. Deploy the
+exact current-app/WABA comparison and audited repair action, ensure the current
+app is subscribed, then resend a unique marker and record tenant routing,
+durable inbound, duplicate/retry behavior, deterministic response, and
+status-hook evidence. Do not use the static Live Test or Diagnostics pages as
+proof. Do not advance to 1B until that evidence is recorded or a discovered 1A
+defect is fixed and re-verified. Outbound timeline insertion and end-to-end
+delivery state remain in 1C and the Milestone 1 completion gate.
 
 Milestone 1 platform controls:
 
@@ -1067,3 +1068,4 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Completed the authenticated production read smoke using credentials supplied through a temporary Git-ignored local file. Login, session, and Businesses API returned `200`; the API returned two live business records, and the exact Businesses UI rendered them at the canonical production origin. The active business reports Live, 100% setup, WhatsApp Active, Health OK, and 10/11 checklist completion.                                                                                                                                             | Browser verification at 1280px found no console warnings/errors or horizontal overflow. The real record differs from Lovable examples, proving that the Businesses adapter is using Supabase. The WhatsApp Connection, Live Test, and Diagnostics child routes were confirmed to remain static preview implementations with unrelated numbers and simulated outcomes; they are not valid live-test evidence. The only incomplete real setup item is receipt of a real WhatsApp test message.                          |
 | 2026-07-17 | Promoted the exact Lovable WhatsApp Connection page from illustrative data to a real read/health adapter. It now renders the selected Supabase connection and calls an internal-admin-authorized endpoint that checks the configured phone identity through Meta Graph using runtime-only credentials, an eight-second timeout, and sanitized results. Added a CLI preflight that refuses Vercel masked placeholders, repaired stale reliability checks, and added `WHATSAPP_CONNECTION_SUFFIXES=2` to Vercel Production and Preview.                       | Commit `a4e5fe2` passed the production build, typecheck, scoped lint, all 42 main tests, all 13 reliability tests, and `git diff --check`. Deployment `dpl_37TyX7wdzEjTYt3CpYMn3UUrzDSP` reached Ready and serves both canonical aliases. Authenticated production browser checks showed the real business values, Meta HTTP `200`, matched identity, `GREEN` quality, zero browser warnings/errors, and no horizontal overflow at 1280px or 390px. Real inbound/retry/status evidence remains open.                  |
 | 2026-07-17 | Began the real-provider Milestone 1A smoke with marker `LIVE-1A-0717-A1`. Expanded the admin-only WhatsApp health adapter beyond phone identity to inspect the current Meta app, app-level WhatsApp callback and `messages` subscription, and WABA app subscription using runtime-only credentials; the exact connection page now reports each layer separately.                                                                                                                                            | A secret-safe production Supabase audit found no signed Meta `POST`, durable message, processing claim, or diagnostic event after the marker was sent; the existing webhook logs contained only earlier deliberate invalid probes. This local diagnostic release passed typecheck, scoped lint, all 42 main tests, all 13 reliability tests, production build, and `git diff --check`; deployment and live subscription diagnosis are next.                                                        |
+| 2026-07-17 | Deployed the first subscription diagnostic as `dpl_8rbcVfyq2ovuhKDemk5ai7gCYrhz`; production reported a matched callback, active `messages` subscription, and at least one WABA app subscription. A 90-day secret-safe audit then proved historical inbound, bot responses, and sent/delivered/read callbacks, but on a different phone-number ID from the current active Meta test number. Tightened the check to compare the exact current app ID and added an audited admin repair action that subscribes that app to the selected WABA. | The canonical aliases served commit `6f8686a`; authenticated production health was Meta HTTP `200`, matched identity, matched callback, active `messages`, and `GREEN` quality. The current number still had no inbound event. The next deployment must run the exact current-app comparison, repair if necessary, and repeat the provider marker before 1A can close.                                                                                                                                          |

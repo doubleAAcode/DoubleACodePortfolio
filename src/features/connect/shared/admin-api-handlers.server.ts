@@ -10,6 +10,7 @@ import {
 import {
   checkWhatsAppConnectionHealth,
   createWhatsAppMessageTemplate,
+  ensureWhatsAppApplicationSubscription,
   getReviewConnection,
   listLocalMetaTemplates,
   listReviewConnections,
@@ -785,6 +786,32 @@ export function createInternalAdminWhatsAppHealthHandlers() {
         requireAdmin(request);
         const connectionId = new URL(request.url).searchParams.get("connectionId") || "";
         const data = await checkWhatsAppConnectionHealth(connectionId);
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return adminApiError(error);
+      }
+    },
+    POST: async ({ request }: { request: Request }) => {
+      try {
+        const session = requireAdmin(request);
+        const body = (await request.json().catch(() => null)) as {
+          connectionId?: string;
+        } | null;
+        const data = await ensureWhatsAppApplicationSubscription(body?.connectionId || "");
+        await recordAdminAuditLog({
+          adminUser: session.username,
+          request,
+          businessId: data.connection.businessId,
+          action: "WHATSAPP_APP_SUBSCRIPTION_ENSURED",
+          targetType: "WHATSAPP_CONNECTION",
+          targetId: data.connection.connectionId,
+          newValue: {
+            appId: data.subscription.appId,
+            wabaSubscribed: data.subscription.wabaSubscribed,
+            callbackMatches: data.subscription.callbackMatches,
+            messagesSubscribed: data.subscription.messagesSubscribed,
+          },
+        });
         return Response.json({ ok: true, data });
       } catch (error) {
         return adminApiError(error);

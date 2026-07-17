@@ -50,6 +50,7 @@ export type WhatsAppConnectionHealth = {
     appName: string | null;
     appStatus: number | null;
     wabaStatus: number | null;
+    wabaAppCount: number;
     wabaSubscribed: boolean;
     callbackConfigured: boolean;
     callbackMatches: boolean;
@@ -128,7 +129,12 @@ type MetaAppResponse = {
 };
 
 type MetaSubscribedAppsResponse = {
-  data?: unknown[];
+  data?: Array<{
+    id?: string;
+    whatsapp_business_api_data?: {
+      id?: string;
+    };
+  }>;
   error?: MetaApiError;
 };
 
@@ -141,6 +147,11 @@ type MetaAppSubscription = {
 
 type MetaAppSubscriptionsResponse = {
   data?: MetaAppSubscription[];
+  error?: MetaApiError;
+};
+
+type MetaSubscribeAppResponse = {
+  success?: boolean;
   error?: MetaApiError;
 };
 
@@ -263,7 +274,11 @@ export async function checkWhatsAppConnectionHealth(
     const callbackUrl = whatsappSubscription?.callback_url?.trim() || null;
     const subscriptionError =
       appData.error || wabaData.error || appSubscriptions.error || undefined;
-    const wabaSubscribed = wabaResponse.ok && Boolean(wabaData.data?.length);
+    const wabaAppIds = (wabaData.data ?? [])
+      .map((entry) => entry.whatsapp_business_api_data?.id || entry.id || "")
+      .filter(Boolean);
+    const wabaSubscribed =
+      wabaResponse.ok && Boolean(appData.id) && wabaAppIds.includes(appData.id || "");
     const callbackConfigured = Boolean(callbackUrl);
     const callbackMatches = callbackUrl
       ? normalizeUrl(callbackUrl) === normalizeUrl(expectedCallbackUrl)
@@ -303,6 +318,7 @@ export async function checkWhatsAppConnectionHealth(
         appName: appData.name?.trim() || null,
         appStatus: appSubscriptionResponse?.status ?? appResponse.status,
         wabaStatus: wabaResponse.status,
+        wabaAppCount: wabaData.data?.length ?? 0,
         wabaSubscribed,
         callbackConfigured,
         callbackMatches,
@@ -341,6 +357,61 @@ export async function checkWhatsAppConnectionHealth(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function ensureWhatsAppApplicationSubscription(
+  connectionId: string,
+): Promise<WhatsAppConnectionHealth> {
+  const connection = await getReviewConnection(connectionId);
+  const config = getWhatsAppServerConfig(connection.configSuffix);
+  const missingConfigKeys = getMissingWhatsAppConfigKeys(config);
+  if (missingConfigKeys.length) {
+    throw new Error(`Missing WhatsApp config: ${missingConfigKeys.join(", ")}`);
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), META_HEALTH_TIMEOUT_MS);
+  try {
+    const appUrl = new URL(`${config.graphApiVersion}/app`, "https://graph.facebook.com");
+    appUrl.searchParams.set("fields", "id,name");
+    const appResponse = await fetch(appUrl, {
+      headers: { Authorization: `Bearer ${config.accessToken}` },
+      signal: controller.signal,
+    });
+    const appData = (await appResponse.json().catch(() => ({}))) as MetaAppResponse;
+    if (!appResponse.ok || !appData.id) {
+      throw new Error(
+        sanitizeExternalErrorMessage(
+          appData.error?.message,
+          "Could not identify the Meta app for this connection",
+        ),
+      );
+    }
+
+    const wabaId = connection.businessAccountId || config.businessAccountId;
+    const subscribeUrl = new URL(
+      `${config.graphApiVersion}/${encodeURIComponent(wabaId)}/subscribed_apps`,
+      "https://graph.facebook.com",
+    );
+    const response = await fetch(subscribeUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.accessToken}` },
+      signal: controller.signal,
+    });
+    const data = (await response.json().catch(() => ({}))) as MetaSubscribeAppResponse;
+    if (!response.ok || data.success === false) {
+      throw new Error(
+        sanitizeExternalErrorMessage(
+          data.error?.message,
+          "Meta rejected the WABA app subscription",
+        ),
+      );
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  return checkWhatsAppConnectionHealth(connectionId);
 }
 
 export async function createWhatsAppMessageTemplate({
@@ -567,6 +638,7 @@ function emptySubscriptionHealth(
     appName: null,
     appStatus: null,
     wabaStatus: null,
+    wabaAppCount: 0,
     wabaSubscribed: false,
     callbackConfigured: false,
     callbackMatches: false,

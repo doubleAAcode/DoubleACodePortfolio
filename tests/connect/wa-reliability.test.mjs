@@ -180,13 +180,18 @@ test("admin WhatsApp health check uses runtime-only Meta credentials", () => {
   assert.match(appReviewDemo, /getWhatsAppServerConfig\(connection\.configSuffix\)/);
   assert.match(appReviewDemo, /Authorization: `Bearer \$\{config\.accessToken\}`/);
   assert.match(appReviewDemo, /identityMatches/);
+  assert.match(appReviewDemo, /wabaAppIds\.includes\(appData\.id/);
+  assert.match(appReviewDemo, /export async function ensureWhatsAppApplicationSubscription/);
+  assert.match(appReviewDemo, /method: "POST"/);
   assert.match(appReviewDemo, /META_HEALTH_TIMEOUT_MS/);
   assert.match(adminHandlers, /createInternalAdminWhatsAppHealthHandlers/);
   assert.match(adminHandlers, /requireAdmin\(request\)/);
   assert.match(adminClient, /export async function getAdminWhatsAppHealth/);
+  assert.match(adminClient, /export async function ensureAdminWhatsAppSubscription/);
   assert.match(whatsappHealthRoute, /\/api\/connect\/admin\/whatsapp-health/);
   assert.match(businessWhatsAppRoute, /useBusinessDetails/);
   assert.match(businessWhatsAppRoute, /getAdminWhatsAppHealth/);
+  assert.match(businessWhatsAppRoute, /ensureAdminWhatsAppSubscription/);
   assert.doesNotMatch(businessWhatsAppRoute, /preview-data\/mock-data/);
 });
 
