@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "smoke:whatsapp:preflight": "node tools/whatsapp-live-preflight.mjs",
     "test:wa": "node --test tests/connect/wa-reliability.test.mjs",
     "format": "prettier --write .",
     "test": "node --experimental-strip-types --test tests/**/*.test.ts",

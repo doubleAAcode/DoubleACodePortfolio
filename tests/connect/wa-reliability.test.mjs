@@ -11,11 +11,16 @@ const diagnosticsHandler = read("src/features/connect/shared/diagnostics.server.
 const dashboardHandlers = read("src/features/connect/shared/dashboard-api-handlers.server.ts");
 const adminHandlers = read("src/features/connect/shared/admin-api-handlers.server.ts");
 const adminClient = read("src/features/connect/shared/admin-client.ts");
+const appReviewDemo = read("src/features/connect/shared/app-review-demo.server.ts");
 const dashboardStore = read("src/features/connect/shared/dashboard-store.server.ts");
 const flowImageRoute = read("src/routes/api.connect.admin.businesses.$businessId.flow-image.ts");
-const businessFlowBuilderRoute = read(
-  "src/routes/connect.admin.businesses.$businessId.flow-builder.tsx",
+const whatsappHealthRoute = read("src/routes/api.connect.admin.whatsapp-health.ts");
+const businessWhatsAppRoute = read("src/routes/connect.admin.businesses.$id.whatsapp.tsx");
+const flowManagerFeatureStatus = read("src/features/connect/flow-manager-ui/feature-status.ts");
+const flowManagerPreviewBoundary = read(
+  "src/features/connect/flow-manager-ui/preview-boundary.tsx",
 );
+const businessFlowBuilderRoute = read("src/routes/connect.admin.businesses.$id.flow-builder.tsx");
 const sender = read("src/features/connect/shared/sender.server.ts");
 const reliability = read("src/features/connect/shared/reliability.ts");
 const sessionStore = read("src/features/connect/shared/conversation-store.server.ts");
@@ -170,6 +175,21 @@ test("admin flow image uploads use authenticated FormData storage route", () => 
   assert.match(flowImageRoute, /\/api\/connect\/admin\/businesses\/\$businessId\/flow-image/);
 });
 
+test("admin WhatsApp health check uses runtime-only Meta credentials", () => {
+  assert.match(appReviewDemo, /export async function checkWhatsAppConnectionHealth/);
+  assert.match(appReviewDemo, /getWhatsAppServerConfig\(connection\.configSuffix\)/);
+  assert.match(appReviewDemo, /Authorization: `Bearer \$\{config\.accessToken\}`/);
+  assert.match(appReviewDemo, /identityMatches/);
+  assert.match(appReviewDemo, /META_HEALTH_TIMEOUT_MS/);
+  assert.match(adminHandlers, /createInternalAdminWhatsAppHealthHandlers/);
+  assert.match(adminHandlers, /requireAdmin\(request\)/);
+  assert.match(adminClient, /export async function getAdminWhatsAppHealth/);
+  assert.match(whatsappHealthRoute, /\/api\/connect\/admin\/whatsapp-health/);
+  assert.match(businessWhatsAppRoute, /useBusinessDetails/);
+  assert.match(businessWhatsAppRoute, /getAdminWhatsAppHealth/);
+  assert.doesNotMatch(businessWhatsAppRoute, /preview-data\/mock-data/);
+});
+
 test("admin support diagnostics can inspect and reset a customer conversation", () => {
   assert.match(adminHandlers, /inspect_customer_conversation/);
   assert.match(adminHandlers, /reset_customer_conversation/);
@@ -185,16 +205,16 @@ test("admin support diagnostics can inspect and reset a customer conversation", 
   assert.match(adminClient, /AdminConversationDiagnostics/);
 });
 
-test("normal business flow builder only exposes approved template families", () => {
-  assert.match(businessFlowBuilderRoute, /approvedTemplateCategories/);
-  assert.match(businessFlowBuilderRoute, /"ECOMMERCE"/);
-  assert.match(businessFlowBuilderRoute, /"RESTAURANT"/);
-  assert.match(businessFlowBuilderRoute, /"GREETING_STORE_INFO"/);
+test("Lovable business flow builder remains preview-only until backend promotion", () => {
+  assert.match(businessFlowBuilderRoute, /preview-data\/mock-data/);
+  assert.match(businessFlowBuilderRoute, /flowSteps/);
   assert.match(
-    businessFlowBuilderRoute,
-    /template\.status === "PUBLISHED" && approvedTemplateCategories\.has\(template\.category\)/,
+    flowManagerFeatureStatus,
+    /\{ path: "\/connect\/admin\/businesses", includeChildren: true \}/,
   );
-  assert.doesNotMatch(businessFlowBuilderRoute, /Start from scratch/);
+  assert.match(flowManagerPreviewBoundary, /mutationLabel/);
+  assert.match(flowManagerPreviewBoundary, /publish/);
+  assert.match(flowManagerPreviewBoundary, /data-flow-manager-status/);
 });
 
 test("image replies pause before follow-up messages to keep deterministic WhatsApp ordering", () => {

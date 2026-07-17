@@ -8,6 +8,7 @@ import {
   validateInternalAdminCredentials,
 } from "./admin-auth.server";
 import {
+  checkWhatsAppConnectionHealth,
   createWhatsAppMessageTemplate,
   getReviewConnection,
   listLocalMetaTemplates,
@@ -769,6 +770,21 @@ export function createInternalAdminReviewConnectionsHandlers() {
       try {
         requireAdmin(request);
         const data = await listReviewConnections();
+        return Response.json({ ok: true, data });
+      } catch (error) {
+        return adminApiError(error);
+      }
+    },
+  };
+}
+
+export function createInternalAdminWhatsAppHealthHandlers() {
+  return {
+    GET: async ({ request }: { request: Request }) => {
+      try {
+        requireAdmin(request);
+        const connectionId = new URL(request.url).searchParams.get("connectionId") || "";
+        const data = await checkWhatsAppConnectionHealth(connectionId);
         return Response.json({ ok: true, data });
       } catch (error) {
         return adminApiError(error);

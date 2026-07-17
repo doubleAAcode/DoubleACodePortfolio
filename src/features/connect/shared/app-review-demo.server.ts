@@ -25,6 +25,24 @@ export type ReviewConnectionSummary = {
   missingConfigKeys: string[];
 };
 
+export type WhatsAppConnectionHealth = {
+  checkedAt: string;
+  connection: ReviewConnectionSummary;
+  configComplete: boolean;
+  missingConfigKeys: string[];
+  meta: {
+    ok: boolean;
+    status: number | null;
+    identityMatches: boolean;
+    displayNumberPresent: boolean;
+    verifiedName: string | null;
+    qualityRating: string | null;
+    codeVerificationStatus: string | null;
+    errorCode: string | null;
+    errorMessage: string | null;
+  };
+};
+
 export type MetaTemplateRow = {
   id: string;
   business_id: string | null;
@@ -72,6 +90,20 @@ type MetaTemplateResponse = {
   };
 };
 
+type MetaPhoneNumberResponse = {
+  id?: string;
+  display_phone_number?: string;
+  verified_name?: string;
+  quality_rating?: string;
+  code_verification_status?: string;
+  error?: {
+    code?: string | number;
+    message?: string;
+  };
+};
+
+const META_HEALTH_TIMEOUT_MS = 8_000;
+
 export async function listReviewConnections(): Promise<ReviewConnectionSummary[]> {
   if (!isServerSupabaseConfigured()) return [];
 
@@ -103,6 +135,79 @@ export async function getReviewConnection(connectionId: string) {
     connection,
     new Map(businesses.map((business) => [business.id, business])),
   );
+}
+
+export async function checkWhatsAppConnectionHealth(
+  connectionId: string,
+): Promise<WhatsAppConnectionHealth> {
+  const connection = await getReviewConnection(connectionId);
+  const config = getWhatsAppServerConfig(connection.configSuffix);
+  const missingConfigKeys = getMissingWhatsAppConfigKeys(config);
+  const checkedAt = new Date().toISOString();
+
+  if (missingConfigKeys.length) {
+    return {
+      checkedAt,
+      connection,
+      configComplete: false,
+      missingConfigKeys,
+      meta: emptyMetaHealth("WhatsApp runtime configuration is incomplete."),
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), META_HEALTH_TIMEOUT_MS);
+  try {
+    const url = new URL(
+      `${config.graphApiVersion}/${encodeURIComponent(connection.phoneNumberId)}`,
+      "https://graph.facebook.com",
+    );
+    url.searchParams.set(
+      "fields",
+      "id,display_phone_number,verified_name,quality_rating,code_verification_status",
+    );
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${config.accessToken}` },
+      signal: controller.signal,
+    });
+    const data = (await response.json().catch(() => ({}))) as MetaPhoneNumberResponse;
+    const identityMatches = data.id === connection.phoneNumberId;
+
+    return {
+      checkedAt,
+      connection,
+      configComplete: true,
+      missingConfigKeys: [],
+      meta: {
+        ok: response.ok && identityMatches,
+        status: response.status,
+        identityMatches,
+        displayNumberPresent: Boolean(data.display_phone_number),
+        verifiedName: data.verified_name?.trim() || null,
+        qualityRating: data.quality_rating?.trim() || null,
+        codeVerificationStatus: data.code_verification_status?.trim() || null,
+        errorCode: data.error?.code == null ? null : String(data.error.code),
+        errorMessage: response.ok
+          ? null
+          : sanitizeExternalErrorMessage(data.error?.message, "Meta connection check failed"),
+      },
+    };
+  } catch (error) {
+    return {
+      checkedAt,
+      connection,
+      configComplete: true,
+      missingConfigKeys: [],
+      meta: emptyMetaHealth(
+        sanitizeExternalErrorMessage(
+          error instanceof Error ? error.message : undefined,
+          "Meta connection check failed",
+        ),
+      ),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function createWhatsAppMessageTemplate({
@@ -301,4 +406,18 @@ function sanitizeResponse(data: Record<string, unknown>) {
     sanitized[key] = /token|secret|authorization/i.test(key) ? "[redacted]" : value;
   }
   return sanitized;
+}
+
+function emptyMetaHealth(errorMessage: string): WhatsAppConnectionHealth["meta"] {
+  return {
+    ok: false,
+    status: null,
+    identityMatches: false,
+    displayNumberPresent: false,
+    verifiedName: null,
+    qualityRating: null,
+    codeVerificationStatus: null,
+    errorCode: null,
+    errorMessage,
+  };
 }

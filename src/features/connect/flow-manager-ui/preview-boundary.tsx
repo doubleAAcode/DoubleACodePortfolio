@@ -9,7 +9,7 @@ const mutationLabel =
 
 const partialRouteMessages: Record<string, string> = {
   "/connect/admin/businesses":
-    "Business records, search, status filters, and setup checks use live admin data. Creation and configuration actions remain future work.",
+    "Business records, search, status filters, setup checks, and WhatsApp connection health use live admin data. Creation and configuration changes remain future work.",
   "/connect/client/automations":
     "The workflow list uses the authorized business backend. Canvas data, editing, and actions remain preview-only.",
 };

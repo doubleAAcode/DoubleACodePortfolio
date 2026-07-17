@@ -340,16 +340,16 @@ response.
 This is the audited starting point for the roadmap. It distinguishes deployed
 foundations from the final product experience.
 
-| Area                 | Current baseline                                                                                                                                                                 | Target                                                                                       |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Product surface      | Exact Lovable admin/client route trees mounted below `/connect`; most routes are Preview/Future.                                                                                 | One coherent Flow Manager product with real, tenant-safe operations.                         |
-| Connected UI         | Admin Businesses list/header/setup hub and client Automations have partial real adapters. Business WhatsApp, Live Test, and Diagnostics child pages remain Lovable preview data. | Each route graduates independently only after its full journey passes.                       |
-| WhatsApp             | Verified webhook, phone-number routing, deterministic processing, sender, diagnostics, and new durable inbound persistence code.                                                 | Durable inbox, human operations, statuses, flows, media, templates, and broadcasts.          |
-| Database             | Existing `wa_*` commerce/runtime domains plus deployed additive Flow Manager inbox/contact tables and messaging RPCs.                                                            | Versioned, tenant-scoped domains with migration and rollback evidence.                       |
-| Authentication       | HMAC-signed, environment-backed internal-admin and client cookies. Client sessions are tied to one configured business.                                                          | Database-backed users, workspace memberships, role enforcement, rotation, and audit.         |
-| Deployment           | Automatic `main` deployment is working. The Milestone 1A release first verified at commit `5f059bf` reached Ready and was promoted to both canonical aliases.                    | Repeatable local, preview, and production release ladder with smoke and rollback procedures. |
-| Legacy compatibility | Database connection lookup falls back to legacy suffixed Vercel WhatsApp variables. Existing APIs and services remain available behind redirects/adapters.                       | Database-owned connections and new UI, with fallback removed only after measured cutover.    |
-| Verified baseline    | Typecheck, scoped ESLint, 42 Connect tests, production build, live SQL checks, and prior desktop/mobile browser checks pass.                                                     | Every milestone adds automated, browser, database, and real-provider evidence.               |
+| Area                 | Current baseline                                                                                                                                                                                  | Target                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Product surface      | Exact Lovable admin/client route trees mounted below `/connect`; most routes are Preview/Future.                                                                                                  | One coherent Flow Manager product with real, tenant-safe operations.                         |
+| Connected UI         | Admin Businesses list/header/setup hub and WhatsApp Connection read/health view use real adapters; client Automations is partial. Business Live Test and Diagnostics remain Lovable preview data. | Each route graduates independently only after its full journey passes.                       |
+| WhatsApp             | Verified webhook, phone-number routing, deterministic processing, sender, diagnostics, and new durable inbound persistence code.                                                                  | Durable inbox, human operations, statuses, flows, media, templates, and broadcasts.          |
+| Database             | Existing `wa_*` commerce/runtime domains plus deployed additive Flow Manager inbox/contact tables and messaging RPCs.                                                                             | Versioned, tenant-scoped domains with migration and rollback evidence.                       |
+| Authentication       | HMAC-signed, environment-backed internal-admin and client cookies. Client sessions are tied to one configured business.                                                                           | Database-backed users, workspace memberships, role enforcement, rotation, and audit.         |
+| Deployment           | Automatic `main` deployment is working. The Milestone 1A release first verified at commit `5f059bf` reached Ready and was promoted to both canonical aliases.                                     | Repeatable local, preview, and production release ladder with smoke and rollback procedures. |
+| Legacy compatibility | Database connection lookup falls back to legacy suffixed Vercel WhatsApp variables. Existing APIs and services remain available behind redirects/adapters.                                        | Database-owned connections and new UI, with fallback removed only after measured cutover.    |
+| Verified baseline    | Typecheck, scoped ESLint, 42 Connect tests, production build, live SQL checks, and prior desktop/mobile browser checks pass.                                                                      | Every milestone adds automated, browser, database, and real-provider evidence.               |
 
 Known release gap: the Milestone 1A application code and live RPCs are deployed,
 but the real Meta inbound/retry/status smoke test is not complete. Production
@@ -358,9 +358,10 @@ commit `5f059bf`. Secret-safe production login, session, and Businesses API
 checks return `200`; the exact Businesses UI renders two live Supabase records
 without browser errors or overflow. The active business is Live, 100% configured,
 WhatsApp Active, Health OK, and 10/11 on the real setup checklist. Its remaining
-item is a real test message. The WhatsApp Connection, Live Test, and Diagnostics
-child pages still contain static Lovable examples and are excluded from live
-acceptance evidence until connected.
+item is a real test message. WhatsApp Connection now reads the database and has
+an admin-authorized, runtime-secret Meta identity check awaiting production
+acceptance. Live Test and Diagnostics still contain static Lovable examples and
+are excluded from live acceptance evidence until connected.
 
 ## Technology Stack
 
@@ -808,14 +809,16 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: finish the 1A real-provider smoke gate. Send a
-uniquely identifiable message from an allowed test customer to the actual active
-business number, then record the Meta webhook, tenant routing, durable inbound
-row, duplicate/retry behavior, deterministic response, and status-hook outcome
-from backend evidence. Do not use the static Live Test or Diagnostics pages as
-proof. Do not advance to 1B until that evidence is recorded or a discovered 1A
-defect is fixed and re-verified. Outbound timeline insertion and end-to-end
-delivery state remain in 1C and the Milestone 1 completion gate.
+Current authorized next action: deploy and production-test the runtime-secret
+WhatsApp health endpoint and connected WhatsApp Connection page. Then finish the
+1A real-provider smoke gate by sending a uniquely identifiable message from an
+allowed test customer to the actual active business number and recording the
+Meta webhook, tenant routing, durable inbound row, duplicate/retry behavior,
+deterministic response, and status-hook outcome from backend evidence. Do not
+use the static Live Test or Diagnostics pages as proof. Do not advance to 1B
+until that evidence is recorded or a discovered 1A defect is fixed and
+re-verified. Outbound timeline insertion and end-to-end delivery state remain
+in 1C and the Milestone 1 completion gate.
 
 Milestone 1 platform controls:
 

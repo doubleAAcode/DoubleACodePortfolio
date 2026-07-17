@@ -1,4 +1,8 @@
-import type { MetaTemplateRow, ReviewConnectionSummary } from "./app-review-demo.server";
+import type {
+  MetaTemplateRow,
+  ReviewConnectionSummary,
+  WhatsAppConnectionHealth,
+} from "./app-review-demo.server";
 import type { WaMessageEventRow } from "./message-events.server";
 import type { SendResult } from "./sender.server";
 import type {
@@ -75,6 +79,14 @@ export type AdminConversationDiagnostics = {
 
 export async function getInternalAdminSession() {
   return apiFetch<InternalAdminSessionResult>("/api/connect/admin/session");
+}
+
+export async function getAdminWhatsAppHealth(connectionId: string) {
+  const result = await apiFetch<ApiResult<WhatsAppConnectionHealth>>(
+    `/api/connect/admin/whatsapp-health?connectionId=${encodeURIComponent(connectionId)}`,
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
 }
 
 export async function loginInternalAdmin(username: string, password: string) {

@@ -185,6 +185,7 @@ import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.conne
 import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
 import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
 import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
+import { Route as ApiConnectAdminWhatsappHealthRouteImport } from './routes/api.connect.admin.whatsapp-health'
 import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
 import { Route as ApiConnectAdminSendReviewMessageRouteImport } from './routes/api.connect.admin.send-review-message'
 import { Route as ApiConnectAdminReviewConnectionsRouteImport } from './routes/api.connect.admin.review-connections'
@@ -1161,6 +1162,12 @@ const ApiConnectAdminWhatsappTemplatesRoute =
     path: '/api/connect/admin/whatsapp-templates',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiConnectAdminWhatsappHealthRoute =
+  ApiConnectAdminWhatsappHealthRouteImport.update({
+    id: '/api/connect/admin/whatsapp-health',
+    path: '/api/connect/admin/whatsapp-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectAdminSessionRoute = ApiConnectAdminSessionRouteImport.update({
   id: '/api/connect/admin/session',
   path: '/api/connect/admin/session',
@@ -1500,6 +1507,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
   '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
@@ -1696,6 +1704,7 @@ export interface FileRoutesByTo {
   '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
   '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
@@ -1907,6 +1916,7 @@ export interface FileRoutesById {
   '/api/connect/admin/review-connections': typeof ApiConnectAdminReviewConnectionsRoute
   '/api/connect/admin/send-review-message': typeof ApiConnectAdminSendReviewMessageRoute
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
+  '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
@@ -2120,6 +2130,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/review-connections'
     | '/api/connect/admin/send-review-message'
     | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
@@ -2316,6 +2327,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/review-connections'
     | '/api/connect/admin/send-review-message'
     | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
@@ -2526,6 +2538,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/review-connections'
     | '/api/connect/admin/send-review-message'
     | '/api/connect/admin/session'
+    | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
@@ -2653,6 +2666,7 @@ export interface RootRouteChildren {
   ApiConnectAdminReviewConnectionsRoute: typeof ApiConnectAdminReviewConnectionsRoute
   ApiConnectAdminSendReviewMessageRoute: typeof ApiConnectAdminSendReviewMessageRoute
   ApiConnectAdminSessionRoute: typeof ApiConnectAdminSessionRoute
+  ApiConnectAdminWhatsappHealthRoute: typeof ApiConnectAdminWhatsappHealthRoute
   ApiConnectAdminWhatsappTemplatesRoute: typeof ApiConnectAdminWhatsappTemplatesRoute
   ApiConnectDashboard2CatalogRoute: typeof ApiConnectDashboard2CatalogRoute
   ApiConnectDashboard2DiagnosticsRoute: typeof ApiConnectDashboard2DiagnosticsRoute
@@ -3908,6 +3922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectAdminWhatsappTemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/admin/whatsapp-health': {
+      id: '/api/connect/admin/whatsapp-health'
+      path: '/api/connect/admin/whatsapp-health'
+      fullPath: '/api/connect/admin/whatsapp-health'
+      preLoaderRoute: typeof ApiConnectAdminWhatsappHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/admin/session': {
       id: '/api/connect/admin/session'
       path: '/api/connect/admin/session'
@@ -4843,6 +4864,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectAdminReviewConnectionsRoute: ApiConnectAdminReviewConnectionsRoute,
   ApiConnectAdminSendReviewMessageRoute: ApiConnectAdminSendReviewMessageRoute,
   ApiConnectAdminSessionRoute: ApiConnectAdminSessionRoute,
+  ApiConnectAdminWhatsappHealthRoute: ApiConnectAdminWhatsappHealthRoute,
   ApiConnectAdminWhatsappTemplatesRoute: ApiConnectAdminWhatsappTemplatesRoute,
   ApiConnectDashboard2CatalogRoute: ApiConnectDashboard2CatalogRoute,
   ApiConnectDashboard2DiagnosticsRoute: ApiConnectDashboard2DiagnosticsRoute,
