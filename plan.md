@@ -811,23 +811,21 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: begin 1B Authorized inbox APIs. Work package 1A
-is complete. Marker `LIVE-1A-0717-A4` reached the production webhook with HTTP
-`200`, persisted once, completed one processing claim on its first attempt, and
-produced one bot response with `sent` and `delivered` callbacks. The durable
-conversation now matches `wa_conversation_sessions` on business, pinned flow,
-immutable flow version, and current node, with exactly one `FLOW_STARTED` event.
-A rollback-only handoff postflight called the linkage twice and retained one
-`FLOW_STARTED` plus one `FLOW_STOPPED` inside the transaction. Begin 1B with a
-shared tenant-scoped inbox query service and two-business contract tests, then
-add admin and client list/detail endpoints. Do not connect the Lovable inbox
-surfaces until the API isolation and pagination gate passes. Outbound timeline
-insertion and end-to-end human delivery state remain in 1C.
+Current authorized next action: deploy and verify 1B Authorized inbox APIs.
+The shared tenant-scoped query service and all admin/client conversation and
+contact list/detail endpoints are implemented. Local HTTP checks use real
+Supabase records, return `401` without a session, return `200` for authorized
+admin/client reads, and reject a client-supplied `businessId` with `400`.
+Two-business contract tests cover pagination, filters, cross-tenant denial, and
+sanitized errors. Do not connect the Lovable inbox surfaces until the exact
+commit passes production API smoke checks. Outbound timeline insertion and
+end-to-end human delivery state remain in 1C.
 
 Milestone 1 platform controls:
 
-- [ ] Pin the Node runtime and verify Vercel uses the same major version before
-      1B is released.
+- [~] Pin the Node runtime and verify Vercel uses the same major version before
+      1B is released. `package.json` now requires Node `22.x`; production build
+      verification on the deployed commit remains.
 - [~] Add a secret-safe environment preflight for the active Supabase,
   WhatsApp, admin, and client configuration groups. WhatsApp now has a
   runtime health endpoint and a CLI preflight that rejects masked values;
@@ -864,14 +862,21 @@ Milestone 1 platform controls:
 
 #### 1B - Authorized inbox APIs
 
-- [ ] Add paginated admin conversation list/detail APIs across authorized
-      businesses.
-- [ ] Add paginated client conversation list/detail APIs scoped only to the
-      signed-in business.
-- [ ] Add server-side search, status, assignment, unread, and tag filters.
-- [ ] Add contact history and timeline projections without duplicating domain
-      records in UI-specific tables.
-- [ ] Cover every read and mutation with tenant-isolation and role tests.
+- [~] Add paginated admin conversation list/detail APIs across authorized
+      businesses. Implemented and locally verified against live Supabase;
+      production route verification remains.
+- [~] Add paginated client conversation list/detail APIs scoped only to the
+      signed-in business. Signed-cookie scope and browser override denial pass
+      local HTTP and contract tests; production route verification remains.
+- [~] Add server-side search, status, assignment, unread, and tag filters.
+      Combined real-data filters and tag relationship syntax are verified.
+- [~] Add contact history and timeline projections without duplicating domain
+      records in UI-specific tables. Real message/event timelines and contact
+      cursor pagination are verified read-only.
+- [~] Cover every read and mutation with tenant-isolation and role tests.
+      Read authorization, two-business isolation, pagination, invalid input,
+      not-found behavior, and sanitized failures are covered; 1B has no
+      mutations.
 
 #### 1C - Human operations and outbound reply
 
@@ -956,6 +961,11 @@ Status: **Queued**
       invitations, activation, removal, and audit events.
 - [ ] Complete business creation, setup checklist mutations, WhatsApp connection
       configuration/health, workspace switching, and team management.
+- [ ] After Meta app approval, integrate Embedded Signup for self-service
+      WhatsApp onboarding, connection provisioning, callback/subscription
+      verification, failure recovery, and audit history. Until then, support the
+      existing manually configured live connection without presenting a signup
+      link or implying that additional businesses can self-onboard.
 - [ ] Connect admin Overview, Settings, Logs, Diagnostics, and operational
       analytics to real data.
 - [ ] Keep separate, auditable Double A internal-admin authorization.
@@ -1045,6 +1055,7 @@ the active roadmap:
 | 2026-07-16 | The checked-out Flow Manager route/component tree is the canonical UI baseline.     | Backend adapters must make the supplied product functional without substituting a custom shell or redesigned page composition.                                           |
 | 2026-07-17 | `https://doubleacode.com` is the canonical production origin.                       | Production acceptance must test the real deployed product consistently; a hosting redirect to `www` is an alias, not a different environment.                            |
 | 2026-07-17 | `saeed-ahmar-s-projects/double-a-code-portfolio` is the production Vercel project.  | Deployment acceptance requires evidence that this project built the tested Git commit and assigned both production aliases; a successful Git push alone is insufficient. |
+| 2026-07-17 | Meta app review is pending; production currently has one manually configured live WhatsApp connection. | Active milestones must preserve and test against that connection. Embedded Signup and self-service WhatsApp onboarding stay Future until Meta approval and approved credentials are verified. |
 
 ## Roadmap Changelog
 
@@ -1080,3 +1091,5 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Marker `LIVE-1A-0717-A3` completed the repaired real-provider roundtrip on the current production number. The signed inbound callback returned HTTP `200`, routed to the active business/connection, persisted exactly one customer message, completed one processing claim on its first attempt, and produced exactly one deterministic bot response. The bot response then received signed `sent`, `delivered`, and `read` callbacks.                                                                                                                                            | A controlled replay of the exact A3 provider message ID through the deployed service-role ingest RPC returned `inserted=false` and `shouldProcess=false`; postflight still showed one inbound row, one processing attempt, and one bot response. This closes the provider persistence/idempotency gate. During evidence review, the durable conversation was found not yet to copy the already-pinned runtime flow/version/node, so 1A remains open for the explicit linkage hook and an A4 production check before 1B. |
 | 2026-07-17 | Added the final Milestone 1A runtime-to-inbox linkage. A service-role-only RPC now tenant-validates the pinned business flow/version, updates the durable conversation's flow/version/node atomically, and records idempotent `FLOW_STARTED` plus human-handoff `FLOW_STOPPED` timeline events. The webhook copies the saved session linkage before completing the inbound processing claim.                                                                                                                                                                               | The additive function is live in Supabase; service-role execute is allowed, authenticated execute is denied, and a rollback-only active-session linkage test passed. Typecheck, scoped lint, 43 main tests, 14 WhatsApp reliability tests, production build, and diff checks passed. Vercel deployment `dpl_4kxYkQpdeq9nVB5JHmNteFEE7EQd` built exact commit `f59b474`, reached Ready, and received both canonical aliases. Fresh A4 provider evidence remains before 1A closes. |
 | 2026-07-17 | Closed Milestone 1A with real marker `LIVE-1A-0717-A4` on production deployment `dpl_DfJRuhYoY2qubjYveKd2bgfnywLN` from commit `a7bb544`. The signed callback returned HTTP `200`, persisted exactly one inbound message, completed one processing claim on attempt one, and produced one bot response with `sent` and `delivered` callbacks. The durable conversation copied the active session's tenant, pinned flow, immutable version, and current node.                                                                                                                    | Production showed exact flow/version/node equality and one matching `FLOW_STARTED` event. A rollback-only postflight invoked the handoff linkage twice and asserted one `FLOW_STARTED` plus one human-handoff `FLOW_STOPPED`, proving timeline idempotency without retaining synthetic state. Together with A3's exact-provider-ID duplicate rejection and `sent`/`delivered`/`read` callback chain, every 1A exit condition is satisfied. Work package 1B is now authorized. |
+| 2026-07-17 | Recorded the current Meta rollout constraint: the app remains under review and only the existing manually configured production WhatsApp connection is available. Embedded Signup and multi-business self-service connection onboarding are explicitly deferred to Milestone 4 after Meta approval. | Roadmap-only clarification. Milestones 1-3 must preserve the active connection and require no Embedded Signup dependency; onboarding UI remains labeled Future and must not expose a nonfunctional signup link. |
+| 2026-07-17 | Implemented the Milestone 1B authorized inbox read slice: one shared Supabase query service now provides deterministic opaque-cursor conversation/contact lists, conversation timelines, contact history, validated filters, and sanitized projections. Added admin and signed-business client list/detail route families, while keeping the Lovable Inbox and Contacts screens unchanged and labeled Future. Pinned the application runtime to Node `22.x`. | Typecheck, scoped ESLint, 51 main tests, 14 WhatsApp reliability tests, production build, read-only live Supabase pagination/filter/timeline/cross-tenant checks, and authenticated local HTTP route checks pass. Production deployment and canonical-origin API smoke remain before 1B completion. |

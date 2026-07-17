@@ -2,10 +2,9 @@ import "@tanstack/react-start/server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-import { DOUBLE_A_TEST_BUSINESS_ID } from "./catalog-repository.server";
-
 const COOKIE_NAME = "wa_dashboard_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
+const DOUBLE_A_TEST_BUSINESS_ID = "double-a-test-business";
 const PARTNER_TEST_BUSINESS_ID = "double-a-partner-test-business";
 
 type DashboardSessionPayload = {

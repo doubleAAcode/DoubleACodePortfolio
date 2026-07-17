@@ -184,6 +184,8 @@ import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.conn
 import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.connect.dashboard-2.flow'
 import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
 import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
+import { Route as ApiConnectClientConversationsRouteImport } from './routes/api/connect/client/conversations'
+import { Route as ApiConnectClientContactsRouteImport } from './routes/api/connect/client/contacts'
 import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
 import { Route as ApiConnectAdminWhatsappHealthRouteImport } from './routes/api.connect.admin.whatsapp-health'
 import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
@@ -195,6 +197,8 @@ import { Route as ApiConnectAdminLogsRouteImport } from './routes/api.connect.ad
 import { Route as ApiConnectAdminLogoutRouteImport } from './routes/api.connect.admin.logout'
 import { Route as ApiConnectAdminLoginRouteImport } from './routes/api.connect.admin.login'
 import { Route as ApiConnectAdminFlowTemplatesRouteImport } from './routes/api.connect.admin.flow-templates'
+import { Route as ApiConnectAdminConversationsRouteImport } from './routes/api.connect.admin.conversations'
+import { Route as ApiConnectAdminContactsRouteImport } from './routes/api.connect.admin.contacts'
 import { Route as ApiConnectAdminBusinessesRouteImport } from './routes/api.connect.admin.businesses'
 import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
 import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
@@ -214,7 +218,11 @@ import { Route as ApiWaAdminBusinessesBusinessIdFlowImageRouteImport } from './r
 import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
 import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/api.connect.dashboard.orders.$orderId'
 import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
+import { Route as ApiConnectClientConversationsConversationIdRouteImport } from './routes/api/connect/client/conversations.$conversationId'
+import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/api/connect/client/contacts.$contactId'
 import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
+import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
+import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
 import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
@@ -1156,6 +1164,18 @@ const ApiConnectDashboard2CatalogRoute =
     path: '/api/connect/dashboard-2/catalog',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiConnectClientConversationsRoute =
+  ApiConnectClientConversationsRouteImport.update({
+    id: '/api/connect/client/conversations',
+    path: '/api/connect/client/conversations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientContactsRoute =
+  ApiConnectClientContactsRouteImport.update({
+    id: '/api/connect/client/contacts',
+    path: '/api/connect/client/contacts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectAdminWhatsappTemplatesRoute =
   ApiConnectAdminWhatsappTemplatesRouteImport.update({
     id: '/api/connect/admin/whatsapp-templates',
@@ -1217,6 +1237,17 @@ const ApiConnectAdminFlowTemplatesRoute =
     path: '/api/connect/admin/flow-templates',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiConnectAdminConversationsRoute =
+  ApiConnectAdminConversationsRouteImport.update({
+    id: '/api/connect/admin/conversations',
+    path: '/api/connect/admin/conversations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminContactsRoute = ApiConnectAdminContactsRouteImport.update({
+  id: '/api/connect/admin/contacts',
+  path: '/api/connect/admin/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiConnectAdminBusinessesRoute =
   ApiConnectAdminBusinessesRouteImport.update({
     id: '/api/connect/admin/businesses',
@@ -1331,11 +1362,35 @@ const ApiConnectDashboard2OrdersOrderIdRoute =
     path: '/$orderId',
     getParentRoute: () => ApiConnectDashboard2OrdersRoute,
   } as any)
+const ApiConnectClientConversationsConversationIdRoute =
+  ApiConnectClientConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => ApiConnectClientConversationsRoute,
+  } as any)
+const ApiConnectClientContactsContactIdRoute =
+  ApiConnectClientContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => ApiConnectClientContactsRoute,
+  } as any)
 const ApiConnectAdminFlowTemplatesTemplateIdRoute =
   ApiConnectAdminFlowTemplatesTemplateIdRouteImport.update({
     id: '/$templateId',
     path: '/$templateId',
     getParentRoute: () => ApiConnectAdminFlowTemplatesRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdRoute =
+  ApiConnectAdminConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => ApiConnectAdminConversationsRoute,
+  } as any)
+const ApiConnectAdminContactsContactIdRoute =
+  ApiConnectAdminContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => ApiConnectAdminContactsRoute,
   } as any)
 const ApiConnectAdminBusinessesBusinessIdRoute =
   ApiConnectAdminBusinessesBusinessIdRouteImport.update({
@@ -1498,6 +1553,8 @@ export interface FileRoutesByFullPath {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
+  '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
@@ -1509,6 +1566,8 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
+  '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -1557,7 +1616,11 @@ export interface FileRoutesByFullPath {
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -1695,6 +1758,8 @@ export interface FileRoutesByTo {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
+  '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
@@ -1706,6 +1771,8 @@ export interface FileRoutesByTo {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
+  '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -1753,7 +1820,11 @@ export interface FileRoutesByTo {
   '/stores/pavone/admin': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -1907,6 +1978,8 @@ export interface FileRoutesById {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
+  '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
@@ -1918,6 +1991,8 @@ export interface FileRoutesById {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
+  '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -1966,7 +2041,11 @@ export interface FileRoutesById {
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -2121,6 +2200,8 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/contacts'
+    | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
@@ -2132,6 +2213,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/contacts'
+    | '/api/connect/client/conversations'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2180,7 +2263,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/contacts/$contactId'
+    | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/client/contacts/$contactId'
+    | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
@@ -2318,6 +2405,8 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/contacts'
+    | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
@@ -2329,6 +2418,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/contacts'
+    | '/api/connect/client/conversations'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2376,7 +2467,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/contacts/$contactId'
+    | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/client/contacts/$contactId'
+    | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
@@ -2529,6 +2624,8 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/contacts'
+    | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
@@ -2540,6 +2637,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/contacts'
+    | '/api/connect/client/conversations'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2588,7 +2687,11 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/contacts/$contactId'
+    | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/client/contacts/$contactId'
+    | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
@@ -2657,6 +2760,8 @@ export interface RootRouteChildren {
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiWhatsappWebhook2Route: typeof ApiWhatsappWebhook2Route
   ApiConnectAdminBusinessesRoute: typeof ApiConnectAdminBusinessesRouteWithChildren
+  ApiConnectAdminContactsRoute: typeof ApiConnectAdminContactsRouteWithChildren
+  ApiConnectAdminConversationsRoute: typeof ApiConnectAdminConversationsRouteWithChildren
   ApiConnectAdminFlowTemplatesRoute: typeof ApiConnectAdminFlowTemplatesRouteWithChildren
   ApiConnectAdminLoginRoute: typeof ApiConnectAdminLoginRoute
   ApiConnectAdminLogoutRoute: typeof ApiConnectAdminLogoutRoute
@@ -2668,6 +2773,8 @@ export interface RootRouteChildren {
   ApiConnectAdminSessionRoute: typeof ApiConnectAdminSessionRoute
   ApiConnectAdminWhatsappHealthRoute: typeof ApiConnectAdminWhatsappHealthRoute
   ApiConnectAdminWhatsappTemplatesRoute: typeof ApiConnectAdminWhatsappTemplatesRoute
+  ApiConnectClientContactsRoute: typeof ApiConnectClientContactsRouteWithChildren
+  ApiConnectClientConversationsRoute: typeof ApiConnectClientConversationsRouteWithChildren
   ApiConnectDashboard2CatalogRoute: typeof ApiConnectDashboard2CatalogRoute
   ApiConnectDashboard2DiagnosticsRoute: typeof ApiConnectDashboard2DiagnosticsRoute
   ApiConnectDashboard2FlowRoute: typeof ApiConnectDashboard2FlowRoute
@@ -3915,6 +4022,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectDashboard2CatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/client/conversations': {
+      id: '/api/connect/client/conversations'
+      path: '/api/connect/client/conversations'
+      fullPath: '/api/connect/client/conversations'
+      preLoaderRoute: typeof ApiConnectClientConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/contacts': {
+      id: '/api/connect/client/contacts'
+      path: '/api/connect/client/contacts'
+      fullPath: '/api/connect/client/contacts'
+      preLoaderRoute: typeof ApiConnectClientContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/admin/whatsapp-templates': {
       id: '/api/connect/admin/whatsapp-templates'
       path: '/api/connect/admin/whatsapp-templates'
@@ -3990,6 +4111,20 @@ declare module '@tanstack/react-router' {
       path: '/api/connect/admin/flow-templates'
       fullPath: '/api/connect/admin/flow-templates'
       preLoaderRoute: typeof ApiConnectAdminFlowTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/conversations': {
+      id: '/api/connect/admin/conversations'
+      path: '/api/connect/admin/conversations'
+      fullPath: '/api/connect/admin/conversations'
+      preLoaderRoute: typeof ApiConnectAdminConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/contacts': {
+      id: '/api/connect/admin/contacts'
+      path: '/api/connect/admin/contacts'
+      fullPath: '/api/connect/admin/contacts'
+      preLoaderRoute: typeof ApiConnectAdminContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/connect/admin/businesses': {
@@ -4125,12 +4260,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectDashboard2OrdersOrderIdRouteImport
       parentRoute: typeof ApiConnectDashboard2OrdersRoute
     }
+    '/api/connect/client/conversations/$conversationId': {
+      id: '/api/connect/client/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/api/connect/client/conversations/$conversationId'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdRouteImport
+      parentRoute: typeof ApiConnectClientConversationsRoute
+    }
+    '/api/connect/client/contacts/$contactId': {
+      id: '/api/connect/client/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/api/connect/client/contacts/$contactId'
+      preLoaderRoute: typeof ApiConnectClientContactsContactIdRouteImport
+      parentRoute: typeof ApiConnectClientContactsRoute
+    }
     '/api/connect/admin/flow-templates/$templateId': {
       id: '/api/connect/admin/flow-templates/$templateId'
       path: '/$templateId'
       fullPath: '/api/connect/admin/flow-templates/$templateId'
       preLoaderRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRouteImport
       parentRoute: typeof ApiConnectAdminFlowTemplatesRoute
+    }
+    '/api/connect/admin/conversations/$conversationId': {
+      id: '/api/connect/admin/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/api/connect/admin/conversations/$conversationId'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsRoute
+    }
+    '/api/connect/admin/contacts/$contactId': {
+      id: '/api/connect/admin/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/api/connect/admin/contacts/$contactId'
+      preLoaderRoute: typeof ApiConnectAdminContactsContactIdRouteImport
+      parentRoute: typeof ApiConnectAdminContactsRoute
     }
     '/api/connect/admin/businesses/$businessId': {
       id: '/api/connect/admin/businesses/$businessId'
@@ -4758,6 +4921,36 @@ const ApiConnectAdminBusinessesRouteWithChildren =
     ApiConnectAdminBusinessesRouteChildren,
   )
 
+interface ApiConnectAdminContactsRouteChildren {
+  ApiConnectAdminContactsContactIdRoute: typeof ApiConnectAdminContactsContactIdRoute
+}
+
+const ApiConnectAdminContactsRouteChildren: ApiConnectAdminContactsRouteChildren =
+  {
+    ApiConnectAdminContactsContactIdRoute:
+      ApiConnectAdminContactsContactIdRoute,
+  }
+
+const ApiConnectAdminContactsRouteWithChildren =
+  ApiConnectAdminContactsRoute._addFileChildren(
+    ApiConnectAdminContactsRouteChildren,
+  )
+
+interface ApiConnectAdminConversationsRouteChildren {
+  ApiConnectAdminConversationsConversationIdRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+}
+
+const ApiConnectAdminConversationsRouteChildren: ApiConnectAdminConversationsRouteChildren =
+  {
+    ApiConnectAdminConversationsConversationIdRoute:
+      ApiConnectAdminConversationsConversationIdRoute,
+  }
+
+const ApiConnectAdminConversationsRouteWithChildren =
+  ApiConnectAdminConversationsRoute._addFileChildren(
+    ApiConnectAdminConversationsRouteChildren,
+  )
+
 interface ApiConnectAdminFlowTemplatesRouteChildren {
   ApiConnectAdminFlowTemplatesTemplateIdRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
 }
@@ -4771,6 +4964,36 @@ const ApiConnectAdminFlowTemplatesRouteChildren: ApiConnectAdminFlowTemplatesRou
 const ApiConnectAdminFlowTemplatesRouteWithChildren =
   ApiConnectAdminFlowTemplatesRoute._addFileChildren(
     ApiConnectAdminFlowTemplatesRouteChildren,
+  )
+
+interface ApiConnectClientContactsRouteChildren {
+  ApiConnectClientContactsContactIdRoute: typeof ApiConnectClientContactsContactIdRoute
+}
+
+const ApiConnectClientContactsRouteChildren: ApiConnectClientContactsRouteChildren =
+  {
+    ApiConnectClientContactsContactIdRoute:
+      ApiConnectClientContactsContactIdRoute,
+  }
+
+const ApiConnectClientContactsRouteWithChildren =
+  ApiConnectClientContactsRoute._addFileChildren(
+    ApiConnectClientContactsRouteChildren,
+  )
+
+interface ApiConnectClientConversationsRouteChildren {
+  ApiConnectClientConversationsConversationIdRoute: typeof ApiConnectClientConversationsConversationIdRoute
+}
+
+const ApiConnectClientConversationsRouteChildren: ApiConnectClientConversationsRouteChildren =
+  {
+    ApiConnectClientConversationsConversationIdRoute:
+      ApiConnectClientConversationsConversationIdRoute,
+  }
+
+const ApiConnectClientConversationsRouteWithChildren =
+  ApiConnectClientConversationsRoute._addFileChildren(
+    ApiConnectClientConversationsRouteChildren,
   )
 
 interface ApiConnectDashboard2OrdersRouteChildren {
@@ -4854,6 +5077,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiWhatsappWebhook2Route: ApiWhatsappWebhook2Route,
   ApiConnectAdminBusinessesRoute: ApiConnectAdminBusinessesRouteWithChildren,
+  ApiConnectAdminContactsRoute: ApiConnectAdminContactsRouteWithChildren,
+  ApiConnectAdminConversationsRoute:
+    ApiConnectAdminConversationsRouteWithChildren,
   ApiConnectAdminFlowTemplatesRoute:
     ApiConnectAdminFlowTemplatesRouteWithChildren,
   ApiConnectAdminLoginRoute: ApiConnectAdminLoginRoute,
@@ -4866,6 +5092,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectAdminSessionRoute: ApiConnectAdminSessionRoute,
   ApiConnectAdminWhatsappHealthRoute: ApiConnectAdminWhatsappHealthRoute,
   ApiConnectAdminWhatsappTemplatesRoute: ApiConnectAdminWhatsappTemplatesRoute,
+  ApiConnectClientContactsRoute: ApiConnectClientContactsRouteWithChildren,
+  ApiConnectClientConversationsRoute:
+    ApiConnectClientConversationsRouteWithChildren,
   ApiConnectDashboard2CatalogRoute: ApiConnectDashboard2CatalogRoute,
   ApiConnectDashboard2DiagnosticsRoute: ApiConnectDashboard2DiagnosticsRoute,
   ApiConnectDashboard2FlowRoute: ApiConnectDashboard2FlowRoute,
