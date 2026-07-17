@@ -811,20 +811,18 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: finish 1A runtime linkage. Marker
-`LIVE-1A-0717-A3` passed the repaired production data plane: the signed webhook
-returned HTTP `200`, exactly one durable inbound row and one processed claim
-were recorded, the deterministic bot responded once, and its provider status
-advanced through `sent`, `delivered`, and `read`. Replaying the exact provider
-message ID through the deployed ingest RPC returned `inserted=false` and
-`shouldProcess=false` without changing the one-row/one-response counts. The
-remaining 1A contract is to verify with fresh marker A4 that the durable
-conversation stores the same business flow, immutable flow version, and current
-node as `wa_conversation_sessions`, with one `FLOW_STARTED` event.
-Use the connected Live Test and database evidence; Diagnostics remains
-illustrative. Do not advance to 1B until that evidence is recorded. Outbound
-timeline insertion and end-to-end delivery state remain in 1C and the Milestone
-1 completion gate.
+Current authorized next action: begin 1B Authorized inbox APIs. Work package 1A
+is complete. Marker `LIVE-1A-0717-A4` reached the production webhook with HTTP
+`200`, persisted once, completed one processing claim on its first attempt, and
+produced one bot response with `sent` and `delivered` callbacks. The durable
+conversation now matches `wa_conversation_sessions` on business, pinned flow,
+immutable flow version, and current node, with exactly one `FLOW_STARTED` event.
+A rollback-only handoff postflight called the linkage twice and retained one
+`FLOW_STARTED` plus one `FLOW_STOPPED` inside the transaction. Begin 1B with a
+shared tenant-scoped inbox query service and two-business contract tests, then
+add admin and client list/detail endpoints. Do not connect the Lovable inbox
+surfaces until the API isolation and pagination gate passes. Outbound timeline
+insertion and end-to-end human delivery state remain in 1C.
 
 Milestone 1 platform controls:
 
@@ -839,7 +837,7 @@ Milestone 1 platform controls:
 - [ ] Record fallback connection resolutions so legacy Vercel credential use
       can be measured before retirement.
 
-#### 1A - Durable inbound data plane
+#### 1A - Durable inbound data plane (Complete)
 
 - [~] Create one tenant-safe messaging store for contacts, conversations,
   messages, events, notes, tags, and unread counters. Contacts,
@@ -853,17 +851,16 @@ Milestone 1 platform controls:
       webhook retries or concurrent delivery.
 - [x] Upsert contacts without exposing full phone numbers in logs or cross-tenant
       queries.
-- [~] Record flow/session linkage and handoff state on the conversation
-  timeline. The tenant-validating RPC is deployed and its service-role-only
-  grant plus rollback-only linkage postflight pass. The webhook hook and
-  idempotent `FLOW_STARTED`/human-handoff `FLOW_STOPPED` events are deployed;
-  A4 production evidence remains.
+- [x] Record flow/session linkage and handoff state on the conversation
+  timeline. A4 proved exact conversation/session flow, version, and node
+  linkage with one `FLOW_STARTED`; a rollback-only double-call postflight proved
+  one idempotent human-handoff `FLOW_STOPPED` event.
 - [~] Update outbound message state from sent, delivered, read, and failed Meta
   status webhooks. The monotonic status RPC and webhook hook are ready;
   outbound timeline insertion remains in 1C.
 - [x] Use the exact Flow Manager Live Test route as the repeatable provider
       harness. Real connection data, approved-template opening sends, restart
-      sends, event refresh, and the A3 production roundtrip are verified.
+      sends, event refresh, and the A3/A4 production roundtrips are verified.
 
 #### 1B - Authorized inbox APIs
 
@@ -1082,3 +1079,4 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Marker `LIVE-1A-0717-A2` reached the current production webhook with a valid Meta signature and correct current phone/business routing. Vercel raw logs proved five deliveries of the same provider message ID, all failing before flow execution because `wa_ingest_inbound_message` resolved its `message_id` output column ambiguously against the processing-table conflict target. Corrected the canonical migration and added the function-only `wa_messaging_operations_rpc_message_id_fix.sql` repair plus a regression assertion.                                      | The additive repair was applied through the Supabase SQL editor. Postflight confirms the deployed definition uses `wa_inbound_message_processing_pkey`, preserves service-role execute, denies authenticated execute, and passes a rollback-only transactional ingest without retaining synthetic data. Typecheck, scoped lint, all 42 main tests, all 14 reliability tests, and `git diff --check` pass. Meta did not retry A2 after repair; fresh marker `LIVE-1A-0717-A3` is required for final persistence, idempotency, bot-response, and status evidence. |
 | 2026-07-17 | Marker `LIVE-1A-0717-A3` completed the repaired real-provider roundtrip on the current production number. The signed inbound callback returned HTTP `200`, routed to the active business/connection, persisted exactly one customer message, completed one processing claim on its first attempt, and produced exactly one deterministic bot response. The bot response then received signed `sent`, `delivered`, and `read` callbacks.                                                                                                                                            | A controlled replay of the exact A3 provider message ID through the deployed service-role ingest RPC returned `inserted=false` and `shouldProcess=false`; postflight still showed one inbound row, one processing attempt, and one bot response. This closes the provider persistence/idempotency gate. During evidence review, the durable conversation was found not yet to copy the already-pinned runtime flow/version/node, so 1A remains open for the explicit linkage hook and an A4 production check before 1B. |
 | 2026-07-17 | Added the final Milestone 1A runtime-to-inbox linkage. A service-role-only RPC now tenant-validates the pinned business flow/version, updates the durable conversation's flow/version/node atomically, and records idempotent `FLOW_STARTED` plus human-handoff `FLOW_STOPPED` timeline events. The webhook copies the saved session linkage before completing the inbound processing claim.                                                                                                                                                                               | The additive function is live in Supabase; service-role execute is allowed, authenticated execute is denied, and a rollback-only active-session linkage test passed. Typecheck, scoped lint, 43 main tests, 14 WhatsApp reliability tests, production build, and diff checks passed. Vercel deployment `dpl_4kxYkQpdeq9nVB5JHmNteFEE7EQd` built exact commit `f59b474`, reached Ready, and received both canonical aliases. Fresh A4 provider evidence remains before 1A closes. |
+| 2026-07-17 | Closed Milestone 1A with real marker `LIVE-1A-0717-A4` on production deployment `dpl_DfJRuhYoY2qubjYveKd2bgfnywLN` from commit `a7bb544`. The signed callback returned HTTP `200`, persisted exactly one inbound message, completed one processing claim on attempt one, and produced one bot response with `sent` and `delivered` callbacks. The durable conversation copied the active session's tenant, pinned flow, immutable version, and current node.                                                                                                                    | Production showed exact flow/version/node equality and one matching `FLOW_STARTED` event. A rollback-only postflight invoked the handoff linkage twice and asserted one `FLOW_STARTED` plus one human-handoff `FLOW_STOPPED`, proving timeline idempotency without retaining synthetic state. Together with A3's exact-provider-ID duplicate rejection and `sent`/`delivered`/`read` callback chain, every 1A exit condition is satisfied. Work package 1B is now authorized. |
