@@ -199,7 +199,7 @@ function ConnectionField({
 }
 
 function ConnectionHealthResult({ health }: { health: WhatsAppConnectionHealth }) {
-  const healthy = health.configComplete && health.meta.ok;
+  const healthy = health.configComplete && health.meta.ok && health.subscription.ok;
   return (
     <div
       className={`rounded-md border p-3 text-sm ${
@@ -227,13 +227,33 @@ function ConnectionHealthResult({ health }: { health: WhatsAppConnectionHealth }
           label="Phone identity"
           value={health.meta.identityMatches ? "Matched" : "Not verified"}
         />
+        <HealthValue
+          label="WABA app subscription"
+          value={health.subscription.wabaSubscribed ? "Subscribed" : "Not subscribed"}
+        />
+        <HealthValue
+          label="Webhook callback"
+          value={health.subscription.callbackMatches ? "Matched" : "Not matched"}
+        />
+        <HealthValue
+          label="Messages field"
+          value={health.subscription.messagesSubscribed ? "Subscribed" : "Not subscribed"}
+        />
+        <HealthValue
+          label="Subscription state"
+          value={health.subscription.active ? "Active" : "Inactive"}
+        />
         <HealthValue label="Quality rating" value={health.meta.qualityRating || "Not available"} />
         <HealthValue label="Verified name" value={health.meta.verifiedName || "Not available"} />
         <HealthValue label="Checked" value={formatCheckedAt(health.checkedAt)} />
       </dl>
-      {health.meta.errorMessage ? (
-        <p className="mt-3 text-xs text-muted-foreground">{health.meta.errorMessage}</p>
-      ) : null}
+      {[health.meta.errorMessage, health.subscription.errorMessage]
+        .filter((message): message is string => Boolean(message))
+        .map((message) => (
+          <p key={message} className="mt-3 text-xs text-muted-foreground">
+            {message}
+          </p>
+        ))}
     </div>
   );
 }

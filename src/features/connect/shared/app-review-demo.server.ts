@@ -1,6 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { randomUUID } from "node:crypto";
+import process from "node:process";
 
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
@@ -19,6 +20,7 @@ export type ReviewConnectionSummary = {
   phoneNumberId: string;
   businessAccountId: string | null;
   displayPhoneNumber: string | null;
+  webhookPath: string | null;
   status: string;
   isActive: boolean;
   configSuffix: string;
@@ -38,6 +40,22 @@ export type WhatsAppConnectionHealth = {
     verifiedName: string | null;
     qualityRating: string | null;
     codeVerificationStatus: string | null;
+    errorCode: string | null;
+    errorMessage: string | null;
+  };
+  subscription: {
+    ok: boolean;
+    expectedCallbackUrl: string;
+    appId: string | null;
+    appName: string | null;
+    appStatus: number | null;
+    wabaStatus: number | null;
+    wabaSubscribed: boolean;
+    callbackConfigured: boolean;
+    callbackMatches: boolean;
+    messagesSubscribed: boolean;
+    active: boolean;
+    callbackUrl: string | null;
     errorCode: string | null;
     errorMessage: string | null;
   };
@@ -69,6 +87,7 @@ type ConnectionRow = {
   phone_number_id: string;
   business_account_id: string | null;
   display_phone_number: string | null;
+  webhook_path: string | null;
   status: string | null;
   is_active: boolean;
   config_suffix: string | null;
@@ -100,6 +119,34 @@ type MetaPhoneNumberResponse = {
     code?: string | number;
     message?: string;
   };
+};
+
+type MetaAppResponse = {
+  id?: string;
+  name?: string;
+  error?: MetaApiError;
+};
+
+type MetaSubscribedAppsResponse = {
+  data?: unknown[];
+  error?: MetaApiError;
+};
+
+type MetaAppSubscription = {
+  object?: string;
+  callback_url?: string;
+  active?: boolean;
+  fields?: Array<string | { name?: string }>;
+};
+
+type MetaAppSubscriptionsResponse = {
+  data?: MetaAppSubscription[];
+  error?: MetaApiError;
+};
+
+type MetaApiError = {
+  code?: string | number;
+  message?: string;
 };
 
 const META_HEALTH_TIMEOUT_MS = 8_000;
@@ -144,6 +191,7 @@ export async function checkWhatsAppConnectionHealth(
   const config = getWhatsAppServerConfig(connection.configSuffix);
   const missingConfigKeys = getMissingWhatsAppConfigKeys(config);
   const checkedAt = new Date().toISOString();
+  const expectedCallbackUrl = getExpectedWebhookUrl(connection);
 
   if (missingConfigKeys.length) {
     return {
@@ -152,26 +200,76 @@ export async function checkWhatsAppConnectionHealth(
       configComplete: false,
       missingConfigKeys,
       meta: emptyMetaHealth("WhatsApp runtime configuration is incomplete."),
+      subscription: emptySubscriptionHealth(
+        expectedCallbackUrl,
+        "WhatsApp runtime configuration is incomplete.",
+      ),
     };
   }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), META_HEALTH_TIMEOUT_MS);
   try {
-    const url = new URL(
+    const phoneUrl = new URL(
       `${config.graphApiVersion}/${encodeURIComponent(connection.phoneNumberId)}`,
       "https://graph.facebook.com",
     );
-    url.searchParams.set(
+    phoneUrl.searchParams.set(
       "fields",
       "id,display_phone_number,verified_name,quality_rating,code_verification_status",
     );
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${config.accessToken}` },
-      signal: controller.signal,
-    });
-    const data = (await response.json().catch(() => ({}))) as MetaPhoneNumberResponse;
-    const identityMatches = data.id === connection.phoneNumberId;
+    const appUrl = new URL(`${config.graphApiVersion}/app`, "https://graph.facebook.com");
+    appUrl.searchParams.set("fields", "id,name");
+    const wabaId = connection.businessAccountId || config.businessAccountId;
+    const wabaUrl = new URL(
+      `${config.graphApiVersion}/${encodeURIComponent(wabaId)}/subscribed_apps`,
+      "https://graph.facebook.com",
+    );
+    const accessHeaders = { Authorization: `Bearer ${config.accessToken}` };
+    const [phoneResponse, appResponse, wabaResponse] = await Promise.all([
+      fetch(phoneUrl, { headers: accessHeaders, signal: controller.signal }),
+      fetch(appUrl, { headers: accessHeaders, signal: controller.signal }),
+      fetch(wabaUrl, { headers: accessHeaders, signal: controller.signal }),
+    ]);
+    const [phoneData, appData, wabaData] = await Promise.all([
+      phoneResponse.json().catch(() => ({})) as Promise<MetaPhoneNumberResponse>,
+      appResponse.json().catch(() => ({})) as Promise<MetaAppResponse>,
+      wabaResponse.json().catch(() => ({})) as Promise<MetaSubscribedAppsResponse>,
+    ]);
+    const identityMatches = phoneData.id === connection.phoneNumberId;
+
+    let appSubscriptionResponse: Response | null = null;
+    let appSubscriptions: MetaAppSubscriptionsResponse = {};
+    if (appResponse.ok && appData.id) {
+      const appSubscriptionsUrl = new URL(
+        `${config.graphApiVersion}/${encodeURIComponent(appData.id)}/subscriptions`,
+        "https://graph.facebook.com",
+      );
+      appSubscriptionResponse = await fetch(appSubscriptionsUrl, {
+        headers: { Authorization: `Bearer ${appData.id}|${config.appSecret}` },
+        signal: controller.signal,
+      });
+      appSubscriptions = (await appSubscriptionResponse
+        .json()
+        .catch(() => ({}))) as MetaAppSubscriptionsResponse;
+    }
+
+    const whatsappSubscription = appSubscriptions.data?.find(
+      (subscription) => subscription.object === "whatsapp_business_account",
+    );
+    const subscribedFields = (whatsappSubscription?.fields ?? []).map((field) =>
+      typeof field === "string" ? field : field.name || "",
+    );
+    const callbackUrl = whatsappSubscription?.callback_url?.trim() || null;
+    const subscriptionError =
+      appData.error || wabaData.error || appSubscriptions.error || undefined;
+    const wabaSubscribed = wabaResponse.ok && Boolean(wabaData.data?.length);
+    const callbackConfigured = Boolean(callbackUrl);
+    const callbackMatches = callbackUrl
+      ? normalizeUrl(callbackUrl) === normalizeUrl(expectedCallbackUrl)
+      : false;
+    const messagesSubscribed = subscribedFields.includes("messages");
+    const active = whatsappSubscription?.active !== false && Boolean(whatsappSubscription);
 
     return {
       checkedAt,
@@ -179,17 +277,45 @@ export async function checkWhatsAppConnectionHealth(
       configComplete: true,
       missingConfigKeys: [],
       meta: {
-        ok: response.ok && identityMatches,
-        status: response.status,
+        ok: phoneResponse.ok && identityMatches,
+        status: phoneResponse.status,
         identityMatches,
-        displayNumberPresent: Boolean(data.display_phone_number),
-        verifiedName: data.verified_name?.trim() || null,
-        qualityRating: data.quality_rating?.trim() || null,
-        codeVerificationStatus: data.code_verification_status?.trim() || null,
-        errorCode: data.error?.code == null ? null : String(data.error.code),
-        errorMessage: response.ok
+        displayNumberPresent: Boolean(phoneData.display_phone_number),
+        verifiedName: phoneData.verified_name?.trim() || null,
+        qualityRating: phoneData.quality_rating?.trim() || null,
+        codeVerificationStatus: phoneData.code_verification_status?.trim() || null,
+        errorCode: phoneData.error?.code == null ? null : String(phoneData.error.code),
+        errorMessage: phoneResponse.ok
           ? null
-          : sanitizeExternalErrorMessage(data.error?.message, "Meta connection check failed"),
+          : sanitizeExternalErrorMessage(phoneData.error?.message, "Meta connection check failed"),
+      },
+      subscription: {
+        ok:
+          appResponse.ok &&
+          wabaResponse.ok &&
+          Boolean(appSubscriptionResponse?.ok) &&
+          wabaSubscribed &&
+          callbackMatches &&
+          messagesSubscribed &&
+          active,
+        expectedCallbackUrl,
+        appId: appData.id?.trim() || null,
+        appName: appData.name?.trim() || null,
+        appStatus: appSubscriptionResponse?.status ?? appResponse.status,
+        wabaStatus: wabaResponse.status,
+        wabaSubscribed,
+        callbackConfigured,
+        callbackMatches,
+        messagesSubscribed,
+        active,
+        callbackUrl,
+        errorCode: subscriptionError?.code == null ? null : String(subscriptionError.code),
+        errorMessage: subscriptionError
+          ? sanitizeExternalErrorMessage(
+              subscriptionError.message,
+              "Meta webhook subscription check failed",
+            )
+          : null,
       },
     };
   } catch (error) {
@@ -202,6 +328,13 @@ export async function checkWhatsAppConnectionHealth(
         sanitizeExternalErrorMessage(
           error instanceof Error ? error.message : undefined,
           "Meta connection check failed",
+        ),
+      ),
+      subscription: emptySubscriptionHealth(
+        expectedCallbackUrl,
+        sanitizeExternalErrorMessage(
+          error instanceof Error ? error.message : undefined,
+          "Meta webhook subscription check failed",
         ),
       ),
     };
@@ -307,6 +440,7 @@ function toConnectionSummary(
     phoneNumberId: connection.phone_number_id,
     businessAccountId: connection.business_account_id,
     displayPhoneNumber: connection.display_phone_number,
+    webhookPath: connection.webhook_path,
     status: connection.status || "DRAFT",
     isActive: connection.is_active,
     configSuffix: connection.config_suffix ?? "",
@@ -420,4 +554,38 @@ function emptyMetaHealth(errorMessage: string): WhatsAppConnectionHealth["meta"]
     errorCode: null,
     errorMessage,
   };
+}
+
+function emptySubscriptionHealth(
+  expectedCallbackUrl: string,
+  errorMessage: string,
+): WhatsAppConnectionHealth["subscription"] {
+  return {
+    ok: false,
+    expectedCallbackUrl,
+    appId: null,
+    appName: null,
+    appStatus: null,
+    wabaStatus: null,
+    wabaSubscribed: false,
+    callbackConfigured: false,
+    callbackMatches: false,
+    messagesSubscribed: false,
+    active: false,
+    callbackUrl: null,
+    errorCode: null,
+    errorMessage,
+  };
+}
+
+function getExpectedWebhookUrl(connection: ReviewConnectionSummary) {
+  const siteUrl = process.env.PUBLIC_SITE_URL || "https://www.doubleacode.com";
+  const webhookPath =
+    connection.webhookPath ||
+    (connection.configSuffix === "2" ? "/api/connect/whatsapp/webhook" : "/api/whatsapp/webhook");
+  return new URL(webhookPath, siteUrl).toString();
+}
+
+function normalizeUrl(value: string) {
+  return value.trim().replace(/\/$/, "").toLowerCase();
 }
