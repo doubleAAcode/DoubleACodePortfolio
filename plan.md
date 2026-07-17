@@ -343,7 +343,7 @@ foundations from the final product experience.
 | Area                 | Current baseline                                                                                                                                                                                  | Target                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Product surface      | Exact Lovable admin/client route trees mounted below `/connect`; most routes are Preview/Future.                                                                                                  | One coherent Flow Manager product with real, tenant-safe operations.                         |
-| Connected UI         | Admin Businesses, setup, WhatsApp Connection, and Live Test use real adapters; client Automations is partial. Business Diagnostics remains Lovable preview data.                              | Each route graduates independently only after its full journey passes.                       |
+| Connected UI         | Admin Businesses, setup, WhatsApp Connection, and Live Test use real adapters; client Automations only loads the real flow summary. Its Guided and Canvas editors are separate hard-coded Lovable previews and do not edit the real flow. Business Diagnostics remains Lovable preview data. | Each route graduates independently only after its full journey passes.                       |
 | WhatsApp             | Verified webhook, phone-number routing, deterministic processing, sender, diagnostics, and new durable inbound persistence code.                                                                  | Durable inbox, human operations, statuses, flows, media, templates, and broadcasts.          |
 | Database             | Existing `wa_*` commerce/runtime domains plus deployed additive Flow Manager inbox/contact tables and messaging RPCs.                                                                             | Versioned, tenant-scoped domains with migration and rollback evidence.                       |
 | Authentication       | HMAC-signed, environment-backed internal-admin and client cookies. Client sessions are tied to one configured business.                                                                           | Database-backed users, workspace memberships, role enforcement, rotation, and audit.         |
@@ -756,7 +756,7 @@ Definition of done for every milestone:
 | ----- | -------------------------------------- | ----------------- | ----------------------------------- | ------------------------------------------------------------------------- |
 | 0     | Integrated Foundation                  | Complete baseline | None                                | Exact UI mounted, core schema live, first adapters verified.              |
 | 1     | WhatsApp Operations                    | **Active**        | Milestone 0                         | Real inbound-to-inbox-to-human-reply-to-status journey and tenant denial. |
-| 2     | Visual Flow Builder and Runtime        | Queued            | Milestone 1 timeline and operations | Published Flow Manager canvas executes a real pinned flow with trace.     |
+| 2     | Guided Flow Builder and Runtime        | Queued            | Milestone 1 timeline and operations | A flow built and repaired entirely in Guided executes a real pinned version with trace. |
 | 3     | Commerce and Order Operations          | Queued            | Milestone 2 protected runtime       | Real catalog-to-idempotent-order-to-owner lifecycle in new UI.            |
 | 4     | Workspace, Onboarding, and Permissions | Queued            | Stable domain/API boundaries        | New business connects WhatsApp, invites roles, and passes tenancy checks. |
 | 5     | Media and Voice Notes                  | Queued            | Messaging outbox and flow runtime   | Prerecorded outbound audio and inbound transcription complete real flows. |
@@ -918,25 +918,50 @@ Current implementation sequence: **1A messaging store and webhook dual-write,
 then 1B APIs, 1C mutations, and 1D UI. Do not integrate another page family
 until this gate passes.**
 
-### Milestone 2 - Visual Flow Builder and Runtime
+### Milestone 2 - Guided Flow Builder and Runtime
 
 Status: **Queued after Milestone 1**
 
-- [ ] Map the exact Lovable canvas to the existing canonical v2 flow document.
-- [ ] Load, edit, validate, save drafts, publish immutable versions, and inspect
+- [ ] Make the WhatsApp-specific Lovable Guided experience the single canonical
+      editor for both admin and client users. Permissions may differ, but the
+      flow representation and editing behavior may not fork.
+- [ ] Keep Canvas visible and clickable as a labeled `Future` preview. Canvas is
+      not required for Guided completion and receives no production mutation
+      path during this milestone.
+- [ ] Map Guided steps and explicit destinations to the existing canonical v2
+      flow document without introducing a second UI-owned flow format.
+- [ ] Load, create, duplicate, edit, reorder, enable/disable, and delete steps;
+      save recoverable drafts; publish immutable versions; and inspect or restore
       version history through authorized APIs.
 - [ ] Support WhatsApp trigger, text, image, template, question, menu, branch,
       contact field, tag, assignment, handoff, wait, jump, subflow, and close
       nodes.
+- [ ] Make branching understandable without graph handles: every option or
+      condition names its next step, missing destinations are immediately
+      visible, and deleting a referenced step requires an explicit repair.
+- [ ] Provide field-level validation plus one ordered problem list that names the
+      affected step, explains the issue in plain language, and navigates directly
+      to the control that fixes it. Distinguish publish-blocking errors from
+      warnings.
+- [ ] Detect at least missing required content, invalid or unreachable targets,
+      unreachable steps, dead ends, duplicate option values, unsupported node
+      configuration, unavailable media/templates, and invalid start/end paths.
+- [ ] Protect work with dirty-state indicators, navigation warnings, retryable
+      saves, server-conflict handling, undo/redo for the current editing session,
+      and no fake success state after a rejected mutation.
 - [ ] Persist typed answers and deterministic branch decisions.
 - [ ] Write per-contact execution progress and errors into the conversation
       timeline built in Milestone 1.
-- [ ] Add test simulation, unsaved-change protection, execution traces, and
-      stop/restart controls.
+- [ ] Add test simulation from any step, sample-answer branching, execution
+      traces, and stop/restart controls without sending a real customer message.
+- [ ] Preserve stable step IDs and published-version pinning so editing a draft
+      cannot change an already-running customer session.
 
-Completion gate: an authorized user builds and publishes a flow entirely in the
-new canvas; a real inbound WhatsApp conversation executes that published
-version; each step and failure is visible in the inbox timeline and diagnostics.
+Completion gate: a first-time authorized user builds, validates, repairs, and
+publishes a branching WhatsApp flow entirely in Guided without opening Canvas;
+the editor survives reload and rejected saves without losing work; a real inbound
+WhatsApp conversation executes the pinned published version; and each step,
+decision, handoff, and failure is visible in the inbox timeline and diagnostics.
 
 ### Milestone 3 - Commerce and Order Operations
 
@@ -1100,3 +1125,4 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Recorded the current Meta rollout constraint: the app remains under review and only the existing manually configured production WhatsApp connection is available. Embedded Signup and multi-business self-service connection onboarding are explicitly deferred to Milestone 4 after Meta approval. | Roadmap-only clarification. Milestones 1-3 must preserve the active connection and require no Embedded Signup dependency; onboarding UI remains labeled Future and must not expose a nonfunctional signup link. |
 | 2026-07-17 | Implemented the Milestone 1B authorized inbox read slice: one shared Supabase query service now provides deterministic opaque-cursor conversation/contact lists, conversation timelines, contact history, validated filters, and sanitized projections. Added admin and signed-business client list/detail route families, while keeping the Lovable Inbox and Contacts screens unchanged and labeled Future. Pinned the application runtime to Node `22.x`. | Typecheck, scoped ESLint, 51 main tests, 14 WhatsApp reliability tests, production build, read-only live Supabase pagination/filter/timeline/cross-tenant checks, and authenticated local HTTP route checks pass. Production deployment and canonical-origin API smoke remain before 1B completion. |
 | 2026-07-17 | Released the exact Milestone 1B implementation from commit `63cc2f3` and corrected the Vercel project runtime from Node `24.x` to the repository-required Node `22.x`. Production deployment `dpl_HE8FEZGtSHFXNzC9K7hcH7o4XYMi` reached Ready and received both canonical aliases. | `doubleacode.com` redirects to `www`; the exact Businesses release marker returns `200`; and the deployed admin/client conversation and contact route families each return `401` without a session. Authenticated local HTTP checks against live Supabase return real records, enforce signed-business scope, reject a browser `businessId` override with `400`, and deny cross-tenant IDs. The in-app admin and Vercel sessions expired before the equivalent authenticated canonical-origin read could be repeated, so that read-only check remains the final 1B release gate. |
+| 2026-07-17 | Audited the flow-editing mismatch and made Guided the product-standard editor for Milestone 2. The current client Automations card reads a real flow summary, but both Lovable editor variants remain hard-coded previews and neither edits the canonical flow. The WhatsApp-specific Guided experience will be shared by admin and client; Canvas remains visible, clickable, and labeled `Future`. | Added an explicit Guided acceptance contract covering the canonical v2 mapping, complete draft/version lifecycle, permission consistency, understandable branching, field-level and flow-level validation, direct problem navigation, safe deletion repair, dirty/conflict/retry handling, undo/redo, simulation, stable step IDs, and real pinned-version execution. No runtime behavior changed in this roadmap-only correction. |
