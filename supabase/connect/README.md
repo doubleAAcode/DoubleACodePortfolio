@@ -38,6 +38,14 @@ runtime-linkage hook. It tenant-validates the pinned business flow/version,
 updates the durable conversation pointers atomically, and records idempotent
 `FLOW_STARTED` and human-handoff `FLOW_STOPPED` timeline events.
 
+Run `wa_human_operations_outbox.sql` before deploying the human-reply command
+routes. It adds tenant-scoped outbox and attempt history, atomic idempotency
+claims, and completion state transitions. Free-text replies are claimed only
+inside the WhatsApp 24-hour customer-service window; outside it, the command is
+persisted as blocked with `TEMPLATE_REQUIRED`. Both tables and RPCs are
+service-role-only. Application sending also remains default-off unless the
+server-only `CONNECT_HUMAN_SEND_ENABLED` variable is exactly `true`.
+
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the
 durable customer timeline. Their runtime and diagnostic responsibilities remain
 separate.

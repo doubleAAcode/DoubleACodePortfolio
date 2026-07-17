@@ -811,18 +811,15 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: complete the authenticated canonical-origin
-smoke for 1B Authorized inbox APIs. The shared tenant-scoped query service and
-all admin/client conversation and contact list/detail endpoints are deployed on
-the exact implementation release. Local HTTP checks use real Supabase records,
-return `401` without a session, return `200` for authorized admin/client reads,
-and reject a client-supplied `businessId` with `400`. Two-business contract
-tests cover pagination, filters, cross-tenant denial, and sanitized errors.
-Production confirms the exact route families exist and reject unauthenticated
-requests; the in-app admin and Vercel sessions expired before the authenticated
-production read could be repeated. Do not begin 1C or connect the Lovable inbox
-surfaces until that final read-only gate passes. Outbound timeline insertion and
-end-to-end human delivery state remain in 1C.
+Current authorized next action: finish 1C Human operations by adding the retry
+claim/reconciliation processor, then conversation lifecycle and collaboration
+commands. The first 1C slice is implemented behind a default-off kill switch:
+tenant-scoped outbox and attempt history, idempotent human text claims, admin and
+signed-client command routes, existing-sender integration, and strict WhatsApp
+customer-service-window enforcement. The migration is live and transactionally
+verified without retaining test messages. Do not enable real human sending or
+connect the Lovable inbox surfaces until retry recovery and the controlled
+provider smoke pass; inbox UI promotion remains 1D.
 
 Milestone 1 platform controls:
 
@@ -864,16 +861,15 @@ Milestone 1 platform controls:
       harness. Real connection data, approved-template opening sends, restart
       sends, event refresh, and the A3/A4 production roundtrips are verified.
 
-#### 1B - Authorized inbox APIs
+#### 1B - Authorized inbox APIs (Complete)
 
-- [~] Add paginated admin conversation list/detail APIs across authorized
-      businesses. Implemented, locally verified against live Supabase, deployed,
-      and confirmed to enforce production authentication; an authenticated
-      production read remains.
-- [~] Add paginated client conversation list/detail APIs scoped only to the
-      signed-in business. Signed-cookie scope and browser override denial pass
-      local HTTP and contract tests; the deployed routes enforce authentication,
-      and an authenticated production read remains.
+- [x] Add paginated admin conversation list/detail APIs across authorized
+      businesses. Production login, list, detail, and cursor reads return `200`
+      against real records; unauthenticated reads return `401`.
+- [x] Add paginated client conversation list/detail APIs scoped only to the
+      signed-in business. Production login, list, and detail reads return `200`;
+      unauthenticated reads return `401`, and a browser-supplied `businessId`
+      returns `400`.
 - [x] Add server-side search, status, assignment, unread, and tag filters.
       Combined real-data filters and tag relationship syntax are verified.
 - [x] Add contact history and timeline projections without duplicating domain
@@ -886,12 +882,21 @@ Milestone 1 platform controls:
 
 #### 1C - Human operations and outbound reply
 
-- [ ] Add an idempotent outbound outbox with attempt history, retry policy, and
-      visible permanent failures.
-- [ ] Send a human text reply through the existing WhatsApp sender and append it
-      to the same conversation timeline.
-- [ ] Enforce the WhatsApp customer-service window and require an approved
-      template when free-form replies are not allowed.
+- [~] Add an idempotent outbound outbox with attempt history, retry policy, and
+      visible permanent failures. The live schema now claims by tenant/key,
+      rejects changed-payload key reuse, stores every attempt, and schedules
+      bounded retry states; due-item claiming/reconciliation and visible failure
+      UI remain.
+- [~] Send a human text reply through the existing WhatsApp sender and append it
+      to the same conversation timeline. Admin and signed-client POST commands,
+      durable timeline insertion, provider result completion, and default-off
+      `CONNECT_HUMAN_SEND_ENABLED` control are implemented; a controlled real
+      provider send remains blocked until retry recovery is complete.
+- [x] Enforce the WhatsApp customer-service window and require an approved
+      template when free-form replies are not allowed. The live RPC blocks free
+      text at or after 24 hours with `TEMPLATE_REQUIRED`; open-window, blocked,
+      duplicate, changed-payload, and completion paths passed rollback-only live
+      database checks with zero retained rows.
 - [ ] Implement open, pending, snoozed, reopened, and closed lifecycle behavior.
 - [ ] Implement assignment/transfer, internal notes, tags, unread state, and
       canned replies with audit events.
@@ -1126,3 +1131,5 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Implemented the Milestone 1B authorized inbox read slice: one shared Supabase query service now provides deterministic opaque-cursor conversation/contact lists, conversation timelines, contact history, validated filters, and sanitized projections. Added admin and signed-business client list/detail route families, while keeping the Lovable Inbox and Contacts screens unchanged and labeled Future. Pinned the application runtime to Node `22.x`. | Typecheck, scoped ESLint, 51 main tests, 14 WhatsApp reliability tests, production build, read-only live Supabase pagination/filter/timeline/cross-tenant checks, and authenticated local HTTP route checks pass. Production deployment and canonical-origin API smoke remain before 1B completion. |
 | 2026-07-17 | Released the exact Milestone 1B implementation from commit `63cc2f3` and corrected the Vercel project runtime from Node `24.x` to the repository-required Node `22.x`. Production deployment `dpl_HE8FEZGtSHFXNzC9K7hcH7o4XYMi` reached Ready and received both canonical aliases. | `doubleacode.com` redirects to `www`; the exact Businesses release marker returns `200`; and the deployed admin/client conversation and contact route families each return `401` without a session. Authenticated local HTTP checks against live Supabase return real records, enforce signed-business scope, reject a browser `businessId` override with `400`, and deny cross-tenant IDs. The in-app admin and Vercel sessions expired before the equivalent authenticated canonical-origin read could be repeated, so that read-only check remains the final 1B release gate. |
 | 2026-07-17 | Audited the flow-editing mismatch and made Guided the product-standard editor for Milestone 2. The current client Automations card reads a real flow summary, but both Lovable editor variants remain hard-coded previews and neither edits the canonical flow. The WhatsApp-specific Guided experience will be shared by admin and client; Canvas remains visible, clickable, and labeled `Future`. | Added an explicit Guided acceptance contract covering the canonical v2 mapping, complete draft/version lifecycle, permission consistency, understandable branching, field-level and flow-level validation, direct problem navigation, safe deletion repair, dirty/conflict/retry handling, undo/redo, simulation, stable step IDs, and real pinned-version execution. No runtime behavior changed in this roadmap-only correction. |
+| 2026-07-17 | Closed Milestone 1B using a fresh secret-safe production smoke against the exact deployed inbox APIs. Both real login boundaries returned `200` and issued authenticated sessions; admin and client conversation/contact lists and available details returned real records with `200`; admin contact cursor pagination returned the next page with `200`. | Unauthenticated admin/client reads returned `401`, and the client API rejected a browser-supplied partner `businessId` with `400`. The partner tenant currently has no contact row for a live cross-tenant detail probe, so two-business ID denial remains covered by the automated contract suite and local HTTP checks against live Supabase. The Git-ignored credential and smoke files were deleted immediately after the successful run. Work package 1C is now authorized. |
+| 2026-07-17 | Implemented the first controlled Milestone 1C human-reply slice without enabling provider sends. Added a tenant-scoped durable outbox and attempt ledger, atomic claim/completion RPCs, changed-payload idempotency conflict detection, bounded retry state, 24-hour service-window enforcement, admin/client text-reply command routes, signed client scope, existing Meta sender integration, and an exactly-`true` default-off kill switch. Diagnostic event failure can no longer turn an accepted provider send into a false sender failure. | Applied the idempotent migration to live Supabase. Both tables have RLS, service-role access, and explicit anonymous/authenticated denial; both RPCs are service-role-only. Live rollback-only checks passed open-window claim, duplicate suppression, altered replay rejection, successful completion, and closed-window `TEMPLATE_REQUIRED`, then confirmed zero retained test outbox/message rows. Typecheck, scoped lint, 59 main tests, 14 WhatsApp reliability tests, production build, and diff checks passed; repository-wide lint remains blocked by pre-existing Lovable-clone CRLF/style debt outside this slice. |

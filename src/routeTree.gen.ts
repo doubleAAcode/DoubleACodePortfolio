@@ -225,6 +225,8 @@ import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from '
 import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
 import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
+import { Route as ApiConnectClientConversationsConversationIdMessagesRouteImport } from './routes/api/connect/client/conversations.$conversationId.messages'
+import { Route as ApiConnectAdminConversationsConversationIdMessagesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.messages'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow'
 
@@ -1404,6 +1406,18 @@ const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
     path: '/versions/$versionId',
     getParentRoute: () => AdminFlowTemplatesTemplateIdRoute,
   } as any)
+const ApiConnectClientConversationsConversationIdMessagesRoute =
+  ApiConnectClientConversationsConversationIdMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdMessagesRoute =
+  ApiConnectAdminConversationsConversationIdMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
+  } as any)
 const ApiConnectAdminBusinessesBusinessIdFlowImageRoute =
   ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport.update({
     id: '/flow-image',
@@ -1617,10 +1631,10 @@ export interface FileRoutesByFullPath {
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
-  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
-  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -1636,6 +1650,8 @@ export interface FileRoutesByFullPath {
   '/connect/admin/businesses/$id/': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1821,10 +1837,10 @@ export interface FileRoutesByTo {
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
-  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
-  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -1840,6 +1856,8 @@ export interface FileRoutesByTo {
   '/connect/admin/businesses/$id': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -2042,10 +2060,10 @@ export interface FileRoutesById {
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
-  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRoute
+  '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
-  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRoute
+  '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
@@ -2061,6 +2079,8 @@ export interface FileRoutesById {
   '/connect/admin/businesses/$id/': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -2283,6 +2303,8 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id/'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/messages'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -2487,6 +2509,8 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/messages'
   id:
     | '__root__'
     | '/'
@@ -2707,6 +2731,8 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id/'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/messages'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -4309,6 +4335,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
       parentRoute: typeof AdminFlowTemplatesTemplateIdRoute
     }
+    '/api/connect/client/conversations/$conversationId/messages': {
+      id: '/api/connect/client/conversations/$conversationId/messages'
+      path: '/messages'
+      fullPath: '/api/connect/client/conversations/$conversationId/messages'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdMessagesRouteImport
+      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
+    }
+    '/api/connect/admin/conversations/$conversationId/messages': {
+      id: '/api/connect/admin/conversations/$conversationId/messages'
+      path: '/messages'
+      fullPath: '/api/connect/admin/conversations/$conversationId/messages'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+    }
     '/api/connect/admin/businesses/$businessId/flow-image': {
       id: '/api/connect/admin/businesses/$businessId/flow-image'
       path: '/flow-image'
@@ -4936,14 +4976,29 @@ const ApiConnectAdminContactsRouteWithChildren =
     ApiConnectAdminContactsRouteChildren,
   )
 
+interface ApiConnectAdminConversationsConversationIdRouteChildren {
+  ApiConnectAdminConversationsConversationIdMessagesRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+}
+
+const ApiConnectAdminConversationsConversationIdRouteChildren: ApiConnectAdminConversationsConversationIdRouteChildren =
+  {
+    ApiConnectAdminConversationsConversationIdMessagesRoute:
+      ApiConnectAdminConversationsConversationIdMessagesRoute,
+  }
+
+const ApiConnectAdminConversationsConversationIdRouteWithChildren =
+  ApiConnectAdminConversationsConversationIdRoute._addFileChildren(
+    ApiConnectAdminConversationsConversationIdRouteChildren,
+  )
+
 interface ApiConnectAdminConversationsRouteChildren {
-  ApiConnectAdminConversationsConversationIdRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+  ApiConnectAdminConversationsConversationIdRoute: typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
 }
 
 const ApiConnectAdminConversationsRouteChildren: ApiConnectAdminConversationsRouteChildren =
   {
     ApiConnectAdminConversationsConversationIdRoute:
-      ApiConnectAdminConversationsConversationIdRoute,
+      ApiConnectAdminConversationsConversationIdRouteWithChildren,
   }
 
 const ApiConnectAdminConversationsRouteWithChildren =
@@ -4981,14 +5036,29 @@ const ApiConnectClientContactsRouteWithChildren =
     ApiConnectClientContactsRouteChildren,
   )
 
+interface ApiConnectClientConversationsConversationIdRouteChildren {
+  ApiConnectClientConversationsConversationIdMessagesRoute: typeof ApiConnectClientConversationsConversationIdMessagesRoute
+}
+
+const ApiConnectClientConversationsConversationIdRouteChildren: ApiConnectClientConversationsConversationIdRouteChildren =
+  {
+    ApiConnectClientConversationsConversationIdMessagesRoute:
+      ApiConnectClientConversationsConversationIdMessagesRoute,
+  }
+
+const ApiConnectClientConversationsConversationIdRouteWithChildren =
+  ApiConnectClientConversationsConversationIdRoute._addFileChildren(
+    ApiConnectClientConversationsConversationIdRouteChildren,
+  )
+
 interface ApiConnectClientConversationsRouteChildren {
-  ApiConnectClientConversationsConversationIdRoute: typeof ApiConnectClientConversationsConversationIdRoute
+  ApiConnectClientConversationsConversationIdRoute: typeof ApiConnectClientConversationsConversationIdRouteWithChildren
 }
 
 const ApiConnectClientConversationsRouteChildren: ApiConnectClientConversationsRouteChildren =
   {
     ApiConnectClientConversationsConversationIdRoute:
-      ApiConnectClientConversationsConversationIdRoute,
+      ApiConnectClientConversationsConversationIdRouteWithChildren,
   }
 
 const ApiConnectClientConversationsRouteWithChildren =

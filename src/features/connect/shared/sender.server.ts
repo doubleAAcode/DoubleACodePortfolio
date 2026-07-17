@@ -404,19 +404,25 @@ async function logOutboundMessage({
   logContext?: OutboundLogContext;
 }) {
   if (!logContext) return;
-  await recordWaMessageEvent({
-    businessId: logContext.businessId,
-    connectionId: logContext.connectionId,
-    phoneNumberId,
-    customerPhone: recipient,
-    direction: "OUTBOUND",
-    senderType: logContext.senderType ?? "BOT",
-    messageType,
-    body,
-    summary,
-    metaMessageId: result.ok ? result.messageId : undefined,
-    status: result.ok ? "sent" : "failed",
-    errorCode: result.ok ? undefined : result.errorCode,
-    errorMessage: result.ok ? undefined : result.errorMessage,
-  });
+  try {
+    await recordWaMessageEvent({
+      businessId: logContext.businessId,
+      connectionId: logContext.connectionId,
+      phoneNumberId,
+      customerPhone: recipient,
+      direction: "OUTBOUND",
+      senderType: logContext.senderType ?? "BOT",
+      messageType,
+      body,
+      summary,
+      metaMessageId: result.ok ? result.messageId : undefined,
+      status: result.ok ? "sent" : "failed",
+      errorCode: result.ok ? undefined : result.errorCode,
+      errorMessage: result.ok ? undefined : result.errorMessage,
+    });
+  } catch (error) {
+    console.error("[connect:sender] outbound diagnostic write failed", {
+      message: error instanceof Error ? error.message : "Unknown diagnostic failure",
+    });
+  }
 }
