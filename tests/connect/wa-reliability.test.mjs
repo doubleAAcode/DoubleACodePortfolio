@@ -16,6 +16,7 @@ const dashboardStore = read("src/features/connect/shared/dashboard-store.server.
 const flowImageRoute = read("src/routes/api.connect.admin.businesses.$businessId.flow-image.ts");
 const whatsappHealthRoute = read("src/routes/api.connect.admin.whatsapp-health.ts");
 const businessWhatsAppRoute = read("src/routes/connect.admin.businesses.$id.whatsapp.tsx");
+const businessLiveTestRoute = read("src/routes/connect.admin.businesses.$id.live-test.tsx");
 const flowManagerFeatureStatus = read("src/features/connect/flow-manager-ui/feature-status.ts");
 const flowManagerPreviewBoundary = read(
   "src/features/connect/flow-manager-ui/preview-boundary.tsx",
@@ -69,8 +70,21 @@ test("WhatsApp sender uses timeout and retryable failure classification", () => 
   assert.match(sender, /WHATSAPP_SEND_TIMEOUT_MS/);
   assert.match(sender, /AbortController/);
   assert.match(sender, /isRetryableHttpStatus/);
+  assert.match(sender, /export async function sendWhatsAppTemplate/);
+  assert.match(sender, /type: "template"/);
   assert.match(reliability, /status === 429/);
   assert.match(reliability, /status >= 500/);
+});
+
+test("admin live test uses the authorized sender and real message events", () => {
+  assert.match(adminHandlers, /sendWhatsAppTemplate/);
+  assert.match(adminHandlers, /validateDemoSendInput/);
+  assert.match(adminClient, /sendReviewWhatsAppMessage/);
+  assert.match(businessLiveTestRoute, /useBusinessDetails/);
+  assert.match(businessLiveTestRoute, /TEST_TEMPLATE_NAME = "hello_world"/);
+  assert.match(businessLiveTestRoute, /getWaMessageEvents/);
+  assert.match(businessLiveTestRoute, /sendReviewWhatsAppMessage/);
+  assert.doesNotMatch(businessLiveTestRoute, /\+971|sess_5f9c1e|preview-data/);
 });
 
 test("stored conversation sessions are schema-validated on load", () => {

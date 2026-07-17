@@ -15,6 +15,15 @@ export type SendWhatsAppTextInput = {
   logContext?: OutboundLogContext;
 };
 
+export type SendWhatsAppTemplateInput = {
+  phoneNumberId: string;
+  recipient: string;
+  templateName: string;
+  language: string;
+  config?: WhatsAppServerConfig;
+  logContext?: OutboundLogContext;
+};
+
 export type SendWhatsAppButtonsInput = {
   phoneNumberId: string;
   recipient: string;
@@ -110,6 +119,40 @@ export async function sendWhatsAppText({
     messageType: "text",
     body: message,
     summary: message,
+    logContext,
+  });
+  return result;
+}
+
+export async function sendWhatsAppTemplate({
+  phoneNumberId,
+  recipient,
+  templateName,
+  language,
+  config,
+  logContext,
+}: SendWhatsAppTemplateInput): Promise<SendResult> {
+  const result = await sendWhatsAppPayload({
+    phoneNumberId,
+    config,
+    payload: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: language },
+      },
+    },
+  });
+  await logOutboundMessage({
+    result,
+    phoneNumberId,
+    recipient,
+    messageType: "template",
+    body: `Template: ${templateName}`,
+    summary: `Template ${templateName} (${language})`,
     logContext,
   });
   return result;
@@ -355,7 +398,7 @@ async function logOutboundMessage({
   result: SendResult;
   phoneNumberId: string;
   recipient: string;
-  messageType: "text" | "button" | "list" | "image";
+  messageType: "text" | "button" | "list" | "template" | "image";
   body: string;
   summary: string;
   logContext?: OutboundLogContext;

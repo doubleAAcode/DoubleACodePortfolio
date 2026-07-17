@@ -318,7 +318,9 @@ export async function getWaMessageEvents(input: { connectionId?: string; busines
 export async function sendReviewWhatsAppMessage(input: {
   connectionId: string;
   recipientPhone: string;
-  body: string;
+  body?: string;
+  templateName?: string;
+  language?: string;
 }) {
   const result = await apiFetch<
     ApiResult<{

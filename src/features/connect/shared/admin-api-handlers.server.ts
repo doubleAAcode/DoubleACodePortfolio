@@ -25,7 +25,7 @@ import {
 import { uploadWaFlowImage } from "./dashboard-store.server";
 import { listWaMessageEvents } from "./message-events.server";
 import { maskCustomerIdentifier } from "./reliability";
-import { sendWhatsAppText } from "./sender.server";
+import { sendWhatsAppTemplate, sendWhatsAppText } from "./sender.server";
 import {
   assignBusinessUser,
   createAdminBusiness,
@@ -846,21 +846,39 @@ export function createInternalAdminSendReviewMessageHandlers() {
           connectionId?: string;
           recipientPhone?: string;
           body?: string;
+          templateName?: string;
+          language?: string;
         } | null;
         const connection = await getReviewConnection(body?.connectionId || "");
-        validateDemoSendInput(connection, body?.recipientPhone || "", body?.body || "");
+        validateDemoSendInput(
+          connection,
+          body?.recipientPhone || "",
+          body?.body || "",
+          body?.templateName || "",
+          body?.language || "",
+        );
 
-        const result = await sendWhatsAppText({
-          phoneNumberId: connection.phoneNumberId,
-          recipient: body?.recipientPhone?.trim() || "",
-          message: body?.body?.trim() || "",
-          config: getWhatsAppServerConfig(connection.configSuffix),
-          logContext: {
-            businessId: connection.businessId,
-            connectionId: connection.connectionId,
-            senderType: "SYSTEM",
-          },
-        });
+        const logContext = {
+          businessId: connection.businessId,
+          connectionId: connection.connectionId,
+          senderType: "SYSTEM" as const,
+        };
+        const result = body?.templateName?.trim()
+          ? await sendWhatsAppTemplate({
+              phoneNumberId: connection.phoneNumberId,
+              recipient: body.recipientPhone?.trim() || "",
+              templateName: body.templateName.trim(),
+              language: body.language?.trim() || "en_US",
+              config: getWhatsAppServerConfig(connection.configSuffix),
+              logContext,
+            })
+          : await sendWhatsAppText({
+              phoneNumberId: connection.phoneNumberId,
+              recipient: body?.recipientPhone?.trim() || "",
+              message: body?.body?.trim() || "",
+              config: getWhatsAppServerConfig(connection.configSuffix),
+              logContext,
+            });
         await recordAdminAuditLog({
           adminUser: session.username,
           request,
@@ -944,6 +962,8 @@ function validateDemoSendInput(
   connection: ReviewConnectionSummary,
   recipientPhone: string,
   messageBody: string,
+  templateName: string,
+  language: string,
 ) {
   if (!connection.isActive || connection.status !== "ACTIVE") {
     throw new Error("Select an ACTIVE WhatsApp connection before sending a demo message.");
@@ -953,6 +973,16 @@ function validateDemoSendInput(
   }
   if (!/^\+[1-9]\d{7,14}$/.test(recipientPhone.trim())) {
     throw new Error("Recipient phone must be in E.164 format, for example +15551234567.");
+  }
+  const cleanTemplateName = templateName.trim();
+  if (cleanTemplateName) {
+    if (!/^[a-z0-9_]{1,512}$/.test(cleanTemplateName)) {
+      throw new Error("Template name is invalid.");
+    }
+    if (language.trim() && !/^[a-z]{2,3}(?:_[A-Z]{2})?$/.test(language.trim())) {
+      throw new Error("Template language is invalid.");
+    }
+    return;
   }
   if (!messageBody.trim()) throw new Error("Message body is required.");
   if (messageBody.length > 1000) throw new Error("Demo message must be 1000 characters or less.");
