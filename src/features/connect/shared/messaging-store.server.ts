@@ -2,6 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
 
+import type { ConversationSession } from "./conversation-store.server";
 import type { IncomingWhatsAppMessage, IncomingWhatsAppStatus } from "./parser.server";
 
 export type InboundMessagePersistenceResult = {
@@ -88,6 +89,37 @@ export async function finishInboundWhatsAppMessageProcessing({
   });
 }
 
+export async function linkConversationRuntimeState({
+  businessId,
+  conversationId,
+  session,
+}: {
+  businessId: string;
+  conversationId: string;
+  session: ConversationSession;
+}) {
+  if (!isServerSupabaseConfigured()) return false;
+  if (!session.businessFlowId || !session.flowVersionId) return false;
+
+  const linked = await supabaseServerRest<boolean>("/rpc/wa_link_conversation_runtime", {
+    method: "POST",
+    body: JSON.stringify({
+      p_business_id: businessId,
+      p_conversation_id: conversationId,
+      p_business_flow_id: session.businessFlowId,
+      p_flow_version_id: session.flowVersionId,
+      p_current_node_id: session.currentNodeId ?? null,
+      p_handoff_paused: isHumanHandoffPaused(session.flowVariables),
+    }),
+  });
+
+  if (linked !== true) {
+    throw new Error("Conversation runtime linkage was not persisted.");
+  }
+
+  return true;
+}
+
 export async function applyWhatsAppMessageStatus({
   businessId,
   status,
@@ -131,4 +163,15 @@ function readableError(error: unknown) {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return "Inbound WhatsApp processing failed.";
+}
+
+function isHumanHandoffPaused(flowVariables: Record<string, unknown>) {
+  const handoff = flowVariables.humanHandoff;
+  return (
+    typeof handoff === "object" &&
+    handoff !== null &&
+    !Array.isArray(handoff) &&
+    "status" in handoff &&
+    handoff.status === "paused"
+  );
 }

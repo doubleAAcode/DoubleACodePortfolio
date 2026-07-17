@@ -435,6 +435,34 @@ test("messaging operations migration provides atomic idempotent inbound ingestio
   );
 });
 
+test("conversation runtime linkage is tenant-validated and service-role-only", () => {
+  const baseMigration = readFileSync("supabase/connect/wa_messaging_operations_rpc.sql", "utf8");
+  const linkageMigration = readFileSync(
+    "supabase/connect/wa_conversation_runtime_linkage_rpc.sql",
+    "utf8",
+  );
+
+  for (const migration of [baseMigration, linkageMigration]) {
+    assert.match(migration, /create or replace function public\.wa_link_conversation_runtime/);
+    assert.match(
+      migration,
+      /version\.business_flow_id = p_business_flow_id[\s\S]*?flow\.business_id = p_business_id/,
+    );
+    assert.match(migration, /where conversation\.business_id = p_business_id/);
+    assert.match(migration, /event\.event_type = 'FLOW_STARTED'/);
+    assert.match(migration, /event\.event_type = 'FLOW_STOPPED'/);
+    assert.match(migration, /event\.payload ->> 'reason' = 'HUMAN_HANDOFF'/);
+    assert.match(
+      migration,
+      /revoke all on function public\.wa_link_conversation_runtime[\s\S]*?from public, anon, authenticated/,
+    );
+    assert.match(
+      migration,
+      /grant execute on function public\.wa_link_conversation_runtime[\s\S]*?to service_role/,
+    );
+  }
+});
+
 test("Meta webhook persists and claims inbound messages before running the flow engine", () => {
   const webhook = readFileSync("src/features/connect/shared/webhook-handler.server.ts", "utf8");
   const messagingStore = readFileSync(
@@ -443,9 +471,13 @@ test("Meta webhook persists and claims inbound messages before running the flow 
   );
   const persistenceIndex = webhook.indexOf("const persistence = await measureWebhookPhase");
   const processingIndex = webhook.indexOf("processIncomingMessage({", persistenceIndex);
+  const linkageIndex = webhook.indexOf("linkConversationRuntimeState({", processingIndex);
+  const completionIndex = webhook.indexOf("finishInboundWhatsAppMessageProcessing({", linkageIndex);
 
   assert.ok(persistenceIndex >= 0);
   assert.ok(processingIndex > persistenceIndex);
+  assert.ok(linkageIndex > processingIndex);
+  assert.ok(completionIndex > linkageIndex);
   assert.match(
     webhook,
     /connection\.source === "database" \? connection\.connectionId : undefined/,
@@ -457,6 +489,8 @@ test("Meta webhook persists and claims inbound messages before running the flow 
   assert.match(messagingStore, /"\/rpc\/wa_ingest_inbound_message"/);
   assert.match(messagingStore, /"\/rpc\/wa_finish_inbound_message_processing"/);
   assert.match(messagingStore, /"\/rpc\/wa_apply_message_status"/);
+  assert.match(messagingStore, /"\/rpc\/wa_link_conversation_runtime"/);
+  assert.match(messagingStore, /handoff\.status === "paused"/);
 });
 
 function canonicalOneMessageDocument(id: string, text: string): CanonicalFlowDocument {

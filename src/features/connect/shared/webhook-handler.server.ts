@@ -11,6 +11,7 @@ import {
   processIncomingMessage,
   type BotResponse,
 } from "@/features/connect/shared/conversation-engine.server";
+import { getActiveConversationSession } from "@/features/connect/shared/conversation-store.server";
 import { hasProcessedWhatsAppMessage } from "@/features/connect/shared/duplicates.server";
 import {
   createCorrelationId,
@@ -25,6 +26,7 @@ import {
 import {
   applyWhatsAppMessageStatus,
   finishInboundWhatsAppMessageProcessing,
+  linkConversationRuntimeState,
   persistInboundWhatsAppMessage,
 } from "@/features/connect/shared/messaging-store.server";
 import {
@@ -385,6 +387,36 @@ async function handleWebhookEvent(request: Request, options: WhatsAppWebhookOpti
             input: message.input,
           }),
       );
+
+      if (persistence.available && persistence.conversationId) {
+        const conversationId = persistence.conversationId;
+        await measureWebhookPhase(
+          timings,
+          "runtime_linkage",
+          {
+            correlationId,
+            operation: "webhook.timing.runtime_linkage",
+            businessId: connection.businessId,
+            metaMessageId: message.messageId,
+            customerPhone: message.sender,
+            phoneNumberId: message.phoneNumberId,
+          },
+          async () => {
+            const session = await getActiveConversationSession({
+              businessId: connection.businessId,
+              customerPhone: message.sender,
+            });
+            if (!session) {
+              throw new Error("Conversation session was not found after flow processing.");
+            }
+            await linkConversationRuntimeState({
+              businessId: connection.businessId,
+              conversationId,
+              session,
+            });
+          },
+        );
+      }
     } catch (error) {
       await recordInboundProcessingFailure(connection.businessId, message.messageId, error);
       throw error;

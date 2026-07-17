@@ -811,23 +811,21 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: finish the 1A real-provider smoke gate. The
-active callback, `messages` field, exact current app/WABA subscription, phone
-identity, and quality are verified. The connected production Live Test sent the
-approved `hello_world` template to the exact user-confirmed historical test
-recipient, and production recorded signed `sent`, `delivered`, and `read` status
-callbacks with HTTP `200` against one provider message ID. The user's
-`LIVE-1A-0717-A2` reply reached the current webhook with a valid signature and
-correct tenant/phone routing, but five Meta attempts returned `500` because the
-new ingest RPC used an ambiguous `message_id` conflict target. The additive
-`wa_messaging_operations_rpc_message_id_fix.sql` repair is deployed; its named
-constraint, grants, and rollback-only transactional ingest postflight pass. The
-user must now send fresh marker `LIVE-1A-0717-A3` in that exact thread, then we
-must record one durable inbound row, retry/idempotency behavior, deterministic
-response, and response status callbacks. Use the connected Live Test and
-database evidence; Diagnostics remains illustrative. Do not advance to 1B until
-that evidence is recorded. Outbound timeline insertion and end-to-end delivery
-state remain in 1C and the Milestone 1 completion gate.
+Current authorized next action: finish 1A runtime linkage. Marker
+`LIVE-1A-0717-A3` passed the repaired production data plane: the signed webhook
+returned HTTP `200`, exactly one durable inbound row and one processed claim
+were recorded, the deterministic bot responded once, and its provider status
+advanced through `sent`, `delivered`, and `read`. Replaying the exact provider
+message ID through the deployed ingest RPC returned `inserted=false` and
+`shouldProcess=false` without changing the one-row/one-response counts. The
+remaining 1A contract is to release the application runtime-linkage hook, then
+verify with fresh marker A4 that the durable conversation stores the same
+business flow, immutable flow version, and current node as
+`wa_conversation_sessions`, with one `FLOW_STARTED` event.
+Use the connected Live Test and database evidence; Diagnostics remains
+illustrative. Do not advance to 1B until that evidence is recorded. Outbound
+timeline insertion and end-to-end delivery state remain in 1C and the Milestone
+1 completion gate.
 
 Milestone 1 platform controls:
 
@@ -848,23 +846,25 @@ Milestone 1 platform controls:
   messages, events, notes, tags, and unread counters. Contacts,
   conversations, messages, events, and unread counters are connected;
   notes and tags remain in 1C.
-- [~] Dual-write verified inbound WhatsApp messages from the existing webhook
-  into the messaging store before running the deterministic flow. Code and
-  live database RPCs are deployed; production application deployment and public
-  boundary checks pass. Real marker A2 exposed and drove repair of an ambiguous
-  processing-key conflict target; a fresh A3 roundtrip remains.
+- [x] Dual-write verified inbound WhatsApp messages from the existing webhook
+  into the messaging store before running the deterministic flow. Marker A3
+  proved signed HTTP `200` delivery, one durable row, one processed claim, one
+  bot response, monotonic status callbacks, and duplicate rejection.
 - [x] Make inbound persistence idempotent by provider message ID and safe under
       webhook retries or concurrent delivery.
 - [x] Upsert contacts without exposing full phone numbers in logs or cross-tenant
       queries.
-- [ ] Record flow/session linkage and handoff state on the conversation timeline.
+- [~] Record flow/session linkage and handoff state on the conversation
+  timeline. The tenant-validating RPC is deployed and its service-role-only
+  grant plus rollback-only linkage postflight pass. The webhook hook and
+  idempotent `FLOW_STARTED`/human-handoff `FLOW_STOPPED` events are implemented;
+  application release and A4 production evidence remain.
 - [~] Update outbound message state from sent, delivered, read, and failed Meta
   status webhooks. The monotonic status RPC and webhook hook are ready;
   outbound timeline insertion remains in 1C.
-- [~] Use the exact Flow Manager Live Test route as the repeatable provider
+- [x] Use the exact Flow Manager Live Test route as the repeatable provider
       harness. Real connection data, approved-template opening sends, restart
-      sends, and event refresh are connected; production roundtrip evidence is
-      still required before the route or 1A is complete.
+      sends, event refresh, and the A3 production roundtrip are verified.
 
 #### 1B - Authorized inbox APIs
 
@@ -1081,3 +1081,4 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Deployed exact current-app/WABA verification and the audited repair control as `dpl_75ZqQdT419QCNbFaom5XCcixChQP` from commit `f2036d0`. The authenticated production check compared app IDs and confirmed the current app is already subscribed, with the expected callback, active `messages` field, matched phone identity, and `GREEN` quality; the repair mutation was therefore not invoked.                                                                                                  | Both canonical aliases serve the Ready deployment. A final four-hour database audit still found no signed Meta `POST` or marker `LIVE-1A-0717-A1`. Historical records prove an older phone-number ID and recipient ending `5749` completed inbound, bot reply, sent, delivered, and read cycles. The remaining provider smoke requires a fresh outbound thread on the current test number and a reply from the verified recipient; no 1B work has started.                                                                 |
 | 2026-07-17 | Connected the exact Flow Manager business Live Test route to the real admin-authorized WhatsApp services. It now reads the selected Supabase connection, can send the approved `hello_world` template to open a compliant test conversation, can send `/restart` inside an open customer-service window, and refreshes sanitized real message events. Added reusable template sending to the shared Meta sender and extended the existing audited demo-send API without hardcoding the test recipient.                         | Deployment `dpl_7oBVoRU3GvrSS4dUCKZ9PNjyu8rv` rendered the real connection/events and exposed the partial-page Future guard intercepting connected actions. Commit `a965221` fixed that boundary without removing the partial/Future label. The exact user-confirmed historical recipient then received and read the approved template: production recorded the outbound provider ID plus signed `sent`, `delivered`, and `read` callbacks with HTTP `200`. The failed mistyped-recipient attempt remains sanitized and visible for diagnosis. Await marker `LIVE-1A-0717-A2` to complete inbound/idempotency evidence. |
 | 2026-07-17 | Marker `LIVE-1A-0717-A2` reached the current production webhook with a valid Meta signature and correct current phone/business routing. Vercel raw logs proved five deliveries of the same provider message ID, all failing before flow execution because `wa_ingest_inbound_message` resolved its `message_id` output column ambiguously against the processing-table conflict target. Corrected the canonical migration and added the function-only `wa_messaging_operations_rpc_message_id_fix.sql` repair plus a regression assertion.                                      | The additive repair was applied through the Supabase SQL editor. Postflight confirms the deployed definition uses `wa_inbound_message_processing_pkey`, preserves service-role execute, denies authenticated execute, and passes a rollback-only transactional ingest without retaining synthetic data. Typecheck, scoped lint, all 42 main tests, all 14 reliability tests, and `git diff --check` pass. Meta did not retry A2 after repair; fresh marker `LIVE-1A-0717-A3` is required for final persistence, idempotency, bot-response, and status evidence. |
+| 2026-07-17 | Marker `LIVE-1A-0717-A3` completed the repaired real-provider roundtrip on the current production number. The signed inbound callback returned HTTP `200`, routed to the active business/connection, persisted exactly one customer message, completed one processing claim on its first attempt, and produced exactly one deterministic bot response. The bot response then received signed `sent`, `delivered`, and `read` callbacks.                                                                                                                                            | A controlled replay of the exact A3 provider message ID through the deployed service-role ingest RPC returned `inserted=false` and `shouldProcess=false`; postflight still showed one inbound row, one processing attempt, and one bot response. This closes the provider persistence/idempotency gate. During evidence review, the durable conversation was found not yet to copy the already-pinned runtime flow/version/node, so 1A remains open for the explicit linkage hook and an A4 production check before 1B. |

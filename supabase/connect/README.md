@@ -33,6 +33,11 @@ Existing deployments created before the inbound provider smoke must then run
 function, preserving its signature and service-role-only grant while removing
 an ambiguous PL/pgSQL `message_id` conflict target found by real webhook retries.
 
+Run `wa_conversation_runtime_linkage_rpc.sql` before deploying the webhook
+runtime-linkage hook. It tenant-validates the pinned business flow/version,
+updates the durable conversation pointers atomically, and records idempotent
+`FLOW_STARTED` and human-handoff `FLOW_STOPPED` timeline events.
+
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the
 durable customer timeline. Their runtime and diagnostic responsibilities remain
 separate.
