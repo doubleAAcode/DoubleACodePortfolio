@@ -340,27 +340,27 @@ response.
 This is the audited starting point for the roadmap. It distinguishes deployed
 foundations from the final product experience.
 
-| Area                 | Current baseline                                                                                                                                              | Target                                                                                       |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Product surface      | Exact Lovable admin/client route trees mounted below `/connect`; most routes are Preview/Future.                                                              | One coherent Flow Manager product with real, tenant-safe operations.                         |
-| Connected UI         | Admin Businesses and client Automations have partial real adapters.                                                                                           | Each route graduates independently only after its full journey passes.                       |
-| WhatsApp             | Verified webhook, phone-number routing, deterministic processing, sender, diagnostics, and new durable inbound persistence code.                              | Durable inbox, human operations, statuses, flows, media, templates, and broadcasts.          |
-| Database             | Existing `wa_*` commerce/runtime domains plus deployed additive Flow Manager inbox/contact tables and messaging RPCs.                                         | Versioned, tenant-scoped domains with migration and rollback evidence.                       |
-| Authentication       | HMAC-signed, environment-backed internal-admin and client cookies. Client sessions are tied to one configured business.                                       | Database-backed users, workspace memberships, role enforcement, rotation, and audit.         |
-| Deployment           | Automatic `main` deployment is working. The Milestone 1A release first verified at commit `5f059bf` reached Ready and was promoted to both canonical aliases. | Repeatable local, preview, and production release ladder with smoke and rollback procedures. |
-| Legacy compatibility | Database connection lookup falls back to legacy suffixed Vercel WhatsApp variables. Existing APIs and services remain available behind redirects/adapters.    | Database-owned connections and new UI, with fallback removed only after measured cutover.    |
-| Verified baseline    | Typecheck, scoped ESLint, 42 Connect tests, production build, live SQL checks, and prior desktop/mobile browser checks pass.                                  | Every milestone adds automated, browser, database, and real-provider evidence.               |
+| Area                 | Current baseline                                                                                                                                                                 | Target                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Product surface      | Exact Lovable admin/client route trees mounted below `/connect`; most routes are Preview/Future.                                                                                 | One coherent Flow Manager product with real, tenant-safe operations.                         |
+| Connected UI         | Admin Businesses list/header/setup hub and client Automations have partial real adapters. Business WhatsApp, Live Test, and Diagnostics child pages remain Lovable preview data. | Each route graduates independently only after its full journey passes.                       |
+| WhatsApp             | Verified webhook, phone-number routing, deterministic processing, sender, diagnostics, and new durable inbound persistence code.                                                 | Durable inbox, human operations, statuses, flows, media, templates, and broadcasts.          |
+| Database             | Existing `wa_*` commerce/runtime domains plus deployed additive Flow Manager inbox/contact tables and messaging RPCs.                                                            | Versioned, tenant-scoped domains with migration and rollback evidence.                       |
+| Authentication       | HMAC-signed, environment-backed internal-admin and client cookies. Client sessions are tied to one configured business.                                                          | Database-backed users, workspace memberships, role enforcement, rotation, and audit.         |
+| Deployment           | Automatic `main` deployment is working. The Milestone 1A release first verified at commit `5f059bf` reached Ready and was promoted to both canonical aliases.                    | Repeatable local, preview, and production release ladder with smoke and rollback procedures. |
+| Legacy compatibility | Database connection lookup falls back to legacy suffixed Vercel WhatsApp variables. Existing APIs and services remain available behind redirects/adapters.                       | Database-owned connections and new UI, with fallback removed only after measured cutover.    |
+| Verified baseline    | Typecheck, scoped ESLint, 42 Connect tests, production build, live SQL checks, and prior desktop/mobile browser checks pass.                                                     | Every milestone adds automated, browser, database, and real-provider evidence.               |
 
 Known release gap: the Milestone 1A application code and live RPCs are deployed,
 but the real Meta inbound/retry/status smoke test is not complete. Production
 contains the Milestone 1A runtime on both canonical aliases, first verified at
-commit `5f059bf`; the canonical redirect, login boundary, API authentication
-boundary, 390px containment, and clean browser console are verified. A
-secret-safe authenticated API probe could not proceed because both internal
-account pairs returned `401`, while the public session diagnostic reports
-authentication is configured. Reconcile or rotate the production
-internal-admin credentials, then complete authenticated UI/API and real-provider
-smoke evidence before passing the 1A gate.
+commit `5f059bf`. Secret-safe production login, session, and Businesses API
+checks return `200`; the exact Businesses UI renders two live Supabase records
+without browser errors or overflow. The active business is Live, 100% configured,
+WhatsApp Active, Health OK, and 10/11 on the real setup checklist. Its remaining
+item is a real test message. The WhatsApp Connection, Live Test, and Diagnostics
+child pages still contain static Lovable examples and are excluded from live
+acceptance evidence until connected.
 
 ## Technology Stack
 
@@ -808,14 +808,14 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: finish the 1A production smoke gate. Reconcile
-or rotate the production internal-admin credentials without exposing them,
-redeploy if environment values change, and verify the authenticated Businesses
-UI/API against live Supabase data. Then execute and record the real Meta
-inbound, duplicate/retry, deterministic-response, and status-hook checks. Do not
-advance to 1B until that evidence is recorded or a discovered 1A defect is fixed
-and re-verified. Outbound timeline insertion and end-to-end delivery state
-remain in 1C and the Milestone 1 completion gate.
+Current authorized next action: finish the 1A real-provider smoke gate. Send a
+uniquely identifiable message from an allowed test customer to the actual active
+business number, then record the Meta webhook, tenant routing, durable inbound
+row, duplicate/retry behavior, deterministic response, and status-hook outcome
+from backend evidence. Do not use the static Live Test or Diagnostics pages as
+proof. Do not advance to 1B until that evidence is recorded or a discovered 1A
+defect is fixed and re-verified. Outbound timeline insertion and end-to-end
+delivery state remain in 1C and the Milestone 1 completion gate.
 
 Milestone 1 platform controls:
 
@@ -837,8 +837,8 @@ Milestone 1 platform controls:
 - [~] Dual-write verified inbound WhatsApp messages from the existing webhook
   into the messaging store before running the deterministic flow. Code and
   live database RPCs are deployed; production application deployment and public
-  boundary checks pass, but authenticated live-data verification and a real
-  webhook smoke test remain.
+  boundary checks pass, and authenticated live-data verification passes. A real
+  webhook smoke test remains.
 - [x] Make inbound persistence idempotent by provider message ID and safe under
       webhook retries or concurrent delivery.
 - [x] Upsert contacts without exposing full phone numbers in logs or cross-tenant
@@ -1056,3 +1056,4 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Authenticated the Vercel CLI by device flow, linked the workspace to `saeed-ahmar-s-projects/double-a-code-portfolio`, and audited the production deployment and secret-safe environment-key inventory. Initial deployment-list output appeared stale and led to an incorrect blocked-release diagnosis; the Vercel dashboard and a refreshed CLI subsequently confirmed that automatic `main` deployments were being created successfully.                                                                                                                 | Vercel project ID, aliases, framework, production environment key names, GitHub repository ID, production branch, and deployed commit were verified without printing secret values. The incorrect blocked-deployment conclusion is superseded by the production evidence in the following entry.                                                                                                                                                                                                                      |
 | 2026-07-17 | Confirmed the Milestone 1A application release in production. Automatic Git deployment `dpl_HLUy4m4Doj7p69D3YaKWSTafr1H2` built full commit `5f059bf61bf4015d14d249ce835a96c8d7c016cc`, reached Ready, and received `doubleacode.com` and `www.doubleacode.com`.                                                                                                                                                                                                                                                                                            | The canonical origin redirected to `www`; the new Businesses page title marker was live; unauthenticated Businesses API returned `401`; session diagnostics returned `configured: true`; desktop and 390px checks had no console errors or horizontal overflow. A secret-safe probe found both current production internal account pairs returned `401`, so authenticated live-data verification and the real Meta inbound/retry/status smoke remain open. Temporary pulled-environment and smoke files were deleted. |
 | 2026-07-17 | Verified automatic deployment a second time after correcting the roadmap. Documentation commit `587a7bf` independently triggered production deployment `dpl_Bb3Lbsh73VrYhLDLPSLm7ZaaUGgf`.                                                                                                                                                                                                                                                                                                                                                                  | The deployment reached Ready and received both canonical production aliases, confirming that Git-triggered `main` deployment is operating repeatedly. This evidence changes release diagnosis only; it does not complete the authenticated data or real Meta smoke gates.                                                                                                                                                                                                                                             |
+| 2026-07-17 | Completed the authenticated production read smoke using credentials supplied through a temporary Git-ignored local file. Login, session, and Businesses API returned `200`; the API returned two live business records, and the exact Businesses UI rendered them at the canonical production origin. The active business reports Live, 100% setup, WhatsApp Active, Health OK, and 10/11 checklist completion.                                                                                                                                             | Browser verification at 1280px found no console warnings/errors or horizontal overflow. The real record differs from Lovable examples, proving that the Businesses adapter is using Supabase. The WhatsApp Connection, Live Test, and Diagnostics child routes were confirmed to remain static preview implementations with unrelated numbers and simulated outcomes; they are not valid live-test evidence. The only incomplete real setup item is receipt of a real WhatsApp test message.                          |
