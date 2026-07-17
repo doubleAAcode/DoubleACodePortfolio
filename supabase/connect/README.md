@@ -46,6 +46,14 @@ persisted as blocked with `TEMPLATE_REQUIRED`. Both tables and RPCs are
 service-role-only. Application sending also remains default-off unless the
 server-only `CONNECT_HUMAN_SEND_ENABLED` variable is exactly `true`.
 
+Run `wa_human_operations_retry_reconciliation.sql` immediately afterward and
+before deploying the outbox processor routes. It adds due-retry claiming,
+service-window revalidation, expired-lease quarantine, and audited manual
+reconciliation. An expired `SENDING` lease is treated as an unknown provider
+outcome and is never replayed automatically. The processor may be called by an
+internal administrator or a scheduler bearing `CONNECT_HUMAN_WORKER_SECRET`;
+the scheduler and provider-send switch remain separate rollout controls.
+
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the
 durable customer timeline. Their runtime and diagnostic responsibilities remain
 separate.

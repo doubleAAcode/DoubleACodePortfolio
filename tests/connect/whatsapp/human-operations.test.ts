@@ -161,6 +161,57 @@ test("retryable provider failure remains durable for a later attempt", async () 
   assert.equal(result.errorCode, "TEMPORARY");
 });
 
+test("recovers a lost completion response without sending twice", async () => {
+  let sends = 0;
+  let completionCalls = 0;
+  const service = createHumanOperationsService({
+    isSendEnabled: () => true,
+    dataSource: fixtureDataSource({
+      completeTextReply: async () => {
+        completionCalls += 1;
+        throw new Error("response lost after commit");
+      },
+      getTextReplyState: async () => outboxState("SENT"),
+    }),
+    resolveConnection: async () => ({ phoneNumberId: "phone-number-id", config: config() }),
+    sendText: async () => {
+      sends += 1;
+      return { ok: true, messageId: "wamid.committed" };
+    },
+  });
+
+  const result = await service.sendTextReply(command());
+  assert.equal(result.status, "SENT");
+  assert.equal(sends, 1);
+  assert.equal(completionCalls, 1);
+});
+
+test("retries a transient completion write without resending to Meta", async () => {
+  let sends = 0;
+  let completionCalls = 0;
+  const service = createHumanOperationsService({
+    isSendEnabled: () => true,
+    dataSource: fixtureDataSource({
+      completeTextReply: async () => {
+        completionCalls += 1;
+        if (completionCalls === 1) throw new Error("temporary database failure");
+        return completeRow("SENT");
+      },
+      getTextReplyState: async () => outboxState("SENDING"),
+    }),
+    resolveConnection: async () => ({ phoneNumberId: "phone-number-id", config: config() }),
+    sendText: async () => {
+      sends += 1;
+      return { ok: true, messageId: "wamid.once" };
+    },
+  });
+
+  const result = await service.sendTextReply(command());
+  assert.equal(result.status, "SENT");
+  assert.equal(sends, 1);
+  assert.equal(completionCalls, 2);
+});
+
 test("admin and client mutation handlers enforce auth and signed tenant scope", async () => {
   const previousAdminSecret = process.env.WA_INTERNAL_ADMIN_SESSION_SECRET;
   const previousClientSecret = process.env.WA_DASHBOARD_SESSION_SECRET;
@@ -260,6 +311,7 @@ function fixtureDataSource(
     resolveConversation: async () => ({ business_id: "business-a", status: "OPEN" }),
     claimTextReply: async () => claimRow(),
     completeTextReply: async () => completeRow("SENT"),
+    getTextReplyState: async () => outboxState("SENDING"),
     ...overrides,
   };
 }
@@ -301,6 +353,16 @@ function completeRow(status: "SENT" | "RETRYABLE" | "FAILED") {
     message_id: MESSAGE_ID,
     outbox_status: status,
     attempt_number: 1,
+    next_attempt_at: status === "RETRYABLE" ? "2026-07-17T12:01:00.000Z" : null,
+  };
+}
+
+function outboxState(status: "SENDING" | "SENT" | "RETRYABLE" | "FAILED") {
+  return {
+    id: OUTBOX_ID,
+    message_id: MESSAGE_ID,
+    status,
+    attempt_count: 1,
     next_attempt_at: status === "RETRYABLE" ? "2026-07-17T12:01:00.000Z" : null,
   };
 }

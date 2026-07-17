@@ -1,7 +1,14 @@
 import { invalidRequest, parseInboxBusinessId, parseInboxUuid } from "./inbox-query.ts";
 
 export type HumanActorKind = "INTERNAL_ADMIN" | "BUSINESS_USER";
-export type HumanReplyStatus = "SENDING" | "SENT" | "RETRYABLE" | "FAILED" | "CANCELLED";
+export type HumanReplyStatus =
+  | "SENDING"
+  | "SENT"
+  | "RETRYABLE"
+  | "FAILED"
+  | "BLOCKED"
+  | "RECONCILIATION_REQUIRED"
+  | "CANCELLED";
 
 export type HumanTextReplyCommand = {
   conversationId: string;

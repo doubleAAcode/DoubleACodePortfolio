@@ -27,21 +27,24 @@ type HumanConnectionRow = {
   status: string;
 };
 
-type ClaimRow = {
+export type HumanSendExecutionClaim = {
   outbox_id: string;
   message_id: string | null;
   business_id: string;
-  conversation_id: string;
   connection_id: string | null;
   recipient_phone: string;
-  outbox_status: string;
   attempt_number: number;
+};
+
+export type HumanSendClaimRow = HumanSendExecutionClaim & {
+  conversation_id: string;
+  outbox_status: string;
   should_send: boolean;
   block_code: string | null;
   service_window_expires_at: string | null;
 };
 
-type CompleteRow = {
+export type HumanSendCompleteRow = {
   outbox_id: string;
   message_id: string | null;
   outbox_status: HumanReplyStatus;
@@ -49,7 +52,15 @@ type CompleteRow = {
   next_attempt_at: string | null;
 };
 
-type HumanOperationsDataSource = {
+type HumanOutboxStateRow = {
+  id: string;
+  message_id: string | null;
+  status: HumanReplyStatus;
+  attempt_count: number;
+  next_attempt_at: string | null;
+};
+
+export type HumanOperationsDataSource = {
   resolveConversation(input: {
     conversationId: string;
     businessId?: string;
@@ -61,13 +72,17 @@ type HumanOperationsDataSource = {
     body: string;
     actorKind: string;
     actorUsername: string;
-  }): Promise<ClaimRow>;
+  }): Promise<HumanSendClaimRow>;
   completeTextReply(input: {
     businessId: string;
     outboxId: string;
     attemptNumber: number;
     result: SendResult;
-  }): Promise<CompleteRow>;
+  }): Promise<HumanSendCompleteRow>;
+  getTextReplyState(input: {
+    businessId: string;
+    outboxId: string;
+  }): Promise<HumanOutboxStateRow | undefined>;
 };
 
 type HumanSendConnection = {
@@ -75,7 +90,12 @@ type HumanSendConnection = {
   config: WhatsAppServerConfig;
 };
 
-type HumanTextSender = (input: SendWhatsAppTextInput) => Promise<SendResult>;
+export type HumanTextSender = (input: SendWhatsAppTextInput) => Promise<SendResult>;
+
+export type HumanSendExecutionDependencies = {
+  resolveConnection?: (connectionId: string, businessId: string) => Promise<HumanSendConnection>;
+  sendText?: HumanTextSender;
+};
 
 export type HumanOperationsDependencies = {
   dataSource?: HumanOperationsDataSource;
@@ -148,45 +168,13 @@ export function createHumanOperationsService(
         );
       }
       if (!claim.should_send) return resultFromExistingClaim(claim);
-      if (!claim.connection_id) {
-        return completeFailedClaim({
-          dataSource,
-          claim,
-          errorCode: "CONNECTION_REQUIRED",
-          errorMessage: "The conversation has no active WhatsApp connection.",
-          retryable: false,
-        });
-      }
 
-      let sendResult: SendResult;
-      try {
-        const connection = await resolveConnection(claim.connection_id, claim.business_id);
-        sendResult = await sendText({
-          phoneNumberId: connection.phoneNumberId,
-          recipient: claim.recipient_phone,
-          message: input.body,
-          config: connection.config,
-          logContext: {
-            businessId: claim.business_id,
-            connectionId: claim.connection_id,
-            senderType: "HUMAN",
-          },
-        });
-      } catch {
-        sendResult = {
-          ok: false,
-          status: 0,
-          errorCode: "CONNECTION_UNAVAILABLE",
-          errorMessage: "The WhatsApp connection could not be prepared for sending.",
-          retryable: true,
-        };
-      }
-
-      const completed = await dataSource.completeTextReply({
-        businessId: claim.business_id,
-        outboxId: claim.outbox_id,
-        attemptNumber: claim.attempt_number,
-        result: sendResult,
+      const { completed, sendResult } = await executeClaimedHumanTextReply({
+        claim,
+        body: input.body,
+        dataSource,
+        resolveConnection,
+        sendText,
       });
       return {
         outboxId: completed.outbox_id,
@@ -216,7 +204,7 @@ export function createHumanOperationsDataSource(): HumanOperationsDataSource {
       return rows[0];
     },
     async claimTextReply(input) {
-      const rows = await callRpc<ClaimRow[]>("wa_claim_human_text_reply", {
+      const rows = await callRpc<HumanSendClaimRow[]>("wa_claim_human_text_reply", {
         p_business_id: input.businessId,
         p_conversation_id: input.conversationId,
         p_idempotency_key: input.idempotencyKey,
@@ -229,7 +217,7 @@ export function createHumanOperationsDataSource(): HumanOperationsDataSource {
     },
     async completeTextReply(input) {
       const result = input.result;
-      const rows = await callRpc<CompleteRow[]>("wa_complete_human_text_reply", {
+      const rows = await callRpc<HumanSendCompleteRow[]>("wa_complete_human_text_reply", {
         p_business_id: input.businessId,
         p_outbox_id: input.outboxId,
         p_attempt_number: input.attemptNumber,
@@ -243,7 +231,69 @@ export function createHumanOperationsDataSource(): HumanOperationsDataSource {
       if (!rows[0]) throw new Error("Human reply completion returned no result.");
       return rows[0];
     },
+    async getTextReplyState({ businessId, outboxId }) {
+      const rows = await supabaseServerRest<HumanOutboxStateRow[]>(
+        `/wa_human_outbox?select=id,message_id,status,attempt_count,next_attempt_at&business_id=eq.${encodeURIComponent(businessId)}&id=eq.${encodeURIComponent(outboxId)}&limit=1`,
+      );
+      return rows[0];
+    },
   };
+}
+
+export async function executeClaimedHumanTextReply({
+  claim,
+  body,
+  dataSource,
+  resolveConnection = resolveHumanSendConnection,
+  sendText = sendHumanText,
+}: {
+  claim: HumanSendExecutionClaim;
+  body: string;
+  dataSource: HumanOperationsDataSource;
+  resolveConnection?: NonNullable<HumanSendExecutionDependencies["resolveConnection"]>;
+  sendText?: HumanTextSender;
+}) {
+  let sendResult: SendResult;
+  if (!claim.connection_id) {
+    sendResult = {
+      ok: false,
+      status: 500,
+      errorCode: "CONNECTION_REQUIRED",
+      errorMessage: "The conversation has no active WhatsApp connection.",
+      retryable: false,
+    };
+  } else {
+    try {
+      const connection = await resolveConnection(claim.connection_id, claim.business_id);
+      sendResult = await sendText({
+        phoneNumberId: connection.phoneNumberId,
+        recipient: claim.recipient_phone,
+        message: body,
+        config: connection.config,
+        logContext: {
+          businessId: claim.business_id,
+          connectionId: claim.connection_id,
+          senderType: "HUMAN",
+        },
+      });
+    } catch {
+      sendResult = {
+        ok: false,
+        status: 0,
+        errorCode: "CONNECTION_UNAVAILABLE",
+        errorMessage: "The WhatsApp connection could not be prepared for sending.",
+        retryable: true,
+      };
+    }
+  }
+
+  const completed = await completeTextReplyWithRecovery(dataSource, {
+    businessId: claim.business_id,
+    outboxId: claim.outbox_id,
+    attemptNumber: claim.attempt_number,
+    result: sendResult,
+  });
+  return { completed, sendResult };
 }
 
 async function resolveHumanSendConnection(
@@ -268,44 +318,7 @@ async function sendHumanText(input: SendWhatsAppTextInput) {
   return sendWhatsAppText(input);
 }
 
-async function completeFailedClaim({
-  dataSource,
-  claim,
-  errorCode,
-  errorMessage,
-  retryable,
-}: {
-  dataSource: HumanOperationsDataSource;
-  claim: ClaimRow;
-  errorCode: string;
-  errorMessage: string;
-  retryable: boolean;
-}) {
-  const completed = await dataSource.completeTextReply({
-    businessId: claim.business_id,
-    outboxId: claim.outbox_id,
-    attemptNumber: claim.attempt_number,
-    result: {
-      ok: false,
-      status: 500,
-      errorCode,
-      errorMessage,
-      retryable,
-    },
-  });
-  return {
-    outboxId: completed.outbox_id,
-    messageId: completed.message_id,
-    status: completed.outbox_status,
-    attemptNumber: completed.attempt_number,
-    duplicate: false,
-    retryable: completed.outbox_status === "RETRYABLE",
-    serviceWindowExpiresAt: claim.service_window_expires_at!,
-    errorCode,
-  } satisfies HumanTextReplyResult;
-}
-
-function resultFromExistingClaim(claim: ClaimRow): HumanTextReplyResult {
+function resultFromExistingClaim(claim: HumanSendClaimRow): HumanTextReplyResult {
   const status = normalizeExistingStatus(claim.outbox_status);
   return {
     outboxId: claim.outbox_id,
@@ -319,10 +332,48 @@ function resultFromExistingClaim(claim: ClaimRow): HumanTextReplyResult {
 }
 
 function normalizeExistingStatus(value: string): HumanReplyStatus {
-  if (value === "SENT" || value === "RETRYABLE" || value === "FAILED" || value === "CANCELLED") {
+  if (
+    value === "SENT" ||
+    value === "RETRYABLE" ||
+    value === "FAILED" ||
+    value === "RECONCILIATION_REQUIRED" ||
+    value === "CANCELLED"
+  ) {
     return value;
   }
   return "SENDING";
+}
+
+async function completeTextReplyWithRecovery(
+  dataSource: HumanOperationsDataSource,
+  input: Parameters<HumanOperationsDataSource["completeTextReply"]>[0],
+) {
+  let firstError: unknown;
+  for (let completionAttempt = 0; completionAttempt < 2; completionAttempt += 1) {
+    try {
+      return await dataSource.completeTextReply(input);
+    } catch (error) {
+      firstError ??= error;
+      try {
+        const state = await dataSource.getTextReplyState({
+          businessId: input.businessId,
+          outboxId: input.outboxId,
+        });
+        if (state && state.attempt_count === input.attemptNumber && state.status !== "SENDING") {
+          return {
+            outbox_id: state.id,
+            message_id: state.message_id,
+            outbox_status: state.status,
+            attempt_number: state.attempt_count,
+            next_attempt_at: state.next_attempt_at,
+          } satisfies HumanSendCompleteRow;
+        }
+      } catch {
+        // A second completion attempt is safe while the same lease remains current.
+      }
+    }
+  }
+  throw firstError;
 }
 
 async function callRpc<T>(name: string, body: Record<string, unknown>) {

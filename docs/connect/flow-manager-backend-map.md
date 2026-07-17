@@ -63,14 +63,20 @@ composition.
    schemas authoritative.
 2. Apply `supabase/connect/wa_flow_manager_core_schema.sql` for durable contacts,
    inbox operations, team metadata, and tenant-owned media.
-3. Dual-write inbound and outbound WhatsApp activity into the durable inbox
+3. Apply `supabase/connect/wa_messaging_operations_rpc.sql`, its deployed
+   function repair, and `wa_conversation_runtime_linkage_rpc.sql` for atomic
+   inbound persistence and runtime linkage.
+4. Apply `supabase/connect/wa_human_operations_outbox.sql`, followed by
+   `wa_human_operations_retry_reconciliation.sql`, before deploying human-send
+   or worker routes.
+5. Dual-write inbound and outbound WhatsApp activity into the durable inbox
    while retaining `wa_message_events` as the diagnostic audit stream.
-4. Connect the exact Inbox and Contacts screens to server-only tenant-scoped
+6. Connect the exact Inbox and Contacts screens to server-only tenant-scoped
    adapters.
-5. Connect the exact Automations screen to canonical business flow documents,
+7. Connect the exact Automations screen to canonical business flow documents,
    validation, drafts, publishing, and runtime traces.
-6. Connect catalog, orders, templates, settings, and derived dashboards.
-7. Add compliant broadcasts only after contacts, opt-in evidence, templates,
+8. Connect catalog, orders, templates, settings, and derived dashboards.
+9. Add compliant broadcasts only after contacts, opt-in evidence, templates,
    and the message outbox are production-ready.
 
 ## Boundary rules

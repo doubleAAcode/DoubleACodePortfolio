@@ -220,6 +220,8 @@ import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/a
 import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
 import { Route as ApiConnectClientConversationsConversationIdRouteImport } from './routes/api/connect/client/conversations.$conversationId'
 import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/api/connect/client/contacts.$contactId'
+import { Route as ApiConnectAdminHumanOutboxReconciliationRouteImport } from './routes/api.connect.admin.human-outbox.reconciliation'
+import { Route as ApiConnectAdminHumanOutboxProcessRouteImport } from './routes/api.connect.admin.human-outbox.process'
 import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
 import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
 import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
@@ -1376,6 +1378,18 @@ const ApiConnectClientContactsContactIdRoute =
     path: '/$contactId',
     getParentRoute: () => ApiConnectClientContactsRoute,
   } as any)
+const ApiConnectAdminHumanOutboxReconciliationRoute =
+  ApiConnectAdminHumanOutboxReconciliationRouteImport.update({
+    id: '/api/connect/admin/human-outbox/reconciliation',
+    path: '/api/connect/admin/human-outbox/reconciliation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminHumanOutboxProcessRoute =
+  ApiConnectAdminHumanOutboxProcessRouteImport.update({
+    id: '/api/connect/admin/human-outbox/process',
+    path: '/api/connect/admin/human-outbox/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectAdminFlowTemplatesTemplateIdRoute =
   ApiConnectAdminFlowTemplatesTemplateIdRouteImport.update({
     id: '/$templateId',
@@ -1633,6 +1647,8 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
+  '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -1839,6 +1855,8 @@ export interface FileRoutesByTo {
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
+  '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -2062,6 +2080,8 @@ export interface FileRoutesById {
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
+  '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
+  '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -2286,6 +2306,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/admin/human-outbox/process'
+    | '/api/connect/admin/human-outbox/reconciliation'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2492,6 +2514,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/admin/human-outbox/process'
+    | '/api/connect/admin/human-outbox/reconciliation'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2714,6 +2738,8 @@ export interface FileRouteTypes {
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/flow-templates/$templateId'
+    | '/api/connect/admin/human-outbox/process'
+    | '/api/connect/admin/human-outbox/reconciliation'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2819,6 +2845,8 @@ export interface RootRouteChildren {
   ApiConnectDashboardSessionRoute: typeof ApiConnectDashboardSessionRoute
   ApiConnectDashboardUploadRoute: typeof ApiConnectDashboardUploadRoute
   ApiConnectWhatsappWebhookRoute: typeof ApiConnectWhatsappWebhookRoute
+  ApiConnectAdminHumanOutboxProcessRoute: typeof ApiConnectAdminHumanOutboxProcessRoute
+  ApiConnectAdminHumanOutboxReconciliationRoute: typeof ApiConnectAdminHumanOutboxReconciliationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -4300,6 +4328,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectClientContactsContactIdRouteImport
       parentRoute: typeof ApiConnectClientContactsRoute
     }
+    '/api/connect/admin/human-outbox/reconciliation': {
+      id: '/api/connect/admin/human-outbox/reconciliation'
+      path: '/api/connect/admin/human-outbox/reconciliation'
+      fullPath: '/api/connect/admin/human-outbox/reconciliation'
+      preLoaderRoute: typeof ApiConnectAdminHumanOutboxReconciliationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/human-outbox/process': {
+      id: '/api/connect/admin/human-outbox/process'
+      path: '/api/connect/admin/human-outbox/process'
+      fullPath: '/api/connect/admin/human-outbox/process'
+      preLoaderRoute: typeof ApiConnectAdminHumanOutboxProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/admin/flow-templates/$templateId': {
       id: '/api/connect/admin/flow-templates/$templateId'
       path: '/$templateId'
@@ -5183,6 +5225,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectDashboardSessionRoute: ApiConnectDashboardSessionRoute,
   ApiConnectDashboardUploadRoute: ApiConnectDashboardUploadRoute,
   ApiConnectWhatsappWebhookRoute: ApiConnectWhatsappWebhookRoute,
+  ApiConnectAdminHumanOutboxProcessRoute:
+    ApiConnectAdminHumanOutboxProcessRoute,
+  ApiConnectAdminHumanOutboxReconciliationRoute:
+    ApiConnectAdminHumanOutboxReconciliationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
