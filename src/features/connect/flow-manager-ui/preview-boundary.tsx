@@ -10,6 +10,8 @@ const mutationLabel =
 const partialRouteMessages: Record<string, string> = {
   "/connect/admin/businesses":
     "Business records, search, status filters, setup checks, and WhatsApp connection health use live admin data. Creation and configuration changes remain future work.",
+  "/connect/admin/businesses/live-test":
+    "Connection data, approved test sends, and message events are live. Full roundtrip verification and diagnostics remain future work.",
   "/connect/client/automations":
     "The workflow list uses the authorized business backend. Canvas data, editing, and actions remain preview-only.",
 };
@@ -17,9 +19,11 @@ const partialRouteMessages: Record<string, string> = {
 export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const status = getFlowManagerFeatureStatus(pathname);
-  const partialMessage = pathname.startsWith("/connect/admin/businesses")
-    ? partialRouteMessages["/connect/admin/businesses"]
-    : partialRouteMessages[pathname];
+  const partialMessage = pathname.endsWith("/live-test")
+    ? partialRouteMessages["/connect/admin/businesses/live-test"]
+    : pathname.startsWith("/connect/admin/businesses")
+      ? partialRouteMessages["/connect/admin/businesses"]
+      : partialRouteMessages[pathname];
 
   if (status === "live") return <>{children}</>;
 
@@ -31,6 +35,7 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
     if (!button || button.getAttribute("role") === "tab" || button.hasAttribute("aria-haspopup")) {
       return;
     }
+    if (button.hasAttribute("data-flow-manager-live-action")) return;
 
     if (!mutationLabel.test(button.textContent || button.getAttribute("aria-label") || "")) return;
     event.preventDefault();

@@ -84,6 +84,11 @@ test("admin live test uses the authorized sender and real message events", () =>
   assert.match(businessLiveTestRoute, /TEST_TEMPLATE_NAME = "hello_world"/);
   assert.match(businessLiveTestRoute, /getWaMessageEvents/);
   assert.match(businessLiveTestRoute, /sendReviewWhatsAppMessage/);
+  assert.match(businessLiveTestRoute, /data-flow-manager-live-action/);
+  assert.match(
+    flowManagerPreviewBoundary,
+    /button\.hasAttribute\("data-flow-manager-live-action"\)/,
+  );
   assert.doesNotMatch(businessLiveTestRoute, /\+971|sess_5f9c1e|preview-data/);
 });
 

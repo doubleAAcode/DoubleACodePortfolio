@@ -169,7 +169,11 @@ function LiveTestPage() {
             />
           </div>
           <div className="grid gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <Button onClick={sendTemplate} disabled={Boolean(sending)}>
+            <Button
+              data-flow-manager-live-action
+              onClick={sendTemplate}
+              disabled={Boolean(sending)}
+            >
               {sending === "template" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -177,7 +181,12 @@ function LiveTestPage() {
               )}
               Send template
             </Button>
-            <Button variant="outline" onClick={sendRestart} disabled={Boolean(sending)}>
+            <Button
+              data-flow-manager-live-action
+              variant="outline"
+              onClick={sendRestart}
+              disabled={Boolean(sending)}
+            >
               {sending === "restart" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
