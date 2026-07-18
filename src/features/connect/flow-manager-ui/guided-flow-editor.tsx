@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowDown,
+  ArrowRight,
   ArrowUp,
   GitBranch,
   Image as ImageIcon,
@@ -97,8 +98,10 @@ export function GuidedFlowEditor({
         <div className="border-b p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold">Flow steps</div>
-              <div className="text-xs text-muted-foreground">{model.steps.length} total</div>
+              <div className="text-sm font-semibold">Conversation path</div>
+              <div className="text-xs text-muted-foreground">
+                {model.steps.length} steps - follow the arrows
+              </div>
             </div>
             <Button
               data-flow-manager-live-action
@@ -151,8 +154,9 @@ export function GuidedFlowEditor({
               key={step.id}
               index={model.steps.findIndex((candidate) => candidate.id === step.id)}
               step={step}
+              steps={model.steps}
               selected={step.id === selected.id}
-              onSelect={() => onSelect(step.id)}
+              onSelect={onSelect}
             />
           ))}
           {!filteredSteps.length ? (
@@ -232,7 +236,7 @@ export function GuidedFlowEditor({
         </div>
 
         <div className="grid min-w-0 gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="min-w-0 space-y-4">
+          <div className="order-first min-w-0 space-y-4 xl:order-none">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Step details</CardTitle>
@@ -457,25 +461,33 @@ export function GuidedFlowEditor({
           <div className="min-w-0 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Routing summary</CardTitle>
-                <CardDescription>Where the conversation goes next.</CardDescription>
+                <CardTitle className="text-base">What happens next</CardTitle>
+                <CardDescription>Follow every route from this step.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {selected.options.map((option) => (
                   <RouteSummary
                     key={option.key}
-                    label={option.labelEn}
+                    event="When customer chooses"
+                    label={option.labelEn || option.key}
+                    targetId={option.targetNodeId}
+                    targetNumber={stepNumber(model.steps, option.targetNodeId)}
                     destination={option.targetTitle}
                     warning={option.missingTarget || !option.targetNodeId}
                     inactive={!option.active}
+                    onSelect={onSelect}
                   />
                 ))}
                 {selected.nextSteps.map((next) => (
                   <RouteSummary
                     key={next.edgeId}
-                    label="After this step"
+                    event="When this step finishes"
+                    label="Continue automatically"
+                    targetId={next.id}
+                    targetNumber={stepNumber(model.steps, next.id)}
                     destination={next.title}
                     warning={next.missing}
+                    onSelect={onSelect}
                   />
                 ))}
                 {!selected.options.length && !selected.nextSteps.length ? (
@@ -608,91 +620,185 @@ export function GuidedFlowEditor({
 
 function StepNavigationItem({
   step,
+  steps,
   index,
   selected,
   onSelect,
 }: {
   step: GuidedFlowStep;
+  steps: GuidedFlowStep[];
   index: number;
   selected: boolean;
-  onSelect: () => void;
+  onSelect: (id: string) => void;
 }) {
-  const destinations = step.options.length + step.nextSteps.length;
+  const routes = [
+    ...step.options.map((option) => ({
+      key: `option-${option.key}`,
+      label: option.labelEn || option.key,
+      targetId: option.targetNodeId,
+      targetTitle: option.targetTitle,
+      missing: option.missingTarget || !option.targetNodeId,
+      inactive: !option.active,
+    })),
+    ...step.nextSteps.map((next) => ({
+      key: next.edgeId,
+      label: "Then",
+      targetId: next.id,
+      targetTitle: next.title,
+      missing: next.missing,
+      inactive: false,
+    })),
+  ];
+
   return (
-    <button
-      data-flow-manager-live-action
-      type="button"
-      onClick={onSelect}
+    <div
       className={cn(
-        "mb-1 grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 rounded-md px-2 py-2.5 text-left transition",
+        "mb-1 rounded-md transition",
         selected ? "bg-primary text-primary-foreground" : "hover:bg-muted",
       )}
     >
-      <span
-        className={cn(
-          "grid size-7 place-items-center rounded text-xs font-semibold",
-          selected ? "bg-primary-foreground/15" : "bg-background",
-        )}
+      <button
+        data-flow-manager-live-action
+        type="button"
+        onClick={() => onSelect(step.id)}
+        className="grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 rounded-md px-2 py-2.5 text-left"
       >
-        {index + 1}
-      </span>
-      <span className="min-w-0">
-        <span className="flex items-center gap-1.5">
-          <StepIcon kind={step.kind} />
-          <span className="truncate text-sm font-medium">{step.title}</span>
-        </span>
         <span
           className={cn(
-            "mt-1 block truncate text-[11px]",
-            selected ? "text-primary-foreground/75" : "text-muted-foreground",
+            "grid size-7 place-items-center rounded text-xs font-semibold",
+            selected ? "bg-primary-foreground/15" : "bg-background",
           )}
         >
-          {step.isStart
-            ? "Starts the flow"
-            : `${destinations} next destination${destinations === 1 ? "" : "s"}`}
+          {index + 1}
         </span>
-      </span>
-      <span className="pt-1">
-        {step.status === "error" ? (
-          <span className="block size-2 rounded-full bg-destructive" title="Error" />
-        ) : step.status === "warning" ? (
-          <span className="block size-2 rounded-full bg-amber-400" title="Warning" />
-        ) : (
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5">
+            <StepIcon kind={step.kind} />
+            <span className="truncate text-sm font-medium">{step.title}</span>
+          </span>
           <span
-            className={cn("block size-2 rounded-full", selected ? "bg-white" : "bg-emerald-500")}
-            title="Ready"
-          />
-        )}
-      </span>
-    </button>
+            className={cn(
+              "mt-1 block truncate text-[11px]",
+              selected ? "text-primary-foreground/75" : "text-muted-foreground",
+            )}
+          >
+            {step.isStart
+              ? "Starts the flow"
+              : `${routes.length} route${routes.length === 1 ? "" : "s"}`}
+          </span>
+        </span>
+        <span className="pt-1">
+          {step.status === "error" ? (
+            <span className="block size-2 rounded-full bg-destructive" title="Error" />
+          ) : step.status === "warning" ? (
+            <span className="block size-2 rounded-full bg-amber-400" title="Warning" />
+          ) : (
+            <span
+              className={cn("block size-2 rounded-full", selected ? "bg-white" : "bg-emerald-500")}
+              title="Ready"
+            />
+          )}
+        </span>
+      </button>
+
+      <div className="space-y-1 px-2 pb-2 pl-10">
+        {routes.map((route) => {
+          const targetNumber = stepNumber(steps, route.targetId);
+          return (
+            <button
+              data-flow-manager-live-action
+              key={route.key}
+              type="button"
+              disabled={route.missing || !route.targetId}
+              onClick={() => route.targetId && onSelect(route.targetId)}
+              className={cn(
+                "grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 rounded px-2 py-1.5 text-left text-[10px]",
+                selected
+                  ? "bg-primary-foreground/10 hover:bg-primary-foreground/20"
+                  : "bg-background/70 hover:bg-background",
+                route.missing && "text-destructive",
+                route.inactive && "opacity-60",
+              )}
+              aria-label={`${route.label}, go to ${route.targetTitle}`}
+            >
+              <span className="truncate">{route.label}</span>
+              <ArrowRight className="size-3" />
+              <span className="truncate font-medium">
+                {targetNumber ? `${targetNumber}. ` : ""}
+                {route.targetTitle}
+              </span>
+            </button>
+          );
+        })}
+        {!routes.length ? (
+          <div
+            className={cn(
+              "px-2 pb-1 text-[10px]",
+              selected ? "text-primary-foreground/75" : "text-muted-foreground",
+            )}
+          >
+            Conversation ends here
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
 function RouteSummary({
+  event,
   label,
+  targetId,
+  targetNumber,
   destination,
   warning,
   inactive = false,
+  onSelect,
 }: {
+  event: string;
   label: string;
+  targetId: string | null;
+  targetNumber: number | null;
   destination: string;
   warning: boolean;
   inactive?: boolean;
+  onSelect: (id: string) => void;
 }) {
   return (
-    <div className="rounded-md border p-3 text-xs">
+    <button
+      data-flow-manager-live-action
+      type="button"
+      disabled={warning || !targetId}
+      onClick={() => targetId && onSelect(targetId)}
+      className="w-full rounded-md border p-3 text-left text-xs transition hover:border-primary/40 hover:bg-muted/30 disabled:cursor-default disabled:opacity-100"
+      aria-label={`${event} ${label}, go to ${destination}`}
+    >
       <div className="flex items-start gap-2">
         <GitBranch className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-muted-foreground">{label}</div>
-          <div className={cn("mt-0.5 truncate font-medium", warning && "text-destructive")}>
-            {destination}
+        <div className="min-w-0 flex-1 space-y-2">
+          <div>
+            <div className="text-[10px] font-semibold uppercase text-muted-foreground">{event}</div>
+            <div className="mt-0.5 font-medium">{label}</div>
+          </div>
+          <div className="flex items-center gap-2 border-t pt-2">
+            <span className="text-[10px] font-semibold uppercase text-muted-foreground">Then</span>
+            <ArrowRight className="size-3 shrink-0" />
+            <span className={cn("min-w-0 truncate font-semibold", warning && "text-destructive")}>
+              {targetNumber ? `Step ${targetNumber} - ` : ""}
+              {destination}
+            </span>
           </div>
         </div>
         {inactive ? <StatusBadge tone="neutral">Off</StatusBadge> : null}
       </div>
-    </div>
+    </button>
   );
+}
+
+function stepNumber(steps: GuidedFlowStep[], id: string | null) {
+  if (!id) return null;
+  const index = steps.findIndex((step) => step.id === id);
+  return index >= 0 ? index + 1 : null;
 }
 
 function StepStatus({ step }: { step: GuidedFlowStep }) {

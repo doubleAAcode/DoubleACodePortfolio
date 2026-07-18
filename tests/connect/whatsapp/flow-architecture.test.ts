@@ -359,8 +359,11 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
   assert.match(guidedEditor, /lg:grid-cols-\[288px_minmax\(0,1fr\)\]/);
-  assert.match(guidedEditor, /Flow steps/);
+  assert.match(guidedEditor, /Conversation path/);
   assert.match(guidedEditor, /Choices and destinations/);
+  assert.match(guidedEditor, /What happens next/);
+  assert.match(guidedEditor, /When customer chooses/);
+  assert.match(guidedEditor, /Conversation ends here/);
   assert.doesNotMatch(guidedEditor, /min-w-max|overflow-x-auto/);
   assert.match(adminBusinesses, /getAdminBusinesses/);
   assert.match(adminBusinesses, /toBusinessListItem/);
