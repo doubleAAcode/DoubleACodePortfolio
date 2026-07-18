@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m1c-runtime-controls-v1";
+export const CONNECT_RELEASE = "m1c-worker-reply-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {

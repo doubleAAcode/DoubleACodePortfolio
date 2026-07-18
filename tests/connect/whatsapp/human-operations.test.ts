@@ -246,6 +246,16 @@ test("admin and client mutation handlers enforce auth and signed tenant scope", 
     assert.equal(commands[0].actorKind, "INTERNAL_ADMIN");
     assert.equal(commands[0].businessId, undefined);
 
+    const workerHandlers = createAdminHumanTextReplyHandlers(service, async () => true);
+    const workerResponse = await workerHandlers.POST({
+      request: request(url),
+      params: { conversationId: CONVERSATION_ID },
+    });
+    assert.equal(workerResponse.status, 200);
+    assert.equal(commands[1].actorKind, "INTERNAL_ADMIN");
+    assert.equal(commands[1].actorUsername, "connect-worker");
+    assert.equal(commands[1].businessId, undefined);
+
     const disabledHandlers = createAdminHumanTextReplyHandlers(
       createHumanOperationsService({ isSendEnabled: () => false }),
     );
@@ -263,8 +273,8 @@ test("admin and client mutation handlers enforce auth and signed tenant scope", 
       params: { conversationId: CONVERSATION_ID },
     });
     assert.equal(clientResponse.status, 200);
-    assert.equal(commands[1].actorKind, "BUSINESS_USER");
-    assert.equal(commands[1].businessId, "business-a");
+    assert.equal(commands[2].actorKind, "BUSINESS_USER");
+    assert.equal(commands[2].businessId, "business-a");
 
     const override = await clientHandlers.POST({
       request: request(`${clientUrl}?businessId=business-b`, clientCookie),

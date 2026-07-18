@@ -1,6 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { getInternalAdminSessionFromRequest } from "./admin-auth.server.ts";
+import { isConnectWorkerAuthorized } from "./connect-worker-auth.server.ts";
 import { getDashboardSessionFromRequest } from "./dashboard-auth.server.ts";
 import {
   HumanOperationsError,
@@ -13,18 +14,22 @@ import { InboxRequestError, parseInboxUuid } from "./inbox-query.ts";
 
 let defaultService: HumanOperationsService | undefined;
 
-export function createAdminHumanTextReplyHandlers(service = getDefaultService()) {
+export function createAdminHumanTextReplyHandlers(
+  service = getDefaultService(),
+  authorizeWorker = isConnectWorkerAuthorized,
+) {
   return {
     POST: async ({ request, params }: MessageHandlerContext) => {
       const session = getInternalAdminSessionFromRequest(request);
-      if (!session) return unauthorized();
+      const workerAuthorized = session ? false : await authorizeWorker(request);
+      if (!session && !workerAuthorized) return unauthorized();
       try {
         const input = parseHumanTextReplyRequest(await request.json().catch(() => null));
         const data = await service.sendTextReply({
           conversationId: parseInboxUuid(params.conversationId, "conversationId"),
           ...input,
           actorKind: "INTERNAL_ADMIN",
-          actorUsername: session.username,
+          actorUsername: session?.username ?? "connect-worker",
         });
         return humanReplyResponse(data);
       } catch (error) {
