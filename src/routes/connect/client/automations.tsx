@@ -14,6 +14,7 @@ import {
 } from "@/features/connect/flow-manager-ui/guided-flow-workspace";
 import { formatDistanceToNow } from "@/features/connect/flow-manager-ui/preview-data/format";
 import {
+  applyWaDashboardFlowAction,
   getWaDashboardFlow,
   type WaDashboardFlowSnapshot,
 } from "@/features/connect/shared/dashboard-client";
@@ -175,7 +176,19 @@ function ClientAutomations() {
 
           <TabsContent value="guided" className="mt-4">
             {flowQuery.data?.details ? (
-              <GuidedFlowWorkspace details={flowQuery.data.details} showCanvasTab={false} />
+              <GuidedFlowWorkspace
+                details={flowQuery.data.details}
+                showCanvasTab={false}
+                onSaveDraft={async ({ flowJson, flowName }) => {
+                  const snapshot = await applyWaDashboardFlowAction({
+                    action: "save_draft",
+                    flowJson,
+                    flowName,
+                  });
+                  await flowQuery.refetch();
+                  return snapshot.details;
+                }}
+              />
             ) : flowQuery.error ? (
               <WorkflowStateCard message={flowQuery.error.message} />
             ) : (

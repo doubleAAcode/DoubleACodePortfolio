@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import {
+  createGuidedDraftFlow,
+  updateGuidedNode,
+  updateGuidedOption,
+} from "../../../src/features/connect/flow-manager-ui/guided-flow-draft.ts";
 import { createGuidedFlowModel } from "../../../src/features/connect/flow-manager-ui/guided-flow-model.ts";
 import {
   loadCanonicalFlowDocument,
@@ -106,6 +111,56 @@ test("Guided can inspect an explicitly selected immutable version", () => {
   assert.equal(result.model.version.id, published.id);
   assert.equal(result.model.steps[0]?.messages.en, "Published welcome");
   assert.equal(result.model.activeVersionId, published.id);
+});
+
+test("Guided draft persistence synchronizes canonical and runtime data without stale visual state", () => {
+  const editedDocument: CanonicalFlowDocument = {
+    ...canonicalDocument,
+    nodes: canonicalDocument.nodes.map((node) =>
+      node.id === "welcome"
+        ? {
+            ...node,
+            title: "Clear welcome",
+            messages: { ...node.messages, en: "Edited in Guided" },
+          }
+        : node,
+    ),
+  };
+  const base = {
+    ...createDefaultFlowDefinition("STANDARD_ONLINE_STORE"),
+    visualFlow: { stale: true },
+    compiledRuntimeFlowJson: { stale: true },
+  };
+  const saved = createGuidedDraftFlow(base, editedDocument);
+
+  assert.equal(saved.visualFlow, undefined);
+  assert.equal(saved.compiledRuntimeFlowJson, undefined);
+  assert.deepEqual(saved.canonicalDocument, editedDocument);
+  assert.equal(saved.nodes.find((node) => node.id === "welcome")?.messages?.en, "Edited in Guided");
+
+  const reloaded = loadCanonicalFlowDocument(JSON.parse(JSON.stringify(saved)));
+  assert.equal(reloaded.ok, true);
+  if (reloaded.ok) assert.deepEqual(reloaded.document, editedDocument);
+});
+
+test("Guided field edits are immutable and preserve stable node and option keys", () => {
+  const withMessage = updateGuidedNode(canonicalDocument, "question", (node) => ({
+    ...node,
+    messages: { ...node.messages, en: "Updated question" },
+  }));
+  const withDestination = updateGuidedOption(withMessage, "welcome", "ask", (option) => ({
+    ...option,
+    targetNodeId: "end",
+    active: false,
+  }));
+
+  assert.equal(canonicalDocument.nodes[1]?.messages?.en, "What would you like to know?");
+  assert.equal(canonicalDocument.nodes[0]?.options?.[0]?.targetNodeId, "question");
+  assert.equal(withDestination.nodes[1]?.messages?.en, "Updated question");
+  assert.equal(withDestination.nodes[0]?.id, "welcome");
+  assert.equal(withDestination.nodes[0]?.options?.[0]?.key, "ask");
+  assert.equal(withDestination.nodes[0]?.options?.[0]?.targetNodeId, "end");
+  assert.equal(withDestination.nodes[0]?.options?.[0]?.active, false);
 });
 
 test("Guided returns stable empty and unsupported-document errors", () => {

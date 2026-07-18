@@ -44,7 +44,7 @@ export type GuidedFlowStep = {
   protectedAction: string | null;
   optional: boolean;
   options: GuidedFlowOption[];
-  nextSteps: Array<{ id: string; title: string; missing: boolean }>;
+  nextSteps: Array<{ edgeId: string; id: string; title: string; missing: boolean }>;
   issues: FlowValidationIssue[];
   status: "ok" | "warning" | "error";
 };
@@ -156,6 +156,7 @@ export function createGuidedFlowModel(
         const nextSteps = outgoing
           .filter((edge) => !optionTargets.has(edge.to))
           .map((edge) => ({
+            edgeId: edge.id,
             id: edge.to,
             title: titleById.get(edge.to) ?? "Missing destination",
             missing: !nodeById.has(edge.to),

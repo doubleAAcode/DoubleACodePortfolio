@@ -1,20 +1,14 @@
 import {
   AlertCircle,
   AlertTriangle,
-  ArrowRight,
   Braces,
   GitBranch,
-  Image as ImageIcon,
-  ListTree,
   Loader2,
-  MessageSquare,
   MoreHorizontal,
-  Plus,
+  Redo2,
   RefreshCw,
   Save,
-  Square,
-  UploadCloud,
-  User,
+  Undo2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -28,8 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -37,45 +29,121 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
+import {
+  createGuidedDraftFlow,
+  serializeGuidedDocument,
+  updateGuidedNode,
+  updateGuidedOption,
+} from "@/features/connect/flow-manager-ui/guided-flow-draft";
+import { GuidedFlowEditor } from "@/features/connect/flow-manager-ui/guided-flow-editor";
 import {
   createGuidedFlowModel,
   type GuidedFlowModel,
   type GuidedFlowStep,
-  type GuidedStepKind,
 } from "@/features/connect/flow-manager-ui/guided-flow-model";
+import type { CanonicalFlowDocument } from "@/features/connect/shared/flow-document";
 import type { BusinessFlowDetails } from "@/features/connect/shared/flow-template-store.server";
-import type { FlowValidationIssue } from "@/features/connect/shared/flow-template-types";
+import type {
+  FlowDefinition,
+  FlowValidationIssue,
+} from "@/features/connect/shared/flow-template-types";
+import {
+  flowDiagnosticsToLegacyResult,
+  validateFlow,
+} from "@/features/connect/shared/flow-validation";
 import { cn } from "@/lib/utils";
+
+type SaveDraftInput = {
+  flowJson: FlowDefinition;
+  flowName: string;
+  versionId: string;
+};
 
 export function GuidedFlowWorkspace({
   details,
   showCanvasTab = true,
+  onSaveDraft,
 }: {
   details: BusinessFlowDetails;
   showCanvasTab?: boolean;
+  onSaveDraft?: (input: SaveDraftInput) => Promise<BusinessFlowDetails>;
 }) {
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
   const [selectedStepId, setSelectedStepId] = useState<string>();
-  const [activeTab, setActiveTab] = useState("journey");
-  const result = useMemo(
+  const [activeTab, setActiveTab] = useState("guided");
+  const [historyVersionId, setHistoryVersionId] = useState<string>();
+  const [history, setHistory] = useState<CanonicalFlowDocument[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [savedSnapshot, setSavedSnapshot] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
     [details, selectedVersionId],
   );
+  const baseDocumentKey = baseResult.ok
+    ? `${baseResult.model.version.id}:${serializeGuidedDocument(baseResult.model.document)}`
+    : "";
 
   useEffect(() => {
-    if (!result.ok) return;
-    const model = result.model;
-    if (!selectedVersionId || !model.versions.some((version) => version.id === selectedVersionId)) {
-      setSelectedVersionId(model.version.id);
-    }
-    if (!selectedStepId || !model.steps.some((step) => step.id === selectedStepId)) {
-      setSelectedStepId(model.steps[0]?.id);
-    }
-  }, [result, selectedStepId, selectedVersionId]);
+    if (!baseResult.ok) return;
+    const document = structuredClone(baseResult.model.document);
+    setSelectedVersionId(baseResult.model.version.id);
+    setHistoryVersionId(baseResult.model.version.id);
+    setHistory([document]);
+    setHistoryIndex(0);
+    setSavedSnapshot(serializeGuidedDocument(document));
+    setSelectedStepId((current) =>
+      current && baseResult.model.steps.some((step) => step.id === current)
+        ? current
+        : baseResult.model.steps[0]?.id,
+    );
+  }, [baseDocumentKey, baseResult]);
+
+  const baseModel = baseResult.ok ? baseResult.model : undefined;
+  const workingDocument =
+    baseModel && historyVersionId === baseModel.version.id
+      ? (history[historyIndex] ?? baseModel.document)
+      : baseModel?.document;
+  const result = useMemo(() => {
+    if (!baseResult.ok || !workingDocument) return baseResult;
+    const baseVersion = baseResult.model.version;
+    const flowJson = createGuidedDraftFlow(baseVersion.flow_json, workingDocument);
+    const validation = flowDiagnosticsToLegacyResult(
+      validateFlow(workingDocument, { mode: "draft" }).diagnostics,
+    );
+    const workingVersion = {
+      ...baseVersion,
+      flow_json: flowJson,
+      validation_result: validation,
+    };
+    const workingDetails: BusinessFlowDetails = {
+      ...details,
+      versions: details.versions.map((version) =>
+        version.id === workingVersion.id ? workingVersion : version,
+      ),
+      activeVersion:
+        details.activeVersion?.id === workingVersion.id ? workingVersion : details.activeVersion,
+    };
+    return createGuidedFlowModel(workingDetails, workingVersion.id);
+  }, [baseResult, details, workingDocument]);
+
+  const stateModel = result.ok ? result.model : undefined;
+  const stateEditable = stateModel?.version.status === "DRAFT" && Boolean(onSaveDraft);
+  const stateSnapshot = stateModel ? serializeGuidedDocument(stateModel.document) : "";
+  const stateDirty = Boolean(stateEditable && stateSnapshot !== savedSnapshot);
+
+  useEffect(() => {
+    if (!stateDirty) return;
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", preventUnload);
+    return () => window.removeEventListener("beforeunload", preventUnload);
+  }, [stateDirty]);
 
   if (!result.ok) {
     return (
@@ -89,52 +157,140 @@ export function GuidedFlowWorkspace({
   }
 
   const model = result.model;
-  const step = model.steps.find((item) => item.id === selectedStepId) ?? model.steps[0];
+  const selectedStep = model.steps.find((step) => step.id === selectedStepId) ?? model.steps[0];
+  const editable = stateEditable;
+  const currentSnapshot = stateSnapshot;
+  const dirty = stateDirty;
+  const canUndo = historyVersionId === model.version.id && historyIndex > 0;
+  const canRedo = historyVersionId === model.version.id && historyIndex < history.length - 1;
 
   function explainFuture(feature: string, description: string) {
     toast.info(`${feature} - Future`, { description });
+  }
+
+  function commitDocument(update: (document: CanonicalFlowDocument) => CanonicalFlowDocument) {
+    if (!editable) {
+      explainFuture(
+        "Read-only version",
+        "Choose the Draft version to edit. Published versions remain immutable.",
+      );
+      return;
+    }
+    const next = update(structuredClone(model.document));
+    if (serializeGuidedDocument(next) === currentSnapshot) return;
+    const nextHistory = [...history.slice(0, historyIndex + 1), next].slice(-50);
+    setHistory(nextHistory);
+    setHistoryIndex(nextHistory.length - 1);
+  }
+
+  async function saveDraft() {
+    if (!editable || !onSaveDraft) {
+      explainFuture(
+        "Save draft",
+        "Choose the Draft version to edit. Published versions remain immutable.",
+      );
+      return;
+    }
+    if (!dirty) {
+      toast.info("Draft is already saved");
+      return;
+    }
+    setSaving(true);
+    try {
+      const saved = await onSaveDraft({
+        flowJson: createGuidedDraftFlow(model.version.flow_json, model.document),
+        flowName: model.flowName,
+        versionId: model.version.id,
+      });
+      const savedResult = createGuidedFlowModel(saved);
+      if (!savedResult.ok) throw new Error(savedResult.message);
+      const document = structuredClone(savedResult.model.document);
+      setSelectedVersionId(savedResult.model.version.id);
+      setHistoryVersionId(savedResult.model.version.id);
+      setHistory([document]);
+      setHistoryIndex(0);
+      setSavedSnapshot(serializeGuidedDocument(document));
+      toast.success("Draft saved");
+    } catch (error) {
+      toast.error("Draft was not saved", {
+        description: error instanceof Error ? error.message : "Try again without losing your work.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function changeVersion(versionId: string) {
+    if (dirty) {
+      toast.error("Save or undo your changes before switching versions.");
+      return;
+    }
+    setSelectedVersionId(versionId);
   }
 
   return (
     <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs text-muted-foreground">Canonical WhatsApp flow</div>
+          <div className="text-xs text-muted-foreground">WhatsApp conversation flow</div>
           <div className="truncate text-lg font-semibold">{model.flowName}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <StatusBadge tone={model.activeVersionId ? "success" : "warning"}>
               {model.activeVersionId ? "Live version available" : "Draft only"}
             </StatusBadge>
             <span>{model.steps.length} steps</span>
-            <span>{model.source.replaceAll("_", " ")}</span>
+            {dirty ? <StatusBadge tone="warning">Unsaved changes</StatusBadge> : null}
+            {!editable ? <StatusBadge tone="neutral">Read only</StatusBadge> : null}
           </div>
         </div>
         <div className="flex max-w-full flex-wrap items-center gap-2">
-          <Select value={model.version.id} onValueChange={setSelectedVersionId}>
+          <Select value={model.version.id} onValueChange={changeVersion}>
             <SelectTrigger className="h-9 w-48 max-w-full" aria-label="Flow version">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {model.versions.map((version) => (
                 <SelectItem key={version.id} value={version.id}>
-                  {version.status === "DRAFT" ? "Draft" : `Version ${version.version_number}`} -{" "}
-                  {version.status.toLowerCase()}
+                  {version.status === "DRAFT" ? "Draft" : "Published"} v{version.version_number}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center rounded-md border bg-background p-0.5">
+            <Button
+              data-flow-manager-live-action
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label="Undo"
+              title="Undo"
+              disabled={!canUndo || saving}
+              onClick={() => setHistoryIndex((index) => index - 1)}
+            >
+              <Undo2 className="size-4" />
+            </Button>
+            <Button
+              data-flow-manager-live-action
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label="Redo"
+              title="Redo"
+              disabled={!canRedo || saving}
+              onClick={() => setHistoryIndex((index) => index + 1)}
+            >
+              <Redo2 className="size-4" />
+            </Button>
+          </div>
           <Button
             data-flow-manager-live-action
             variant="outline"
             size="sm"
-            onClick={() =>
-              explainFuture(
-                "Save draft",
-                "Safe Guided editing, conflict handling, and retryable saves are the next work package.",
-              )
-            }
+            disabled={saving}
+            onClick={() => void saveDraft()}
           >
-            <Save className="size-4" /> Save draft <FutureLabel />
+            {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {saving ? "Saving..." : "Save draft"}
           </Button>
           <Button
             data-flow-manager-live-action
@@ -142,11 +298,11 @@ export function GuidedFlowWorkspace({
             onClick={() =>
               explainFuture(
                 "Publish changes",
-                "Publishing remains disabled until Guided mutations and repair validation are complete.",
+                "Publishing follows safe draft editing, repair validation, and immutable history in 2C.",
               )
             }
           >
-            Publish changes <FutureLabel />
+            Publish <FutureLabel />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -158,17 +314,12 @@ export function GuidedFlowWorkspace({
               <FutureMenuItem
                 label="Duplicate flow"
                 onSelect={() =>
-                  explainFuture(
-                    "Duplicate flow",
-                    "Flow duplication is planned for safe draft editing.",
-                  )
+                  explainFuture("Duplicate flow", "Duplication ships with safe step creation.")
                 }
               />
               <FutureMenuItem
                 label="Export as JSON"
-                onSelect={() =>
-                  explainFuture("Export flow", "Audited flow exports do not run in this release.")
-                }
+                onSelect={() => explainFuture("Export flow", "Audited flow exports remain Future.")}
               />
               <DropdownMenuSeparator />
               <FutureMenuItem
@@ -177,7 +328,7 @@ export function GuidedFlowWorkspace({
                 onSelect={() =>
                   explainFuture(
                     "Discard draft",
-                    "Draft restore and conflict safeguards must be complete before discard is enabled.",
+                    "Restore safeguards must be complete before discard is enabled.",
                   )
                 }
               />
@@ -188,63 +339,53 @@ export function GuidedFlowWorkspace({
 
       <Tabs className="min-w-0" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="max-w-full justify-start overflow-x-auto">
-          <TabsTrigger data-flow-manager-live="true" value="journey">
-            Guided
-          </TabsTrigger>
-          {showCanvasTab ? (
-            <TabsTrigger
-              data-flow-manager-live-action
-              value="canvas"
-              onClick={() =>
-                explainFuture(
-                  "Canvas",
-                  "Canvas stays available as a preview while Guided becomes the supported editor.",
-                )
-              }
-            >
-              Canvas
-            </TabsTrigger>
-          ) : null}
-          <TabsTrigger data-flow-manager-live="true" value="selected">
-            Selected Step
+          <TabsTrigger data-flow-manager-live="true" value="guided">
+            Guided editor
           </TabsTrigger>
           <TabsTrigger data-flow-manager-live="true" value="preview">
             Preview
           </TabsTrigger>
           <TabsTrigger data-flow-manager-live="true" value="validation">
-            Validation
+            Problems {model.diagnostics.length ? `(${model.diagnostics.length})` : ""}
           </TabsTrigger>
           <TabsTrigger data-flow-manager-live="true" value="advanced">
             Advanced
           </TabsTrigger>
+          {showCanvasTab ? (
+            <TabsTrigger
+              value="canvas"
+              aria-label="Canvas - Future"
+              onClick={() =>
+                explainFuture(
+                  "Canvas",
+                  "Canvas remains a visible preview. Guided editor is the supported builder.",
+                )
+              }
+            >
+              Canvas <FutureLabel />
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
-        <TabsContent value="journey" className="mt-4">
-          <JourneyTab
+        <TabsContent value="guided" className="mt-4">
+          <GuidedFlowEditor
             model={model}
-            selectedId={step?.id}
+            selectedId={selectedStep?.id}
+            editable={editable}
             onSelect={setSelectedStepId}
+            onUpdateNode={(nodeId, update) =>
+              commitDocument((document) => updateGuidedNode(document, nodeId, update))
+            }
+            onUpdateOption={(nodeId, optionKey, update) =>
+              commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
+            }
             onFuture={explainFuture}
           />
         </TabsContent>
-        {showCanvasTab ? (
-          <TabsContent value="canvas" className="mt-4">
-            <CanvasFuturePanel />
-          </TabsContent>
-        ) : null}
-        <TabsContent value="selected" className="mt-4">
-          {step ? (
-            <SelectedStepTab step={step} steps={model.steps} onFuture={explainFuture} />
-          ) : (
-            <WorkspaceState
-              icon={<MessageSquare className="size-5" />}
-              title="No step selected"
-              message="Choose a Guided step to inspect its canonical fields."
-            />
-          )}
-        </TabsContent>
         <TabsContent value="preview" className="mt-4">
-          {step ? <PreviewTab step={step} version={model.version.version_number} /> : null}
+          {selectedStep ? (
+            <PreviewTab step={selectedStep} version={model.version.version_number} />
+          ) : null}
         </TabsContent>
         <TabsContent value="validation" className="mt-4">
           <ValidationTab
@@ -252,13 +393,18 @@ export function GuidedFlowWorkspace({
             steps={model.steps}
             onFocus={(nodeId) => {
               setSelectedStepId(nodeId);
-              setActiveTab("selected");
+              setActiveTab("guided");
             }}
           />
         </TabsContent>
         <TabsContent value="advanced" className="mt-4">
           <AdvancedTab model={model} onFuture={explainFuture} />
         </TabsContent>
+        {showCanvasTab ? (
+          <TabsContent value="canvas" className="mt-4">
+            <CanvasFuturePanel />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );
@@ -294,344 +440,8 @@ export function CanvasFuturePanel() {
     <WorkspaceState
       icon={<GitBranch className="size-5 text-amber-700" />}
       title="Canvas - Future"
-      message="The visual canvas remains visible for later work. Guided is the supported flow-building experience and this preview does not save changes."
+      message="Canvas remains visible for later work. Guided editor is the supported flow-building experience and Canvas does not save changes."
     />
-  );
-}
-
-function JourneyTab({
-  model,
-  selectedId,
-  onSelect,
-  onFuture,
-}: {
-  model: GuidedFlowModel;
-  selectedId?: string;
-  onSelect: (id: string) => void;
-  onFuture: (feature: string, description: string) => void;
-}) {
-  const selected = model.steps.find((step) => step.id === selectedId) ?? model.steps[0];
-  return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-muted/30 p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-medium">Conversation journey</div>
-            <div className="text-xs text-muted-foreground">
-              Ordered from the canonical start step; unreachable saved steps remain visible.
-            </div>
-          </div>
-          <Button
-            data-flow-manager-live-action
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              onFuture(
-                "Add next step",
-                "Step creation starts after the canonical mapping and preservation gate passes.",
-              )
-            }
-          >
-            <Plus className="size-4" /> Add next step <FutureLabel />
-          </Button>
-        </div>
-        <div className="overflow-x-auto pb-2">
-          <div className="flex min-w-max items-start gap-3">
-            {model.steps.map((step, index) => (
-              <div key={step.id} className="flex items-start gap-3">
-                <StepCard
-                  step={step}
-                  selected={selected?.id === step.id}
-                  onSelect={() => onSelect(step.id)}
-                />
-                {index < model.steps.length - 1 ? (
-                  <ArrowRight className="mt-9 size-4 shrink-0 text-muted-foreground" />
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {selected ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{selected.title} routing</CardTitle>
-            <CardDescription>
-              Every saved option and explicit next destination from this canonical step.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {selected.options.map((option) => (
-              <RouteRow
-                key={option.key}
-                label={`Customer chooses: ${option.labelEn}`}
-                destination={option.targetTitle}
-                warning={option.missingTarget || !option.targetNodeId}
-                inactive={!option.active}
-              />
-            ))}
-            {selected.nextSteps.map((next) => (
-              <RouteRow
-                key={next.id}
-                label="Then"
-                destination={next.title}
-                warning={next.missing}
-              />
-            ))}
-            {!selected.options.length && !selected.nextSteps.length ? (
-              <p className="text-sm text-muted-foreground">This step has no saved destination.</p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-    </div>
-  );
-}
-
-function StepCard({
-  step,
-  selected,
-  onSelect,
-}: {
-  step: GuidedFlowStep;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      data-flow-manager-live-action
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "w-64 shrink-0 rounded-lg border bg-card p-3 text-left shadow-sm transition hover:shadow",
-        selected && "border-primary ring-2 ring-primary/20",
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span className="grid size-7 place-items-center rounded bg-muted text-muted-foreground">
-          <StepIcon kind={step.kind} />
-        </span>
-        <span className="text-xs text-muted-foreground">{step.kind}</span>
-        <span className="ml-auto">
-          <StepStatus step={step} />
-        </span>
-      </div>
-      <div className="mt-2 truncate text-sm font-medium">{step.title}</div>
-      <div className="mt-1 line-clamp-2 min-h-8 text-xs text-muted-foreground">{step.preview}</div>
-      <div className="mt-2 truncate font-mono text-[10px] text-muted-foreground">{step.id}</div>
-    </button>
-  );
-}
-
-function SelectedStepTab({
-  step,
-  steps,
-  onFuture,
-}: {
-  step: GuidedFlowStep;
-  steps: GuidedFlowStep[];
-  onFuture: (feature: string, description: string) => void;
-}) {
-  const readOnlyFuture = () =>
-    onFuture(
-      "Guided editing",
-      "These are the real saved fields. Safe editing and rejected-save recovery start in work package 2B.",
-    );
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <div className="space-y-4 lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              Step identity <FutureLabel />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <Field label="Admin title">
-              <Input value={step.title} readOnly onClick={readOnlyFuture} />
-            </Field>
-            <Field label="Step type">
-              <Select value={step.canonicalType} onValueChange={readOnlyFuture}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={step.canonicalType}>{step.canonicalType}</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Stable step ID">
-              <Input value={step.id} readOnly className="font-mono" />
-            </Field>
-            <Field label="Protected backend action">
-              <Input value={step.protectedAction ?? "None"} readOnly className="font-mono" />
-            </Field>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              Customer-facing message <FutureLabel />
-            </CardTitle>
-            <CardDescription>Real copy stored for this canonical step.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <Field label="Message (EN)">
-              <Textarea rows={4} value={step.messages.en} readOnly onClick={readOnlyFuture} />
-            </Field>
-            <Field label="Message (AR)">
-              <Textarea
-                rows={4}
-                dir="rtl"
-                value={step.messages.ar}
-                readOnly
-                onClick={readOnlyFuture}
-              />
-            </Field>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  WhatsApp options <FutureLabel />
-                </CardTitle>
-                <CardDescription>Saved labels and explicit Guided destinations.</CardDescription>
-              </div>
-              <Button
-                data-flow-manager-live-action
-                size="sm"
-                variant="outline"
-                onClick={readOnlyFuture}
-              >
-                <Plus className="size-4" /> Add WhatsApp option <FutureLabel />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {step.options.length ? (
-              step.options.map((option) => (
-                <div key={option.key} className="rounded-md border p-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Button text (EN)">
-                      <Input value={option.labelEn} readOnly onClick={readOnlyFuture} />
-                    </Field>
-                    <Field label="Button text (AR)">
-                      <Input dir="rtl" value={option.labelAr} readOnly onClick={readOnlyFuture} />
-                    </Field>
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <Field label="After customer chooses">
-                      <Select value={option.targetNodeId ?? "none"} onValueChange={readOnlyFuture}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No destination</SelectItem>
-                          {steps.map((candidate) => (
-                            <SelectItem key={candidate.id} value={candidate.id}>
-                              {candidate.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <div className="flex items-end gap-2 pb-0.5">
-                      <Switch checked={option.active} onCheckedChange={readOnlyFuture} />
-                      <span className="text-xs">Active</span>
-                    </div>
-                  </div>
-                  {option.missingTarget ? (
-                    <p className="mt-2 text-xs text-destructive">
-                      The saved destination is missing.
-                    </p>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">This step has no saved options.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              Image / media <FutureLabel />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {step.mediaUrl ? (
-              <img
-                src={step.mediaUrl}
-                alt="Saved flow media"
-                className="aspect-video w-full rounded-md border object-contain"
-              />
-            ) : (
-              <div className="grid aspect-video place-items-center rounded-md border-2 border-dashed bg-muted/40 text-xs text-muted-foreground">
-                No image attached
-              </div>
-            )}
-            <Button
-              data-flow-manager-live-action
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() =>
-                onFuture(
-                  "Upload image",
-                  "Tenant media availability and safe Guided saving are not enabled in 2A.",
-                )
-              }
-            >
-              <UploadCloud className="size-4" /> Upload image <FutureLabel />
-            </Button>
-            <Field label="Caption (EN)">
-              <Textarea value={step.mediaCaption.en} rows={2} readOnly onClick={readOnlyFuture} />
-            </Field>
-            <Field label="Caption (AR)">
-              <Textarea
-                value={step.mediaCaption.ar}
-                rows={2}
-                dir="rtl"
-                readOnly
-                onClick={readOnlyFuture}
-              />
-            </Field>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Routing behavior</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span>Start step</span>
-              <StatusBadge tone={step.isStart ? "success" : "neutral"}>
-                {step.isStart ? "Yes" : "No"}
-              </StatusBadge>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Optional</span>
-              <StatusBadge tone={step.optional ? "info" : "neutral"}>
-                {step.optional ? "Yes" : "No"}
-              </StatusBadge>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Destinations</span>
-              <span className="tabular-nums">{step.options.length + step.nextSteps.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
   );
 }
 
@@ -645,7 +455,7 @@ function PreviewTab({ step, version }: { step: GuidedFlowStep; version: number }
           <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base">WhatsApp preview</CardTitle>
-              <CardDescription>Real saved copy for {step.title}.</CardDescription>
+              <CardDescription>Saved draft appearance for {step.title}.</CardDescription>
             </div>
             <div className="flex gap-1 rounded-md border p-0.5 text-xs">
               {(["en", "ar"] as const).map((value) => (
@@ -680,7 +490,7 @@ function PreviewTab({ step, version }: { step: GuidedFlowStep; version: number }
                 />
               ) : null}
               <div className="whitespace-pre-wrap">
-                {message || "No saved copy for this language."}
+                {message || "No copy is set for this language."}
               </div>
               {step.options.length ? (
                 <div className="mt-2 space-y-1 border-t pt-2">
@@ -702,7 +512,7 @@ function PreviewTab({ step, version }: { step: GuidedFlowStep; version: number }
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">What happens next</CardTitle>
+          <CardTitle className="text-base">Next destinations</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {[
@@ -717,7 +527,7 @@ function PreviewTab({ step, version }: { step: GuidedFlowStep; version: number }
             <p className="text-muted-foreground">No next destination is saved.</p>
           ) : null}
           <div className="pt-2 text-xs text-muted-foreground">
-            Preview reflects saved version {version}. It does not send a customer message.
+            Preview reflects version {version}. It does not send a customer message.
           </div>
         </CardContent>
       </Card>
@@ -738,8 +548,8 @@ function ValidationTab({
     return (
       <WorkspaceState
         icon={<AlertCircle className="size-5 text-emerald-700" />}
-        title="No saved validation issues"
-        message="This version does not contain a recorded error or warning. Publishing remains disabled until 2B validates edited Guided state."
+        title="No draft problems"
+        message="The current Guided draft has no recorded error or warning. Publishing remains deferred to 2C."
       />
     );
   }
@@ -786,7 +596,7 @@ function ValidationTab({
                     variant="outline"
                     onClick={() => onFocus(diagnostic.nodeId!)}
                   >
-                    Focus step
+                    Open step
                   </Button>
                 ) : null}
               </div>
@@ -835,7 +645,7 @@ function AdvancedTab({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              Manual / debug tools <FutureLabel />
+              Manual tools <FutureLabel />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -851,10 +661,7 @@ function AdvancedTab({
                 size="sm"
                 className="w-full justify-start"
                 onClick={() =>
-                  onFuture(
-                    feature,
-                    "This action remains disabled until safe Guided mutations ship.",
-                  )
+                  onFuture(feature, "This action remains disabled until safe restore ships.")
                 }
               >
                 <Braces className="size-4" /> {label} <FutureLabel />
@@ -863,59 +670,6 @@ function AdvancedTab({
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
-
-function RouteRow({
-  label,
-  destination,
-  warning,
-  inactive = false,
-}: {
-  label: string;
-  destination: string;
-  warning: boolean;
-  inactive?: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs">
-      <div className="min-w-0">
-        <div className="truncate text-muted-foreground">{label}</div>
-        <div className={cn("truncate font-medium", warning && "text-destructive")}>
-          Then: {destination}
-        </div>
-      </div>
-      {inactive ? <StatusBadge tone="neutral">Off</StatusBadge> : null}
-    </div>
-  );
-}
-
-function StepStatus({ step }: { step: GuidedFlowStep }) {
-  if (step.status === "error") {
-    return <StatusBadge tone="destructive">{step.issues.length} error</StatusBadge>;
-  }
-  if (step.status === "warning") {
-    return <StatusBadge tone="warning">{step.issues.length} warning</StatusBadge>;
-  }
-  return <StatusBadge tone="success">OK</StatusBadge>;
-}
-
-function StepIcon({ kind }: { kind: GuidedStepKind }) {
-  const className = "size-4";
-  if (kind === "Image") return <ImageIcon className={className} />;
-  if (kind === "Catalog") return <ListTree className={className} />;
-  if (kind === "Branch") return <GitBranch className={className} />;
-  if (kind === "Handoff") return <User className={className} />;
-  if (kind === "End") return <Square className={className} />;
-  return <MessageSquare className={className} />;
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <Label>{label}</Label>
-      {children}
     </div>
   );
 }
