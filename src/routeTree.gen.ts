@@ -184,8 +184,10 @@ import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.conn
 import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.connect.dashboard-2.flow'
 import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
 import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
+import { Route as ApiConnectClientInboxOptionsRouteImport } from './routes/api/connect/client/inbox-options'
 import { Route as ApiConnectClientConversationsRouteImport } from './routes/api/connect/client/conversations'
 import { Route as ApiConnectClientContactsRouteImport } from './routes/api/connect/client/contacts'
+import { Route as ApiConnectClientCannedRepliesRouteImport } from './routes/api/connect/client/canned-replies'
 import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
 import { Route as ApiConnectAdminWhatsappHealthRouteImport } from './routes/api.connect.admin.whatsapp-health'
 import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
@@ -196,9 +198,11 @@ import { Route as ApiConnectAdminMessageEventsRouteImport } from './routes/api.c
 import { Route as ApiConnectAdminLogsRouteImport } from './routes/api.connect.admin.logs'
 import { Route as ApiConnectAdminLogoutRouteImport } from './routes/api.connect.admin.logout'
 import { Route as ApiConnectAdminLoginRouteImport } from './routes/api.connect.admin.login'
+import { Route as ApiConnectAdminInboxOptionsRouteImport } from './routes/api.connect.admin.inbox-options'
 import { Route as ApiConnectAdminFlowTemplatesRouteImport } from './routes/api.connect.admin.flow-templates'
 import { Route as ApiConnectAdminConversationsRouteImport } from './routes/api.connect.admin.conversations'
 import { Route as ApiConnectAdminContactsRouteImport } from './routes/api.connect.admin.contacts'
+import { Route as ApiConnectAdminCannedRepliesRouteImport } from './routes/api.connect.admin.canned-replies'
 import { Route as ApiConnectAdminBusinessesRouteImport } from './routes/api.connect.admin.businesses'
 import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
 import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
@@ -220,18 +224,24 @@ import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/a
 import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
 import { Route as ApiConnectClientConversationsConversationIdRouteImport } from './routes/api/connect/client/conversations.$conversationId'
 import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/api/connect/client/contacts.$contactId'
+import { Route as ApiConnectClientCannedRepliesReplyIdRouteImport } from './routes/api/connect/client/canned-replies.$replyId'
 import { Route as ApiConnectAdminHumanOutboxReconciliationRouteImport } from './routes/api.connect.admin.human-outbox.reconciliation'
 import { Route as ApiConnectAdminHumanOutboxProcessRouteImport } from './routes/api.connect.admin.human-outbox.process'
 import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
 import { Route as ApiConnectAdminConversationsProcessLifecycleRouteImport } from './routes/api.connect.admin.conversations.process-lifecycle'
 import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
 import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
+import { Route as ApiConnectAdminCannedRepliesReplyIdRouteImport } from './routes/api.connect.admin.canned-replies.$replyId'
 import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
+import { Route as ApiConnectClientConversationsConversationIdNotesRouteImport } from './routes/api/connect/client/conversations.$conversationId.notes'
 import { Route as ApiConnectClientConversationsConversationIdMessagesRouteImport } from './routes/api/connect/client/conversations.$conversationId.messages'
+import { Route as ApiConnectAdminConversationsConversationIdNotesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.notes'
 import { Route as ApiConnectAdminConversationsConversationIdMessagesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.messages'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow'
+import { Route as ApiConnectClientConversationsConversationIdTagsTagIdRouteImport } from './routes/api/connect/client/conversations.$conversationId.tags.$tagId'
+import { Route as ApiConnectAdminConversationsConversationIdTagsTagIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId.tags.$tagId'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -1169,6 +1179,12 @@ const ApiConnectDashboard2CatalogRoute =
     path: '/api/connect/dashboard-2/catalog',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiConnectClientInboxOptionsRoute =
+  ApiConnectClientInboxOptionsRouteImport.update({
+    id: '/api/connect/client/inbox-options',
+    path: '/api/connect/client/inbox-options',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectClientConversationsRoute =
   ApiConnectClientConversationsRouteImport.update({
     id: '/api/connect/client/conversations',
@@ -1179,6 +1195,12 @@ const ApiConnectClientContactsRoute =
   ApiConnectClientContactsRouteImport.update({
     id: '/api/connect/client/contacts',
     path: '/api/connect/client/contacts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientCannedRepliesRoute =
+  ApiConnectClientCannedRepliesRouteImport.update({
+    id: '/api/connect/client/canned-replies',
+    path: '/api/connect/client/canned-replies',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiConnectAdminWhatsappTemplatesRoute =
@@ -1236,6 +1258,12 @@ const ApiConnectAdminLoginRoute = ApiConnectAdminLoginRouteImport.update({
   path: '/api/connect/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConnectAdminInboxOptionsRoute =
+  ApiConnectAdminInboxOptionsRouteImport.update({
+    id: '/api/connect/admin/inbox-options',
+    path: '/api/connect/admin/inbox-options',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectAdminFlowTemplatesRoute =
   ApiConnectAdminFlowTemplatesRouteImport.update({
     id: '/api/connect/admin/flow-templates',
@@ -1253,6 +1281,12 @@ const ApiConnectAdminContactsRoute = ApiConnectAdminContactsRouteImport.update({
   path: '/api/connect/admin/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConnectAdminCannedRepliesRoute =
+  ApiConnectAdminCannedRepliesRouteImport.update({
+    id: '/api/connect/admin/canned-replies',
+    path: '/api/connect/admin/canned-replies',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectAdminBusinessesRoute =
   ApiConnectAdminBusinessesRouteImport.update({
     id: '/api/connect/admin/businesses',
@@ -1379,6 +1413,12 @@ const ApiConnectClientContactsContactIdRoute =
     path: '/$contactId',
     getParentRoute: () => ApiConnectClientContactsRoute,
   } as any)
+const ApiConnectClientCannedRepliesReplyIdRoute =
+  ApiConnectClientCannedRepliesReplyIdRouteImport.update({
+    id: '/$replyId',
+    path: '/$replyId',
+    getParentRoute: () => ApiConnectClientCannedRepliesRoute,
+  } as any)
 const ApiConnectAdminHumanOutboxReconciliationRoute =
   ApiConnectAdminHumanOutboxReconciliationRouteImport.update({
     id: '/api/connect/admin/human-outbox/reconciliation',
@@ -1415,6 +1455,12 @@ const ApiConnectAdminContactsContactIdRoute =
     path: '/$contactId',
     getParentRoute: () => ApiConnectAdminContactsRoute,
   } as any)
+const ApiConnectAdminCannedRepliesReplyIdRoute =
+  ApiConnectAdminCannedRepliesReplyIdRouteImport.update({
+    id: '/$replyId',
+    path: '/$replyId',
+    getParentRoute: () => ApiConnectAdminCannedRepliesRoute,
+  } as any)
 const ApiConnectAdminBusinessesBusinessIdRoute =
   ApiConnectAdminBusinessesBusinessIdRouteImport.update({
     id: '/$businessId',
@@ -1427,11 +1473,23 @@ const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
     path: '/versions/$versionId',
     getParentRoute: () => AdminFlowTemplatesTemplateIdRoute,
   } as any)
+const ApiConnectClientConversationsConversationIdNotesRoute =
+  ApiConnectClientConversationsConversationIdNotesRouteImport.update({
+    id: '/notes',
+    path: '/notes',
+    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
+  } as any)
 const ApiConnectClientConversationsConversationIdMessagesRoute =
   ApiConnectClientConversationsConversationIdMessagesRouteImport.update({
     id: '/messages',
     path: '/messages',
     getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdNotesRoute =
+  ApiConnectAdminConversationsConversationIdNotesRouteImport.update({
+    id: '/notes',
+    path: '/notes',
+    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
   } as any)
 const ApiConnectAdminConversationsConversationIdMessagesRoute =
   ApiConnectAdminConversationsConversationIdMessagesRouteImport.update({
@@ -1450,6 +1508,18 @@ const ApiConnectAdminBusinessesBusinessIdFlowRoute =
     id: '/flow',
     path: '/flow',
     getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
+  } as any)
+const ApiConnectClientConversationsConversationIdTagsTagIdRoute =
+  ApiConnectClientConversationsConversationIdTagsTagIdRouteImport.update({
+    id: '/tags/$tagId',
+    path: '/tags/$tagId',
+    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdTagsTagIdRoute =
+  ApiConnectAdminConversationsConversationIdTagsTagIdRouteImport.update({
+    id: '/tags/$tagId',
+    path: '/tags/$tagId',
+    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1588,9 +1658,11 @@ export interface FileRoutesByFullPath {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/canned-replies': typeof ApiConnectAdminCannedRepliesRouteWithChildren
   '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
   '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/inbox-options': typeof ApiConnectAdminInboxOptionsRoute
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
   '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
@@ -1601,8 +1673,10 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/canned-replies': typeof ApiConnectClientCannedRepliesRouteWithChildren
   '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
   '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
+  '/api/connect/client/inbox-options': typeof ApiConnectClientInboxOptionsRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -1651,12 +1725,14 @@ export interface FileRoutesByFullPath {
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/canned-replies/$replyId': typeof ApiConnectAdminCannedRepliesReplyIdRoute
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
+  '/api/connect/client/canned-replies/$replyId': typeof ApiConnectClientCannedRepliesReplyIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -1675,7 +1751,11 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/notes': typeof ApiConnectClientConversationsConversationIdNotesRoute
+  '/api/connect/admin/conversations/$conversationId/tags/$tagId': typeof ApiConnectAdminConversationsConversationIdTagsTagIdRoute
+  '/api/connect/client/conversations/$conversationId/tags/$tagId': typeof ApiConnectClientConversationsConversationIdTagsTagIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1798,9 +1878,11 @@ export interface FileRoutesByTo {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/canned-replies': typeof ApiConnectAdminCannedRepliesRouteWithChildren
   '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
   '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/inbox-options': typeof ApiConnectAdminInboxOptionsRoute
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
   '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
@@ -1811,8 +1893,10 @@ export interface FileRoutesByTo {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/canned-replies': typeof ApiConnectClientCannedRepliesRouteWithChildren
   '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
   '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
+  '/api/connect/client/inbox-options': typeof ApiConnectClientInboxOptionsRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -1860,12 +1944,14 @@ export interface FileRoutesByTo {
   '/stores/pavone/admin': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/canned-replies/$replyId': typeof ApiConnectAdminCannedRepliesReplyIdRoute
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
+  '/api/connect/client/canned-replies/$replyId': typeof ApiConnectClientCannedRepliesReplyIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -1884,7 +1970,11 @@ export interface FileRoutesByTo {
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/notes': typeof ApiConnectClientConversationsConversationIdNotesRoute
+  '/api/connect/admin/conversations/$conversationId/tags/$tagId': typeof ApiConnectAdminConversationsConversationIdTagsTagIdRoute
+  '/api/connect/client/conversations/$conversationId/tags/$tagId': typeof ApiConnectClientConversationsConversationIdTagsTagIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -2023,9 +2113,11 @@ export interface FileRoutesById {
   '/admin/businesses/$businessId/flow-builder': typeof AdminBusinessesBusinessIdFlowBuilderRoute
   '/admin/businesses/$businessId/products': typeof AdminBusinessesBusinessIdProductsRoute
   '/api/connect/admin/businesses': typeof ApiConnectAdminBusinessesRouteWithChildren
+  '/api/connect/admin/canned-replies': typeof ApiConnectAdminCannedRepliesRouteWithChildren
   '/api/connect/admin/contacts': typeof ApiConnectAdminContactsRouteWithChildren
   '/api/connect/admin/conversations': typeof ApiConnectAdminConversationsRouteWithChildren
   '/api/connect/admin/flow-templates': typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  '/api/connect/admin/inbox-options': typeof ApiConnectAdminInboxOptionsRoute
   '/api/connect/admin/login': typeof ApiConnectAdminLoginRoute
   '/api/connect/admin/logout': typeof ApiConnectAdminLogoutRoute
   '/api/connect/admin/logs': typeof ApiConnectAdminLogsRoute
@@ -2036,8 +2128,10 @@ export interface FileRoutesById {
   '/api/connect/admin/session': typeof ApiConnectAdminSessionRoute
   '/api/connect/admin/whatsapp-health': typeof ApiConnectAdminWhatsappHealthRoute
   '/api/connect/admin/whatsapp-templates': typeof ApiConnectAdminWhatsappTemplatesRoute
+  '/api/connect/client/canned-replies': typeof ApiConnectClientCannedRepliesRouteWithChildren
   '/api/connect/client/contacts': typeof ApiConnectClientContactsRouteWithChildren
   '/api/connect/client/conversations': typeof ApiConnectClientConversationsRouteWithChildren
+  '/api/connect/client/inbox-options': typeof ApiConnectClientInboxOptionsRoute
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
@@ -2086,12 +2180,14 @@ export interface FileRoutesById {
   '/stores/pavone/admin/': typeof StoresPavoneAdminIndexRoute
   '/admin/flow-templates/$templateId/versions/$versionId': typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRoute
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
+  '/api/connect/admin/canned-replies/$replyId': typeof ApiConnectAdminCannedRepliesReplyIdRoute
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
   '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
+  '/api/connect/client/canned-replies/$replyId': typeof ApiConnectClientCannedRepliesReplyIdRoute
   '/api/connect/client/contacts/$contactId': typeof ApiConnectClientContactsContactIdRoute
   '/api/connect/client/conversations/$conversationId': typeof ApiConnectClientConversationsConversationIdRouteWithChildren
   '/api/connect/dashboard-2/orders/$orderId': typeof ApiConnectDashboard2OrdersOrderIdRoute
@@ -2110,7 +2206,11 @@ export interface FileRoutesById {
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
+  '/api/connect/client/conversations/$conversationId/notes': typeof ApiConnectClientConversationsConversationIdNotesRoute
+  '/api/connect/admin/conversations/$conversationId/tags/$tagId': typeof ApiConnectAdminConversationsConversationIdTagsTagIdRoute
+  '/api/connect/client/conversations/$conversationId/tags/$tagId': typeof ApiConnectClientConversationsConversationIdTagsTagIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -2250,9 +2350,11 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/canned-replies'
     | '/api/connect/admin/contacts'
     | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/inbox-options'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
     | '/api/connect/admin/logs'
@@ -2263,8 +2365,10 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/canned-replies'
     | '/api/connect/client/contacts'
     | '/api/connect/client/conversations'
+    | '/api/connect/client/inbox-options'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2313,12 +2417,14 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/canned-replies/$replyId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
+    | '/api/connect/client/canned-replies/$replyId'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2337,7 +2443,11 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/notes'
+    | '/api/connect/admin/conversations/$conversationId/tags/$tagId'
+    | '/api/connect/client/conversations/$conversationId/tags/$tagId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -2460,9 +2570,11 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/canned-replies'
     | '/api/connect/admin/contacts'
     | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/inbox-options'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
     | '/api/connect/admin/logs'
@@ -2473,8 +2585,10 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/canned-replies'
     | '/api/connect/client/contacts'
     | '/api/connect/client/conversations'
+    | '/api/connect/client/inbox-options'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2522,12 +2636,14 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/canned-replies/$replyId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
+    | '/api/connect/client/canned-replies/$replyId'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2546,7 +2662,11 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/notes'
+    | '/api/connect/admin/conversations/$conversationId/tags/$tagId'
+    | '/api/connect/client/conversations/$conversationId/tags/$tagId'
   id:
     | '__root__'
     | '/'
@@ -2684,9 +2804,11 @@ export interface FileRouteTypes {
     | '/admin/businesses/$businessId/flow-builder'
     | '/admin/businesses/$businessId/products'
     | '/api/connect/admin/businesses'
+    | '/api/connect/admin/canned-replies'
     | '/api/connect/admin/contacts'
     | '/api/connect/admin/conversations'
     | '/api/connect/admin/flow-templates'
+    | '/api/connect/admin/inbox-options'
     | '/api/connect/admin/login'
     | '/api/connect/admin/logout'
     | '/api/connect/admin/logs'
@@ -2697,8 +2819,10 @@ export interface FileRouteTypes {
     | '/api/connect/admin/session'
     | '/api/connect/admin/whatsapp-health'
     | '/api/connect/admin/whatsapp-templates'
+    | '/api/connect/client/canned-replies'
     | '/api/connect/client/contacts'
     | '/api/connect/client/conversations'
+    | '/api/connect/client/inbox-options'
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
@@ -2747,12 +2871,14 @@ export interface FileRouteTypes {
     | '/stores/pavone/admin/'
     | '/admin/flow-templates/$templateId/versions/$versionId'
     | '/api/connect/admin/businesses/$businessId'
+    | '/api/connect/admin/canned-replies/$replyId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
     | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
+    | '/api/connect/client/canned-replies/$replyId'
     | '/api/connect/client/contacts/$contactId'
     | '/api/connect/client/conversations/$conversationId'
     | '/api/connect/dashboard-2/orders/$orderId'
@@ -2771,7 +2897,11 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
+    | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
+    | '/api/connect/client/conversations/$conversationId/notes'
+    | '/api/connect/admin/conversations/$conversationId/tags/$tagId'
+    | '/api/connect/client/conversations/$conversationId/tags/$tagId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2825,9 +2955,11 @@ export interface RootRouteChildren {
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiWhatsappWebhook2Route: typeof ApiWhatsappWebhook2Route
   ApiConnectAdminBusinessesRoute: typeof ApiConnectAdminBusinessesRouteWithChildren
+  ApiConnectAdminCannedRepliesRoute: typeof ApiConnectAdminCannedRepliesRouteWithChildren
   ApiConnectAdminContactsRoute: typeof ApiConnectAdminContactsRouteWithChildren
   ApiConnectAdminConversationsRoute: typeof ApiConnectAdminConversationsRouteWithChildren
   ApiConnectAdminFlowTemplatesRoute: typeof ApiConnectAdminFlowTemplatesRouteWithChildren
+  ApiConnectAdminInboxOptionsRoute: typeof ApiConnectAdminInboxOptionsRoute
   ApiConnectAdminLoginRoute: typeof ApiConnectAdminLoginRoute
   ApiConnectAdminLogoutRoute: typeof ApiConnectAdminLogoutRoute
   ApiConnectAdminLogsRoute: typeof ApiConnectAdminLogsRoute
@@ -2838,8 +2970,10 @@ export interface RootRouteChildren {
   ApiConnectAdminSessionRoute: typeof ApiConnectAdminSessionRoute
   ApiConnectAdminWhatsappHealthRoute: typeof ApiConnectAdminWhatsappHealthRoute
   ApiConnectAdminWhatsappTemplatesRoute: typeof ApiConnectAdminWhatsappTemplatesRoute
+  ApiConnectClientCannedRepliesRoute: typeof ApiConnectClientCannedRepliesRouteWithChildren
   ApiConnectClientContactsRoute: typeof ApiConnectClientContactsRouteWithChildren
   ApiConnectClientConversationsRoute: typeof ApiConnectClientConversationsRouteWithChildren
+  ApiConnectClientInboxOptionsRoute: typeof ApiConnectClientInboxOptionsRoute
   ApiConnectDashboard2CatalogRoute: typeof ApiConnectDashboard2CatalogRoute
   ApiConnectDashboard2DiagnosticsRoute: typeof ApiConnectDashboard2DiagnosticsRoute
   ApiConnectDashboard2FlowRoute: typeof ApiConnectDashboard2FlowRoute
@@ -4089,6 +4223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectDashboard2CatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/client/inbox-options': {
+      id: '/api/connect/client/inbox-options'
+      path: '/api/connect/client/inbox-options'
+      fullPath: '/api/connect/client/inbox-options'
+      preLoaderRoute: typeof ApiConnectClientInboxOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/client/conversations': {
       id: '/api/connect/client/conversations'
       path: '/api/connect/client/conversations'
@@ -4101,6 +4242,13 @@ declare module '@tanstack/react-router' {
       path: '/api/connect/client/contacts'
       fullPath: '/api/connect/client/contacts'
       preLoaderRoute: typeof ApiConnectClientContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/canned-replies': {
+      id: '/api/connect/client/canned-replies'
+      path: '/api/connect/client/canned-replies'
+      fullPath: '/api/connect/client/canned-replies'
+      preLoaderRoute: typeof ApiConnectClientCannedRepliesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/connect/admin/whatsapp-templates': {
@@ -4173,6 +4321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectAdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/admin/inbox-options': {
+      id: '/api/connect/admin/inbox-options'
+      path: '/api/connect/admin/inbox-options'
+      fullPath: '/api/connect/admin/inbox-options'
+      preLoaderRoute: typeof ApiConnectAdminInboxOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/admin/flow-templates': {
       id: '/api/connect/admin/flow-templates'
       path: '/api/connect/admin/flow-templates'
@@ -4192,6 +4347,13 @@ declare module '@tanstack/react-router' {
       path: '/api/connect/admin/contacts'
       fullPath: '/api/connect/admin/contacts'
       preLoaderRoute: typeof ApiConnectAdminContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/canned-replies': {
+      id: '/api/connect/admin/canned-replies'
+      path: '/api/connect/admin/canned-replies'
+      fullPath: '/api/connect/admin/canned-replies'
+      preLoaderRoute: typeof ApiConnectAdminCannedRepliesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/connect/admin/businesses': {
@@ -4341,6 +4503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectClientContactsContactIdRouteImport
       parentRoute: typeof ApiConnectClientContactsRoute
     }
+    '/api/connect/client/canned-replies/$replyId': {
+      id: '/api/connect/client/canned-replies/$replyId'
+      path: '/$replyId'
+      fullPath: '/api/connect/client/canned-replies/$replyId'
+      preLoaderRoute: typeof ApiConnectClientCannedRepliesReplyIdRouteImport
+      parentRoute: typeof ApiConnectClientCannedRepliesRoute
+    }
     '/api/connect/admin/human-outbox/reconciliation': {
       id: '/api/connect/admin/human-outbox/reconciliation'
       path: '/api/connect/admin/human-outbox/reconciliation'
@@ -4383,6 +4552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectAdminContactsContactIdRouteImport
       parentRoute: typeof ApiConnectAdminContactsRoute
     }
+    '/api/connect/admin/canned-replies/$replyId': {
+      id: '/api/connect/admin/canned-replies/$replyId'
+      path: '/$replyId'
+      fullPath: '/api/connect/admin/canned-replies/$replyId'
+      preLoaderRoute: typeof ApiConnectAdminCannedRepliesReplyIdRouteImport
+      parentRoute: typeof ApiConnectAdminCannedRepliesRoute
+    }
     '/api/connect/admin/businesses/$businessId': {
       id: '/api/connect/admin/businesses/$businessId'
       path: '/$businessId'
@@ -4397,12 +4573,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
       parentRoute: typeof AdminFlowTemplatesTemplateIdRoute
     }
+    '/api/connect/client/conversations/$conversationId/notes': {
+      id: '/api/connect/client/conversations/$conversationId/notes'
+      path: '/notes'
+      fullPath: '/api/connect/client/conversations/$conversationId/notes'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdNotesRouteImport
+      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
+    }
     '/api/connect/client/conversations/$conversationId/messages': {
       id: '/api/connect/client/conversations/$conversationId/messages'
       path: '/messages'
       fullPath: '/api/connect/client/conversations/$conversationId/messages'
       preLoaderRoute: typeof ApiConnectClientConversationsConversationIdMessagesRouteImport
       parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
+    }
+    '/api/connect/admin/conversations/$conversationId/notes': {
+      id: '/api/connect/admin/conversations/$conversationId/notes'
+      path: '/notes'
+      fullPath: '/api/connect/admin/conversations/$conversationId/notes'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdNotesRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
     }
     '/api/connect/admin/conversations/$conversationId/messages': {
       id: '/api/connect/admin/conversations/$conversationId/messages'
@@ -4424,6 +4614,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/connect/admin/businesses/$businessId/flow'
       preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRouteImport
       parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
+    }
+    '/api/connect/client/conversations/$conversationId/tags/$tagId': {
+      id: '/api/connect/client/conversations/$conversationId/tags/$tagId'
+      path: '/tags/$tagId'
+      fullPath: '/api/connect/client/conversations/$conversationId/tags/$tagId'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdTagsTagIdRouteImport
+      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
+    }
+    '/api/connect/admin/conversations/$conversationId/tags/$tagId': {
+      id: '/api/connect/admin/conversations/$conversationId/tags/$tagId'
+      path: '/tags/$tagId'
+      fullPath: '/api/connect/admin/conversations/$conversationId/tags/$tagId'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdTagsTagIdRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
     }
   }
 }
@@ -5023,6 +5227,21 @@ const ApiConnectAdminBusinessesRouteWithChildren =
     ApiConnectAdminBusinessesRouteChildren,
   )
 
+interface ApiConnectAdminCannedRepliesRouteChildren {
+  ApiConnectAdminCannedRepliesReplyIdRoute: typeof ApiConnectAdminCannedRepliesReplyIdRoute
+}
+
+const ApiConnectAdminCannedRepliesRouteChildren: ApiConnectAdminCannedRepliesRouteChildren =
+  {
+    ApiConnectAdminCannedRepliesReplyIdRoute:
+      ApiConnectAdminCannedRepliesReplyIdRoute,
+  }
+
+const ApiConnectAdminCannedRepliesRouteWithChildren =
+  ApiConnectAdminCannedRepliesRoute._addFileChildren(
+    ApiConnectAdminCannedRepliesRouteChildren,
+  )
+
 interface ApiConnectAdminContactsRouteChildren {
   ApiConnectAdminContactsContactIdRoute: typeof ApiConnectAdminContactsContactIdRoute
 }
@@ -5040,12 +5259,18 @@ const ApiConnectAdminContactsRouteWithChildren =
 
 interface ApiConnectAdminConversationsConversationIdRouteChildren {
   ApiConnectAdminConversationsConversationIdMessagesRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRoute
+  ApiConnectAdminConversationsConversationIdNotesRoute: typeof ApiConnectAdminConversationsConversationIdNotesRoute
+  ApiConnectAdminConversationsConversationIdTagsTagIdRoute: typeof ApiConnectAdminConversationsConversationIdTagsTagIdRoute
 }
 
 const ApiConnectAdminConversationsConversationIdRouteChildren: ApiConnectAdminConversationsConversationIdRouteChildren =
   {
     ApiConnectAdminConversationsConversationIdMessagesRoute:
       ApiConnectAdminConversationsConversationIdMessagesRoute,
+    ApiConnectAdminConversationsConversationIdNotesRoute:
+      ApiConnectAdminConversationsConversationIdNotesRoute,
+    ApiConnectAdminConversationsConversationIdTagsTagIdRoute:
+      ApiConnectAdminConversationsConversationIdTagsTagIdRoute,
   }
 
 const ApiConnectAdminConversationsConversationIdRouteWithChildren =
@@ -5086,6 +5311,21 @@ const ApiConnectAdminFlowTemplatesRouteWithChildren =
     ApiConnectAdminFlowTemplatesRouteChildren,
   )
 
+interface ApiConnectClientCannedRepliesRouteChildren {
+  ApiConnectClientCannedRepliesReplyIdRoute: typeof ApiConnectClientCannedRepliesReplyIdRoute
+}
+
+const ApiConnectClientCannedRepliesRouteChildren: ApiConnectClientCannedRepliesRouteChildren =
+  {
+    ApiConnectClientCannedRepliesReplyIdRoute:
+      ApiConnectClientCannedRepliesReplyIdRoute,
+  }
+
+const ApiConnectClientCannedRepliesRouteWithChildren =
+  ApiConnectClientCannedRepliesRoute._addFileChildren(
+    ApiConnectClientCannedRepliesRouteChildren,
+  )
+
 interface ApiConnectClientContactsRouteChildren {
   ApiConnectClientContactsContactIdRoute: typeof ApiConnectClientContactsContactIdRoute
 }
@@ -5103,12 +5343,18 @@ const ApiConnectClientContactsRouteWithChildren =
 
 interface ApiConnectClientConversationsConversationIdRouteChildren {
   ApiConnectClientConversationsConversationIdMessagesRoute: typeof ApiConnectClientConversationsConversationIdMessagesRoute
+  ApiConnectClientConversationsConversationIdNotesRoute: typeof ApiConnectClientConversationsConversationIdNotesRoute
+  ApiConnectClientConversationsConversationIdTagsTagIdRoute: typeof ApiConnectClientConversationsConversationIdTagsTagIdRoute
 }
 
 const ApiConnectClientConversationsConversationIdRouteChildren: ApiConnectClientConversationsConversationIdRouteChildren =
   {
     ApiConnectClientConversationsConversationIdMessagesRoute:
       ApiConnectClientConversationsConversationIdMessagesRoute,
+    ApiConnectClientConversationsConversationIdNotesRoute:
+      ApiConnectClientConversationsConversationIdNotesRoute,
+    ApiConnectClientConversationsConversationIdTagsTagIdRoute:
+      ApiConnectClientConversationsConversationIdTagsTagIdRoute,
   }
 
 const ApiConnectClientConversationsConversationIdRouteWithChildren =
@@ -5212,11 +5458,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiWhatsappWebhook2Route: ApiWhatsappWebhook2Route,
   ApiConnectAdminBusinessesRoute: ApiConnectAdminBusinessesRouteWithChildren,
+  ApiConnectAdminCannedRepliesRoute:
+    ApiConnectAdminCannedRepliesRouteWithChildren,
   ApiConnectAdminContactsRoute: ApiConnectAdminContactsRouteWithChildren,
   ApiConnectAdminConversationsRoute:
     ApiConnectAdminConversationsRouteWithChildren,
   ApiConnectAdminFlowTemplatesRoute:
     ApiConnectAdminFlowTemplatesRouteWithChildren,
+  ApiConnectAdminInboxOptionsRoute: ApiConnectAdminInboxOptionsRoute,
   ApiConnectAdminLoginRoute: ApiConnectAdminLoginRoute,
   ApiConnectAdminLogoutRoute: ApiConnectAdminLogoutRoute,
   ApiConnectAdminLogsRoute: ApiConnectAdminLogsRoute,
@@ -5227,9 +5476,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectAdminSessionRoute: ApiConnectAdminSessionRoute,
   ApiConnectAdminWhatsappHealthRoute: ApiConnectAdminWhatsappHealthRoute,
   ApiConnectAdminWhatsappTemplatesRoute: ApiConnectAdminWhatsappTemplatesRoute,
+  ApiConnectClientCannedRepliesRoute:
+    ApiConnectClientCannedRepliesRouteWithChildren,
   ApiConnectClientContactsRoute: ApiConnectClientContactsRouteWithChildren,
   ApiConnectClientConversationsRoute:
     ApiConnectClientConversationsRouteWithChildren,
+  ApiConnectClientInboxOptionsRoute: ApiConnectClientInboxOptionsRoute,
   ApiConnectDashboard2CatalogRoute: ApiConnectDashboard2CatalogRoute,
   ApiConnectDashboard2DiagnosticsRoute: ApiConnectDashboard2DiagnosticsRoute,
   ApiConnectDashboard2FlowRoute: ApiConnectDashboard2FlowRoute,

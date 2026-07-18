@@ -1,6 +1,6 @@
 # Double A Connect Product Roadmap
 
-Last updated: 2026-07-17
+Last updated: 2026-07-18
 
 ## Purpose
 
@@ -119,7 +119,7 @@ Explicitly deferred:
       commerce actions, and runtime compilation.
 - [x] Business and conversation diagnostics, webhook logs, and message logs.
 - [x] Meta WhatsApp template submission and local submission records.
-- [x] Automated Connect suite: 40 tests passing on 2026-07-16.
+- [x] Automated Connect suite: 80 tests passing on 2026-07-18.
 
 ### Working but temporary or incomplete product layers
 
@@ -139,8 +139,9 @@ Explicitly deferred:
   contact domain. Contact-management route adapters and operations remain
   pending.
 - [~] The deployed schema now provides durable inbox conversations, messages,
-  events, assignment fields, notes, tags, and canned replies. Webhook dual-write,
-  human outbox, and route adapters remain pending.
+  events, assignment/transfer, priority, lifecycle, unread state, internal notes,
+  contact tags, canned replies, and audited collaboration commands. The exact
+  Flow Manager inbox surfaces remain pending in 1D.
 - [~] The exact Flow Manager Automations list now reads the authorized
   business's canonical flow and version summary through the existing client
   API. The supplied Lovable canvas remains illustrative; real document mapping,
@@ -811,12 +812,12 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: finish 1C Human operations with assignment,
-notes, tags, unread, and canned-reply commands, then perform the controlled
-human-send and worker-schedule activation. Manual lifecycle changes, inbound
-wake behavior, due-snooze claiming, durable retry processing, and ambiguous-send
-reconciliation are implemented. Provider sending and scheduled worker calls
-remain unactivated rollout controls; inbox UI promotion remains 1D.
+Current authorized next action: release the completed 1C collaboration command
+routes, then perform the controlled human-send and worker-schedule activation.
+Manual lifecycle and collaboration commands, inbound wake behavior, due-snooze
+claiming, durable retry processing, and ambiguous-send reconciliation are
+implemented. Provider sending and scheduled worker calls remain unactivated
+rollout controls; inbox UI promotion remains 1D.
 
 Milestone 1 platform controls:
 
@@ -901,8 +902,12 @@ Milestone 1 platform controls:
   reject unsafe reopen conflicts, and write idempotent actor audit events.
   Customer inbound and the protected due-snooze worker reopen conversations;
   production schedule activation and visible UI controls remain.
-- [ ] Implement assignment/transfer, internal notes, tags, unread state, and
-      canned replies with audit events.
+- [~] Implement assignment/transfer, priority, internal notes, tags, unread state,
+  and canned replies with audit events. The additive production schema, shared
+  server services, admin/client routes, signed tenant scope, canned-reply audit
+  ledger, and rollback-only live database verification are complete. Production
+  route deployment/probes remain before this capability is promoted to complete;
+  visible controls belong to 1D.
 - [ ] Keep image, document, template, and prerecorded-audio replies visible as
       `Future` until their media/template dependencies are completed.
 
@@ -1140,3 +1145,5 @@ current-status sections above define the active implementation state.
 | 2026-07-17 | Implemented the Milestone 1C retry and reconciliation slice. Added a protected outbox processor, due-retry leases, service-window revalidation, expired-send quarantine, completion-write recovery, and internal-admin reconciliation decisions for confirm-sent, confirm-failed, or retry with actor/time audit fields. Provider sends and scheduling remain default-off rollout controls.                                                                                                                                                                 | The additive migration is live and service-role-only. Two forced-rollback production suites passed attempt-2 retry, unknown-outcome quarantine, closed-window blocking, and all three reconciliation decisions; postflight retained `0` outbox rows, `0` attempts, `0` human messages, and `0` test keys. The production build, typecheck, scoped ESLint, `66/66` main tests, `14/14` WhatsApp reliability tests, and diff checks pass; deployment verification remains.                                                                                                                                                     |
 | 2026-07-17 | Released the retry/reconciliation slice from exact commit `2ff784b`. GitHub's Vercel check reached success and the canonical Connect page continued to serve after promotion.                                                                                                                                                                                                                                                                                                                                                                               | `doubleacode.com` redirected to `www`; production reconciliation `GET`, reconciliation `POST`, and outbox processor `POST` each returned sanitized `401 UNAUTHORIZED` without credentials. The live database still held zero human outbox, attempt, and human-message rows, and provider sending remained off.                                                                                                                                                                                                                                                                                                               |
 | 2026-07-18 | Implemented the next Milestone 1C lifecycle slice. Added shared admin/client lifecycle commands, atomic tenant-scoped status transitions, bounded snoozing, idempotent actor audit events, active-conversation reopen protection, closed-state transition guards, customer-inbound wake behavior, and a protected due-snooze worker using the generic Connect worker bearer.                                                                                                                                                                                | The additive lifecycle migration is live. Service-role execution is allowed and authenticated execution denied. Forced-rollback production suites passed pending, snooze, open, close, reopen, duplicate, changed-payload conflict, closed-state rejection, inbound wake, and due wake paths; postflight restored the live conversation to `OPEN` with zero synthetic messages/events. The production build, typecheck, scoped ESLint, `72/72` main tests, `14/14` WhatsApp reliability tests, and diff checks pass; deployment verification remains.                                                                        |
+| 2026-07-18 | Released the lifecycle slice from exact commit `34918c5`. GitHub's Vercel production check reached success and the canonical Connect Businesses page continued to serve after promotion.                                                                                                                                                                                                                                                                                                                                                                  | Unauthenticated production probes for the admin lifecycle `PATCH`, signed-client lifecycle `PATCH`, and protected lifecycle worker `POST` each returned sanitized `401 UNAUTHORIZED`. Manual status UI and schedule activation remain gated; the database behavior is live and verified.                                                                                                                                                                                                                                                                                                                                     |
+| 2026-07-18 | Implemented the remaining Milestone 1C collaboration command foundation. Added one strict admin/client `PATCH` contract for priority, assignment/transfer/unassignment, and unread state; dedicated internal-note and contact-tag routes; tenant-scoped inbox option reads; and audited canned-reply create/update/archive routes. Internal notes remain timeline-only and are never sent to WhatsApp.                                                                                                                                                | The additive collaboration migration is live. All four RPCs allow service-role execution and deny authenticated/anonymous execution; the canned-reply audit table has RLS. The checked-in rollback harness passed priority, assignment, transfer, cross-tenant rejection, unassignment, read/unread, note, tag, canned create/update/archive, duplicate, and changed-payload conflict assertions, then postflight confirmed zero retained events, audits, users, tags, contact-tags, or canned replies. Build, typecheck, scoped ESLint, `80/80` main tests, `14/14` reliability tests, and diff checks pass; route deployment/probes remain. |
