@@ -9,6 +9,7 @@ export type FlowManagerFeatureStatus = "live" | "partial" | "future";
 export const liveFlowManagerRoutes: FlowManagerRouteRule[] = [];
 
 export const partialFlowManagerRoutes: FlowManagerRouteRule[] = [
+  { path: "/connect/admin/inbox", includeChildren: true },
   { path: "/connect/admin/businesses", includeChildren: true },
   { path: "/connect/client/automations", includeChildren: true },
 ];

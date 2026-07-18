@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m1c-worker-reply-v1";
+export const CONNECT_RELEASE = "m1d-admin-inbox-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/connect/release")({
           {
             product: "double-a-connect",
             release: CONNECT_RELEASE,
-            capabilities: ["minute-workers", "database-rollout-controls"],
+            capabilities: ["minute-workers", "database-rollout-controls", "admin-live-operations"],
           },
           {
             headers: {

@@ -3,11 +3,14 @@ import { Clock3 } from "lucide-react";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 
 import { getFlowManagerFeatureStatus } from "@/features/connect/flow-manager-ui/feature-status";
+import { cn } from "@/lib/utils";
 
 const mutationLabel =
   /\b(save|send|submit|create|invite|export|import|pause|resume|assign|resolve|snooze|transfer|tag|delete|revoke|rotate|refund|remind|install|connect|re-index|redeploy|generate|queue|publish|test run|try it|new workflow|new api key|add endpoint)\b/i;
 
 const partialRouteMessages: Record<string, string> = {
+  "/connect/admin/inbox":
+    "Conversation lists, timelines, WhatsApp text replies, lifecycle, assignment, priority, unread state, tags, notes, and canned replies use live tenant-safe APIs. Advanced operational folders, templates, media, and incident actions remain Future.",
   "/connect/admin/businesses":
     "Business records, search, status filters, setup checks, and WhatsApp connection health use live admin data. Creation and configuration changes remain future work.",
   "/connect/admin/businesses/live-test":
@@ -21,9 +24,11 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
   const status = getFlowManagerFeatureStatus(pathname);
   const partialMessage = pathname.endsWith("/live-test")
     ? partialRouteMessages["/connect/admin/businesses/live-test"]
-    : pathname.startsWith("/connect/admin/businesses")
-      ? partialRouteMessages["/connect/admin/businesses"]
-      : partialRouteMessages[pathname];
+    : pathname.startsWith("/connect/admin/inbox")
+      ? partialRouteMessages["/connect/admin/inbox"]
+      : pathname.startsWith("/connect/admin/businesses")
+        ? partialRouteMessages["/connect/admin/businesses"]
+        : partialRouteMessages[pathname];
 
   if (status === "live") return <>{children}</>;
 
@@ -53,19 +58,33 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
       onClickCapture={blockPreviewMutation}
       onSubmitCapture={blockPreviewSubmit}
     >
-      {children}
-      <aside className="fixed bottom-4 right-4 z-50 max-w-[min(22rem,calc(100vw-2rem))] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+      <aside
+        className={cn(
+          "border-b px-4 py-2.5 sm:px-6",
+          status === "partial"
+            ? "border-sky-200 bg-sky-50 text-sky-950"
+            : "border-amber-200 bg-amber-50 text-amber-950",
+        )}
+      >
         <div className="flex items-start gap-2.5">
-          <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <Clock3
+            className={cn(
+              "mt-0.5 size-4 shrink-0",
+              status === "partial" ? "text-sky-700" : "text-amber-700",
+            )}
+          />
           <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase text-muted-foreground">Future</div>
-            <p className="mt-0.5 text-xs leading-5">
+            <div className="text-xs font-semibold uppercase">
+              {status === "partial" ? "In progress" : "Future"}
+            </div>
+            <p className="mt-0.5 hidden text-xs leading-5 opacity-80 sm:block">
               {partialMessage ??
                 "Future work. UI preview only. Data is illustrative, and actions do not save or send."}
             </p>
           </div>
         </div>
       </aside>
+      {children}
     </div>
   );
 }
