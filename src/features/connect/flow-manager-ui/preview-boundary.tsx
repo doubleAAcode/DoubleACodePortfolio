@@ -21,8 +21,10 @@ const partialRouteMessages: Record<string, string> = {
     "Business records, search, status filters, setup checks, and WhatsApp connection health use live admin data. Creation and configuration changes remain future work.",
   "/connect/admin/businesses/live-test":
     "Connection data, approved test sends, and message events are live. Full roundtrip verification and diagnostics remain future work.",
+  "/connect/admin/businesses/flow-builder":
+    "Guided reads the real canonical WhatsApp draft, versions, steps, routing, validation, and preview. Editing, saving, publishing, and Canvas remain Future while safe mutations are built.",
   "/connect/client/automations":
-    "The workflow list uses the authorized business backend. Canvas data, editing, and actions remain preview-only.",
+    "The workflow list and Guided workspace read the authorized canonical WhatsApp flow. Editing, saving, publishing, run metrics, and Canvas remain Future while safe mutations are built.",
 };
 
 export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }) {
@@ -30,17 +32,19 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
   const status = getFlowManagerFeatureStatus(pathname);
   const partialMessage = pathname.endsWith("/live-test")
     ? partialRouteMessages["/connect/admin/businesses/live-test"]
-    : pathname.startsWith("/connect/admin/inbox")
-      ? partialRouteMessages["/connect/admin/inbox"]
-      : pathname.startsWith("/connect/client/inbox")
-        ? partialRouteMessages["/connect/client/inbox"]
-        : pathname.startsWith("/connect/admin/contacts")
-          ? partialRouteMessages["/connect/admin/contacts"]
-          : pathname.startsWith("/connect/client/contacts")
-            ? partialRouteMessages["/connect/client/contacts"]
-            : pathname.startsWith("/connect/admin/businesses")
-              ? partialRouteMessages["/connect/admin/businesses"]
-              : partialRouteMessages[pathname];
+    : pathname.endsWith("/flow-builder")
+      ? partialRouteMessages["/connect/admin/businesses/flow-builder"]
+      : pathname.startsWith("/connect/admin/inbox")
+        ? partialRouteMessages["/connect/admin/inbox"]
+        : pathname.startsWith("/connect/client/inbox")
+          ? partialRouteMessages["/connect/client/inbox"]
+          : pathname.startsWith("/connect/admin/contacts")
+            ? partialRouteMessages["/connect/admin/contacts"]
+            : pathname.startsWith("/connect/client/contacts")
+              ? partialRouteMessages["/connect/client/contacts"]
+              : pathname.startsWith("/connect/admin/businesses")
+                ? partialRouteMessages["/connect/admin/businesses"]
+                : partialRouteMessages[pathname];
 
   if (status === "live") return <>{children}</>;
 

@@ -230,9 +230,10 @@ test("admin support diagnostics can inspect and reset a customer conversation", 
   assert.match(adminClient, /AdminConversationDiagnostics/);
 });
 
-test("Lovable business flow builder remains preview-only until backend promotion", () => {
-  assert.match(businessFlowBuilderRoute, /preview-data\/mock-data/);
-  assert.match(businessFlowBuilderRoute, /flowSteps/);
+test("Lovable business flow builder reads the authorized canonical Guided workspace", () => {
+  assert.match(businessFlowBuilderRoute, /GuidedFlowWorkspace/);
+  assert.match(businessFlowBuilderRoute, /getBusinessFlowDetails/);
+  assert.doesNotMatch(businessFlowBuilderRoute, /preview-data|mock-data|flowSteps/);
   assert.match(
     flowManagerFeatureStatus,
     /\{ path: "\/connect\/admin\/businesses", includeChildren: true \}/,
@@ -257,7 +258,10 @@ test("Connect workers use minute schedules without persisting the worker bearer"
   assert.match(workerSchedulesSql, /connect-human-outbox-minute/);
   assert.match(workerSchedulesSql, /vault\.decrypted_secrets/);
   assert.match(workerSchedulesSql, /secret\.name = 'connect_worker_secret'/);
-  assert.match(workerSchedulesSql, /https:\/\/www\.doubleacode\.com\/api\/connect\/admin\/human-outbox\/process/);
+  assert.match(
+    workerSchedulesSql,
+    /https:\/\/www\.doubleacode\.com\/api\/connect\/admin\/human-outbox\/process/,
+  );
   assert.match(workerSchedulesSql, /'Authorization', 'Bearer ' \|\| secret\.decrypted_secret/);
   assert.doesNotMatch(workerSchedulesSql, /CONNECT_WORKER_SECRET\s*=/);
 });

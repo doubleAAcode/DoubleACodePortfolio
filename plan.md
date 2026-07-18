@@ -812,12 +812,11 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: Milestone 1 is accepted. Begin only Milestone
-2A, the canonical Guided foundation: map the exact Lovable Guided controls to
-the canonical v2 flow document, load the same real draft/version data for admin
-and client through authorized adapters, and keep Canvas clickable and labeled
-`Future`. Do not begin Guided mutations until the shared mapping, authorization,
-and preservation tests pass. Provider sending remains off.
+Current authorized next action: finish the Milestone 2A release gate. The shared
+canonical Guided reader and its preservation tests are implemented; verify the
+production marker and denied API boundaries before promoting 2B. Do not begin
+Guided mutations until that release evidence is recorded. Provider sending
+remains off.
 
 Milestone 1 platform controls:
 
@@ -957,6 +956,9 @@ only active work package.**
 ### Milestone 2 - Guided Flow Builder and Runtime
 
 Status: **Active - work package 2A only**
+
+Work-package 2A status: **In progress - implementation and local verification
+complete; production release gate pending.**
 
 Milestone 2 work-package contract:
 
@@ -1190,3 +1192,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released the second Milestone 1D surface from exact commit `5b3eb6a` without requiring Vercel dashboard access. | The canonical release endpoint returned `200`, `X-Connect-Release: m1d-client-inbox-v1`, and capability `client-whatsapp-inbox`. The deployed client conversations API returned sanitized `401 UNAUTHORIZED` without a session, preserving its signed-business boundary. Admin and client inbox surfaces are complete; Contacts is now authorized. |
 | 2026-07-18 | Implemented the final Milestone 1D Contacts surface without replacing the Lovable composition. Admin and signed-client lists now use the shared tenant-safe contact API for real search, cursor pagination, lifecycle, tags, consent, and timestamps; admin profile adds real attributes and conversation history. Create, import, export, bulk changes, broadcasts, spend, and non-WhatsApp channels remain visible, clickable, and labeled `Future` with no fake mutation or success. | Authenticated local browser checks against production Supabase rendered the two real `Double A Test Business` contacts in both audiences, filtered each list server-side, opened the real admin profile and conversation history, and showed explanatory Future notices. Desktop `1280x720` and mobile `390x844` had no document overflow; wide tables scroll within their own container. Typecheck, scoped ESLint, `91/91` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-contacts-v1` deployment and both unauthenticated API-boundary probes remain. |
 | 2026-07-18 | Released the final Milestone 1D Contacts surface from exact commit `3a13a82` and accepted the Milestone 1 production gate. | The canonical endpoint returned `200`, release `m1d-contacts-v1`, and capability `contacts`; deployed admin and client Contacts reads each returned sanitized `401 UNAUTHORIZED` without a session. Authenticated local browser journeys used production Supabase because a production UI credential was not available; this is the recorded residual risk. Rollback is code-only by reverting `3a13a82`; no schema changed, existing business/connection data is untouched, and human provider sending remains disabled. Milestone 2A Canonical Guided foundation is now the only authorized work package. |
+| 2026-07-18 | Implemented the Milestone 2A canonical Guided foundation in the exact Flow Manager admin builder and client Automations presentation. Both audiences now use one shared canonical-v2 mapper and workspace for real flow/version selection, ordered stable steps, saved copy/media/options/destinations, preview, recorded validation, and advanced JSON inspection. Canvas and every mutation remain visible, clickable, labeled `Future`, and produce explanations without saving or fake success. | Lossless mapper tests cover draft preference, explicit immutable-version inspection, stable IDs/order, destinations, diagnostics, unsupported schemas, and canonical reload. Authenticated local browser checks against production Supabase loaded the same real `Greeting + Store Info image test v6` draft with 8 steps in admin and client, selected a saved image step by stable ID, rendered its real media, verified deferred Save messaging, and measured a `390x844` client viewport with no document overflow. Typecheck, scoped ESLint, `94/94` main tests, `15/15` reliability tests, the production build, and diff checks pass. Canonical deployment and denied production API-boundary evidence remain in the release gate. |

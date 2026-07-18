@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m1d-contacts-v1";
+export const CONNECT_RELEASE = "m2a-guided-foundation-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "admin-live-operations",
               "client-whatsapp-inbox",
               "contacts",
+              "guided-flow-read",
             ],
           },
           {

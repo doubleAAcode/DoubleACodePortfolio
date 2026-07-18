@@ -304,6 +304,14 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   const clientLayout = readFileSync("src/routes/connect/client.tsx", "utf8");
   const adminLayout = readFileSync("src/routes/connect.admin.tsx", "utf8");
   const automations = readFileSync("src/routes/connect/client/automations.tsx", "utf8");
+  const adminFlowBuilder = readFileSync(
+    "src/routes/connect.admin.businesses.$id.flow-builder.tsx",
+    "utf8",
+  );
+  const guidedWorkspace = readFileSync(
+    "src/features/connect/flow-manager-ui/guided-flow-workspace.tsx",
+    "utf8",
+  );
   const adminBusinesses = readFileSync("src/routes/connect.admin.businesses.index.tsx", "utf8");
   const adminBusinessLayout = readFileSync("src/routes/connect.admin.businesses.$id.tsx", "utf8");
   const adminBusinessSetup = readFileSync(
@@ -333,11 +341,17 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
 
   assert.match(clientLayout, /flow-manager-ui\/components\/client-sidebar/);
   assert.match(adminLayout, /flow-manager-ui\/components\/app-sidebar/);
-  assert.match(automations, /flow-manager-ui\/components\/workflow-canvas/);
-  assert.match(automations, /flow-manager-ui\/preview-data\/mock-client/);
+  assert.match(automations, /GuidedFlowWorkspace/);
   assert.match(automations, /getWaDashboardFlow/);
   assert.match(automations, /features\/connect\/shared\/dashboard-client/);
-  assert.match(automations, /data-flow-manager-live="true"/);
+  assert.doesNotMatch(automations, /preview-data\/mock-client/);
+  assert.doesNotMatch(automations, /workflow-canvas/);
+  assert.match(adminFlowBuilder, /GuidedFlowWorkspace/);
+  assert.match(adminFlowBuilder, /getBusinessFlowDetails/);
+  assert.doesNotMatch(adminFlowBuilder, /preview-data|FlowCanvas|WorkflowCanvas/);
+  assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
+  assert.match(guidedWorkspace, /data-flow-manager-live-action/);
+  assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
   assert.match(adminBusinesses, /getAdminBusinesses/);
   assert.match(adminBusinesses, /toBusinessListItem/);
   assert.doesNotMatch(adminBusinesses, /const filtered = businesses\.filter/);
@@ -347,7 +361,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessSetup, /details\.checklist/);
   assert.match(previewBoundary, /UI preview only\. Data is illustrative/);
   assert.match(previewBoundary, /Business records, search, status filters/);
-  assert.match(previewBoundary, /workflow list uses the authorized business backend/);
+  assert.match(previewBoundary, /workflow list and Guided workspace read the authorized/);
   assert.match(previewBoundary, /data-flow-manager-status=\{status\}/);
   assert.match(featureStatus, /liveFlowManagerRoutes: FlowManagerRouteRule\[\] = \[\]/);
   assert.match(featureStatus, /path: "\/connect\/admin\/businesses", includeChildren: true/);
