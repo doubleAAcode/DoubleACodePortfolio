@@ -208,6 +208,19 @@ export function parseInboxBusinessId(value: string, field = "businessId") {
   return normalized;
 }
 
+export function parseInboxIdempotencyKey(value: unknown) {
+  if (typeof value !== "string") throw invalidRequest("idempotencyKey is required.");
+  const normalized = value.trim();
+  if (
+    normalized.length < 8 ||
+    normalized.length > 200 ||
+    !/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(normalized)
+  ) {
+    throw invalidRequest("idempotencyKey is invalid.");
+  }
+  return normalized;
+}
+
 export function parseInboxSearch(value: string | null) {
   const normalized =
     value

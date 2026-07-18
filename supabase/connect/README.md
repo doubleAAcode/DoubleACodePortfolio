@@ -38,6 +38,13 @@ runtime-linkage hook. It tenant-validates the pinned business flow/version,
 updates the durable conversation pointers atomically, and records idempotent
 `FLOW_STARTED` and human-handoff `FLOW_STOPPED` timeline events.
 
+Run `wa_conversation_lifecycle_rpc.sql` before deploying conversation `PATCH`
+or lifecycle-worker routes. It adds atomic `OPEN`, `PENDING`, `SNOOZED`, and
+`CLOSED` transitions, idempotent audit events, customer-inbound wake behavior,
+and due-snooze claiming. Manual changes are shared by admin and client adapters;
+the due worker requires an internal-admin session or a server-only Connect
+worker bearer.
+
 Run `wa_human_operations_outbox.sql` before deploying the human-reply command
 routes. It adds tenant-scoped outbox and attempt history, atomic idempotency
 claims, and completion state transitions. Free-text replies are claimed only
@@ -51,7 +58,8 @@ before deploying the outbox processor routes. It adds due-retry claiming,
 service-window revalidation, expired-lease quarantine, and audited manual
 reconciliation. An expired `SENDING` lease is treated as an unknown provider
 outcome and is never replayed automatically. The processor may be called by an
-internal administrator or a scheduler bearing `CONNECT_HUMAN_WORKER_SECRET`;
+internal administrator or a scheduler bearing `CONNECT_WORKER_SECRET` (with
+`CONNECT_HUMAN_WORKER_SECRET` retained as a rollout alias);
 the scheduler and provider-send switch remain separate rollout controls.
 
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the

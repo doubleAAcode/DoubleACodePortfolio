@@ -1,4 +1,9 @@
-import { invalidRequest, parseInboxBusinessId, parseInboxUuid } from "./inbox-query.ts";
+import {
+  invalidRequest,
+  parseInboxBusinessId,
+  parseInboxIdempotencyKey,
+  parseInboxUuid,
+} from "./inbox-query.ts";
 
 export type HumanActorKind = "INTERNAL_ADMIN" | "BUSINESS_USER";
 export type HumanReplyStatus =
@@ -64,7 +69,7 @@ export function parseHumanTextReplyRequest(value: unknown) {
   }
   const body = value as Record<string, unknown>;
   return {
-    idempotencyKey: parseIdempotencyKey(body.idempotencyKey),
+    idempotencyKey: parseInboxIdempotencyKey(body.idempotencyKey),
     body: parseReplyBody(body.body),
   };
 }
@@ -80,24 +85,11 @@ export function normalizeHumanTextReplyCommand(command: HumanTextReplyCommand) {
   return {
     conversationId: parseInboxUuid(command.conversationId, "conversationId"),
     businessId: command.businessId ? parseInboxBusinessId(command.businessId) : undefined,
-    idempotencyKey: parseIdempotencyKey(command.idempotencyKey),
+    idempotencyKey: parseInboxIdempotencyKey(command.idempotencyKey),
     body: parseReplyBody(command.body),
     actorKind: command.actorKind,
     actorUsername,
   };
-}
-
-function parseIdempotencyKey(value: unknown) {
-  if (typeof value !== "string") throw invalidRequest("idempotencyKey is required.");
-  const normalized = value.trim();
-  if (
-    normalized.length < 8 ||
-    normalized.length > 200 ||
-    !/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(normalized)
-  ) {
-    throw invalidRequest("idempotencyKey is invalid.");
-  }
-  return normalized;
 }
 
 function parseReplyBody(value: unknown) {

@@ -223,6 +223,7 @@ import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/
 import { Route as ApiConnectAdminHumanOutboxReconciliationRouteImport } from './routes/api.connect.admin.human-outbox.reconciliation'
 import { Route as ApiConnectAdminHumanOutboxProcessRouteImport } from './routes/api.connect.admin.human-outbox.process'
 import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
+import { Route as ApiConnectAdminConversationsProcessLifecycleRouteImport } from './routes/api.connect.admin.conversations.process-lifecycle'
 import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
 import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
 import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
@@ -1396,6 +1397,12 @@ const ApiConnectAdminFlowTemplatesTemplateIdRoute =
     path: '/$templateId',
     getParentRoute: () => ApiConnectAdminFlowTemplatesRoute,
   } as any)
+const ApiConnectAdminConversationsProcessLifecycleRoute =
+  ApiConnectAdminConversationsProcessLifecycleRouteImport.update({
+    id: '/process-lifecycle',
+    path: '/process-lifecycle',
+    getParentRoute: () => ApiConnectAdminConversationsRoute,
+  } as any)
 const ApiConnectAdminConversationsConversationIdRoute =
   ApiConnectAdminConversationsConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -1646,6 +1653,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
+  '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
@@ -1854,6 +1862,7 @@ export interface FileRoutesByTo {
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
+  '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
@@ -2079,6 +2088,7 @@ export interface FileRoutesById {
   '/api/connect/admin/businesses/$businessId': typeof ApiConnectAdminBusinessesBusinessIdRouteWithChildren
   '/api/connect/admin/contacts/$contactId': typeof ApiConnectAdminContactsContactIdRoute
   '/api/connect/admin/conversations/$conversationId': typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
+  '/api/connect/admin/conversations/process-lifecycle': typeof ApiConnectAdminConversationsProcessLifecycleRoute
   '/api/connect/admin/flow-templates/$templateId': typeof ApiConnectAdminFlowTemplatesTemplateIdRoute
   '/api/connect/admin/human-outbox/process': typeof ApiConnectAdminHumanOutboxProcessRoute
   '/api/connect/admin/human-outbox/reconciliation': typeof ApiConnectAdminHumanOutboxReconciliationRoute
@@ -2305,6 +2315,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
+    | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
@@ -2513,6 +2524,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
+    | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
@@ -2737,6 +2749,7 @@ export interface FileRouteTypes {
     | '/api/connect/admin/businesses/$businessId'
     | '/api/connect/admin/contacts/$contactId'
     | '/api/connect/admin/conversations/$conversationId'
+    | '/api/connect/admin/conversations/process-lifecycle'
     | '/api/connect/admin/flow-templates/$templateId'
     | '/api/connect/admin/human-outbox/process'
     | '/api/connect/admin/human-outbox/reconciliation'
@@ -4349,6 +4362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRouteImport
       parentRoute: typeof ApiConnectAdminFlowTemplatesRoute
     }
+    '/api/connect/admin/conversations/process-lifecycle': {
+      id: '/api/connect/admin/conversations/process-lifecycle'
+      path: '/process-lifecycle'
+      fullPath: '/api/connect/admin/conversations/process-lifecycle'
+      preLoaderRoute: typeof ApiConnectAdminConversationsProcessLifecycleRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsRoute
+    }
     '/api/connect/admin/conversations/$conversationId': {
       id: '/api/connect/admin/conversations/$conversationId'
       path: '/$conversationId'
@@ -5035,12 +5055,15 @@ const ApiConnectAdminConversationsConversationIdRouteWithChildren =
 
 interface ApiConnectAdminConversationsRouteChildren {
   ApiConnectAdminConversationsConversationIdRoute: typeof ApiConnectAdminConversationsConversationIdRouteWithChildren
+  ApiConnectAdminConversationsProcessLifecycleRoute: typeof ApiConnectAdminConversationsProcessLifecycleRoute
 }
 
 const ApiConnectAdminConversationsRouteChildren: ApiConnectAdminConversationsRouteChildren =
   {
     ApiConnectAdminConversationsConversationIdRoute:
       ApiConnectAdminConversationsConversationIdRouteWithChildren,
+    ApiConnectAdminConversationsProcessLifecycleRoute:
+      ApiConnectAdminConversationsProcessLifecycleRoute,
   }
 
 const ApiConnectAdminConversationsRouteWithChildren =
