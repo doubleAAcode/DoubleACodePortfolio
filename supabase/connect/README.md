@@ -62,6 +62,27 @@ internal administrator or a scheduler bearing `CONNECT_WORKER_SECRET` (with
 `CONNECT_HUMAN_WORKER_SECRET` retained as a rollout alias);
 the scheduler and provider-send switch remain separate rollout controls.
 
+Run `wa_connect_worker_schedules.sql` after the lifecycle and outbox migrations.
+It installs Supabase Cron and `pg_net`, replaces the two named Connect jobs
+idempotently, wakes due snoozes inside Postgres every minute, and invokes the
+protected production outbox processor every minute. The HTTP job reads the
+`connect_worker_secret` value from Supabase Vault at execution time; no bearer
+is written into the migration or `cron.job`, and the request is a no-op until
+that Vault entry exists. Its value must match Vercel Production
+`CONNECT_WORKER_SECRET`. Run
+`select public.wa_disable_connect_worker_schedules();` as the database rollback;
+setting `CONNECT_HUMAN_SEND_ENABLED=false` remains the independent provider-send
+kill switch.
+
+Run `wa_connect_runtime_controls.sql` before enabling the outbox schedule. It
+adds service-role-only flag and worker-digest storage plus RPCs used by the
+deployed server. The provider-send flag is inserted as disabled and every
+verification failure fails closed. Production activation generates the raw
+worker bearer inside Postgres, writes it only to Vault, and stores only its
+SHA-256 digest in `wa_connect_worker_credentials`; no Vercel account setting is
+required. The legacy environment worker bearer and exact-`true` send switch
+remain supported as emergency rollout aliases.
+
 Do not use `wa_conversation_sessions` as an inbox or `wa_message_events` as the
 durable customer timeline. Their runtime and diagnostic responsibilities remain
 separate.

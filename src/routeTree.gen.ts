@@ -134,6 +134,7 @@ import { Route as ApiWaAdminLogoutRouteImport } from './routes/api.wa-admin.logo
 import { Route as ApiWaAdminLoginRouteImport } from './routes/api.wa-admin.login'
 import { Route as ApiWaAdminFlowTemplatesRouteImport } from './routes/api.wa-admin.flow-templates'
 import { Route as ApiWaAdminBusinessesRouteImport } from './routes/api.wa-admin.businesses'
+import { Route as ApiConnectReleaseRouteImport } from './routes/api.connect.release'
 import { Route as AdminFlowTemplatesNewRouteImport } from './routes/admin.flow-templates.new'
 import { Route as AdminFlowTemplatesTemplateIdRouteImport } from './routes/admin.flow-templates.$templateId'
 import { Route as AdminBusinessesNewRouteImport } from './routes/admin.businesses.new'
@@ -888,6 +889,11 @@ const ApiWaAdminBusinessesRoute = ApiWaAdminBusinessesRouteImport.update({
   path: '/api/wa-admin/businesses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConnectReleaseRoute = ApiConnectReleaseRouteImport.update({
+  id: '/api/connect/release',
+  path: '/api/connect/release',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFlowTemplatesNewRoute = AdminFlowTemplatesNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -1576,6 +1582,7 @@ export interface FileRoutesByFullPath {
   '/admin/businesses/new': typeof AdminBusinessesNewRoute
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
+  '/api/connect/release': typeof ApiConnectReleaseRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -1801,6 +1808,7 @@ export interface FileRoutesByTo {
   '/admin/businesses/new': typeof AdminBusinessesNewRoute
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
+  '/api/connect/release': typeof ApiConnectReleaseRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2031,6 +2039,7 @@ export interface FileRoutesById {
   '/admin/businesses/new': typeof AdminBusinessesNewRoute
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
+  '/api/connect/release': typeof ApiConnectReleaseRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2268,6 +2277,7 @@ export interface FileRouteTypes {
     | '/admin/businesses/new'
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
+    | '/api/connect/release'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2493,6 +2503,7 @@ export interface FileRouteTypes {
     | '/admin/businesses/new'
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
+    | '/api/connect/release'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2722,6 +2733,7 @@ export interface FileRouteTypes {
     | '/admin/businesses/new'
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
+    | '/api/connect/release'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2926,6 +2938,7 @@ export interface RootRouteChildren {
   WorkSnapgoRoute: typeof WorkSnapgoRoute
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
+  ApiConnectReleaseRoute: typeof ApiConnectReleaseRoute
   ApiWaAdminBusinessesRoute: typeof ApiWaAdminBusinessesRouteWithChildren
   ApiWaAdminFlowTemplatesRoute: typeof ApiWaAdminFlowTemplatesRouteWithChildren
   ApiWaAdminLoginRoute: typeof ApiWaAdminLoginRoute
@@ -3871,6 +3884,13 @@ declare module '@tanstack/react-router' {
       path: '/api/wa-admin/businesses'
       fullPath: '/api/wa-admin/businesses'
       preLoaderRoute: typeof ApiWaAdminBusinessesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/release': {
+      id: '/api/connect/release'
+      path: '/api/connect/release'
+      fullPath: '/api/connect/release'
+      preLoaderRoute: typeof ApiConnectReleaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/flow-templates/new': {
@@ -5429,6 +5449,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkSnapgoRoute: WorkSnapgoRoute,
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
+  ApiConnectReleaseRoute: ApiConnectReleaseRoute,
   ApiWaAdminBusinessesRoute: ApiWaAdminBusinessesRouteWithChildren,
   ApiWaAdminFlowTemplatesRoute: ApiWaAdminFlowTemplatesRouteWithChildren,
   ApiWaAdminLoginRoute: ApiWaAdminLoginRoute,

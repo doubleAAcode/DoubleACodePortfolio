@@ -2,15 +2,24 @@ import "@tanstack/react-start/server-only";
 
 import { timingSafeEqual } from "node:crypto";
 
-export function isConnectWorkerAuthorized(request: Request) {
-  const secret =
-    process.env.CONNECT_WORKER_SECRET ||
-    process.env.CONNECT_HUMAN_WORKER_SECRET ||
-    process.env.CRON_SECRET ||
-    "";
+import { isDatabaseWorkerBearerAuthorized } from "./connect-runtime-controls.server.ts";
+
+export async function isConnectWorkerAuthorized(
+  request: Request,
+  verifyDatabaseBearer = isDatabaseWorkerBearerAuthorized,
+) {
   const authorization = request.headers.get("authorization") ?? "";
-  if (!secret || !authorization.startsWith("Bearer ")) return false;
-  return timingSafeStringEqual(authorization.slice("Bearer ".length), secret);
+  if (!authorization.startsWith("Bearer ")) return false;
+
+  const bearer = authorization.slice("Bearer ".length);
+  const environmentSecrets = [
+    process.env.CONNECT_WORKER_SECRET,
+    process.env.CONNECT_HUMAN_WORKER_SECRET,
+    process.env.CRON_SECRET,
+  ].filter((secret): secret is string => Boolean(secret));
+
+  if (environmentSecrets.some((secret) => timingSafeStringEqual(bearer, secret))) return true;
+  return verifyDatabaseBearer(bearer);
 }
 
 function timingSafeStringEqual(leftValue: string, rightValue: string) {

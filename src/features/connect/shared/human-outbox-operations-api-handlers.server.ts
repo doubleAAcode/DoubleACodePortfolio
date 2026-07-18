@@ -23,7 +23,10 @@ export function createHumanOutboxProcessorHandlers(
 ) {
   return {
     POST: async ({ request }: { request: Request }) => {
-      if (!getInternalAdminSessionFromRequest(request) && !isConnectWorkerAuthorized(request)) {
+      if (
+        !getInternalAdminSessionFromRequest(request) &&
+        !(await isConnectWorkerAuthorized(request))
+      ) {
         return unauthorized();
       }
       try {

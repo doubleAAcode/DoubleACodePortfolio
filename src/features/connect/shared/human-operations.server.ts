@@ -2,6 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { supabaseServerRest } from "../../../lib/supabase/server-rest.server.ts";
 
+import { isDatabaseHumanSendEnabled } from "./connect-runtime-controls.server.ts";
 import { getWhatsAppServerConfig, type WhatsAppServerConfig } from "./config.server.ts";
 import {
   HumanOperationsError,
@@ -99,7 +100,7 @@ export type HumanSendExecutionDependencies = {
 
 export type HumanOperationsDependencies = {
   dataSource?: HumanOperationsDataSource;
-  isSendEnabled?: () => boolean;
+  isSendEnabled?: () => boolean | Promise<boolean>;
   resolveConnection?: (connectionId: string, businessId: string) => Promise<HumanSendConnection>;
   sendText?: HumanTextSender;
 };
@@ -115,7 +116,7 @@ export function createHumanOperationsService(
   return {
     async sendTextReply(command: HumanTextReplyCommand): Promise<HumanTextReplyResult> {
       const input = normalizeHumanTextReplyCommand(command);
-      if (!isSendEnabled()) {
+      if (!(await isSendEnabled())) {
         throw new HumanOperationsError(
           "HUMAN_SEND_DISABLED",
           "Human WhatsApp sending is disabled for this release.",
@@ -190,8 +191,9 @@ export function createHumanOperationsService(
   };
 }
 
-export function isHumanSendEnabled() {
-  return process.env.CONNECT_HUMAN_SEND_ENABLED?.trim().toLowerCase() === "true";
+export async function isHumanSendEnabled() {
+  if (process.env.CONNECT_HUMAN_SEND_ENABLED?.trim().toLowerCase() === "true") return true;
+  return isDatabaseHumanSendEnabled();
 }
 
 export function createHumanOperationsDataSource(): HumanOperationsDataSource {

@@ -27,6 +27,7 @@ const reliability = read("src/features/connect/shared/reliability.ts");
 const sessionStore = read("src/features/connect/shared/conversation-store.server.ts");
 const conversationEngine = read("src/features/connect/shared/conversation-engine.server.ts");
 const webhookHandler = read("src/features/connect/shared/webhook-handler.server.ts");
+const workerSchedulesSql = read("supabase/connect/wa_connect_worker_schedules.sql");
 
 test("order creation RPC locks stock rows before inserting reservations", () => {
   assert.match(hardeningSql, /create or replace function public\.wa_create_pending_order/);
@@ -246,6 +247,19 @@ test("image replies pause before follow-up messages to keep deterministic WhatsA
   assert.match(webhookHandler, /shouldPauseAfterWhatsAppResponse\(response, nextResponse\)/);
   assert.match(webhookHandler, /response\.type === "image" && Boolean\(nextResponse\)/);
   assert.match(webhookHandler, /webhook\.timing\.media_ordering_pause/);
+});
+
+test("Connect workers use minute schedules without persisting the worker bearer", () => {
+  assert.match(workerSchedulesSql, /create extension if not exists pg_cron/);
+  assert.match(workerSchedulesSql, /create extension if not exists pg_net/);
+  assert.match(workerSchedulesSql, /connect-lifecycle-minute/);
+  assert.match(workerSchedulesSql, /wa_wake_due_snoozed_conversations\(50\)/);
+  assert.match(workerSchedulesSql, /connect-human-outbox-minute/);
+  assert.match(workerSchedulesSql, /vault\.decrypted_secrets/);
+  assert.match(workerSchedulesSql, /secret\.name = 'connect_worker_secret'/);
+  assert.match(workerSchedulesSql, /https:\/\/www\.doubleacode\.com\/api\/connect\/admin\/human-outbox\/process/);
+  assert.match(workerSchedulesSql, /'Authorization', 'Bearer ' \|\| secret\.decrypted_secret/);
+  assert.doesNotMatch(workerSchedulesSql, /CONNECT_WORKER_SECRET\s*=/);
 });
 
 function read(path) {

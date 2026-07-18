@@ -72,7 +72,7 @@ export type HumanOutboxOperationsDataSource = {
 export type HumanOutboxProcessorDependencies = HumanSendExecutionDependencies & {
   operationsDataSource?: HumanOutboxOperationsDataSource;
   completionDataSource?: HumanOperationsDataSource;
-  isSendEnabled?: () => boolean;
+  isSendEnabled?: () => boolean | Promise<boolean>;
 };
 
 export function createHumanOutboxProcessor(
@@ -88,7 +88,7 @@ export function createHumanOutboxProcessor(
     async processDueReplies(input = {}) {
       const limit = parseHumanOperationLimit(input.limit, 10);
       const quarantined = await operationsDataSource.quarantineExpired({ limit });
-      const summary = emptySummary(sendEnabled(), quarantined.length);
+      const summary = emptySummary(await sendEnabled(), quarantined.length);
       if (!summary.sendEnabled) return summary;
 
       const candidates = await operationsDataSource.claimDueRetries({
