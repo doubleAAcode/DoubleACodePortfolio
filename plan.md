@@ -756,8 +756,8 @@ Definition of done for every milestone:
 | Order | Milestone                              | Status            | Depends on                          | Promotion evidence                                                                      |
 | ----- | -------------------------------------- | ----------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
 | 0     | Integrated Foundation                  | Complete baseline | None                                | Exact UI mounted, core schema live, first adapters verified.                            |
-| 1     | WhatsApp Operations                    | **Active**        | Milestone 0                         | Real inbound-to-inbox-to-human-reply-to-status journey and tenant denial.               |
-| 2     | Guided Flow Builder and Runtime        | Queued            | Milestone 1 timeline and operations | A flow built and repaired entirely in Guided executes a real pinned version with trace. |
+| 1     | WhatsApp Operations                    | Complete          | Milestone 0                         | Real inbound-to-inbox-to-human-reply-to-status journey and tenant denial.               |
+| 2     | Guided Flow Builder and Runtime        | **Active**        | Milestone 1 timeline and operations | A flow built and repaired entirely in Guided executes a real pinned version with trace. |
 | 3     | Commerce and Order Operations          | Queued            | Milestone 2 protected runtime       | Real catalog-to-idempotent-order-to-owner lifecycle in new UI.                          |
 | 4     | Workspace, Onboarding, and Permissions | Queued            | Stable domain/API boundaries        | New business connects WhatsApp, invites roles, and passes tenancy checks.               |
 | 5     | Media and Voice Notes                  | Queued            | Messaging outbox and flow runtime   | Prerecorded outbound audio and inbound transcription complete real flows.               |
@@ -797,7 +797,7 @@ admin/client read adapters are verified.
 
 ### Milestone 1 - WhatsApp Operations
 
-Status: **Active - all unrelated feature work is paused**
+Status: **Complete - production release `m1d-contacts-v1` accepted**
 
 Product outcome: a real WhatsApp customer message creates or updates the
 contact and conversation, appears in both authorized inboxes, can be handled by
@@ -812,12 +812,12 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: connect the exact Lovable admin and client
-Contacts surfaces to the shared tenant-safe contact domain. Admin Live
-Operations and client Inbox are released; their canonical markers and deployed
-authentication boundaries are verified. Do not promote another page family
-until Contacts passes its local and production release ladder. Provider sending
-remains off after the controlled 1C proof.
+Current authorized next action: Milestone 1 is accepted. Begin only Milestone
+2A, the canonical Guided foundation: map the exact Lovable Guided controls to
+the canonical v2 flow document, load the same real draft/version data for admin
+and client through authorized adapters, and keep Canvas clickable and labeled
+`Future`. Do not begin Guided mutations until the shared mapping, authorization,
+and preservation tests pass. Provider sending remains off.
 
 Milestone 1 platform controls:
 
@@ -928,10 +928,11 @@ Milestone 1 platform controls:
       are connected. Other channels and AI Copilot remain visible, clickable,
       and labeled `Future`. Canonical release and signed-client boundary
       verification are complete.
-- [~] Connect admin and client Contacts pages to the same contact domain. Real
+- [x] Connect admin and client Contacts pages to the same contact domain. Real
       list/search/pagination, lifecycle, tags, consent, and error states are
       connected for both audiences; admin profile, attributes, and conversation
-      history are connected. Canonical deployment verification remains.
+      history are connected. Canonical release and both authentication-boundary
+      probes are complete.
 - [x] Remove every mock conversation/contact import from those promoted routes.
       Admin Live Operations, client Inbox, both Contacts lists, and the admin
       contact detail no longer import mock records. Client workspace identity
@@ -949,13 +950,22 @@ an authorized human replies; sent/delivered/read or failed status appears in the
 timeline; assignment, note, tag, and close/reopen actions survive reload; another
 tenant cannot read or mutate the conversation.
 
-Current implementation sequence: **1A messaging store and webhook dual-write,
-1B APIs, and 1C mutations are complete. 1D UI is active. Do not integrate
-another page family until the Milestone 1 gate passes.**
+Current implementation sequence: **Milestone 1A through 1D are complete and the
+production gate is accepted. Milestone 2A canonical Guided foundation is the
+only active work package.**
 
 ### Milestone 2 - Guided Flow Builder and Runtime
 
-Status: **Queued after Milestone 1**
+Status: **Active - work package 2A only**
+
+Milestone 2 work-package contract:
+
+| Work package                   | Deliverables                                                                                                  | Required exit evidence                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 2A Canonical Guided foundation | Shared admin/client adapters, canonical v2 step mapping, real draft/version hydration, Canvas Future boundary | No preview records; lossless load/map/reload tests; tenant denial; exact Guided desktop/mobile browser evidence. |
+| 2B Safe draft editing          | Step CRUD/reorder/toggle, destinations, validation/problem navigation, undo/redo, dirty/conflict/retry states | Rejected saves retain work; broken references require repair; authorized reload preserves exact stable step IDs. |
+| 2C Publish and history         | Immutable publish, version inspection/restore, media/template availability checks, pinned-version guarantees | Published snapshot cannot be mutated; restore creates a safe draft; running sessions remain pinned.             |
+| 2D Simulation and runtime      | From-step simulation, sample branching, execution trace, stop/restart, inbox timeline/runtime diagnostics     | Guided-built flow passes simulation and one real inbound executes the pinned version with complete trace.        |
 
 - [ ] Make the WhatsApp-specific Lovable Guided experience the single canonical
       editor for both admin and client users. Permissions may differ, but the
@@ -1179,3 +1189,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Implemented the second Milestone 1D surface by connecting the exact Lovable client Inbox to the signed-business APIs and shared 1C controls. WhatsApp is the only real channel; Instagram, Messenger, Webchat, Email, templates, media, and AI Copilot remain visible, clickable, and labeled `Future`. Removed Lovable conversation/workspace samples from the promoted route, workspace switcher, sidebar identity, AI panel, and shared command palette; the palette now reads real tenant-scoped conversations. | Authenticated local client browser verification against production Supabase rendered `Double A Test Business`, the real conversation and durable timeline, and the delivered human reply. A client reply while sending was disabled showed `HUMAN_SEND_DISABLED`; Future channel and AI controls showed explanatory notices with no fake mutation. Desktop `1280x720` and mobile list/detail `390x844` have no document overflow and keep the composer reachable. Typecheck, scoped ESLint, `89/89` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-client-inbox-v1` deployment and signed-client boundary probes remain. |
 | 2026-07-18 | Released the second Milestone 1D surface from exact commit `5b3eb6a` without requiring Vercel dashboard access. | The canonical release endpoint returned `200`, `X-Connect-Release: m1d-client-inbox-v1`, and capability `client-whatsapp-inbox`. The deployed client conversations API returned sanitized `401 UNAUTHORIZED` without a session, preserving its signed-business boundary. Admin and client inbox surfaces are complete; Contacts is now authorized. |
 | 2026-07-18 | Implemented the final Milestone 1D Contacts surface without replacing the Lovable composition. Admin and signed-client lists now use the shared tenant-safe contact API for real search, cursor pagination, lifecycle, tags, consent, and timestamps; admin profile adds real attributes and conversation history. Create, import, export, bulk changes, broadcasts, spend, and non-WhatsApp channels remain visible, clickable, and labeled `Future` with no fake mutation or success. | Authenticated local browser checks against production Supabase rendered the two real `Double A Test Business` contacts in both audiences, filtered each list server-side, opened the real admin profile and conversation history, and showed explanatory Future notices. Desktop `1280x720` and mobile `390x844` had no document overflow; wide tables scroll within their own container. Typecheck, scoped ESLint, `91/91` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-contacts-v1` deployment and both unauthenticated API-boundary probes remain. |
+| 2026-07-18 | Released the final Milestone 1D Contacts surface from exact commit `3a13a82` and accepted the Milestone 1 production gate. | The canonical endpoint returned `200`, release `m1d-contacts-v1`, and capability `contacts`; deployed admin and client Contacts reads each returned sanitized `401 UNAUTHORIZED` without a session. Authenticated local browser journeys used production Supabase because a production UI credential was not available; this is the recorded residual risk. Rollback is code-only by reverting `3a13a82`; no schema changed, existing business/connection data is untouched, and human provider sending remains disabled. Milestone 2A Canonical Guided foundation is now the only authorized work package. |
