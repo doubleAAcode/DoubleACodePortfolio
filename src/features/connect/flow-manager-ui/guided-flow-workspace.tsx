@@ -342,6 +342,9 @@ export function GuidedFlowWorkspace({
           <TabsTrigger data-flow-manager-live="true" value="guided">
             Guided editor
           </TabsTrigger>
+          <TabsTrigger data-flow-manager-live="true" value="selected">
+            Selected step
+          </TabsTrigger>
           <TabsTrigger data-flow-manager-live="true" value="preview">
             Preview
           </TabsTrigger>
@@ -380,6 +383,26 @@ export function GuidedFlowWorkspace({
               commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
             }
             onFuture={explainFuture}
+            onEdit={(nodeId) => {
+              setSelectedStepId(nodeId);
+              setActiveTab("selected");
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="selected" className="mt-4">
+          <GuidedFlowEditor
+            view="selected"
+            model={model}
+            selectedId={selectedStep?.id}
+            editable={editable}
+            onSelect={setSelectedStepId}
+            onUpdateNode={(nodeId, update) =>
+              commitDocument((document) => updateGuidedNode(document, nodeId, update))
+            }
+            onUpdateOption={(nodeId, optionKey, update) =>
+              commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
+            }
+            onFuture={explainFuture}
           />
         </TabsContent>
         <TabsContent value="preview" className="mt-4">
@@ -393,7 +416,7 @@ export function GuidedFlowWorkspace({
             steps={model.steps}
             onFocus={(nodeId) => {
               setSelectedStepId(nodeId);
-              setActiveTab("guided");
+              setActiveTab("selected");
             }}
           />
         </TabsContent>

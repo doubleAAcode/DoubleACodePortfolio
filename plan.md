@@ -960,11 +960,14 @@ Status: **Active - work package 2B only**
 Work-package 2A status: **Complete - production release
 `m2a-guided-foundation-v1` accepted.**
 
-Work-package 2B status: **In progress - the route-aware vertical master-detail
-Guided editor, safe field-level draft editing, live validation, undo/redo,
-dirty-state protection, and authorized admin/client saves are implemented. Step
-create/duplicate/reorder/delete, referenced-route repair, server conflict
-handling, and media replacement remain before the 2B gate can close.**
+Work-package 2B status: **In progress - the deterministic visual-tree Guided
+editor, dedicated Selected step tab, safe field-level draft editing, explicit
+destinations, live validation, undo/redo, dirty-state protection, and authorized
+admin/client saves are implemented. The map exposes at most three WhatsApp
+reply branches per step and visibly flags legacy overflow, loops, missing
+destinations, and unconnected saved steps. Step create/duplicate/reorder/delete,
+referenced-route repair, server conflict handling, and media replacement remain
+before the 2B gate can close.**
 
 Milestone 2 work-package contract:
 
@@ -1142,6 +1145,7 @@ the active roadmap:
 | 2026-07-17 | Meta app review is pending; production currently has one manually configured live WhatsApp connection.                                             | Active milestones must preserve and test against that connection. Embedded Signup and self-service WhatsApp onboarding stay Future until Meta approval and approved credentials are verified.                                |
 | 2026-07-18 | Supabase Cron and service-role-only runtime controls own minute worker scheduling and rollout activation; Vercel dashboard access is not required. | Supabase supports one-minute jobs beside the durable state. Vault retains the raw worker bearer, the database stores only its digest, and the public release endpoint proves automatic deployment from the canonical origin. |
 | 2026-07-18 | Guided uses a vertical master-detail editor instead of the Lovable horizontal step-card strip. | The connected real flow exposed the strip's poor scanability and editing context. The user explicitly authorized this route-level departure so steps remain vertically navigable while the selected step's copy, choices, destinations, behavior, and problems stay together. The shared Flow Manager shell and visual language remain canonical. |
+| 2026-07-18 | Guided uses a deterministic visual conversation tree with a dedicated Selected step tab and no more than three reply branches per step. | The user selected the centered start, reply-path, and child-card layout for at-a-glance routing, plus tab-based editing for a clean workspace. It derives from canonical data and is not the freeform Canvas. |
 
 ## Roadmap Changelog
 
@@ -1205,3 +1209,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released the first Milestone 2B slice from exact commit `da3fe43`. | The canonical origin redirected to `www` as expected, then returned `200`, `X-Connect-Release: m2b-guided-editor-v1`, and capabilities `guided-flow-read` plus `guided-draft-edit`. Deployed admin and signed-client flow endpoints each returned sanitized `401` without a session. Rollback is code-only by reverting `da3fe43`; no schema changed, the real draft was restored exactly after the save proof, and published flow/runtime records were not mutated. Mobile browser acceptance, server conflict handling, and referenced-step repair remain residual 2B work; publishing and Canvas remain gated. |
 | 2026-07-18 | Made the Guided editor route-aware after production usability feedback showed that numbered steps and a name-only summary did not explain conversation order or branching. The left conversation path now exposes every saved choice or automatic continuation as `source label -> numbered target`; valid targets open directly. The selected-step panel now states `When ... Then Step ...`, and moves before edit fields on narrow screens. | The view derives exclusively from the existing canonical options and edges, so no second flow format or data migration was introduced. Architecture assertions cover route labels, destination language, terminal steps, and the absence of the old horizontal strip. Typecheck, scoped ESLint, `96/96` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Release marker `m2b-guided-routing-v1` and authenticated production visual acceptance remain pending. |
 | 2026-07-18 | Released the route-aware Guided navigation from exact commit `fe7efdd`. | The canonical origin redirected to `www` as expected, then returned `200` with `X-Connect-Release: m2b-guided-routing-v1`; deployed admin and signed-client flow endpoints each remained sanitized `401` without a session. Rollback is code-only by reverting `fe7efdd`; no schema, flow document, draft, or published runtime data changed. Authenticated production visual acceptance remains open, while step deletion repair and server conflict handling remain the next authorized 2B backend work. |
+| 2026-07-18 | Replaced Guided's primary route-list workspace with the approved deterministic visual conversation tree. Start, reply paths, child steps, continuations, returns, invalid overflow, and unconnected saved steps are visible; Edit selects the card and opens the real controls in the Selected step tab. The tree exposes no more than three WhatsApp reply branches, while unsafe create/delete/reorder/media/publish mutations and Canvas remain gated. | This remains a presentation over canonical v2 and the existing authorized save adapters; no schema, draft, published flow, or runtime changed. Architecture checks cover the tree, limit-three contract, tab transition, route problems, internal horizontal containment, and absence of XYFlow/Canvas imports. Publish validation still rejects a fourth active WhatsApp button. Typecheck, scoped ESLint, `96/96` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Deployment marker `m2b-guided-tree-v1`, boundary probes, and authenticated production visual acceptance remain release gates. |

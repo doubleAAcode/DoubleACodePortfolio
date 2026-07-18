@@ -7,6 +7,8 @@ import {
   Image as ImageIcon,
   ListTree,
   MessageSquare,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Square,
@@ -39,6 +41,8 @@ import type { CanonicalFlowNode } from "@/features/connect/shared/flow-document"
 import type { FlowNodeOption } from "@/features/connect/shared/flow-template-types";
 import { cn } from "@/lib/utils";
 
+export const WHATSAPP_REPLY_OPTION_LIMIT = 3;
+
 export function GuidedFlowEditor({
   model,
   selectedId,
@@ -47,6 +51,8 @@ export function GuidedFlowEditor({
   onUpdateNode,
   onUpdateOption,
   onFuture,
+  view = "tree",
+  onEdit,
 }: {
   model: GuidedFlowModel;
   selectedId?: string;
@@ -59,6 +65,8 @@ export function GuidedFlowEditor({
     update: (option: FlowNodeOption) => FlowNodeOption,
   ) => void;
   onFuture: (feature: string, description: string) => void;
+  view?: "tree" | "selected";
+  onEdit?: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const selected = model.steps.find((step) => step.id === selectedId) ?? model.steps[0];
@@ -91,6 +99,20 @@ export function GuidedFlowEditor({
       "Choose the Draft version to edit. Published versions remain immutable.",
     );
   };
+
+  if (view === "tree") {
+    return (
+      <StructuredFlowTree
+        model={model}
+        selectedId={selected.id}
+        onEdit={(id) => {
+          onSelect(id);
+          onEdit?.(id);
+        }}
+        onFuture={onFuture}
+      />
+    );
+  }
 
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border bg-background lg:grid lg:grid-cols-[288px_minmax(0,1fr)]">
@@ -167,7 +189,7 @@ export function GuidedFlowEditor({
         </div>
       </aside>
 
-      <section className="min-w-0">
+      <section className="min-w-0 overflow-y-auto">
         <div className="border-b bg-background px-4 py-3 sm:px-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -357,12 +379,19 @@ export function GuidedFlowEditor({
                     data-flow-manager-live-action
                     size="sm"
                     variant="outline"
-                    onClick={() =>
+                    onClick={() => {
+                      if ((node.options?.length ?? 0) >= WHATSAPP_REPLY_OPTION_LIMIT) {
+                        onFuture(
+                          "Three-option WhatsApp limit",
+                          "A WhatsApp reply-button step can have at most three options. Edit one of the existing choices instead.",
+                        );
+                        return;
+                      }
                       onFuture(
                         "Add choice",
-                        "New choices ship with duplicate-key validation and destination repair.",
-                      )
-                    }
+                        "New choices ship with duplicate-key validation and destination repair. This builder will allow no more than three WhatsApp reply options.",
+                      );
+                    }}
                   >
                     <Plus className="size-4" /> Add choice <FutureLabel />
                   </Button>
@@ -616,6 +645,448 @@ export function GuidedFlowEditor({
       </section>
     </div>
   );
+}
+
+type GuidedTreeRoute = {
+  id: string;
+  kind: "option" | "automatic";
+  label: string;
+  targetId: string | null;
+  targetTitle: string;
+  missing: boolean;
+  inactive: boolean;
+};
+
+function StructuredFlowTree({
+  model,
+  selectedId,
+  onEdit,
+  onFuture,
+}: {
+  model: GuidedFlowModel;
+  selectedId: string;
+  onEdit: (id: string) => void;
+  onFuture: (feature: string, description: string) => void;
+}) {
+  const start = model.steps.find((step) => step.isStart) ?? model.steps[0];
+  const reachableIds = useMemo(
+    () => collectReachableStepIds(model.steps, start?.id),
+    [model.steps, start],
+  );
+  const unconnectedSteps = model.steps.filter((step) => !reachableIds.has(step.id));
+  const overflowSteps = model.steps.filter(
+    (step) => step.options.length > WHATSAPP_REPLY_OPTION_LIMIT,
+  );
+
+  if (!start) return null;
+
+  const addReplyOption = () => {
+    if (start.options.length >= WHATSAPP_REPLY_OPTION_LIMIT) {
+      onFuture(
+        "Three-option WhatsApp limit",
+        "A WhatsApp reply-button step can have at most three options. Edit one of the existing choices instead.",
+      );
+      return;
+    }
+    onFuture(
+      "Add reply option",
+      "Choice creation will ship with stable option keys and destination repair. This builder will never allow more than three WhatsApp reply options.",
+    );
+  };
+
+  return (
+    <div className="min-w-0 overflow-hidden rounded-lg border bg-background">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5">
+        <div>
+          <h2 className="text-sm font-semibold">Conversation map</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Follow each reply from the start. Select Edit to change a step.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="rounded-md border bg-muted/40 px-2 py-1">
+            {model.steps.length} saved steps
+          </span>
+          <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-sky-800">
+            Max 3 WhatsApp replies
+          </span>
+        </div>
+      </div>
+
+      {overflowSteps.length ? (
+        <div className="border-b border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive sm:px-5">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div>
+              <div className="font-semibold">Saved flow exceeds the WhatsApp reply limit</div>
+              <div className="mt-1 text-xs">
+                {overflowSteps.map((step) => `${step.title} (${step.options.length})`).join(", ")}.
+                Open each step and leave no more than three active choices before publishing.
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="overflow-x-auto bg-muted/10">
+        <div className="min-w-[920px] px-8 py-7">
+          <FlowTreeNode
+            step={start}
+            steps={model.steps}
+            selectedId={selectedId}
+            path={[]}
+            depth={0}
+            onEdit={onEdit}
+            onFuture={onFuture}
+          />
+
+          <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-3">
+            <Button
+              data-flow-manager-live-action
+              size="sm"
+              variant="outline"
+              className="border-dashed"
+              onClick={addReplyOption}
+            >
+              <Plus className="size-4" /> Add reply option
+              {start.options.length >= WHATSAPP_REPLY_OPTION_LIMIT ? (
+                <span className="rounded-sm bg-muted px-1 py-0.5 text-[9px] uppercase">
+                  Limit 3
+                </span>
+              ) : (
+                <FutureLabel />
+              )}
+            </Button>
+            <Button
+              data-flow-manager-live-action
+              size="sm"
+              variant="outline"
+              className="border-dashed"
+              onClick={() =>
+                onFuture(
+                  "Add starting path",
+                  "Additional entry paths require trigger priority and fallback rules before they can save safely.",
+                )
+              }
+            >
+              <Plus className="size-4" /> Add starting path <FutureLabel />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {unconnectedSteps.length ? (
+        <div className="border-t px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <AlertTriangle className="size-4 text-amber-600" /> Unconnected saved steps
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            These steps are saved but no route from the start reaches them. They stay visible for
+            repair.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {unconnectedSteps.map((step) => (
+              <button
+                data-flow-manager-live-action
+                key={step.id}
+                type="button"
+                onClick={() => onEdit(step.id)}
+                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition hover:border-primary/40 hover:bg-muted/30"
+              >
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <StepIcon kind={step.kind} />
+                    <span className="truncate">{step.title}</span>
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    Step {stepNumber(model.steps, step.id)} - {step.kind}
+                  </span>
+                </span>
+                <Pencil className="size-3.5 shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FlowTreeNode({
+  step,
+  steps,
+  selectedId,
+  path,
+  depth,
+  onEdit,
+  onFuture,
+}: {
+  step: GuidedFlowStep;
+  steps: GuidedFlowStep[];
+  selectedId: string;
+  path: string[];
+  depth: number;
+  onEdit: (id: string) => void;
+  onFuture: (feature: string, description: string) => void;
+}) {
+  const routes = routesForStep(step);
+  const optionRoutes = routes.filter((route) => route.kind === "option");
+  const automaticRoutes = routes.filter((route) => route.kind === "automatic");
+  const visibleRoutes = [...optionRoutes.slice(0, WHATSAPP_REPLY_OPTION_LIMIT), ...automaticRoutes];
+  const currentPath = [...path, step.id];
+
+  return (
+    <div className="flex min-w-fit flex-col items-center">
+      <FlowStepCard
+        step={step}
+        stepNumber={stepNumber(steps, step.id) ?? 1}
+        selected={step.id === selectedId}
+        onEdit={onEdit}
+        onFuture={onFuture}
+      />
+
+      {optionRoutes.length > WHATSAPP_REPLY_OPTION_LIMIT ? (
+        <button
+          data-flow-manager-live-action
+          type="button"
+          onClick={() => onEdit(step.id)}
+          className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-[10px] font-semibold text-destructive"
+        >
+          {optionRoutes.length - WHATSAPP_REPLY_OPTION_LIMIT} extra saved option(s) - Edit to repair
+        </button>
+      ) : null}
+
+      {visibleRoutes.length ? (
+        <>
+          <div className="h-7 w-px bg-border" />
+          <div
+            className={cn(
+              "grid min-w-fit gap-6",
+              visibleRoutes.length > 1 && "border-t border-border",
+            )}
+            style={{
+              gridTemplateColumns: `repeat(${visibleRoutes.length}, minmax(252px, 1fr))`,
+            }}
+          >
+            {visibleRoutes.map((route, index) => {
+              const target = route.targetId
+                ? steps.find((candidate) => candidate.id === route.targetId)
+                : undefined;
+              const isReturn = Boolean(route.targetId && currentPath.includes(route.targetId));
+              const targetIndex = stepNumber(steps, route.targetId);
+              const branchLabel = route.kind === "option" ? String.fromCharCode(65 + index) : null;
+
+              return (
+                <div key={route.id} className="flex min-w-0 flex-col items-center">
+                  <div className="h-5 w-px bg-border" />
+                  <button
+                    data-flow-manager-live-action
+                    type="button"
+                    onClick={() => route.targetId && target && onEdit(route.targetId)}
+                    className={cn(
+                      "flex h-11 w-full items-center gap-2 rounded-full border bg-background px-3 text-left shadow-sm transition",
+                      target && "hover:border-primary/40 hover:bg-muted/20",
+                      route.missing && "border-destructive/40 bg-destructive/5",
+                      route.inactive && "opacity-60",
+                    )}
+                  >
+                    {branchLabel ? (
+                      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-sky-50 text-[10px] font-semibold text-sky-700">
+                        {branchLabel}
+                      </span>
+                    ) : (
+                      <ArrowDown className="size-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-semibold">{route.label}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">
+                        {route.inactive ? "Inactive - " : ""}
+                        {route.targetTitle}
+                      </span>
+                    </span>
+                  </button>
+                  <div className="h-5 w-px bg-border" />
+
+                  {route.missing || !target ? (
+                    <FlowTerminalLabel tone="error">Missing destination</FlowTerminalLabel>
+                  ) : isReturn ? (
+                    <button
+                      data-flow-manager-live-action
+                      type="button"
+                      onClick={() => onEdit(target.id)}
+                      className="rounded-full border bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase text-muted-foreground"
+                    >
+                      Returns to Step {targetIndex} - {target.title}
+                    </button>
+                  ) : depth >= 2 ? (
+                    <button
+                      data-flow-manager-live-action
+                      type="button"
+                      onClick={() => onEdit(target.id)}
+                      className="rounded-full border bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase text-muted-foreground"
+                    >
+                      Continues to Step {targetIndex} - {target.title}
+                    </button>
+                  ) : (
+                    <FlowTreeNode
+                      step={target}
+                      steps={steps}
+                      selectedId={selectedId}
+                      path={currentPath}
+                      depth={depth + 1}
+                      onEdit={onEdit}
+                      onFuture={onFuture}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="h-5 w-px bg-border" />
+          <FlowTerminalLabel>
+            {step.kind === "End" ? "End of chat" : "Conversation stops"}
+          </FlowTerminalLabel>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FlowStepCard({
+  step,
+  stepNumber,
+  selected,
+  onEdit,
+  onFuture,
+}: {
+  step: GuidedFlowStep;
+  stepNumber: number;
+  selected: boolean;
+  onEdit: (id: string) => void;
+  onFuture: (feature: string, description: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "w-[252px] overflow-hidden rounded-lg border bg-background shadow-sm",
+        selected && "border-primary ring-1 ring-primary",
+      )}
+    >
+      <div className="flex items-start gap-2 border-b px-3 py-2.5">
+        <span className="grid size-9 shrink-0 place-items-center rounded-md bg-sky-50 text-sky-700">
+          <StepIcon kind={step.kind} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase text-muted-foreground">
+            Step {String(stepNumber).padStart(2, "0")}
+            {step.isStart ? (
+              <span className="rounded-sm bg-sky-50 px-1 py-0.5 text-sky-700">Start</span>
+            ) : null}
+          </div>
+          <div className="mt-0.5 truncate text-sm font-semibold">{step.title}</div>
+        </div>
+        <StepStatus step={step} />
+      </div>
+      <div className="min-h-[58px] px-3 py-2.5 text-xs leading-5 text-muted-foreground">
+        <p className="line-clamp-2">{step.preview || "No customer-facing copy yet."}</p>
+      </div>
+      <div className="flex h-10 items-center justify-between border-t px-3">
+        <span className="text-[9px] font-semibold uppercase text-muted-foreground">
+          {step.kind}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            data-flow-manager-live-action
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={() => onEdit(step.id)}
+          >
+            <Pencil className="size-3.5" /> Edit
+          </Button>
+          <Button
+            data-flow-manager-live-action
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            title="More step actions - Future"
+            aria-label="More step actions - Future"
+            onClick={() =>
+              onFuture(
+                "More step actions",
+                "Duplicate, reorder, and delete ship after referenced-step repair is complete.",
+              )
+            }
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlowTerminalLabel({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "error";
+}) {
+  return (
+    <span
+      className={cn(
+        "rounded-full border bg-muted/50 px-3 py-1 text-[9px] font-semibold uppercase text-muted-foreground",
+        tone === "error" && "border-destructive/30 bg-destructive/5 text-destructive",
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function routesForStep(step: GuidedFlowStep): GuidedTreeRoute[] {
+  return [
+    ...step.options.map((option) => ({
+      id: `option-${step.id}-${option.key}`,
+      kind: "option" as const,
+      label: option.labelEn || option.key,
+      targetId: option.targetNodeId,
+      targetTitle: option.targetTitle,
+      missing: option.missingTarget || !option.targetNodeId,
+      inactive: !option.active,
+    })),
+    ...step.nextSteps.map((next) => ({
+      id: next.edgeId,
+      kind: "automatic" as const,
+      label: "Continue automatically",
+      targetId: next.id,
+      targetTitle: next.title,
+      missing: next.missing,
+      inactive: false,
+    })),
+  ];
+}
+
+function collectReachableStepIds(steps: GuidedFlowStep[], startId?: string) {
+  const reachable = new Set<string>();
+  const queue = startId ? [startId] : [];
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (reachable.has(id)) continue;
+    reachable.add(id);
+    const step = steps.find((candidate) => candidate.id === id);
+    if (!step) continue;
+    for (const route of routesForStep(step)) {
+      if (route.targetId && !route.missing) queue.push(route.targetId);
+    }
+  }
+  return reachable;
 }
 
 function StepNavigationItem({
