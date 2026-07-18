@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2b-guided-tree-v1";
+export const CONNECT_RELEASE = "m2b-guided-tree-v2";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
