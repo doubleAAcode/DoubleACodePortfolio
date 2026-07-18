@@ -812,14 +812,13 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: release the worker-authorized reply command,
-verify its public release marker on the automatically deployed canonical site,
-then receive a fresh customer marker and perform the controlled human send.
-Manual lifecycle and collaboration commands, inbound wake behavior,
-due-snooze claiming, durable retry processing, and ambiguous-send
-reconciliation are live. Supabase runs both minute schedules and its Vault-only
-bearer receives authenticated outbox `200` responses. Provider sending remains
-off; inbox UI promotion remains 1D.
+Current authorized next action: begin 1D with the exact Lovable admin Live
+Operations list and conversation detail, connecting the existing 1B reads and
+1C commands through route adapters without changing the cloned composition.
+Milestone 1C is complete: manual lifecycle and collaboration commands, inbound
+wake behavior, due-snooze claiming, durable retry processing, ambiguous-send
+reconciliation, and a real delivered human reply are verified. Supabase runs
+both minute schedules; provider sending is back off after the controlled proof.
 
 Milestone 1 platform controls:
 
@@ -855,9 +854,10 @@ Milestone 1 platform controls:
       timeline. A4 proved exact conversation/session flow, version, and node
       linkage with one `FLOW_STARTED`; a rollback-only double-call postflight proved
       one idempotent human-handoff `FLOW_STOPPED` event.
-- [~] Update outbound message state from sent, delivered, read, and failed Meta
-  status webhooks. The monotonic status RPC and webhook hook are ready;
-  outbound timeline insertion remains in 1C.
+- [x] Update outbound message state from sent, delivered, read, and failed Meta
+      status webhooks. Human marker `LIVE-1C-HUMAN-0718` produced one durable
+      outbound row that advanced through `SENT` to `DELIVERED` from signed Meta
+      callbacks.
 - [x] Use the exact Flow Manager Live Test route as the repeatable provider
       harness. Real connection data, approved-template opening sends, restart
       sends, event refresh, and the A3/A4 production roundtrips are verified.
@@ -881,33 +881,30 @@ Milestone 1 platform controls:
       not-found behavior, and sanitized failures are covered; 1B has no
       mutations.
 
-#### 1C - Human operations and outbound reply
+#### 1C - Human operations and outbound reply (Complete)
 
-- [~] Add an idempotent outbound outbox with attempt history, retry policy, and
-  visible permanent failures. The live schema now claims by tenant/key,
-  rejects changed-payload key reuse, stores every attempt, and schedules
-  bounded retry states. Due retries are leased only inside the service
-  window; expired ambiguous sends require audited reconciliation instead of
-  blind replay. Both minute schedules are active in Supabase; the outbox job is
-  a no-op until its Vault-only bearer is activated. Visible failure UI remains
-  1D.
-- [~] Send a human text reply through the existing WhatsApp sender and append it
-  to the same conversation timeline. Admin and signed-client POST commands,
-  durable timeline insertion, provider result completion, and default-off
-  `CONNECT_HUMAN_SEND_ENABLED` control are implemented. Completion-write
-  recovery checks durable state before any further action so it cannot
-  duplicate a provider send; a controlled real provider send remains.
+- [x] Add an idempotent outbound outbox with attempt history, retry policy, and
+      reconciliation. The live schema claims by tenant/key, rejects
+      changed-payload key reuse, stores every attempt, schedules bounded retry
+      states, and quarantines ambiguous sends for audited resolution. Both
+      minute schedules are active. Visible permanent-failure treatment is an
+      explicit 1D UI state.
+- [x] Send a human text reply through the existing WhatsApp sender and append it
+      to the same conversation timeline. Marker `LIVE-1C-HUMAN-0718` produced
+      exactly one outbox row, one attempt, and one outbound message; the first
+      command returned `SENT`, the identical replay returned `duplicate:true`,
+      and the signed callback advanced the message to `DELIVERED`.
 - [x] Enforce the WhatsApp customer-service window and require an approved
       template when free-form replies are not allowed. The live RPC blocks free
       text at or after 24 hours with `TEMPLATE_REQUIRED`; open-window, blocked,
       duplicate, changed-payload, and completion paths passed rollback-only live
       database checks with zero retained rows.
-- [~] Implement open, pending, snoozed, reopened, and closed lifecycle behavior.
-  Admin and signed-client `PATCH` commands atomically change the tenant row,
-  reject unsafe reopen conflicts, and write idempotent actor audit events.
-  Customer inbound and the protected due-snooze worker reopen conversations;
-  the production minute schedule is active and verified. Visible UI controls
-  remain 1D.
+- [x] Implement open, pending, snoozed, reopened, and closed lifecycle behavior.
+      Admin and signed-client `PATCH` commands atomically change the tenant row,
+      reject unsafe reopen conflicts, and write idempotent actor audit events.
+      Customer inbound and the protected due-snooze worker reopen conversations;
+      the production minute schedule is active and verified. Exact Lovable UI
+      controls are tracked in 1D.
 - [x] Implement assignment/transfer, priority, internal notes, tags, unread state,
       and canned replies with audit events. The additive production schema,
       shared server services, admin/client routes, signed tenant scope,
@@ -934,8 +931,8 @@ timeline; assignment, note, tag, and close/reopen actions survive reload; anothe
 tenant cannot read or mutate the conversation.
 
 Current implementation sequence: **1A messaging store and webhook dual-write,
-then 1B APIs, 1C mutations, and 1D UI. Do not integrate another page family
-until this gate passes.**
+1B APIs, and 1C mutations are complete. 1D UI is active. Do not integrate
+another page family until the Milestone 1 gate passes.**
 
 ### Milestone 2 - Guided Flow Builder and Runtime
 
@@ -1157,3 +1154,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released the collaboration command foundation from exact commit `db0bbd0`. GitHub's automatic Vercel production check succeeded; `doubleacode.com` redirected to `www` and the exact Connect Businesses page returned `200`. | Unauthenticated production probes for admin/client conversation `PATCH`, internal-note `POST`, contact-tag `PUT`, inbox options, and canned replies all returned sanitized `401 UNAUTHORIZED`. Collaboration commands are complete as a backend capability; their exact Lovable controls remain correctly gated to 1D. |
 | 2026-07-18 | Added and applied idempotent minute schedules plus database-backed rollout controls. Supabase Cron now wakes due snoozes and triggers the human outbox every minute. The raw worker bearer will be generated inside Postgres and retained only in Vault; Vercel verifies it through a service-role-only digest RPC. Human sending is controlled by a separate default-off database flag, with legacy environment controls retained as aliases. | Production installed `pg_cron`, `pg_net`, and `pgcrypto`; exactly two named jobs are active and repeatedly successful. Lifecycle returns one result row, while outbox returns zero rows because no bearer exists. Both control tables have RLS and no table grants; service role alone can execute the two RPCs. The human-send flag is false, an unknown bearer is false, and the credential count is zero. Build, typecheck, scoped ESLint, `84/84` main tests, `15/15` reliability tests, and diff checks pass. Automatic deployment, release-header verification, bearer activation, and one real reply remain. |
 | 2026-07-18 | Released runtime controls from commit `2ef11af` without Vercel dashboard access. The canonical release endpoint returned `X-Connect-Release: m1c-runtime-controls-v1`; Supabase generated a 256-bit bearer internally, stored the raw value only in Vault, stored one matching digest, and activated the existing minute outbox job. Added worker authorization to the same admin human-reply command so the controlled provider proof needs no interactive admin credential and remains auditable as `connect-worker`. | The public marker changed from `404` to `200` after the automatic deployment. Consecutive scheduled outbox requests returned authenticated `200` with `sendEnabled:false` and zero candidates, proving bearer authorization and the independent default-off send flag. The worker reply path passes the full `84/84` main suite, typecheck, scoped ESLint, and diff checks. Its new release marker and real provider reply remain. |
+| 2026-07-18 | Closed Milestone 1C on worker-reply release `m1c-worker-reply-v1` from commit `987d755`. Fresh customer marker `LIVE-1C-HUMAN-0718` reopened the real conversation and service window; the controlled human command then created one durable text reply and Meta accepted it on attempt one. | Production returned `SENT` for the first command and `duplicate:true` with the same outbox/message IDs for the exact replay. Durable postflight found one outbox row, one `200` attempt, one message row, and a signed Meta callback advanced it to `DELIVERED`. The database send flag was restored to false; a new key then returned `503 HUMAN_SEND_DISABLED` with zero outbox rows. Both minute cron jobs remain successful and the authenticated outbox worker returns `200` with `sendEnabled:false`. Work package 1D is now authorized. |
