@@ -1,74 +1,89 @@
-import { useState } from "react";
-import { Sparkles, Wand2, ThumbsUp } from "lucide-react";
+import { Sparkles, ThumbsUp, Wand2 } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
-import { toast } from "@/features/connect/flow-manager-ui/preview-toast";
 
-const drafts = [
-  "Hi Fatima — happy to help with the return. Our policy allows returns within 30 days of delivery on unopened items. Would you like me to email you a return label now?",
-  "Yes, absolutely — you have until Dec 3 to return the earbuds. Reply YES and I'll send the prepaid label to your registered address.",
-];
-
-export function AICopilotPanel({ onInsert }: { onInsert: (text: string) => void }) {
-  const [suggestion, setSuggestion] = useState<string | null>(drafts[0]);
-  const [loading, setLoading] = useState(false);
-
-  const regenerate = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setSuggestion(drafts[Math.floor(Math.random() * drafts.length)]);
-      setLoading(false);
-    }, 700);
-  };
+export function AICopilotPanel() {
+  const explainFuture = () =>
+    toast.info("Future work", {
+      description: "AI-assisted replies and conversation insights are planned for a later phase.",
+    });
 
   return (
-    <aside className="border-l bg-gradient-to-b from-primary/5 to-transparent p-4 w-[300px] shrink-0 hidden xl:block">
-      <div className="flex items-center gap-2 mb-3">
+    <aside className="hidden w-[300px] shrink-0 border-l bg-gradient-to-b from-primary/5 to-transparent p-4 xl:block">
+      <div className="mb-3 flex items-center gap-2">
         <div className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground">
           <Sparkles className="h-3.5 w-3.5" />
         </div>
         <div>
           <div className="text-sm font-semibold">AI Copilot</div>
-          <div className="text-[11px] text-muted-foreground">Suggested reply</div>
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            Suggested reply
+            <FutureLabel />
+          </div>
         </div>
       </div>
 
-      <div className="rounded-md border bg-background p-3 text-sm min-h-[120px]">
-        {loading ? (
-          <div className="text-xs text-muted-foreground animate-pulse">Generating…</div>
-        ) : (
-          suggestion
-        )}
-      </div>
+      <button
+        data-flow-manager-live-action
+        type="button"
+        onClick={explainFuture}
+        className="min-h-[120px] w-full rounded-md border bg-background p-3 text-left text-xs text-muted-foreground hover:bg-accent"
+      >
+        No suggestion available.
+      </button>
 
       <div className="mt-3 flex gap-2">
-        <Button
-          size="sm" className="flex-1"
-          onClick={() => suggestion && onInsert(suggestion)}
-          disabled={loading || !suggestion}
-        >
+        <Button data-flow-manager-live-action size="sm" className="flex-1" onClick={explainFuture}>
           Use draft
         </Button>
-        <Button size="sm" variant="outline" onClick={regenerate} disabled={loading}>
+        <Button data-flow-manager-live-action size="sm" variant="outline" onClick={explainFuture}>
           <Wand2 className="h-3.5 w-3.5" />
+          <span className="sr-only">Regenerate suggestion</span>
         </Button>
       </div>
 
       <div className="mt-6 space-y-2">
         <div className="text-xs font-medium text-muted-foreground">Thread insight</div>
-        <div className="rounded-md border bg-background p-2.5 text-xs">
-          <div className="font-medium mb-1">Intent: Return request</div>
-          <div className="text-muted-foreground">Sentiment: neutral · Order #A2381 · Delivered 12 days ago · Within return window.</div>
-        </div>
+        <button
+          data-flow-manager-live-action
+          type="button"
+          onClick={explainFuture}
+          className="w-full rounded-md border bg-background p-2.5 text-left text-xs text-muted-foreground hover:bg-accent"
+        >
+          Not available in this phase.
+        </button>
       </div>
 
       <div className="mt-4 flex gap-1.5">
-        <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={() => toast("Summary sent to Slack")}>
+        <Button
+          data-flow-manager-live-action
+          size="sm"
+          variant="ghost"
+          className="flex-1 text-xs"
+          onClick={explainFuture}
+        >
           Summarize
         </Button>
-        <Button size="sm" variant="ghost" className="text-xs" onClick={() => toast.success("Feedback recorded")}>
+        <Button
+          data-flow-manager-live-action
+          size="sm"
+          variant="ghost"
+          className="text-xs"
+          onClick={explainFuture}
+        >
           <ThumbsUp className="h-3.5 w-3.5" />
+          <span className="sr-only">Rate suggestion</span>
         </Button>
       </div>
     </aside>
+  );
+}
+
+function FutureLabel() {
+  return (
+    <span className="rounded-sm border border-amber-300 bg-amber-50 px-1 py-0.5 text-[8px] font-semibold uppercase text-amber-800">
+      Future
+    </span>
   );
 }

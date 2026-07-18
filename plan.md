@@ -812,13 +812,12 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: release and verify the first 1D vertical slice,
-the exact Lovable admin Live Operations list and conversation detail. The slice
-uses the existing 1B reads and 1C commands through route adapters without
-changing the cloned composition. Do not promote client Inbox until the
-`m1d-admin-inbox-v1` canonical release marker is live and the deployed route
-preserves its authentication boundary. Provider sending remains off after the
-controlled 1C proof.
+Current authorized next action: release and verify the second 1D vertical
+slice, the exact Lovable client WhatsApp Inbox. Admin Live Operations is
+released as `m1d-admin-inbox-v1`; its canonical marker is live and the deployed
+admin API still rejects unauthenticated reads. Do not promote Contacts until
+`m1d-client-inbox-v1` is live and the deployed client API preserves its signed
+business boundary. Provider sending remains off after the controlled 1C proof.
 
 Milestone 1 platform controls:
 
@@ -916,23 +915,28 @@ Milestone 1 platform controls:
 
 #### 1D - Complete Flow Manager surfaces
 
-- [~] Connect admin Live Operations list and conversation detail to the real
-  admin APIs. Real list/search/filter/pagination, message and event timeline,
-  service-window status, reply, lifecycle, assignment, priority, unread,
-  notes, tags, and canned replies are connected. Advanced operational
-  folders, template/media replies, business context, and incident actions
-  remain visible, clickable, and labeled `Future`; production release
-  verification remains.
-- [ ] Connect client Inbox list and conversation detail to the real client APIs.
+- [x] Connect admin Live Operations list and conversation detail to the real
+      admin APIs. Real list/search/filter/pagination, message and event timeline,
+      service-window status, reply, lifecycle, assignment, priority, unread,
+      notes, tags, and canned replies are connected. Advanced operational
+      folders, template/media replies, business context, and incident actions
+      remain visible, clickable, and labeled `Future`. Canonical release and
+      authentication-boundary verification are complete.
+- [~] Connect client Inbox list and conversation detail to the real client APIs.
+      The signed-business WhatsApp list/search/pagination, timeline, reply,
+      lifecycle, assignment, priority, unread, notes, tags, and canned replies
+      are connected. Other channels and AI Copilot remain visible, clickable,
+      and labeled `Future`; production release verification remains.
 - [ ] Connect admin and client Contacts pages to the same contact domain.
 - [~] Remove every mock conversation/contact import from those promoted routes.
-  Admin Live Operations no longer imports mock conversation data; client
-  Inbox and Contacts are not yet promoted.
+      Admin Live Operations and client Inbox no longer import mock conversation
+      records. Client workspace identity and the shared command palette also use
+      the signed real conversation domain. Contacts is not yet promoted.
 - [~] Add loading, empty, retry, permission, provider-failure, and disconnected
-  WhatsApp states without changing the Lovable composition. Admin Live
-  Operations has loading, empty, retry, sanitized API/provider failure,
-  closed-conversation, and closed-service-window states. Client Inbox,
-  Contacts, and the explicit disconnected-number state remain.
+      WhatsApp states without changing the Lovable composition. Admin Live
+      Operations and client Inbox have loading, empty, retry, sanitized
+      API/provider failure, closed-conversation, and closed-service-window
+      states. Contacts and the explicit disconnected-number state remain.
 
 Milestone 1 completion gate: using a real test WhatsApp number, one inbound
 message appears exactly once in the correct tenant's admin and client inboxes;
@@ -1166,3 +1170,5 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released runtime controls from commit `2ef11af` without Vercel dashboard access. The canonical release endpoint returned `X-Connect-Release: m1c-runtime-controls-v1`; Supabase generated a 256-bit bearer internally, stored the raw value only in Vault, stored one matching digest, and activated the existing minute outbox job. Added worker authorization to the same admin human-reply command so the controlled provider proof needs no interactive admin credential and remains auditable as `connect-worker`.                                     | The public marker changed from `404` to `200` after the automatic deployment. Consecutive scheduled outbox requests returned authenticated `200` with `sendEnabled:false` and zero candidates, proving bearer authorization and the independent default-off send flag. The worker reply path passes the full `84/84` main suite, typecheck, scoped ESLint, and diff checks. Its new release marker and real provider reply remain.                                                                                                                                                                                                                |
 | 2026-07-18 | Closed Milestone 1C on worker-reply release `m1c-worker-reply-v1` from commit `987d755`. Fresh customer marker `LIVE-1C-HUMAN-0718` reopened the real conversation and service window; the controlled human command then created one durable text reply and Meta accepted it on attempt one.                                                                                                                                                                                                                                                                | Production returned `SENT` for the first command and `duplicate:true` with the same outbox/message IDs for the exact replay. Durable postflight found one outbox row, one `200` attempt, one message row, and a signed Meta callback advanced it to `DELIVERED`. The database send flag was restored to false; a new key then returned `503 HUMAN_SEND_DISABLED` with zero outbox rows. Both minute cron jobs remain successful and the authenticated outbox worker returns `200` with `sendEnabled:false`. Work package 1D is now authorized.                                                                                                    |
 | 2026-07-18 | Implemented the first Milestone 1D Flow Manager surface without redesigning the Lovable composition. Admin Live Operations now uses one browser adapter over the tenant-safe admin APIs for real list/detail reads and the completed 1C commands. Unsupported operational folders, templates, media, business context, and incident controls remain clickable and explicitly labeled `Future`; the promoted route is labeled `In progress`, not falsely complete.                                                                                           | Authenticated local browser verification against production Supabase rendered the live conversation, inbound markers, real flow/version/node trace, and delivered human reply. The disabled-send control produced visible `HUMAN_SEND_DISABLED` feedback with no fake success; the Template control produced a Future notice. Desktop `1280x720` and mobile `390x844` have no document overflow and keep the composer visible. Typecheck, scoped ESLint, `88/88` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-admin-inbox-v1` deployment verification remains before client Inbox is authorized. |
+| 2026-07-18 | Released the first Milestone 1D surface from exact commit `dd09e7e` without requiring Vercel dashboard access. | The canonical release endpoint returned `200`, `X-Connect-Release: m1d-admin-inbox-v1`, and capability `admin-live-operations`. The deployed admin conversations API returned sanitized `401 UNAUTHORIZED` without a session, preserving its server boundary. Client Inbox was then authorized. |
+| 2026-07-18 | Implemented the second Milestone 1D surface by connecting the exact Lovable client Inbox to the signed-business APIs and shared 1C controls. WhatsApp is the only real channel; Instagram, Messenger, Webchat, Email, templates, media, and AI Copilot remain visible, clickable, and labeled `Future`. Removed Lovable conversation/workspace samples from the promoted route, workspace switcher, sidebar identity, AI panel, and shared command palette; the palette now reads real tenant-scoped conversations. | Authenticated local client browser verification against production Supabase rendered `Double A Test Business`, the real conversation and durable timeline, and the delivered human reply. A client reply while sending was disabled showed `HUMAN_SEND_DISABLED`; Future channel and AI controls showed explanatory notices with no fake mutation. Desktop `1280x720` and mobile list/detail `390x844` have no document overflow and keep the composer reachable. Typecheck, scoped ESLint, `89/89` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-client-inbox-v1` deployment and signed-client boundary probes remain. |

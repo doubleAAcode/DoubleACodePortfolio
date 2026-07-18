@@ -140,3 +140,31 @@ test("promoted admin Live Ops routes no longer import preview conversation data"
   assert.match(detail, /addInboxConversationNote/);
   assert.match(detail, /changeInboxConversationTag/);
 });
+
+test("promoted client Inbox keeps Lovable future controls but removes preview records", () => {
+  const route = readFileSync("src/routes/connect/client/inbox.tsx", "utf8");
+  const workspace = readFileSync(
+    "src/features/connect/flow-manager-ui/components/workspace-switcher.tsx",
+    "utf8",
+  );
+  const palette = readFileSync(
+    "src/features/connect/flow-manager-ui/components/command-palette.tsx",
+    "utf8",
+  );
+  const aiPanel = readFileSync(
+    "src/features/connect/flow-manager-ui/components/ai-copilot-panel.tsx",
+    "utf8",
+  );
+
+  for (const source of [route, workspace, palette, aiPanel]) {
+    assert.doesNotMatch(source, /preview-data\/mock-client/);
+    assert.doesNotMatch(source, /preview-toast/);
+  }
+  assert.match(route, /getInboxConversations\("client"/);
+  assert.match(route, /InboxConversationView/);
+  assert.match(route, /Instagram/);
+  assert.match(route, /FutureLabel/);
+  assert.match(workspace, /useClientWorkspaceSummary/);
+  assert.match(palette, /getInboxConversations/);
+  assert.match(aiPanel, /AI-assisted replies and conversation insights/);
+});

@@ -62,7 +62,7 @@ test("runtime control migration is service-role-only and digest-backed", async (
 
 test("public release endpoint exposes a stable response header marker", async () => {
   const route = await readFile("src/routes/api.connect.release.ts", "utf8");
-  assert.match(route, /m1d-admin-inbox-v1/);
+  assert.match(route, /m1d-client-inbox-v1/);
   assert.match(route, /"X-Connect-Release": CONNECT_RELEASE/);
   assert.match(route, /"Cache-Control": "no-store"/);
 });

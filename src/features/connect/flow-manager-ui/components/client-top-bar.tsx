@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, HelpCircle } from "lucide-react";
+import { Bell, HelpCircle, MessageCircle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSwitcher } from "@/features/connect/flow-manager-ui/components/workspace-switcher";
 
@@ -33,8 +33,8 @@ export function ClientTopBar({ title, subtitle, actions }: Props) {
           </kbd>
         </button>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> All channels healthy
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            <MessageCircle className="size-3" /> WhatsApp workspace
           </span>
           <Button variant="ghost" size="icon" aria-label="Help">
             <HelpCircle className="h-4 w-4" />

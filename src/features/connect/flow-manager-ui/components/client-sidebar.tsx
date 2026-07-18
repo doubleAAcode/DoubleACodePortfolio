@@ -1,4 +1,5 @@
 import { FlowManagerFutureBadge } from "@/features/connect/flow-manager-ui/future-badge";
+import { useClientWorkspaceSummary } from "@/features/connect/flow-manager-ui/client-workspace";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
@@ -62,6 +63,7 @@ const dev = [
 
 export function ClientSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const workspaceSummary = useClientWorkspaceSummary();
   const isActive = (url: string) =>
     url === "/connect/client"
       ? pathname === "/connect/client"
@@ -93,13 +95,13 @@ export function ClientSidebar() {
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-xs font-bold">
-            AE
+            {workspaceSummary.initials}
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden flex-1">
-            <div className="truncate text-sm font-semibold">Atlas Electronics</div>
+            <div className="truncate text-sm font-semibold">{workspaceSummary.name}</div>
             <div className="flex items-center gap-1">
               <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                PREVIEW
+                CLIENT
               </Badge>
               <span className="truncate text-[10px] text-muted-foreground">Client dashboard</span>
             </div>

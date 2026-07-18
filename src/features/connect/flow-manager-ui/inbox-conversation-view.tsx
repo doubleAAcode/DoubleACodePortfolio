@@ -59,9 +59,15 @@ import { cn } from "@/lib/utils";
 export function InboxConversationView({
   audience,
   conversationId,
+  embedded = false,
+  showContextPanel = true,
+  onBack,
 }: {
   audience: InboxAudience;
   conversationId: string;
+  embedded?: boolean;
+  showContextPanel?: boolean;
+  onBack?: () => void;
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
@@ -267,10 +273,28 @@ export function InboxConversationView({
   const replyBlocked = conversation.status === "CLOSED" || !serviceWindowOpen;
 
   return (
-    <div className="grid h-[calc(100dvh-6rem)] min-h-[30rem] min-w-0 grid-cols-1 bg-background md:h-[calc(100dvh-18rem)] md:min-h-[26rem] 2xl:grid-cols-[minmax(0,1fr)_300px]">
+    <div
+      className={cn(
+        "grid min-h-[30rem] min-w-0 grid-cols-1 bg-background md:min-h-[26rem]",
+        embedded ? "h-full" : "h-[calc(100dvh-6rem)] md:h-[calc(100dvh-18rem)]",
+        showContextPanel && "2xl:grid-cols-[minmax(0,1fr)_300px]",
+      )}
+    >
       <div className="flex min-h-0 min-w-0 flex-col bg-background">
         <div className="flex flex-wrap items-center gap-3 border-b p-3">
-          {audience === "admin" ? (
+          {onBack ? (
+            <Button
+              data-flow-manager-live-action
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 md:hidden"
+              onClick={onBack}
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+          ) : audience === "admin" ? (
             <Button
               asChild
               type="button"
@@ -416,157 +440,159 @@ export function InboxConversationView({
         </div>
       </div>
 
-      <aside className="hidden space-y-4 overflow-y-auto border-l bg-muted/10 p-4 2xl:block">
-        <div>
-          <PanelHeading icon={<User className="h-3.5 w-3.5" />} label="Contact" />
-          <div className="rounded-md border bg-background p-3">
-            <div className="text-sm font-medium">{conversation.contact.displayName}</div>
-            <div className="text-xs text-muted-foreground">{conversation.contact.phoneE164}</div>
-            <div className="mt-2 text-xs">
-              Business: <span className="font-medium">{conversation.business.name}</span>
-            </div>
-            <div className="mt-1 text-xs">
-              Lifecycle: <span className="font-medium">{conversation.contact.lifecycle}</span>
+      {showContextPanel ? (
+        <aside className="hidden space-y-4 overflow-y-auto border-l bg-muted/10 p-4 2xl:block">
+          <div>
+            <PanelHeading icon={<User className="h-3.5 w-3.5" />} label="Contact" />
+            <div className="rounded-md border bg-background p-3">
+              <div className="text-sm font-medium">{conversation.contact.displayName}</div>
+              <div className="text-xs text-muted-foreground">{conversation.contact.phoneE164}</div>
+              <div className="mt-2 text-xs">
+                Business: <span className="font-medium">{conversation.business.name}</span>
+              </div>
+              <div className="mt-1 text-xs">
+                Lifecycle: <span className="font-medium">{conversation.contact.lifecycle}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div>
-          <PanelHeading icon={<Tag className="h-3.5 w-3.5" />} label="Tags" />
-          <div className="flex flex-wrap gap-1">
-            {conversation.contact.tags.map((tag) => (
-              <button
-                data-flow-manager-live-action
-                key={tag.id}
-                type="button"
-                disabled={sending}
-                onClick={() => void changeTag(tag.id, "REMOVE")}
-                className="flex items-center gap-1 rounded border px-2 py-0.5 text-xs hover:bg-accent"
-                title={`Remove ${tag.name}`}
-              >
-                {tag.name}
-                <X className="size-3" />
-              </button>
-            ))}
-            <Popover>
-              <PopoverTrigger asChild>
+          <div>
+            <PanelHeading icon={<Tag className="h-3.5 w-3.5" />} label="Tags" />
+            <div className="flex flex-wrap gap-1">
+              {conversation.contact.tags.map((tag) => (
                 <button
                   data-flow-manager-live-action
+                  key={tag.id}
                   type="button"
-                  disabled={sending || availableTags.length === 0}
-                  className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={sending}
+                  onClick={() => void changeTag(tag.id, "REMOVE")}
+                  className="flex items-center gap-1 rounded border px-2 py-0.5 text-xs hover:bg-accent"
+                  title={`Remove ${tag.name}`}
                 >
-                  + Add tag
+                  {tag.name}
+                  <X className="size-3" />
                 </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-52 p-2">
-                {availableTags.map((tag) => (
+              ))}
+              <Popover>
+                <PopoverTrigger asChild>
                   <button
-                    key={tag.id}
+                    data-flow-manager-live-action
                     type="button"
-                    onClick={() => void changeTag(tag.id, "ADD")}
-                    className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                    disabled={sending || availableTags.length === 0}
+                    className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {tag.name}
+                    + Add tag
                   </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-        <div>
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Assigned to</div>
-          <div className="text-sm">
-            {conversation.assignee?.displayName ?? conversation.assignee?.email ?? "Unassigned"}
-          </div>
-        </div>
-
-        <div>
-          <PanelHeading icon={<GitBranch className="h-3.5 w-3.5" />} label="Flow trace" />
-          <div className="space-y-2 rounded-md border bg-background p-3 text-xs">
-            <div>
-              <span className="text-muted-foreground">Flow:</span>{" "}
-              {conversation.businessFlowId ? (
-                <Link
-                  to="/connect/admin/businesses/$id/flow-builder"
-                  params={{ id: conversation.business.id }}
-                  className="font-medium hover:underline"
-                >
-                  {shortId(conversation.businessFlowId)}
-                </Link>
-              ) : (
-                <span className="text-muted-foreground">Not linked</span>
-              )}
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">Version</span>
-              <span className="font-medium">{shortId(conversation.flowVersionId)}</span>
-            </div>
-            <div className="flex justify-between gap-2 border-t pt-2">
-              <span className="text-muted-foreground">Current node</span>
-              <span className="max-w-[9rem] truncate font-medium">
-                {conversation.currentNodeId ?? "Not linked"}
-              </span>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-52 p-2">
+                  {availableTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => void changeTag(tag.id, "ADD")}
+                      className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-        </div>
-
-        <FuturePanel
-          icon={<Building2 className="h-3.5 w-3.5" />}
-          label="Business context"
-          message="Plan, quality tier, message limits, and on-call context will appear here after their operational read model is connected."
-        />
-
-        <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            Ops actions <FutureLabel />
+          <div>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">Assigned to</div>
+            <div className="text-sm">
+              {conversation.assignee?.displayName ?? conversation.assignee?.email ?? "Unassigned"}
+            </div>
           </div>
-          <div className="grid gap-1.5">
-            <Button variant="outline" size="sm" className="justify-start" asChild>
-              <Link
-                to="/connect/admin/businesses/$id/diagnostics"
-                params={{ id: conversation.business.id }}
-              >
-                <Stethoscope className="h-3.5 w-3.5" />
-                Open in Diagnostics
-              </Link>
-            </Button>
-            <FutureButton
-              icon={<Bug className="h-3.5 w-3.5" />}
-              label="Mark as flow bug"
-              message="This will create an auditable flow-incident record in a later diagnostics package."
-              fullWidth
-            />
-            <FutureButton
-              icon={<Bell className="h-3.5 w-3.5" />}
-              label="Notify business owner"
-              message="This will notify the configured owner after the notification policy is connected."
-              fullWidth
-            />
-          </div>
-        </div>
 
-        <div>
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Internal notes</div>
-          <Textarea
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="Add a note only your team can see..."
-            className="min-h-[80px]"
-            disabled={sending}
+          <div>
+            <PanelHeading icon={<GitBranch className="h-3.5 w-3.5" />} label="Flow trace" />
+            <div className="space-y-2 rounded-md border bg-background p-3 text-xs">
+              <div>
+                <span className="text-muted-foreground">Flow:</span>{" "}
+                {conversation.businessFlowId ? (
+                  <Link
+                    to="/connect/admin/businesses/$id/flow-builder"
+                    params={{ id: conversation.business.id }}
+                    className="font-medium hover:underline"
+                  >
+                    {shortId(conversation.businessFlowId)}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">Not linked</span>
+                )}
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Version</span>
+                <span className="font-medium">{shortId(conversation.flowVersionId)}</span>
+              </div>
+              <div className="flex justify-between gap-2 border-t pt-2">
+                <span className="text-muted-foreground">Current node</span>
+                <span className="max-w-[9rem] truncate font-medium">
+                  {conversation.currentNodeId ?? "Not linked"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <FuturePanel
+            icon={<Building2 className="h-3.5 w-3.5" />}
+            label="Business context"
+            message="Plan, quality tier, message limits, and on-call context will appear here after their operational read model is connected."
           />
-          <Button
-            data-flow-manager-live-action
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2 w-full"
-            disabled={!note.trim() || sending}
-            onClick={() => void addNote()}
-          >
-            Add note
-          </Button>
-        </div>
-      </aside>
+
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              Ops actions <FutureLabel />
+            </div>
+            <div className="grid gap-1.5">
+              <Button variant="outline" size="sm" className="justify-start" asChild>
+                <Link
+                  to="/connect/admin/businesses/$id/diagnostics"
+                  params={{ id: conversation.business.id }}
+                >
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  Open in Diagnostics
+                </Link>
+              </Button>
+              <FutureButton
+                icon={<Bug className="h-3.5 w-3.5" />}
+                label="Mark as flow bug"
+                message="This will create an auditable flow-incident record in a later diagnostics package."
+                fullWidth
+              />
+              <FutureButton
+                icon={<Bell className="h-3.5 w-3.5" />}
+                label="Notify business owner"
+                message="This will notify the configured owner after the notification policy is connected."
+                fullWidth
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">Internal notes</div>
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Add a note only your team can see..."
+              className="min-h-[80px]"
+              disabled={sending}
+            />
+            <Button
+              data-flow-manager-live-action
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
+              disabled={!note.trim() || sending}
+              onClick={() => void addNote()}
+            >
+              Add note
+            </Button>
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 }

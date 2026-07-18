@@ -11,6 +11,8 @@ const mutationLabel =
 const partialRouteMessages: Record<string, string> = {
   "/connect/admin/inbox":
     "Conversation lists, timelines, WhatsApp text replies, lifecycle, assignment, priority, unread state, tags, notes, and canned replies use live tenant-safe APIs. Advanced operational folders, templates, media, and incident actions remain Future.",
+  "/connect/client/inbox":
+    "WhatsApp conversation lists, timelines, text replies, lifecycle, assignment, priority, unread state, tags, notes, and canned replies use live tenant-safe APIs. Other channels, templates, media, and AI assistance remain Future.",
   "/connect/admin/businesses":
     "Business records, search, status filters, setup checks, and WhatsApp connection health use live admin data. Creation and configuration changes remain future work.",
   "/connect/admin/businesses/live-test":
@@ -26,9 +28,11 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
     ? partialRouteMessages["/connect/admin/businesses/live-test"]
     : pathname.startsWith("/connect/admin/inbox")
       ? partialRouteMessages["/connect/admin/inbox"]
-      : pathname.startsWith("/connect/admin/businesses")
-        ? partialRouteMessages["/connect/admin/businesses"]
-        : partialRouteMessages[pathname];
+      : pathname.startsWith("/connect/client/inbox")
+        ? partialRouteMessages["/connect/client/inbox"]
+        : pathname.startsWith("/connect/admin/businesses")
+          ? partialRouteMessages["/connect/admin/businesses"]
+          : partialRouteMessages[pathname];
 
   if (status === "live") return <>{children}</>;
 
