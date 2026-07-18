@@ -1,5 +1,8 @@
 import type { InboxConfigurationOptions } from "../shared/inbox-configuration.ts";
 import type {
+  InboxContactDetail,
+  InboxContactLifecycle,
+  InboxContactSummary,
   InboxConversationDetail,
   InboxConversationPriority,
   InboxConversationStatus,
@@ -15,6 +18,14 @@ export type InboxConversationFilters = {
   status?: InboxConversationStatus;
   assignee?: string | "unassigned";
   unread?: boolean;
+  tagId?: string;
+  limit?: number;
+  cursor?: string;
+};
+
+export type InboxContactFilters = {
+  search?: string;
+  lifecycle?: InboxContactLifecycle;
   tagId?: string;
   limit?: number;
   cursor?: string;
@@ -47,6 +58,27 @@ export async function getInboxConversations(
   const query = params.size ? `?${params.toString()}` : "";
   return inboxFetch<InboxPage<InboxConversationSummary>>(
     `${inboxApiBase(audience)}/conversations${query}`,
+  );
+}
+
+export async function getInboxContacts(audience: InboxAudience, filters: InboxContactFilters = {}) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("search", filters.search);
+  if (filters.lifecycle) params.set("lifecycle", filters.lifecycle);
+  if (filters.tagId) params.set("tag", filters.tagId);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.cursor) params.set("cursor", filters.cursor);
+  const query = params.size ? `?${params.toString()}` : "";
+  return inboxFetch<InboxPage<InboxContactSummary>>(`${inboxApiBase(audience)}/contacts${query}`);
+}
+
+export function getInboxContact(
+  audience: InboxAudience,
+  contactId: string,
+  conversationLimit = 50,
+) {
+  return inboxFetch<InboxContactDetail>(
+    `${inboxApiBase(audience)}/contacts/${encodeURIComponent(contactId)}?limit=${conversationLimit}`,
   );
 }
 

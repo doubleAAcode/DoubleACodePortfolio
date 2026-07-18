@@ -5,6 +5,8 @@ import test from "node:test";
 import {
   InboxApiError,
   createInboxIdempotencyKey,
+  getInboxContact,
+  getInboxContacts,
   getInboxConversations,
   sendInboxTextReply,
   updateInboxConversation,
@@ -93,6 +95,42 @@ test("inbox mutation adapters send idempotent commands to the selected audience"
   assert.match(createInboxIdempotencyKey("send reply"), /^ui-send-reply-[A-Za-z0-9-]+$/);
 });
 
+test("contact adapters preserve audience scope, filters, and detail pagination", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const urls: string[] = [];
+  globalThis.fetch = async (input) => {
+    urls.push(String(input));
+    return Response.json({
+      ok: true,
+      data:
+        urls.length === 1 ? { items: [], nextCursor: null } : { contact: {}, conversations: {} },
+    });
+  };
+
+  await getInboxContacts("client", {
+    search: "Hussein",
+    lifecycle: "CUSTOMER",
+    tagId: "55555555-5555-4555-8555-555555555555",
+    limit: 50,
+    cursor: "contact-cursor",
+  });
+  await getInboxContact("admin", "contact/id", 25);
+
+  const listUrl = new URL(urls[0], "https://doubleacode.com");
+  assert.equal(listUrl.pathname, "/api/connect/client/contacts");
+  assert.equal(listUrl.searchParams.get("search"), "Hussein");
+  assert.equal(listUrl.searchParams.get("lifecycle"), "CUSTOMER");
+  assert.equal(listUrl.searchParams.get("tag"), "55555555-5555-4555-8555-555555555555");
+  assert.equal(listUrl.searchParams.get("limit"), "50");
+  assert.equal(listUrl.searchParams.get("cursor"), "contact-cursor");
+  assert.equal(listUrl.searchParams.has("businessId"), false);
+  assert.equal(urls[1], "/api/connect/admin/contacts/contact%2Fid?limit=25");
+});
+
 test("inbox adapter preserves sanitized server error codes for visible UI failures", async (context) => {
   const originalFetch = globalThis.fetch;
   context.after(() => {
@@ -167,4 +205,21 @@ test("promoted client Inbox keeps Lovable future controls but removes preview re
   assert.match(workspace, /useClientWorkspaceSummary/);
   assert.match(palette, /getInboxConversations/);
   assert.match(aiPanel, /AI-assisted replies and conversation insights/);
+});
+
+test("promoted Contacts routes use real adapters and retain explicit Future controls", () => {
+  const adminList = readFileSync("src/routes/connect.admin.contacts.index.tsx", "utf8");
+  const adminDetail = readFileSync("src/routes/connect.admin.contacts.$contactId.tsx", "utf8");
+  const clientList = readFileSync("src/routes/connect/client/contacts.tsx", "utf8");
+
+  for (const source of [adminList, adminDetail, clientList]) {
+    assert.doesNotMatch(source, /preview-data\/mock-extra/);
+    assert.doesNotMatch(source, /preview-toast/);
+    assert.match(source, /Future/);
+  }
+  assert.match(adminList, /getInboxContacts\("admin"/);
+  assert.match(adminDetail, /getInboxContact\("admin"/);
+  assert.match(adminDetail, /Conversation history/);
+  assert.match(clientList, /getInboxContacts\("client"/);
+  assert.match(clientList, /Instagram contacts/);
 });

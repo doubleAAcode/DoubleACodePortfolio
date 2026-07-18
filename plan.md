@@ -812,12 +812,12 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: release and verify the second 1D vertical
-slice, the exact Lovable client WhatsApp Inbox. Admin Live Operations is
-released as `m1d-admin-inbox-v1`; its canonical marker is live and the deployed
-admin API still rejects unauthenticated reads. Do not promote Contacts until
-`m1d-client-inbox-v1` is live and the deployed client API preserves its signed
-business boundary. Provider sending remains off after the controlled 1C proof.
+Current authorized next action: connect the exact Lovable admin and client
+Contacts surfaces to the shared tenant-safe contact domain. Admin Live
+Operations and client Inbox are released; their canonical markers and deployed
+authentication boundaries are verified. Do not promote another page family
+until Contacts passes its local and production release ladder. Provider sending
+remains off after the controlled 1C proof.
 
 Milestone 1 platform controls:
 
@@ -922,21 +922,26 @@ Milestone 1 platform controls:
       folders, template/media replies, business context, and incident actions
       remain visible, clickable, and labeled `Future`. Canonical release and
       authentication-boundary verification are complete.
-- [~] Connect client Inbox list and conversation detail to the real client APIs.
+- [x] Connect client Inbox list and conversation detail to the real client APIs.
       The signed-business WhatsApp list/search/pagination, timeline, reply,
       lifecycle, assignment, priority, unread, notes, tags, and canned replies
       are connected. Other channels and AI Copilot remain visible, clickable,
-      and labeled `Future`; production release verification remains.
-- [ ] Connect admin and client Contacts pages to the same contact domain.
-- [~] Remove every mock conversation/contact import from those promoted routes.
-      Admin Live Operations and client Inbox no longer import mock conversation
-      records. Client workspace identity and the shared command palette also use
-      the signed real conversation domain. Contacts is not yet promoted.
+      and labeled `Future`. Canonical release and signed-client boundary
+      verification are complete.
+- [~] Connect admin and client Contacts pages to the same contact domain. Real
+      list/search/pagination, lifecycle, tags, consent, and error states are
+      connected for both audiences; admin profile, attributes, and conversation
+      history are connected. Canonical deployment verification remains.
+- [x] Remove every mock conversation/contact import from those promoted routes.
+      Admin Live Operations, client Inbox, both Contacts lists, and the admin
+      contact detail no longer import mock records. Client workspace identity
+      and the shared command palette also use the signed real domain.
 - [~] Add loading, empty, retry, permission, provider-failure, and disconnected
       WhatsApp states without changing the Lovable composition. Admin Live
       Operations and client Inbox have loading, empty, retry, sanitized
       API/provider failure, closed-conversation, and closed-service-window
-      states. Contacts and the explicit disconnected-number state remain.
+      states. Contacts now add loading, empty, retry, and sanitized API failures;
+      the explicit disconnected-number state remains.
 
 Milestone 1 completion gate: using a real test WhatsApp number, one inbound
 message appears exactly once in the correct tenant's admin and client inboxes;
@@ -1172,3 +1177,5 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Implemented the first Milestone 1D Flow Manager surface without redesigning the Lovable composition. Admin Live Operations now uses one browser adapter over the tenant-safe admin APIs for real list/detail reads and the completed 1C commands. Unsupported operational folders, templates, media, business context, and incident controls remain clickable and explicitly labeled `Future`; the promoted route is labeled `In progress`, not falsely complete.                                                                                           | Authenticated local browser verification against production Supabase rendered the live conversation, inbound markers, real flow/version/node trace, and delivered human reply. The disabled-send control produced visible `HUMAN_SEND_DISABLED` feedback with no fake success; the Template control produced a Future notice. Desktop `1280x720` and mobile `390x844` have no document overflow and keep the composer visible. Typecheck, scoped ESLint, `88/88` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-admin-inbox-v1` deployment verification remains before client Inbox is authorized. |
 | 2026-07-18 | Released the first Milestone 1D surface from exact commit `dd09e7e` without requiring Vercel dashboard access. | The canonical release endpoint returned `200`, `X-Connect-Release: m1d-admin-inbox-v1`, and capability `admin-live-operations`. The deployed admin conversations API returned sanitized `401 UNAUTHORIZED` without a session, preserving its server boundary. Client Inbox was then authorized. |
 | 2026-07-18 | Implemented the second Milestone 1D surface by connecting the exact Lovable client Inbox to the signed-business APIs and shared 1C controls. WhatsApp is the only real channel; Instagram, Messenger, Webchat, Email, templates, media, and AI Copilot remain visible, clickable, and labeled `Future`. Removed Lovable conversation/workspace samples from the promoted route, workspace switcher, sidebar identity, AI panel, and shared command palette; the palette now reads real tenant-scoped conversations. | Authenticated local client browser verification against production Supabase rendered `Double A Test Business`, the real conversation and durable timeline, and the delivered human reply. A client reply while sending was disabled showed `HUMAN_SEND_DISABLED`; Future channel and AI controls showed explanatory notices with no fake mutation. Desktop `1280x720` and mobile list/detail `390x844` have no document overflow and keep the composer reachable. Typecheck, scoped ESLint, `89/89` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-client-inbox-v1` deployment and signed-client boundary probes remain. |
+| 2026-07-18 | Released the second Milestone 1D surface from exact commit `5b3eb6a` without requiring Vercel dashboard access. | The canonical release endpoint returned `200`, `X-Connect-Release: m1d-client-inbox-v1`, and capability `client-whatsapp-inbox`. The deployed client conversations API returned sanitized `401 UNAUTHORIZED` without a session, preserving its signed-business boundary. Admin and client inbox surfaces are complete; Contacts is now authorized. |
+| 2026-07-18 | Implemented the final Milestone 1D Contacts surface without replacing the Lovable composition. Admin and signed-client lists now use the shared tenant-safe contact API for real search, cursor pagination, lifecycle, tags, consent, and timestamps; admin profile adds real attributes and conversation history. Create, import, export, bulk changes, broadcasts, spend, and non-WhatsApp channels remain visible, clickable, and labeled `Future` with no fake mutation or success. | Authenticated local browser checks against production Supabase rendered the two real `Double A Test Business` contacts in both audiences, filtered each list server-side, opened the real admin profile and conversation history, and showed explanatory Future notices. Desktop `1280x720` and mobile `390x844` had no document overflow; wide tables scroll within their own container. Typecheck, scoped ESLint, `91/91` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical `m1d-contacts-v1` deployment and both unauthenticated API-boundary probes remain. |

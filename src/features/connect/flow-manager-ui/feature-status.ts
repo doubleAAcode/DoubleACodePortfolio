@@ -11,6 +11,8 @@ export const liveFlowManagerRoutes: FlowManagerRouteRule[] = [];
 export const partialFlowManagerRoutes: FlowManagerRouteRule[] = [
   { path: "/connect/admin/inbox", includeChildren: true },
   { path: "/connect/client/inbox", includeChildren: true },
+  { path: "/connect/admin/contacts", includeChildren: true },
+  { path: "/connect/client/contacts", includeChildren: true },
   { path: "/connect/admin/businesses", includeChildren: true },
   { path: "/connect/client/automations", includeChildren: true },
 ];
