@@ -6,6 +6,7 @@ import {
   GuidedFlowLoading,
   GuidedFlowWorkspace,
 } from "@/features/connect/flow-manager-ui/guided-flow-workspace";
+import { BusinessTemplatePicker } from "@/features/connect/admin/businesses/business-template-picker";
 import {
   applyAdminBusinessAction,
   getBusinessFlowDetails,
@@ -32,39 +33,48 @@ function FlowBuilderPage() {
   if (!flowQuery.data) return <GuidedFlowLoading message="Preparing the flow workspace..." />;
 
   return (
-    <GuidedFlowWorkspace
-      details={flowQuery.data}
-      onUploadImage={(file) => uploadAdminFlowImage(id, file)}
-      onRestoreVersion={async (versionId) => {
-        await applyAdminBusinessAction(id, {
-          action: "restore_business_flow_version",
-          versionId,
-        });
-        const refreshed = await flowQuery.refetch();
-        if (!refreshed.data) throw new Error("The restored draft could not be reloaded.");
-        return refreshed.data;
-      }}
-      onPublishVersion={async (versionId) => {
-        await applyAdminBusinessAction(id, {
-          action: "publish_business_flow",
-          versionId,
-        });
-        const refreshed = await flowQuery.refetch();
-        if (!refreshed.data) throw new Error("The published flow could not be reloaded.");
-        return refreshed.data;
-      }}
-      onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
-        await applyAdminBusinessAction(id, {
-          action: "save_business_flow_draft",
-          flowJson,
-          flowName,
-          versionId,
-          expectedRevision,
-        });
-        const refreshed = await flowQuery.refetch();
-        if (!refreshed.data) throw new Error("The saved draft could not be reloaded.");
-        return refreshed.data;
-      }}
-    />
+    <div className="space-y-4">
+      <BusinessTemplatePicker
+        businessId={id}
+        sourceTemplateId={flowQuery.data.flow?.source_template_id}
+        onApplied={async () => {
+          await flowQuery.refetch();
+        }}
+      />
+      <GuidedFlowWorkspace
+        details={flowQuery.data}
+        onUploadImage={(file) => uploadAdminFlowImage(id, file)}
+        onRestoreVersion={async (versionId) => {
+          await applyAdminBusinessAction(id, {
+            action: "restore_business_flow_version",
+            versionId,
+          });
+          const refreshed = await flowQuery.refetch();
+          if (!refreshed.data) throw new Error("The restored draft could not be reloaded.");
+          return refreshed.data;
+        }}
+        onPublishVersion={async (versionId) => {
+          await applyAdminBusinessAction(id, {
+            action: "publish_business_flow",
+            versionId,
+          });
+          const refreshed = await flowQuery.refetch();
+          if (!refreshed.data) throw new Error("The published flow could not be reloaded.");
+          return refreshed.data;
+        }}
+        onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
+          await applyAdminBusinessAction(id, {
+            action: "save_business_flow_draft",
+            flowJson,
+            flowName,
+            versionId,
+            expectedRevision,
+          });
+          const refreshed = await flowQuery.refetch();
+          if (!refreshed.data) throw new Error("The saved draft could not be reloaded.");
+          return refreshed.data;
+        }}
+      />
+    </div>
   );
 }

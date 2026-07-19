@@ -6,6 +6,7 @@ import {
 import { useBusinessDetails } from "@/features/connect/admin/businesses/business-details-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BusinessTemplatePicker } from "@/features/connect/admin/businesses/business-template-picker";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertTriangle, XCircle, Circle, ArrowRight } from "lucide-react";
@@ -72,6 +73,8 @@ function SetupHubPage() {
           <Progress value={pct} className="h-2" />
         </CardContent>
       </Card>
+
+      <BusinessTemplatePicker businessId={id} />
 
       <div className="grid gap-3">
         {items.map((item) => {

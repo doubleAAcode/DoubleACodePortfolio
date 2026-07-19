@@ -987,9 +987,11 @@ snapshot into one new editable draft through an atomic tenant-scoped database
 command. Existing drafts move to history; the active published version and
 pinned runtime sessions remain unchanged. The real Guided Publish action is now
 connected for saved, blocker-free drafts in both admin and client, creates a new
-immutable active snapshot, and keeps the source draft editable. Production
-release acceptance, media/template availability checks, final pinning evidence,
-and real inbound runtime proof remain before 2C can close.**
+immutable active snapshot, and keeps the source draft editable. A business-level
+flow template picker now exposes the existing approved-template clone action as
+a safe draft creation path in Setup Hub and Flow Builder. Production release
+acceptance, media/template availability checks, final pinning evidence, and real
+inbound runtime proof remain before 2C can close.**
 
 Milestone 2 work-package contract:
 
@@ -1013,6 +1015,10 @@ Milestone 2 work-package contract:
       authorized APIs.
 - [x] Inspect immutable versions and restore history into a new draft through
       authorized APIs. Atomic tenant-scoped restore is implemented and live.
+- [~] Choose a published flow template for a business from the business
+      workspace. Setup Hub and Flow Builder now create a new editable draft from
+      an approved template without changing the live flow; production release
+      and browser acceptance remain.
 - [~] Publish a saved Guided draft through authorized admin and client APIs.
       Publish now creates a new active immutable snapshot, blocks unsaved or
       invalid drafts, and leaves existing pinned sessions on their started
@@ -1186,6 +1192,7 @@ the active roadmap:
 | 2026-07-19 | Guided continuously evaluates publish readiness while keeping incomplete drafts saveable. Problems are deduplicated, ordered with publish blockers first, and linked to the exact map step or repair control. | Draft work must remain recoverable, but an operator also needs an honest preview of what will block publishing. Runtime-compatible terminal behavior remains publishable; legacy or unnecessary terminal routes stay visible as cleanup warnings instead of falsely rejecting supported templates. |
 | 2026-07-19 | Guided image media is stored through tenant-scoped audience routes, then referenced by URL only after a successful upload. Replacement and removal are undoable draft edits and remain separate from Save draft; upload failure never changes the canonical document, and published versions stay immutable. | Storage creation and flow persistence have different failure boundaries. Keeping Save explicit preserves the existing conflict/retry model, while a dedicated `flow-images` folder prevents workflow media from being confused with catalog product assets. |
 | 2026-07-19 | Restoring flow history always creates one new draft; it never reactivates or mutates the selected snapshot. The database locks the tenant's flow row, verifies source ownership, archives any current draft, allocates the next version, and preserves the active published pointer in one service-role-only transaction. | A restore is a copy operation, not a rollback of live state. This keeps immutable history and pinned runtime sessions stable, prevents concurrent version-number races, and gives the operator an editable recovery point before any later publish decision. |
+| 2026-07-19 | The near-term sellable MVP is the Businesses workspace and its business sub-tabs, centered on real WhatsApp flow/chat operations. Other sidebar tabs are secondary add-ons until this core path is complete. | A client must be able to open a business, configure its WhatsApp connection, build/publish/test the flow, observe diagnostics, and run the chat experience reliably before broader Overview, Broadcasts, Analytics, Logs, developer, onboarding, and AI-assist surfaces can make the product more valuable. |
 
 ## Roadmap Changelog
 
@@ -1267,3 +1274,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Tightened Guided Publish feedback after production operator testing showed the confirmation dialog inherited the wrong global theme and the async publish action had no obvious progress state. | The Guided publish confirmation is now explicitly light/admin-themed, uses a controlled dialog so the publish request remains visible while running, shows `Publishing and refreshing the live flow...`, disables cancel during the request, and the workspace shows sticky save/publish/restore/upload status banners. Production returned `X-Connect-Release: m2c-guided-publish-feedback-v1`. Authenticated browser acceptance with the test admin account confirmed the fixed production builder hydrated `Draft v23`, opened the publish confirmation, rendered white dialog/cancel styling and a blue publish button instead of the wrong black/pink theme, and was cancelled without publishing. An actual publish/runtime proof remains pending before 2C is accepted. |
 | 2026-07-19 | Corrected Guided Publish confirmation after production testing showed the modal opened but the final `Publish flow` control did not start the mutation or show feedback. | The confirmation now uses a native, data-tagged button path with guarded pointer/click handlers, blocks dialog close while publishing, and renders inline progress, success, or error feedback inside the light admin dialog before relying on toast state. Release marker is `m2c-guided-publish-action-v1`; local gates, deployment, and an authenticated production publish click proof remain required before this correction is accepted. |
 | 2026-07-19 | Released and accepted the Guided Publish confirmation correction from exact commit `12cf7c1`. | Production returned `200` with `X-Connect-Release: m2c-guided-publish-action-v1`. Authenticated browser proof on `/connect/admin/businesses/double-a-test-business/flow-builder` reloaded the new bundle, opened `Draft v23`, confirmed the native `data-guided-publish-confirm` control, clicked `Publish flow`, immediately showed `Publishing flow...` plus `Publishing and refreshing the live flow...`, disabled the publish controls, completed with no browser console errors, and the version selector showed `Live v30` above the still-editable `Draft v23`. Local gates passed: scoped ESLint, typecheck, production build, diff check, and `115/115` Node tests. The remaining 2C gate is real inbound pinned-runtime proof: existing chats must stay on their pinned version while newly started WhatsApp chats use `Live v30`. |
+| 2026-07-19 | Implemented the business workspace flow-template picker after product review identified that a business had no place to choose its starting flow template. | Setup Hub and Flow Builder now share `BusinessTemplatePicker`, load real published templates through the admin API, call the existing `clone_flow_template` business action, warn that the current draft is replaced while the live published flow remains unchanged, show loading/error/progress feedback, and refresh the Flow Builder after a template draft is created. Release marker is `m2c-business-template-picker-v1`; local gates, production deployment, and browser acceptance remain before this slice is accepted. |

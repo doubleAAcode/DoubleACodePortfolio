@@ -326,6 +326,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.index.tsx",
     "utf8",
   );
+  const businessTemplatePicker = readFileSync(
+    "src/features/connect/admin/businesses/business-template-picker.tsx",
+    "utf8",
+  );
   const previewBoundary = readFileSync(
     "src/features/connect/flow-manager-ui/preview-boundary.tsx",
     "utf8",
@@ -358,7 +362,13 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminFlowBuilder, /GuidedFlowWorkspace/);
   assert.match(adminFlowBuilder, /getBusinessFlowDetails/);
   assert.match(adminFlowBuilder, /applyAdminBusinessAction/);
+  assert.match(adminFlowBuilder, /BusinessTemplatePicker/);
   assert.doesNotMatch(adminFlowBuilder, /preview-data|FlowCanvas|WorkflowCanvas/);
+  assert.match(adminBusinessSetup, /BusinessTemplatePicker/);
+  assert.match(businessTemplatePicker, /getFlowTemplates/);
+  assert.match(businessTemplatePicker, /action: "clone_flow_template"/);
+  assert.match(businessTemplatePicker, /Applying a template creates a new editable draft/);
+  assert.doesNotMatch(businessTemplatePicker, /preview-data|mock-data|mock-client/);
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
