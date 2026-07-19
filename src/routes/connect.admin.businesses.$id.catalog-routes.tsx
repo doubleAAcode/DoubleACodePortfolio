@@ -392,7 +392,14 @@ function CatalogRoutesPage() {
               className="space-y-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                void saveRoute();
+                const submitted = new FormData(event.currentTarget);
+                void saveRoute({
+                  ...form,
+                  nameEnglish: String(submitted.get("nameEnglish") ?? ""),
+                  nameArabic: String(submitted.get("nameArabic") ?? ""),
+                  slug: slugPreview(String(submitted.get("slug") ?? "")),
+                  sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
+                });
               }}
             >
               <div className="space-y-4">
@@ -403,6 +410,7 @@ function CatalogRoutesPage() {
                     </Label>
                     <Input
                       id="route-name-en"
+                      name="nameEnglish"
                       value={form.nameEnglish}
                       onChange={(event) =>
                         setForm((current) => ({
@@ -420,6 +428,7 @@ function CatalogRoutesPage() {
                     </Label>
                     <Input
                       id="route-name-ar"
+                      name="nameArabic"
                       dir="rtl"
                       value={form.nameArabic}
                       onChange={(event) =>
@@ -436,6 +445,7 @@ function CatalogRoutesPage() {
                     </Label>
                     <Input
                       id="route-slug"
+                      name="slug"
                       value={form.slug}
                       onChange={(event) =>
                         setForm((current) => ({
@@ -452,6 +462,7 @@ function CatalogRoutesPage() {
                     </Label>
                     <Input
                       id="route-sort"
+                      name="sortOrder"
                       type="number"
                       min={0}
                       value={form.sortOrder}
