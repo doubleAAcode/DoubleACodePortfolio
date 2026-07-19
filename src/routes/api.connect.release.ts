@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2c-diagnostics-phone-normalization-v1";
+export const CONNECT_RELEASE = "business-catalog-routes-live-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
