@@ -951,7 +951,10 @@ tenant cannot read or mutate the conversation.
 
 Current implementation sequence: **Milestone 1A through 1D and Milestone 2A
 through 2B are complete with accepted production gates. Milestone 2C publish
-and history is the only active work package.**
+and history is the only active work package. Immediately after the 2C runtime
+proof, the next priority is the Businesses workspace completion track: every
+business sub-tab must use live tenant data and real mutations before broad
+sidebar features are promoted.**
 
 ### Milestone 2 - Guided Flow Builder and Runtime
 
@@ -1059,6 +1062,46 @@ publishes a branching WhatsApp flow entirely in Guided without opening Canvas;
 the editor survives reload and rejected saves without losing work; a real inbound
 WhatsApp conversation executes the pinned published version; and each step,
 decision, handoff, and failure is visible in the inbox timeline and diagnostics.
+
+### Businesses Workspace Completion Track
+
+Status: **Next priority after Milestone 2C runtime proof**
+
+This track is the near-term sellable product path. Every tab inside a business
+must graduate from preview to live behavior with tenant-scoped reads, real
+mutations, loading/empty/error states, authorization checks, reload persistence,
+and production browser evidence. Mock-only data, local-only edits, and success
+toasts without a backend write are not acceptable for these tabs.
+
+- [x] Setup Hub reads the live business checklist and now exposes the real
+      business flow-template picker.
+- [x] WhatsApp Connection reads the live active connection and can verify/repair
+      the Meta webhook subscription for the manually configured connection.
+- [~] Flow Builder is the primary real workspace for template selection,
+      Guided editing, media, validation, history, save, restore, and publish.
+      Remaining proof is real inbound runtime pinning and execution evidence.
+- [ ] Live Test must execute the currently published flow, show the exact
+      published version under test, and record provider/runtime events without
+      using preview outcomes.
+- [ ] Diagnostics must show real WhatsApp connection, webhook, flow validation,
+      runtime, media/template availability, and recent failure evidence for the
+      selected business.
+- [ ] Catalog Routes must read, create, edit, activate/deactivate, order, and
+      delete real browse groups through protected business APIs.
+- [ ] Route Values must read and mutate real group values and their product
+      assignments, including empty/unassigned warnings.
+- [ ] Products must read and mutate real categories, products, options, option
+      values, variants, stock/availability, media, and route placements.
+- [ ] Checkout Settings must persist real fulfillment, prompts, payment choices,
+      customer-field requirements, owner notification policy, and publish
+      blockers through protected backend settings.
+
+Completion gate: an operator can open a business and configure WhatsApp,
+template, flow, routes, values, products, checkout, live test, and diagnostics
+without encountering mock data or fake success. The configured flow runs against
+the selected published version and, where commerce is enabled, reads protected
+catalog/checkout data without letting admin UI violate order, pricing,
+inventory, tenant, or idempotency invariants.
 
 ### Milestone 3 - Commerce and Order Operations
 
@@ -1193,7 +1236,7 @@ the active roadmap:
 | 2026-07-19 | Guided continuously evaluates publish readiness while keeping incomplete drafts saveable. Problems are deduplicated, ordered with publish blockers first, and linked to the exact map step or repair control. | Draft work must remain recoverable, but an operator also needs an honest preview of what will block publishing. Runtime-compatible terminal behavior remains publishable; legacy or unnecessary terminal routes stay visible as cleanup warnings instead of falsely rejecting supported templates. |
 | 2026-07-19 | Guided image media is stored through tenant-scoped audience routes, then referenced by URL only after a successful upload. Replacement and removal are undoable draft edits and remain separate from Save draft; upload failure never changes the canonical document, and published versions stay immutable. | Storage creation and flow persistence have different failure boundaries. Keeping Save explicit preserves the existing conflict/retry model, while a dedicated `flow-images` folder prevents workflow media from being confused with catalog product assets. |
 | 2026-07-19 | Restoring flow history always creates one new draft; it never reactivates or mutates the selected snapshot. The database locks the tenant's flow row, verifies source ownership, archives any current draft, allocates the next version, and preserves the active published pointer in one service-role-only transaction. | A restore is a copy operation, not a rollback of live state. This keeps immutable history and pinned runtime sessions stable, prevents concurrent version-number races, and gives the operator an editable recovery point before any later publish decision. |
-| 2026-07-19 | The near-term sellable MVP is the Businesses workspace and its business sub-tabs, centered on real WhatsApp flow/chat operations. Other sidebar tabs are secondary add-ons until this core path is complete. | A client must be able to open a business, configure its WhatsApp connection, build/publish/test the flow, observe diagnostics, and run the chat experience reliably before broader Overview, Broadcasts, Analytics, Logs, developer, onboarding, and AI-assist surfaces can make the product more valuable. |
+| 2026-07-19 | The near-term sellable MVP is the Businesses workspace and its business sub-tabs, centered on real WhatsApp flow/chat operations. Other sidebar tabs are secondary add-ons until this core path is complete, and mock-only business sub-tabs are unfinished work, not acceptable product scope. | A client must be able to open a business, configure its WhatsApp connection, choose a flow template, build/publish/test the flow, configure catalog routes, route values, products, checkout behavior, observe diagnostics, and run the chat experience reliably before broader Overview, Broadcasts, Analytics, Logs, developer, onboarding, and AI-assist surfaces can make the product more valuable. |
 
 ## Roadmap Changelog
 
@@ -1276,3 +1319,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Corrected Guided Publish confirmation after production testing showed the modal opened but the final `Publish flow` control did not start the mutation or show feedback. | The confirmation now uses a native, data-tagged button path with guarded pointer/click handlers, blocks dialog close while publishing, and renders inline progress, success, or error feedback inside the light admin dialog before relying on toast state. Release marker is `m2c-guided-publish-action-v1`; local gates, deployment, and an authenticated production publish click proof remain required before this correction is accepted. |
 | 2026-07-19 | Released and accepted the Guided Publish confirmation correction from exact commit `12cf7c1`. | Production returned `200` with `X-Connect-Release: m2c-guided-publish-action-v1`. Authenticated browser proof on `/connect/admin/businesses/double-a-test-business/flow-builder` reloaded the new bundle, opened `Draft v23`, confirmed the native `data-guided-publish-confirm` control, clicked `Publish flow`, immediately showed `Publishing flow...` plus `Publishing and refreshing the live flow...`, disabled the publish controls, completed with no browser console errors, and the version selector showed `Live v30` above the still-editable `Draft v23`. Local gates passed: scoped ESLint, typecheck, production build, diff check, and `115/115` Node tests. The remaining 2C gate is real inbound pinned-runtime proof: existing chats must stay on their pinned version while newly started WhatsApp chats use `Live v30`. |
 | 2026-07-19 | Released and accepted the business workspace flow-template picker from exact commit `64349e2` after product review identified that a business had no place to choose its starting flow template. | Production returned `200` with `X-Connect-Release: m2c-business-template-picker-v1`. Setup Hub and Flow Builder now share `BusinessTemplatePicker`, load real published templates through the admin API, call the existing `clone_flow_template` business action, warn that the current draft is replaced while the live published flow remains unchanged, show loading/error/progress feedback, and refresh the Flow Builder after a template draft is created. Authenticated browser acceptance confirmed the picker appears in Setup Hub and Flow Builder, shows the current `Greeting + Store Info` template, opens the `Create draft from template?` confirmation with live-flow safety copy, and cancels without replacing `Draft v23`. Local gates passed: scoped ESLint, typecheck, production build, diff check, and `115/115` Node tests. |
+| 2026-07-19 | Promoted the Businesses workspace completion track as the next product priority after Milestone 2C runtime proof. | The roadmap now explicitly requires every business sub-tab to graduate from preview to live tenant data and real mutations before broad sidebar features are promoted. Setup Hub, WhatsApp Connection, and Flow Builder are the current working foundation; Live Test, Diagnostics, Catalog Routes, Route Values, Products, and Checkout Settings are the next business-tab implementation slices. |
