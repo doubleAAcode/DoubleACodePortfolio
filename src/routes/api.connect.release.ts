@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2c-version-restore-v1";
+export const CONNECT_RELEASE = "m2c-guided-publish-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "guided-problem-navigation",
               "guided-media-replacement",
               "guided-version-restore",
+              "guided-publish",
             ],
           },
           {

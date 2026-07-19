@@ -119,7 +119,8 @@ test("restore uses one service-role-only database command and both authorized Gu
   assert.match(workspace, /Restore as draft/);
   assert.match(workspace, /The live version has not changed\./);
   assert.match(workspace, /The live version stays unchanged until/);
-  assert.match(workspace, /Publish <FutureLabel/);
+  assert.match(workspace, /Restore as draft/);
+  assert.doesNotMatch(workspace, /Publish <FutureLabel/);
   assert.match(adminRoute, /action: "restore_business_flow_version"/);
   assert.match(clientRoute, /action: "restore_version"/);
 });

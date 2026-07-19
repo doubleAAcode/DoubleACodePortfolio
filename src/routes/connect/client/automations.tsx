@@ -189,6 +189,14 @@ function ClientAutomations() {
                   await flowQuery.refetch();
                   return snapshot.details;
                 }}
+                onPublishVersion={async (versionId) => {
+                  const snapshot = await applyWaDashboardFlowAction({
+                    action: "publish_version",
+                    versionId,
+                  });
+                  await flowQuery.refetch();
+                  return snapshot.details;
+                }}
                 onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
                   const snapshot = await applyWaDashboardFlowAction({
                     action: "save_draft",

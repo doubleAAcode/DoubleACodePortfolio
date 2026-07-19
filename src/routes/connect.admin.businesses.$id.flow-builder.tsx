@@ -44,6 +44,15 @@ function FlowBuilderPage() {
         if (!refreshed.data) throw new Error("The restored draft could not be reloaded.");
         return refreshed.data;
       }}
+      onPublishVersion={async (versionId) => {
+        await applyAdminBusinessAction(id, {
+          action: "publish_business_flow",
+          versionId,
+        });
+        const refreshed = await flowQuery.refetch();
+        if (!refreshed.data) throw new Error("The published flow could not be reloaded.");
+        return refreshed.data;
+      }}
       onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
         await applyAdminBusinessAction(id, {
           action: "save_business_flow_draft",

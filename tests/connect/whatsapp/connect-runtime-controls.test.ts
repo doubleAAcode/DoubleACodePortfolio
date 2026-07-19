@@ -62,9 +62,10 @@ test("runtime control migration is service-role-only and digest-backed", async (
 
 test("public release endpoint exposes a stable response header marker", async () => {
   const route = await readFile("src/routes/api.connect.release.ts", "utf8");
-  assert.match(route, /m2c-version-restore-v1/);
+  assert.match(route, /m2c-guided-publish-v1/);
   assert.match(route, /guided-media-replacement/);
   assert.match(route, /guided-version-restore/);
+  assert.match(route, /guided-publish/);
   assert.match(route, /"guided-flow-read"/);
   assert.match(route, /"guided-draft-edit"/);
   assert.match(route, /"guided-draft-conflict-control"/);

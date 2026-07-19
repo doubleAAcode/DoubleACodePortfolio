@@ -1,6 +1,6 @@
 # Double A Connect Product Roadmap
 
-Last updated: 2026-07-18
+Last updated: 2026-07-19
 
 ## Purpose
 
@@ -985,9 +985,11 @@ Work-package 2C status: **In progress - Guided already inspects immutable
 versions, and both authorized audiences now restore a published or archived
 snapshot into one new editable draft through an atomic tenant-scoped database
 command. Existing drafts move to history; the active published version and
-pinned runtime sessions remain unchanged. Production release acceptance,
-media/template availability checks, final pinning evidence, and the real Guided
-Publish action remain in that order.**
+pinned runtime sessions remain unchanged. The real Guided Publish action is now
+connected for saved, blocker-free drafts in both admin and client, creates a new
+immutable active snapshot, and keeps the source draft editable. Production
+release acceptance, media/template availability checks, final pinning evidence,
+and real inbound runtime proof remain before 2C can close.**
 
 Milestone 2 work-package contract:
 
@@ -1009,9 +1011,13 @@ Milestone 2 work-package contract:
 - [x] Load, create, duplicate, edit, reorder, enable/disable, and delete steps,
       including explicit incoming-route repair; save recoverable drafts through
       authorized APIs.
-- [~] Inspect immutable versions and restore history into a new draft through
-      authorized APIs. Atomic tenant-scoped restore is implemented and live;
-      real publish remains gated behind the rest of work package 2C.
+- [x] Inspect immutable versions and restore history into a new draft through
+      authorized APIs. Atomic tenant-scoped restore is implemented and live.
+- [~] Publish a saved Guided draft through authorized admin and client APIs.
+      Publish now creates a new active immutable snapshot, blocks unsaved or
+      invalid drafts, and leaves existing pinned sessions on their started
+      version. Provider availability checks, deployed browser acceptance, and
+      real inbound runtime proof remain.
 - [ ] Support WhatsApp trigger, text, image, template, question, menu, branch,
       contact field, tag, assignment, handoff, wait, jump, subflow, and close
       nodes.
@@ -1036,8 +1042,10 @@ Milestone 2 work-package contract:
       timeline built in Milestone 1.
 - [ ] Add test simulation from any step, sample-answer branching, execution
       traces, and stop/restart controls without sending a real customer message.
-- [ ] Preserve stable step IDs and published-version pinning so editing a draft
-      cannot change an already-running customer session.
+- [~] Preserve stable step IDs and published-version pinning so editing a draft
+      cannot change an already-running customer session. The publish UI and
+      backend create a new active snapshot and the runtime already loads pinned
+      versions; real inbound evidence remains in the 2C gate.
 
 Completion gate: a first-time authorized user builds, validates, repairs, and
 publishes a branching WhatsApp flow entirely in Guided without opening Canvas;
@@ -1254,3 +1262,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Implemented the final Milestone 2B slice: Guided image steps now upload, replace, and remove media through dedicated tenant-scoped admin and signed-client routes. JPG, PNG, and WebP files are constrained to 3 MB; storage failures are sanitized; upload state locks conflicting draft controls; successful media changes remain undoable and explicitly unsaved until Save draft; published versions remain read-only. The Flow Manager boundary no longer labels media replacement Future, while publishing and Canvas remain visibly Future. | Pure mutation and route contracts cover type/size/empty-file validation, stable node/edge/caption identity, signed audience scoping, the `flow-images` tenant folder, and sanitized provider failure handling. Authenticated end-to-end QA uploaded a synthetic PNG through the signed client route, persisted its public URL into the real canonical draft, reloaded it, restored the original image and revision, and removed the temporary object; published/runtime records were untouched. Browser QA removed the saved image, observed a seventh problem and exact `Fix media` navigation, then undid to the original clean 8-step/six-warning draft. The `390x844` view contains the image, replace/remove controls, and bilingual captions without horizontal overflow. Typecheck, scoped ESLint, `111/111` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Release marker `m2b-guided-media-v1`, canonical deployment, and denied production upload probes remain before 2B acceptance. |
 | 2026-07-19 | Released Guided media replacement from exact commit `8016ce4`; Milestone 2B safe draft editing is complete and accepted, and work package 2C is now authorized. | The canonical origin returned the expected `308` hosting redirect, and the production `www` endpoint returned `200`, `X-Connect-Release: m2b-guided-media-v1`, and capability `guided-media-replacement`. Deployed admin, primary signed-client, and partner signed-client flow-image endpoints each returned sanitized `401` without a session; admin and client draft mutation endpoints also remained `401`. Rollback is code-only by reverting `8016ce4`; no schema changed, the real draft was restored to its original image and clean eight-step state, and published/runtime records were untouched. Authenticated browser file selection on the production hostname remains a low residual release risk because the available browser driver cannot attach files; the same signed route, production Supabase storage, persistence, reload, and restoration path passed end to end locally against the deployed environment contract. The next authorized slice is 2C immutable version inspection and restore-to-new-draft foundations before real publishing is exposed. |
 | 2026-07-19 | Implemented the first Milestone 2C slice. Guided labels the current draft, live version, and archived history distinctly; selecting an immutable version exposes a real `Restore as draft` confirmation in both admin and client. The operation is tenant-scoped, returns stable `404/409` domain errors, records an admin audit event, archives an existing draft, creates exactly one revision-1 draft from the selected snapshot, and leaves the active version unchanged. Publish remains visibly `Future`. | The additive `wa_restore_business_flow_version` function is live in production, locks the business flow row, verifies source ownership, and grants execution only to `service_role`; `authenticated` and `anon` are denied. A rollback-only production proof created exactly one copied draft, preserved the active pointer and source JSON, then returned the database to the exact baseline of 30 versions, one draft, and two published rows. Domain tests cover editable-copy behavior, prior-draft archival, active/source immutability, invalid draft restore, and cross-tenant denial. Typecheck, scoped ESLint, `113/113` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Localhost browser QA was not attempted after the browser safety policy explicitly disallowed that origin; production visual acceptance follows deployment marker `m2c-version-restore-v1`. |
+| 2026-07-19 | Implemented the second Milestone 2C slice: Guided Publish is now a real admin and client action for the saved draft. The button blocks unsaved local changes, routes publish blockers to Problems, confirms that new chats switch while existing chats keep their pinned version, calls the existing tenant-scoped publish APIs, refreshes the builder, and removes only the Publish `Future` tag. | Memory-domain tests prove publishing creates a new active `PUBLISHED` snapshot from the draft, archives the previous live version, leaves the draft editable for future changes, and does not mutate the new active snapshot when the draft is edited again. Static adapter tests cover admin `publish_business_flow`, client `publish_version`, audit logging, blocker copy, pinning copy, and the Flow Manager boundary. Release marker is `m2c-guided-publish-v1`; full test/build gates, production deployment, denied API probes, authenticated browser acceptance, and real inbound pinned-runtime proof remain before this slice is accepted. |

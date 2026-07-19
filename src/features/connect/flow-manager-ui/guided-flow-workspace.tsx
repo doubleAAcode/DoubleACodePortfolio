@@ -108,12 +108,14 @@ export function GuidedFlowWorkspace({
   onSaveDraft,
   onUploadImage,
   onRestoreVersion,
+  onPublishVersion,
 }: {
   details: BusinessFlowDetails;
   showCanvasTab?: boolean;
   onSaveDraft?: (input: SaveDraftInput) => Promise<BusinessFlowDetails>;
   onUploadImage?: (file: File) => Promise<{ path: string; url: string }>;
   onRestoreVersion?: (versionId: string) => Promise<BusinessFlowDetails>;
+  onPublishVersion?: (versionId: string) => Promise<BusinessFlowDetails>;
 }) {
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
   const [selectedStepId, setSelectedStepId] = useState<string>();
@@ -124,6 +126,7 @@ export function GuidedFlowWorkspace({
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [saveConflict, setSaveConflict] = useState<string>();
   const [createStepOpen, setCreateStepOpen] = useState(false);
   const [deleteStepId, setDeleteStepId] = useState<string>();
@@ -250,6 +253,7 @@ export function GuidedFlowWorkspace({
   const dirty = stateDirty;
   const canUndo = historyVersionId === model.version.id && historyIndex > 0;
   const canRedo = historyVersionId === model.version.id && historyIndex < history.length - 1;
+  const publishBlockers = model.diagnostics.filter((issue) => issue.severity === "ERROR");
 
   function explainFuture(feature: string, description: string) {
     toast.info(`${feature} - Future`, { description });
@@ -466,6 +470,44 @@ export function GuidedFlowWorkspace({
     }
   }
 
+  async function publishVersion() {
+    if (!editable || !onPublishVersion) {
+      explainFuture(
+        "Publish changes",
+        "Choose the Draft version to publish. Published versions remain immutable.",
+      );
+      return;
+    }
+    if (dirty) {
+      toast.error("Save the draft before publishing", {
+        description: "Publishing uses the latest saved draft so chat receives a stable version.",
+      });
+      return;
+    }
+    if (publishBlockers.length > 0) {
+      toast.error("Fix publish blockers first", {
+        description: `${publishBlockers.length} ${publishBlockers.length === 1 ? "issue blocks" : "issues block"} publishing.`,
+      });
+      setActiveTab("validation");
+      return;
+    }
+    setPublishing(true);
+    try {
+      const published = await onPublishVersion(model.version.id);
+      adoptServerDetails(published);
+      toast.success(`Flow published from draft v${model.version.version_number}`, {
+        description:
+          "New chats will use the published version. Existing chats keep their pinned version.",
+      });
+    } catch (error) {
+      toast.error("Flow was not published", {
+        description: error instanceof Error ? error.message : "Try again after checking Problems.",
+      });
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   function adoptServerDetails(serverDetails: BusinessFlowDetails) {
     const serverResult = createGuidedFlowModel(serverDetails);
     if (!serverResult.ok) throw new Error(serverResult.message);
@@ -518,7 +560,7 @@ export function GuidedFlowWorkspace({
             <SelectTrigger
               className="h-9 w-48 max-w-full"
               aria-label="Flow version"
-              disabled={saving || restoring || Boolean(mediaUploadingNodeId)}
+              disabled={saving || restoring || publishing || Boolean(mediaUploadingNodeId)}
             >
               <SelectValue />
             </SelectTrigger>
@@ -543,7 +585,9 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Undo"
               title="Undo"
-              disabled={!canUndo || saving || restoring || Boolean(mediaUploadingNodeId)}
+              disabled={
+                !canUndo || saving || restoring || publishing || Boolean(mediaUploadingNodeId)
+              }
               onClick={() => setHistoryIndex((index) => index - 1)}
             >
               <Undo2 className="size-4" />
@@ -555,7 +599,9 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Redo"
               title="Redo"
-              disabled={!canRedo || saving || restoring || Boolean(mediaUploadingNodeId)}
+              disabled={
+                !canRedo || saving || restoring || publishing || Boolean(mediaUploadingNodeId)
+              }
               onClick={() => setHistoryIndex((index) => index + 1)}
             >
               <Redo2 className="size-4" />
@@ -607,18 +653,49 @@ export function GuidedFlowWorkspace({
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {saving ? "Saving..." : "Save draft"}
           </Button>
-          <Button
-            data-flow-manager-live-action
-            size="sm"
-            onClick={() =>
-              explainFuture(
-                "Publish changes",
-                "Publishing follows safe draft editing, repair validation, and immutable history in 2C.",
-              )
-            }
-          >
-            Publish <FutureLabel />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                data-flow-manager-live-action
+                size="sm"
+                disabled={
+                  saving ||
+                  restoring ||
+                  publishing ||
+                  Boolean(saveConflict) ||
+                  Boolean(mediaUploadingNodeId)
+                }
+                onClick={(event) => {
+                  if (!editable || !onPublishVersion || dirty || publishBlockers.length > 0) {
+                    event.preventDefault();
+                    void publishVersion();
+                  }
+                }}
+              >
+                {publishing ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <GitBranch className="size-4" />
+                )}
+                {publishing ? "Publishing..." : "Publish"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Publish this saved draft?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  New WhatsApp chats will start using this flow after publishing. Existing chats
+                  keep the version they already started with.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void publishVersion()}>
+                  Publish flow
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="More flow actions">
@@ -983,7 +1060,7 @@ function ValidationTab({
       <WorkspaceState
         icon={<AlertCircle className="size-5 text-emerald-700" />}
         title="No flow problems"
-        message="This draft has no publish blocker or repair warning. Publishing remains deferred to 2C."
+        message="This saved draft is ready to publish. Warnings will appear here when cleanup is needed."
       />
     );
   }
