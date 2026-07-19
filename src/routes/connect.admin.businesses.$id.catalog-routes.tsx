@@ -348,7 +348,15 @@ function CatalogRoutesPage() {
                         aria-label={`Delete ${group.name_english}`}
                         className="text-destructive"
                         disabled={Boolean(savingAction)}
-                        onClick={() => {
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          setDialogOpen(false);
+                          setNotice(null);
+                          setDeleteTargetId(group.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" && event.key !== " ") return;
+                          event.preventDefault();
                           setDialogOpen(false);
                           setNotice(null);
                           setDeleteTargetId(group.id);
