@@ -11,6 +11,7 @@ import {
   type FlowValidationResult,
 } from "./flow-template-types";
 import { validateFlowForEditor } from "./flow-editor";
+import { assertExpectedDraftRevision, FlowDraftConflictError } from "./flow-draft-conflict";
 import { withCanonicalFlowDocument } from "./flow-document";
 import { flowDiagnosticsToLegacyResult, validateFlow } from "./flow-validation";
 
@@ -56,6 +57,7 @@ export type BusinessFlowVersionRow = {
   flow_json: FlowDefinition;
   validation_result: FlowValidationResult;
   created_by_user_id: string;
+  revision: number;
   published_at: string | null;
   created_at: string;
 };
@@ -300,6 +302,7 @@ export async function cloneTemplateToBusiness({
     flow_json: flowJson,
     validation_result: validation,
     created_by_user_id: adminUser,
+    revision: 1,
     published_at: publish ? now : null,
     created_at: now,
   };
@@ -342,12 +345,19 @@ export async function saveBusinessFlowDraft({
   flowJson,
   adminUser,
   flowName,
+  versionId,
+  expectedRevision,
 }: {
   businessId: string;
   flowJson: FlowDefinition;
   adminUser: string;
   flowName?: string;
+  versionId?: string;
+  expectedRevision?: number;
 }) {
+  if ((versionId === undefined) !== (expectedRevision === undefined)) {
+    throw new Error("Draft version and revision must be provided together.");
+  }
   let details = await getBusinessFlowDetails(businessId);
   const now = new Date().toISOString();
   if (!details.flow) {
@@ -363,13 +373,6 @@ export async function saveBusinessFlowDraft({
       updated_at: now,
     });
     details = await getBusinessFlowDetails(businessId);
-  } else if (flowName?.trim() && flowName.trim() !== details.flow.name) {
-    await upsertBusinessFlow({
-      ...details.flow,
-      name: flowName.trim(),
-      updated_at: now,
-    });
-    details = await getBusinessFlowDetails(businessId);
   }
   if (!details.flow) throw new Error("Business flow could not be created.");
   const flow = withCanonicalFlowDocument(flowJson);
@@ -377,6 +380,14 @@ export async function saveBusinessFlowDraft({
   if (!saveValidation.ok) throw new Error(formatValidationError(saveValidation));
   const validation = validateForPersistence(flow, "draft");
   const draft = details.versions.find((version) => version.status === "DRAFT");
+  if (versionId !== undefined && expectedRevision !== undefined) {
+    assertExpectedDraftRevision({
+      draftId: draft?.id,
+      draftRevision: draft?.revision,
+      expectedVersionId: versionId,
+      expectedRevision,
+    });
+  }
   const versionNumber =
     draft?.version_number ??
     Math.max(0, ...details.versions.map((version) => version.version_number)) + 1;
@@ -388,10 +399,23 @@ export async function saveBusinessFlowDraft({
     flow_json: flow,
     validation_result: validation,
     created_by_user_id: adminUser,
+    revision: draft ? draft.revision + 1 : 1,
     published_at: null,
     created_at: draft?.created_at ?? now,
   };
-  await upsertBusinessFlowVersion(version);
+  if (draft && expectedRevision !== undefined) {
+    const saved = await updateBusinessFlowDraftVersionIfCurrent(version, expectedRevision);
+    if (!saved) throw new FlowDraftConflictError();
+  } else {
+    await upsertBusinessFlowVersion(version);
+  }
+  if (flowName?.trim() && flowName.trim() !== details.flow.name) {
+    await upsertBusinessFlow({
+      ...details.flow,
+      name: flowName.trim(),
+      updated_at: now,
+    });
+  }
   return getBusinessFlowDetails(businessId);
 }
 
@@ -419,6 +443,7 @@ export async function publishBusinessFlowVersion({
     flow_json: flow,
     validation_result: validation,
     created_by_user_id: version.created_by_user_id,
+    revision: 1,
     published_at: now,
     created_at: now,
   };
@@ -594,6 +619,31 @@ async function upsertBusinessFlowVersion(version: BusinessFlowVersionRow) {
     prefer: "resolution=merge-duplicates,return=minimal",
     body: JSON.stringify(version),
   });
+}
+
+async function updateBusinessFlowDraftVersionIfCurrent(
+  version: BusinessFlowVersionRow,
+  expectedRevision: number,
+) {
+  if (!isServerSupabaseConfigured()) {
+    const current = memoryBusinessFlowVersions.get(version.id);
+    if (!current || current.status !== "DRAFT" || current.revision !== expectedRevision) {
+      return false;
+    }
+    memoryBusinessFlowVersions.set(version.id, version);
+    return true;
+  }
+  const rows = await supabaseServerRest<Array<{ id: string }>>(
+    `/wa_business_flow_versions?id=eq.${encodeURIComponent(
+      version.id,
+    )}&status=eq.DRAFT&revision=eq.${expectedRevision}&select=id`,
+    {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: JSON.stringify(version),
+    },
+  );
+  return rows.length === 1;
 }
 
 async function updateTemplateStatus(templateId: string, status: FlowTemplateStatus) {

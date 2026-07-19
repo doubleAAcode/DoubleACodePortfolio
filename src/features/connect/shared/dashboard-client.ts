@@ -30,7 +30,13 @@ export type WaDashboardFlowSnapshot = {
 };
 
 export type WaDashboardFlowAction =
-  | { action: "save_draft"; flowJson: FlowDefinition; flowName?: string }
+  | {
+      action: "save_draft";
+      flowJson: FlowDefinition;
+      flowName?: string;
+      versionId: string;
+      expectedRevision: number;
+    }
   | { action: "publish_version"; versionId: string }
   | { action: "clone_template"; templateId: string }
   | {
@@ -182,7 +188,13 @@ async function apiFetch<T>(path: string, init: RequestInit = {}) {
   const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    throw new Error(data?.error || data?.message || response.statusText);
+    const error = new Error(data?.error || data?.message || response.statusText) as Error & {
+      code?: string;
+      status?: number;
+    };
+    error.code = typeof data?.code === "string" ? data.code : undefined;
+    error.status = response.status;
+    throw error;
   }
 
   return data as T;

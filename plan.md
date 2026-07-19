@@ -963,10 +963,11 @@ Work-package 2A status: **Complete - production release
 Work-package 2B status: **In progress - the deterministic visual-tree Guided
 editor, dedicated Selected step tab, safe field-level draft editing, explicit
 destinations, live validation, undo/redo, dirty-state protection, and authorized
-admin/client saves are implemented. The map exposes at most three WhatsApp
-reply branches per step and visibly flags legacy overflow, loops, missing
+admin/client saves with optimistic server-conflict protection are implemented.
+The map exposes at most three WhatsApp reply branches per step and visibly flags
+legacy overflow, loops, missing
 destinations, and unconnected saved steps. Step create/duplicate/reorder/delete,
-referenced-route repair, server conflict handling, and media replacement remain
+referenced-route repair and media replacement remain
 before the 2B gate can close.**
 
 Milestone 2 work-package contract:
@@ -1002,7 +1003,7 @@ Milestone 2 work-package contract:
 - [ ] Detect at least missing required content, invalid or unreachable targets,
       unreachable steps, dead ends, duplicate option values, unsupported node
       configuration, unavailable media/templates, and invalid start/end paths.
-- [ ] Protect work with dirty-state indicators, navigation warnings, retryable
+- [x] Protect work with dirty-state indicators, navigation warnings, retryable
       saves, server-conflict handling, undo/redo for the current editing session,
       and no fake success state after a rejected mutation.
 - [ ] Persist typed answers and deterministic branch decisions.
@@ -1146,6 +1147,7 @@ the active roadmap:
 | 2026-07-18 | Supabase Cron and service-role-only runtime controls own minute worker scheduling and rollout activation; Vercel dashboard access is not required. | Supabase supports one-minute jobs beside the durable state. Vault retains the raw worker bearer, the database stores only its digest, and the public release endpoint proves automatic deployment from the canonical origin. |
 | 2026-07-18 | Guided uses a vertical master-detail editor instead of the Lovable horizontal step-card strip. | The connected real flow exposed the strip's poor scanability and editing context. The user explicitly authorized this route-level departure so steps remain vertically navigable while the selected step's copy, choices, destinations, behavior, and problems stay together. The shared Flow Manager shell and visual language remain canonical. |
 | 2026-07-18 | Guided uses a deterministic visual conversation tree with a dedicated Selected step tab and no more than three reply branches per step. | The user selected the centered start, reply-path, and child-card layout for at-a-glance routing, plus tab-based editing for a clean workspace. It derives from canonical data and is not the freeform Canvas. |
+| 2026-07-19 | Guided draft saves use a monotonic version revision and an atomic compare-and-swap update. | Concurrent admin or client sessions must never silently overwrite a newer draft. A stale save returns `409 FLOW_DRAFT_CONFLICT`, keeps local edits open, and requires an explicit reload instead of auto-merging or claiming success. |
 
 ## Roadmap Changelog
 
@@ -1211,3 +1213,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released the route-aware Guided navigation from exact commit `fe7efdd`. | The canonical origin redirected to `www` as expected, then returned `200` with `X-Connect-Release: m2b-guided-routing-v1`; deployed admin and signed-client flow endpoints each remained sanitized `401` without a session. Rollback is code-only by reverting `fe7efdd`; no schema, flow document, draft, or published runtime data changed. Authenticated production visual acceptance remains open, while step deletion repair and server conflict handling remain the next authorized 2B backend work. |
 | 2026-07-18 | Replaced Guided's primary route-list workspace with the approved deterministic visual conversation tree. Start, reply paths, child steps, continuations, returns, invalid overflow, and unconnected saved steps are visible; Edit selects the card and opens the real controls in the Selected step tab. The tree exposes no more than three WhatsApp reply branches, while unsafe create/delete/reorder/media/publish mutations and Canvas remain gated. | This remains a presentation over canonical v2 and the existing authorized save adapters; no schema, draft, published flow, or runtime changed. Architecture checks cover the tree, limit-three contract, tab transition, route problems, internal horizontal containment, and absence of XYFlow/Canvas imports. Publish validation still rejects a fourth active WhatsApp button. Typecheck, scoped ESLint, `96/96` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Commit `a25b5ce` reached GitHub `main`, but no Vercel check or production promotion appeared and the canonical endpoint stayed on `m2b-guided-routing-v1`; marker `m2b-guided-tree-v2` is the traceable retrigger. Boundary probes and authenticated production visual acceptance remain release gates. |
 | 2026-07-18 | Released the Guided visual tree through retrigger commit `c4e4dec` after the first automatic deployment event did not promote. | The canonical origin redirected to `www` as expected and then returned `200` with `X-Connect-Release: m2b-guided-tree-v2`. Deployed admin and signed-client flow reads each returned sanitized `401` without a session. Rollback is code-only by reverting `a25b5ce` and `c4e4dec`; no schema, draft, published flow, or runtime data changed. Authenticated production visual acceptance remains open until the product owner refreshes the now-promoted build; referenced-step repair and server conflict handling remain the next 2B backend work. |
+| 2026-07-19 | Implemented Milestone 2B Guided draft conflict control for admin and client saves. Draft versions now carry a monotonic revision; authorized saves atomically compare the submitted version/revision before updating and return `409 FLOW_DRAFT_CONFLICT` when another session won. The Guided workspace keeps rejected local work, blocks repeat saves, supports copying the local JSON, and requires explicit confirmation before loading the latest server draft. | Applied `wa_guided_draft_conflict_control.sql` to production Supabase after a zero-write failed parse and clean retry. Postflight found 30 version rows, one draft, two published versions, zero invalid revisions, the positive-revision constraint, intact RLS/service-role grants, two active pointers, and zero invalid pointers. A real two-tab authenticated browser test against production data proved first-save success, stale-save rejection, retained local edits, disabled save, copy feedback, cancel-safe confirmation, latest reload, and exact restoration to `Start`; reload confirmed no QA marker. The builder had no document overflow at `390px` or `1280px`. Typecheck, scoped ESLint, `99/99` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical deployment and denied production API probes remain before this slice is accepted. |

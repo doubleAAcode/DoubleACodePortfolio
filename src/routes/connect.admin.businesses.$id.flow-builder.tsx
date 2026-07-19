@@ -33,11 +33,13 @@ function FlowBuilderPage() {
   return (
     <GuidedFlowWorkspace
       details={flowQuery.data}
-      onSaveDraft={async ({ flowJson, flowName }) => {
+      onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
         await applyAdminBusinessAction(id, {
           action: "save_business_flow_draft",
           flowJson,
           flowName,
+          versionId,
+          expectedRevision,
         });
         const refreshed = await flowQuery.refetch();
         if (!refreshed.data) throw new Error("The saved draft could not be reloaded.");

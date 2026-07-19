@@ -48,9 +48,11 @@ create table if not exists public.wa_business_flow_versions (
   flow_json jsonb not null,
   validation_result jsonb not null default '{}'::jsonb,
   created_by_user_id text not null,
+  revision bigint not null default 1,
   published_at timestamptz,
   created_at timestamptz not null default now(),
   unique (business_flow_id, version_number),
+  constraint wa_business_flow_versions_revision_positive check (revision > 0),
   check (status in ('DRAFT', 'PUBLISHED', 'ARCHIVED'))
 );
 

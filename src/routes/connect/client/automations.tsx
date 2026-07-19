@@ -179,11 +179,13 @@ function ClientAutomations() {
               <GuidedFlowWorkspace
                 details={flowQuery.data.details}
                 showCanvasTab={false}
-                onSaveDraft={async ({ flowJson, flowName }) => {
+                onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
                   const snapshot = await applyWaDashboardFlowAction({
                     action: "save_draft",
                     flowJson,
                     flowName,
+                    versionId,
+                    expectedRevision,
                   });
                   await flowQuery.refetch();
                   return snapshot.details;

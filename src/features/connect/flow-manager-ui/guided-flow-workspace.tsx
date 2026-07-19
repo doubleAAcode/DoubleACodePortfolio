@@ -2,6 +2,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Braces,
+  Copy,
   GitBranch,
   Loader2,
   MoreHorizontal,
@@ -14,6 +15,17 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -44,6 +56,7 @@ import {
   type GuidedFlowStep,
 } from "@/features/connect/flow-manager-ui/guided-flow-model";
 import type { CanonicalFlowDocument } from "@/features/connect/shared/flow-document";
+import { FLOW_DRAFT_CONFLICT_CODE } from "@/features/connect/shared/flow-draft-conflict";
 import type { BusinessFlowDetails } from "@/features/connect/shared/flow-template-store.server";
 import type {
   FlowDefinition,
@@ -59,6 +72,7 @@ type SaveDraftInput = {
   flowJson: FlowDefinition;
   flowName: string;
   versionId: string;
+  expectedRevision: number;
 };
 
 export function GuidedFlowWorkspace({
@@ -78,6 +92,7 @@ export function GuidedFlowWorkspace({
   const [historyIndex, setHistoryIndex] = useState(0);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveConflict, setSaveConflict] = useState<string>();
 
   const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
@@ -95,6 +110,7 @@ export function GuidedFlowWorkspace({
     setHistory([document]);
     setHistoryIndex(0);
     setSavedSnapshot(serializeGuidedDocument(document));
+    setSaveConflict(undefined);
     setSelectedStepId((current) =>
       current && baseResult.model.steps.some((step) => step.id === current)
         ? current
@@ -201,6 +217,7 @@ export function GuidedFlowWorkspace({
         flowJson: createGuidedDraftFlow(model.version.flow_json, model.document),
         flowName: model.flowName,
         versionId: model.version.id,
+        expectedRevision: model.version.revision,
       });
       const savedResult = createGuidedFlowModel(saved);
       if (!savedResult.ok) throw new Error(savedResult.message);
@@ -210,11 +227,18 @@ export function GuidedFlowWorkspace({
       setHistory([document]);
       setHistoryIndex(0);
       setSavedSnapshot(serializeGuidedDocument(document));
+      setSaveConflict(undefined);
       toast.success("Draft saved");
     } catch (error) {
-      toast.error("Draft was not saved", {
-        description: error instanceof Error ? error.message : "Try again without losing your work.",
-      });
+      const code = (error as { code?: string } | null)?.code;
+      const message =
+        error instanceof Error ? error.message : "Try again without losing your work.";
+      if (code === FLOW_DRAFT_CONFLICT_CODE) {
+        setSaveConflict(message);
+        toast.error("A newer draft is already saved", { description: message });
+      } else {
+        toast.error("Draft was not saved", { description: message });
+      }
     } finally {
       setSaving(false);
     }
@@ -226,6 +250,16 @@ export function GuidedFlowWorkspace({
       return;
     }
     setSelectedVersionId(versionId);
+  }
+
+  async function copyLocalDraft() {
+    try {
+      const localFlow = createGuidedDraftFlow(model.version.flow_json, model.document);
+      await navigator.clipboard.writeText(JSON.stringify(localFlow, null, 2));
+      toast.success("Local draft copied");
+    } catch {
+      toast.error("Local draft could not be copied");
+    }
   }
 
   return (
@@ -286,7 +320,7 @@ export function GuidedFlowWorkspace({
             data-flow-manager-live-action
             variant="outline"
             size="sm"
-            disabled={saving}
+            disabled={saving || Boolean(saveConflict)}
             onClick={() => void saveDraft()}
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
@@ -336,6 +370,51 @@ export function GuidedFlowWorkspace({
           </DropdownMenu>
         </div>
       </div>
+
+      {saveConflict ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-950 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-semibold">Draft changed in another session</div>
+              <p className="mt-0.5 text-sm">
+                Your save was rejected and your local edits remain open. Copy them before loading
+                the latest server draft.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => void copyLocalDraft()}>
+              <Copy className="size-4" /> Copy local draft
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="size-4" /> Reload latest
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Discard local unsaved edits?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Reloading opens the newest server draft and permanently removes the unsaved
+                    edits currently shown in this tab.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep editing</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => window.location.reload()}>
+                    Reload latest
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      ) : null}
 
       <Tabs className="min-w-0" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="max-w-full justify-start overflow-x-auto">

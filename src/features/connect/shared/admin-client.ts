@@ -170,7 +170,13 @@ export async function applyAdminBusinessAction(
     | { action: "save_admin_product_custom_field"; field: AdminProductCustomFieldInput }
     | { action: "delete_admin_product_custom_field"; fieldId: string }
     | { action: "clone_flow_template"; templateId: string }
-    | { action: "save_business_flow_draft"; flowJson: FlowDefinition; flowName?: string }
+    | {
+        action: "save_business_flow_draft";
+        flowJson: FlowDefinition;
+        flowName?: string;
+        versionId: string;
+        expectedRevision: number;
+      }
     | { action: "publish_business_flow"; versionId: string },
 ) {
   const result = await apiFetch<ApiResult<AdminBusinessDetails>>(
@@ -388,6 +394,14 @@ async function apiFetch<T>(path: string, init: RequestInit = {}) {
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
-  if (!response.ok) throw new Error(data?.error || data?.message || response.statusText);
+  if (!response.ok) {
+    const error = new Error(data?.error || data?.message || response.statusText) as Error & {
+      code?: string;
+      status?: number;
+    };
+    error.code = typeof data?.code === "string" ? data.code : undefined;
+    error.status = response.status;
+    throw error;
+  }
   return data as T;
 }

@@ -224,6 +224,7 @@ function version(
     },
     validation_result: { ok: !issue || issue.severity !== "ERROR", issues: issue ? [issue] : [] },
     created_by_user_id: "user-1",
+    revision: 1,
     published_at: status === "PUBLISHED" ? "2026-07-18T08:30:00.000Z" : null,
     created_at: "2026-07-18T08:00:00.000Z",
   };

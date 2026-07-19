@@ -23,6 +23,7 @@ import {
   publishBusinessFlowVersion,
   saveBusinessFlowDraft,
 } from "./flow-template-store.server";
+import { FlowDraftConflictError } from "./flow-draft-conflict";
 import type { FlowDefinition } from "./flow-template-types";
 import {
   acceptDashboardOrder,
@@ -166,7 +167,13 @@ export function createDashboardFlowHandlers(envSuffix = "") {
         }
 
         const action = (await request.json().catch(() => null)) as
-          | { action: "save_draft"; flowJson: FlowDefinition; flowName?: string }
+          | {
+              action: "save_draft";
+              flowJson: FlowDefinition;
+              flowName?: string;
+              versionId?: string;
+              expectedRevision?: number;
+            }
           | { action: "publish_version"; versionId: string }
           | { action: "clone_template"; templateId: string }
           | ({ action: "save_checkout_settings" } & DashboardFlowSettingsInput)
@@ -181,11 +188,24 @@ export function createDashboardFlowHandlers(envSuffix = "") {
           if (!action.flowJson || typeof action.flowJson !== "object") {
             return Response.json({ ok: false, error: "Flow data is required." }, { status: 400 });
           }
+          if (
+            !action.versionId?.trim() ||
+            typeof action.expectedRevision !== "number" ||
+            !Number.isSafeInteger(action.expectedRevision) ||
+            action.expectedRevision < 1
+          ) {
+            return Response.json(
+              { ok: false, error: "A valid draft version and revision are required." },
+              { status: 400 },
+            );
+          }
           await saveBusinessFlowDraft({
             businessId: session.businessId,
             flowJson: action.flowJson,
             flowName: action.flowName,
             adminUser: actor,
+            versionId: action.versionId,
+            expectedRevision: action.expectedRevision,
           });
         } else if (action.action === "publish_version") {
           if (!action.versionId?.trim()) {
@@ -459,6 +479,9 @@ function parseLifecycleAction(value: string | undefined): DashboardLifecycleActi
 }
 
 function dashboardApiError(error: unknown) {
+  if (error instanceof FlowDraftConflictError) {
+    return Response.json({ ok: false, code: error.code, error: error.message }, { status: 409 });
+  }
   const message = error instanceof Error ? error.message : "Dashboard request failed.";
   console.error("[wa-dashboard:api] request failed", { message });
   return Response.json({ ok: false, error: message }, { status: 500 });

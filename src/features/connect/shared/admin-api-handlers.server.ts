@@ -82,6 +82,7 @@ import {
   validateBusinessFlowJson,
 } from "./flow-template-store.server";
 import { validateFlowForEditor } from "./flow-editor";
+import { FlowDraftConflictError } from "./flow-draft-conflict";
 import type { FlowCategory, FlowDefinition } from "./flow-template-types";
 
 export function createInternalAdminSessionHandlers() {
@@ -214,6 +215,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
           flowJson?: unknown;
           flowName?: string;
           versionId?: string;
+          expectedRevision?: number;
           customerPhone?: string;
         } | null;
 
@@ -466,12 +468,25 @@ export function createInternalAdminBusinessDetailsHandlers() {
         }
 
         if (body?.action === "save_business_flow_draft" && body.flowJson) {
+          if (
+            !body.versionId?.trim() ||
+            typeof body.expectedRevision !== "number" ||
+            !Number.isSafeInteger(body.expectedRevision) ||
+            body.expectedRevision < 1
+          ) {
+            return Response.json(
+              { ok: false, error: "A valid draft version and revision are required." },
+              { status: 400 },
+            );
+          }
           const validation = validateBusinessFlowJson(body.flowJson);
           const data = await saveBusinessFlowDraft({
             businessId: params.businessId,
             flowJson: body.flowJson as never,
             adminUser: session.username,
             flowName: typeof body.flowName === "string" ? body.flowName : undefined,
+            versionId: body.versionId,
+            expectedRevision: body.expectedRevision,
           });
           await recordAdminAuditLog({
             adminUser: session.username,
@@ -996,6 +1011,9 @@ function requireAdmin(request: Request) {
 
 function adminApiError(error: unknown) {
   if (error instanceof Response) return error;
+  if (error instanceof FlowDraftConflictError) {
+    return Response.json({ ok: false, code: error.code, error: error.message }, { status: 409 });
+  }
   const message = error instanceof Error ? error.message : "Internal admin request failed.";
   console.error("[wa-admin:api] request failed", { message });
   return Response.json({ ok: false, error: message }, { status: 500 });
