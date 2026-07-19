@@ -36,6 +36,21 @@ export function maskCustomerIdentifier(value: string) {
   return `${"*".repeat(Math.max(0, value.length - 4))}${value.slice(-4)}`;
 }
 
+export function getCustomerPhoneLookupCandidates(value: string) {
+  const compact = value.trim().replace(/[\s()-]/g, "");
+  if (!compact) return [];
+
+  const digits = compact.startsWith("+") ? compact.slice(1) : compact;
+  const candidates = [compact];
+
+  if (/^\d{8,15}$/.test(digits)) {
+    candidates.push(digits);
+    candidates.push(`+${digits}`);
+  }
+
+  return Array.from(new Set(candidates));
+}
+
 export function calculateAvailableStock({
   stockQuantity,
   activeReservedQuantity,

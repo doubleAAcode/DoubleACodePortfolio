@@ -231,19 +231,31 @@ test("admin support diagnostics can inspect and reset a customer conversation", 
   assert.match(adminHandlers, /reset_customer_conversation/);
   assert.match(adminHandlers, /getActiveConversationSession/);
   assert.match(adminHandlers, /deleteConversationSession/);
-  assert.match(
-    adminHandlers,
-    /listWaMessageEvents\(\{\s*businessId:\s*params\.businessId,\s*customerPhone/,
-  );
+  assert.match(adminHandlers, /getCustomerPhoneLookupCandidates/);
+  assert.match(adminHandlers, /matchedCustomerPhoneMasked/);
+  assert.match(adminHandlers, /mergeMessageEvents/);
+  assert.match(adminHandlers, /listWaMessageEvents/);
   assert.match(adminHandlers, /CUSTOMER_CONVERSATION_RESET/);
   assert.match(adminClient, /export async function inspectAdminCustomerConversation/);
   assert.match(adminClient, /export async function resetAdminCustomerConversation/);
   assert.match(adminClient, /AdminConversationDiagnostics/);
   assert.match(businessDiagnosticsRoute, /inspectAdminCustomerConversation/);
   assert.match(businessDiagnosticsRoute, /resetAdminCustomerConversation/);
+  assert.match(businessDiagnosticsRoute, /isWhatsAppPhoneLookup/);
+  assert.match(businessDiagnosticsRoute, /Stored phone/);
   assert.match(businessDiagnosticsRoute, /Runtime version evidence/);
   assert.match(businessDiagnosticsRoute, /flowVersionId/);
   assert.doesNotMatch(businessDiagnosticsRoute, /Atlas Electronics|Shop by Brand|mock-data/);
+});
+
+test("admin customer diagnostics accepts Meta and E.164 phone lookup forms", () => {
+  assert.match(reliability, /export function getCustomerPhoneLookupCandidates/);
+  assert.match(reliability, /candidates\.push\(digits\)/);
+  assert.match(reliability, /candidates\.push\(`\+\$\{digits\}`\)/);
+  assert.match(adminHandlers, /candidates\.map\(async \(candidate\)/);
+  assert.match(adminHandlers, /customerPhone: candidate/);
+  assert.match(adminHandlers, /candidates\.map\(\(candidate\) =>/);
+  assert.match(adminHandlers, /lookupCandidatesMasked: candidates\.map\(maskCustomerIdentifier\)/);
 });
 
 test("Lovable business flow builder reads the authorized canonical Guided workspace", () => {

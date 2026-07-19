@@ -24,7 +24,7 @@ import {
 } from "./conversation-store.server";
 import { uploadWaFlowImage } from "./dashboard-store.server";
 import { listWaMessageEvents } from "./message-events.server";
-import { maskCustomerIdentifier } from "./reliability";
+import { getCustomerPhoneLookupCandidates, maskCustomerIdentifier } from "./reliability";
 import { sendWhatsAppTemplate, sendWhatsAppText } from "./sender.server";
 import {
   assignBusinessUser,
@@ -553,17 +553,31 @@ export function createInternalAdminBusinessDetailsHandlers() {
 
         if (body?.action === "inspect_customer_conversation" && body.customerPhone) {
           const customerPhone = String(body.customerPhone).trim();
-          const [sessionData, events] = await Promise.all([
-            getActiveConversationSession({
-              businessId: params.businessId,
-              customerPhone,
-            }),
-            listWaMessageEvents({
-              businessId: params.businessId,
-              customerPhone,
-              limit: 75,
-            }),
+          const candidates = getCustomerPhoneLookupCandidates(customerPhone);
+          const [sessionMatches, eventGroups] = await Promise.all([
+            Promise.all(
+              candidates.map(async (candidate) => ({
+                customerPhone: candidate,
+                session: await getActiveConversationSession({
+                  businessId: params.businessId,
+                  customerPhone: candidate,
+                }),
+              })),
+            ),
+            Promise.all(
+              candidates.map((candidate) =>
+                listWaMessageEvents({
+                  businessId: params.businessId,
+                  customerPhone: candidate,
+                  limit: 75,
+                }),
+              ),
+            ),
           ]);
+          const sessionMatch =
+            sessionMatches.find((match) => Boolean(match.session)) ?? sessionMatches[0];
+          const sessionData = sessionMatch?.session;
+          const events = mergeMessageEvents(eventGroups, 75);
           await recordAdminAuditLog({
             adminUser: session.username,
             request,
@@ -576,6 +590,11 @@ export function createInternalAdminBusinessDetailsHandlers() {
             ok: true,
             data: {
               customerPhoneMasked: maskCustomerIdentifier(customerPhone),
+              matchedCustomerPhoneMasked:
+                sessionMatch && sessionMatch.customerPhone !== customerPhone
+                  ? maskCustomerIdentifier(sessionMatch.customerPhone)
+                  : undefined,
+              lookupCandidatesMasked: candidates.map(maskCustomerIdentifier),
               session: sessionData
                 ? {
                     currentStep: sessionData.currentStep,
@@ -598,15 +617,25 @@ export function createInternalAdminBusinessDetailsHandlers() {
 
         if (body?.action === "reset_customer_conversation" && body.customerPhone) {
           const customerPhone = String(body.customerPhone).trim();
-          await deleteConversationSession({
-            businessId: params.businessId,
-            customerPhone,
-          });
-          const events = await listWaMessageEvents({
-            businessId: params.businessId,
-            customerPhone,
-            limit: 25,
-          });
+          const candidates = getCustomerPhoneLookupCandidates(customerPhone);
+          await Promise.all(
+            candidates.map((candidate) =>
+              deleteConversationSession({
+                businessId: params.businessId,
+                customerPhone: candidate,
+              }),
+            ),
+          );
+          const eventGroups = await Promise.all(
+            candidates.map((candidate) =>
+              listWaMessageEvents({
+                businessId: params.businessId,
+                customerPhone: candidate,
+                limit: 25,
+              }),
+            ),
+          );
+          const events = mergeMessageEvents(eventGroups, 25);
           await recordAdminAuditLog({
             adminUser: session.username,
             request,
@@ -619,6 +648,7 @@ export function createInternalAdminBusinessDetailsHandlers() {
             ok: true,
             data: {
               customerPhoneMasked: maskCustomerIdentifier(customerPhone),
+              lookupCandidatesMasked: candidates.map(maskCustomerIdentifier),
               session: null,
               events,
               resetAt: new Date().toISOString(),
@@ -632,6 +662,21 @@ export function createInternalAdminBusinessDetailsHandlers() {
       }
     },
   };
+}
+
+function mergeMessageEvents(
+  eventGroups: Awaited<ReturnType<typeof listWaMessageEvents>>[],
+  limit: number,
+) {
+  const eventsById = new Map<string, Awaited<ReturnType<typeof listWaMessageEvents>>[number]>();
+  for (const events of eventGroups) {
+    for (const event of events) {
+      eventsById.set(event.id, event);
+    }
+  }
+  return Array.from(eventsById.values())
+    .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
+    .slice(0, limit);
 }
 
 export function createInternalAdminFlowTemplatesHandlers() {

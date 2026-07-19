@@ -54,8 +54,11 @@ function DiagnosticsPage() {
     null;
 
   async function lookupConversation() {
-    if (!isE164(customerPhone)) {
-      setNotice({ tone: "destructive", message: "Enter the customer phone in E.164 format." });
+    if (!isWhatsAppPhoneLookup(customerPhone)) {
+      setNotice({
+        tone: "destructive",
+        message: "Enter the customer phone with digits and optional +.",
+      });
       return;
     }
     setLoading(true);
@@ -75,8 +78,11 @@ function DiagnosticsPage() {
   }
 
   async function resetConversation() {
-    if (!isE164(customerPhone)) {
-      setNotice({ tone: "destructive", message: "Enter the customer phone in E.164 format." });
+    if (!isWhatsAppPhoneLookup(customerPhone)) {
+      setNotice({
+        tone: "destructive",
+        message: "Enter the customer phone with digits and optional +.",
+      });
       return;
     }
     if (
@@ -240,6 +246,9 @@ function SessionSnapshot({ report }: { report: AdminConversationDiagnostics | nu
         ) : session ? (
           <>
             <Field label="Customer" value={report.customerPhoneMasked} />
+            {report.matchedCustomerPhoneMasked ? (
+              <Field label="Stored phone" value={report.matchedCustomerPhoneMasked} />
+            ) : null}
             <Field label="Current step" value={session.currentStep} />
             <Field label="Current node" value={session.currentNodeId || "Not linked"} mono />
             <Field label="Language" value={session.language?.toUpperCase() || "Not selected"} />
@@ -397,8 +406,8 @@ function healthTone(status: "OK" | "WARNING" | "ERROR") {
   return "destructive" as const;
 }
 
-function isE164(value: string) {
-  return /^\+[1-9]\d{7,14}$/.test(value.trim());
+function isWhatsAppPhoneLookup(value: string) {
+  return /^\+?[1-9]\d{7,14}$/.test(value.trim().replace(/[\s()-]/g, ""));
 }
 
 function formatTime(value: string) {

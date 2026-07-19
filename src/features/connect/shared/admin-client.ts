@@ -60,6 +60,8 @@ type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export type AdminConversationDiagnostics = {
   customerPhoneMasked: string;
+  matchedCustomerPhoneMasked?: string;
+  lookupCandidatesMasked?: string[];
   session: {
     currentStep: string;
     language?: "en" | "ar";
