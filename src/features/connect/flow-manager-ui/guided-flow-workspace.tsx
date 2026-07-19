@@ -12,7 +12,7 @@ import {
   Save,
   Undo2,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -128,6 +128,11 @@ export function GuidedFlowWorkspace({
   const [restoring, setRestoring] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [publishFeedback, setPublishFeedback] = useState<{
+    tone: "info" | "success" | "error";
+    message: string;
+  }>();
+  const publishStartedRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState<string>();
   const [createStepOpen, setCreateStepOpen] = useState(false);
   const [deleteStepId, setDeleteStepId] = useState<string>();
@@ -156,6 +161,7 @@ export function GuidedFlowWorkspace({
     setHistoryIndex(0);
     setSavedSnapshot(serializeGuidedDocument(document));
     setSaveConflict(undefined);
+    setPublishFeedback(undefined);
     setSelectedStepId((current) =>
       current && baseResult.model.steps.some((step) => step.id === current)
         ? current
@@ -501,22 +507,43 @@ export function GuidedFlowWorkspace({
       setActiveTab("validation");
       return;
     }
+    if (publishing || publishStartedRef.current) return;
+    publishStartedRef.current = true;
     setPublishing(true);
+    setPublishFeedback({
+      tone: "info",
+      message: "Publishing and refreshing the live flow...",
+    });
     try {
       const published = await onPublishVersion(model.version.id);
       adoptServerDetails(published);
-      setPublishDialogOpen(false);
+      setPublishFeedback({
+        tone: "success",
+        message: "Published. New WhatsApp chats now use this flow.",
+      });
       toast.success(`Flow published from draft v${model.version.version_number}`, {
         description:
           "New chats will use the published version. Existing chats keep their pinned version.",
       });
+      setPublishDialogOpen(false);
     } catch (error) {
+      setPublishFeedback({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Try again after checking Problems.",
+      });
       toast.error("Flow was not published", {
         description: error instanceof Error ? error.message : "Try again after checking Problems.",
       });
     } finally {
       setPublishing(false);
+      publishStartedRef.current = false;
     }
+  }
+
+  function requestPublishFromDialog(event: SyntheticEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    void publishVersion();
   }
 
   function adoptServerDetails(serverDetails: BusinessFlowDetails) {
@@ -673,7 +700,14 @@ export function GuidedFlowWorkspace({
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {saving ? "Saving..." : "Save draft"}
           </Button>
-          <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+          <AlertDialog
+            open={publishDialogOpen}
+            onOpenChange={(open) => {
+              if (publishing) return;
+              setPublishDialogOpen(open);
+              if (open) setPublishFeedback(undefined);
+            }}
+          >
             <AlertDialogTrigger asChild>
               <Button
                 data-flow-manager-live-action
@@ -710,13 +744,25 @@ export function GuidedFlowWorkspace({
                   keep the version they already started with.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              {publishing ? (
+              {publishFeedback ? (
                 <div
                   role="status"
-                  className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950"
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                    publishFeedback.tone === "error"
+                      ? "border-red-200 bg-red-50 text-red-950"
+                      : publishFeedback.tone === "success"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+                        : "border-sky-200 bg-sky-50 text-sky-950"
+                  }`}
                 >
-                  <Loader2 className="size-4 animate-spin text-sky-700" />
-                  Publishing and refreshing the live flow...
+                  {publishing ? (
+                    <Loader2 className="size-4 animate-spin text-sky-700" />
+                  ) : publishFeedback.tone === "error" ? (
+                    <AlertTriangle className="size-4 text-red-700" />
+                  ) : (
+                    <GitBranch className="size-4 text-emerald-700" />
+                  )}
+                  {publishFeedback.message}
                 </div>
               ) : null}
               <AlertDialogFooter>
@@ -726,11 +772,13 @@ export function GuidedFlowWorkspace({
                 >
                   Cancel
                 </AlertDialogCancel>
-                <Button
+                <button
+                  data-guided-publish-confirm
                   type="button"
                   disabled={publishing}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={() => void publishVersion()}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                  onPointerDown={requestPublishFromDialog}
+                  onClick={requestPublishFromDialog}
                 >
                   {publishing ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -738,7 +786,7 @@ export function GuidedFlowWorkspace({
                     <GitBranch className="size-4" />
                   )}
                   {publishing ? "Publishing..." : "Publish flow"}
-                </Button>
+                </button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

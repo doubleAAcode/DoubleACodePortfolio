@@ -76,8 +76,12 @@ test("Guided publish is connected for admin and client with blocker and pinning 
   assert.match(workspace, /Existing chats\s+keep the version they already started with/);
   assert.match(workspace, /open=\{publishDialogOpen\}/);
   assert.match(workspace, /Publishing and refreshing the live flow/);
+  assert.match(workspace, /data-guided-publish-confirm/);
+  assert.match(workspace, /onPointerDown=\{requestPublishFromDialog\}/);
+  assert.match(workspace, /Published\. New WhatsApp chats now use this flow\./);
+  assert.match(workspace, /Flow was not published/);
   assert.match(workspace, /border-slate-200 bg-white text-slate-950/);
-  assert.match(workspace, /bg-blue-600 text-white/);
+  assert.match(workspace, /bg-blue-600[\s\S]*text-white/);
   assert.match(workspace, /role="status"/);
   assert.match(workspace, /Saving draft\.\.\./);
   assert.match(workspace, /Publish flow/);
