@@ -812,10 +812,11 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: release and accept the exact Milestone 2B
-media-replacement implementation. Confirm the canonical release marker and
-denied admin/client upload boundaries before promoting 2C. Publishing remains
-deferred to 2C, Canvas remains `Future`, and provider sending remains off.
+Current authorized next action: begin only the Milestone 2C immutable
+publish/history foundation. Audit the existing publish, active-version, and
+runtime-pinning services; prove published snapshots cannot be edited; then add
+an authorized restore-to-new-draft contract before exposing a real Guided
+Publish action. Canvas remains `Future`, and provider sending remains off.
 
 Milestone 1 platform controls:
 
@@ -948,19 +949,19 @@ an authorized human replies; sent/delivered/read or failed status appears in the
 timeline; assignment, note, tag, and close/reopen actions survive reload; another
 tenant cannot read or mutate the conversation.
 
-Current implementation sequence: **Milestone 1A through 1D and Milestone 2A are
-complete with accepted production gates. Milestone 2B implementation is
-complete; its production release gate is the only active work.**
+Current implementation sequence: **Milestone 1A through 1D and Milestone 2A
+through 2B are complete with accepted production gates. Milestone 2C publish
+and history is the only active work package.**
 
 ### Milestone 2 - Guided Flow Builder and Runtime
 
-Status: **Active - work package 2B release gate only**
+Status: **Active - work package 2C only**
 
 Work-package 2A status: **Complete - production release
 `m2a-guided-foundation-v1` accepted.**
 
-Work-package 2B status: **Implementation complete - production release
-acceptance pending. The deterministic visual-tree Guided
+Work-package 2B status: **Complete - production release
+`m2b-guided-media-v1` accepted. The deterministic visual-tree Guided
 editor, dedicated Selected step tab, safe field-level draft editing, explicit
 destinations, live validation, undo/redo, dirty-state protection, and authorized
 admin/client saves with optimistic server-conflict protection are implemented.
@@ -979,6 +980,11 @@ The map exposes at most three WhatsApp reply branches per step and visibly flags
 legacy overflow, loops, missing destinations, and unconnected saved steps.
 Provider availability checks for referenced media and approved templates remain
 part of 2C publish readiness.**
+
+Work-package 2C status: **Active - immutable version inspection, safe
+restore-to-new-draft, media/template availability checks, pinned-version
+guarantees, and the final authorized Guided Publish action remain to be
+implemented and accepted in that order.**
 
 Milestone 2 work-package contract:
 
@@ -1241,3 +1247,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Implemented the Milestone 2B ordered Problems experience and automatic-route repair control for both Guided audiences. The same canonical validator now exposes draft warnings and reachable publish blockers, deduplicates equivalent diagnostics, orders blockers first, and routes each action to the affected map step, message, choice, destination, media, behavior, or advanced control. Choice validation now covers stable keys, labels, provider length/quantity limits, targets, and canonical edge synchronization; automatic routes detect duplicates and can be redirected or cleared without changing stable edge identity. | Tests cover ordered/deduplicated blockers and warnings, diagnostic-to-control mapping, exact focus contracts, automatic-route deduplication, official template compatibility, and the existing protected order pipeline. Authenticated browser QA against the production-backed 8-step draft created a temporary reachable invalid reply menu, observed two publish blockers before warnings, followed `Fix message`, `Fix choices`, and `Fix route` to active controls, then undid both changes to the exact clean 8-step draft. The real six-warning list and `Show on map` navigation were accepted on desktop and `390x844` mobile. Typecheck, scoped ESLint, `109/109` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. No schema, saved draft, published version, or runtime session changed. Canonical deployment and denied mutation probes remain before acceptance; media replacement is next. |
 | 2026-07-19 | Released Guided ordered Problems and route repair from exact commit `40ca44c`; this vertical slice is accepted while Milestone 2B remains active for media replacement. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-guided-problems-v1`, and capability `guided-problem-navigation` alongside all earlier Guided capabilities. The deployed admin business mutation and signed-client draft mutation endpoints each returned `401` without a session. Rollback is code-only by reverting `40ca44c`; no schema or provider control changed, the production-backed draft remains the original clean 8 steps after local undo, and published/runtime records were untouched. The next authorized 2B slice is authenticated media replacement with recoverable upload/save failures and reload verification; publishing remains gated in 2C. |
 | 2026-07-19 | Implemented the final Milestone 2B slice: Guided image steps now upload, replace, and remove media through dedicated tenant-scoped admin and signed-client routes. JPG, PNG, and WebP files are constrained to 3 MB; storage failures are sanitized; upload state locks conflicting draft controls; successful media changes remain undoable and explicitly unsaved until Save draft; published versions remain read-only. The Flow Manager boundary no longer labels media replacement Future, while publishing and Canvas remain visibly Future. | Pure mutation and route contracts cover type/size/empty-file validation, stable node/edge/caption identity, signed audience scoping, the `flow-images` tenant folder, and sanitized provider failure handling. Authenticated end-to-end QA uploaded a synthetic PNG through the signed client route, persisted its public URL into the real canonical draft, reloaded it, restored the original image and revision, and removed the temporary object; published/runtime records were untouched. Browser QA removed the saved image, observed a seventh problem and exact `Fix media` navigation, then undid to the original clean 8-step/six-warning draft. The `390x844` view contains the image, replace/remove controls, and bilingual captions without horizontal overflow. Typecheck, scoped ESLint, `111/111` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Release marker `m2b-guided-media-v1`, canonical deployment, and denied production upload probes remain before 2B acceptance. |
+| 2026-07-19 | Released Guided media replacement from exact commit `8016ce4`; Milestone 2B safe draft editing is complete and accepted, and work package 2C is now authorized. | The canonical origin returned the expected `308` hosting redirect, and the production `www` endpoint returned `200`, `X-Connect-Release: m2b-guided-media-v1`, and capability `guided-media-replacement`. Deployed admin, primary signed-client, and partner signed-client flow-image endpoints each returned sanitized `401` without a session; admin and client draft mutation endpoints also remained `401`. Rollback is code-only by reverting `8016ce4`; no schema changed, the real draft was restored to its original image and clean eight-step state, and published/runtime records were untouched. Authenticated browser file selection on the production hostname remains a low residual release risk because the available browser driver cannot attach files; the same signed route, production Supabase storage, persistence, reload, and restoration path passed end to end locally against the deployed environment contract. The next authorized slice is 2C immutable version inspection and restore-to-new-draft foundations before real publishing is exposed. |
