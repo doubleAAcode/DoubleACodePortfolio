@@ -44,12 +44,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
 import {
+  createGuidedNode,
   createGuidedDraftFlow,
+  deleteGuidedNode,
+  duplicateGuidedNode,
+  moveGuidedNode,
   serializeGuidedDocument,
+  type GuidedDeleteRepair,
+  type GuidedNewStepType,
   updateGuidedNode,
   updateGuidedOption,
 } from "@/features/connect/flow-manager-ui/guided-flow-draft";
 import { GuidedFlowEditor } from "@/features/connect/flow-manager-ui/guided-flow-editor";
+import {
+  GuidedCreateStepDialog,
+  GuidedDeleteStepDialog,
+} from "@/features/connect/flow-manager-ui/guided-flow-step-dialogs";
 import {
   createGuidedFlowModel,
   type GuidedFlowModel,
@@ -93,6 +103,8 @@ export function GuidedFlowWorkspace({
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveConflict, setSaveConflict] = useState<string>();
+  const [createStepOpen, setCreateStepOpen] = useState(false);
+  const [deleteStepId, setDeleteStepId] = useState<string>();
 
   const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
@@ -197,6 +209,70 @@ export function GuidedFlowWorkspace({
     const nextHistory = [...history.slice(0, historyIndex + 1), next].slice(-50);
     setHistory(nextHistory);
     setHistoryIndex(nextHistory.length - 1);
+  }
+
+  function requireEditableStepMutation(action: () => void) {
+    if (editable) {
+      action();
+      return;
+    }
+    explainFuture(
+      "Read-only version",
+      "Choose the Draft version to change its steps. Published versions remain immutable.",
+    );
+  }
+
+  function createStep(input: { type: GuidedNewStepType; title: string }) {
+    let createdId: string | undefined;
+    commitDocument((document) => {
+      const created = createGuidedNode(document, input);
+      createdId = created.nodeId;
+      return created.document;
+    });
+    if (!createdId) return;
+    setSelectedStepId(createdId);
+    setActiveTab("selected");
+  }
+
+  function duplicateStep(nodeId: string) {
+    requireEditableStepMutation(() => {
+      let duplicateId: string | undefined;
+      commitDocument((document) => {
+        const duplicated = duplicateGuidedNode(document, nodeId);
+        duplicateId = duplicated.nodeId;
+        return duplicated.document;
+      });
+      if (!duplicateId) return;
+      setSelectedStepId(duplicateId);
+      setActiveTab("selected");
+      toast.success("Step duplicated");
+    });
+  }
+
+  function moveStep(nodeId: string, direction: "up" | "down") {
+    requireEditableStepMutation(() => {
+      commitDocument((document) => moveGuidedNode(document, nodeId, direction));
+    });
+  }
+
+  function requestDeleteStep(nodeId: string) {
+    requireEditableStepMutation(() => {
+      if (model.document.startNodeId === nodeId) {
+        toast.info("The start step cannot be deleted", {
+          description: "A later Guided phase will support choosing a different start step.",
+        });
+        return;
+      }
+      setDeleteStepId(nodeId);
+    });
+  }
+
+  function deleteStep(nodeId: string, repair?: GuidedDeleteRepair) {
+    const selectedIndex = model.steps.findIndex((step) => step.id === nodeId);
+    const fallback = model.steps[selectedIndex + 1] ?? model.steps[selectedIndex - 1];
+    commitDocument((document) => deleteGuidedNode(document, nodeId, repair));
+    if (selectedStepId === nodeId) setSelectedStepId(fallback?.id);
+    toast.success("Step deleted");
   }
 
   async function saveDraft() {
@@ -462,6 +538,10 @@ export function GuidedFlowWorkspace({
               commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
             }
             onFuture={explainFuture}
+            onAddStep={() => requireEditableStepMutation(() => setCreateStepOpen(true))}
+            onDuplicateStep={duplicateStep}
+            onMoveStep={moveStep}
+            onDeleteStep={requestDeleteStep}
             onEdit={(nodeId) => {
               setSelectedStepId(nodeId);
               setActiveTab("selected");
@@ -482,6 +562,10 @@ export function GuidedFlowWorkspace({
               commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
             }
             onFuture={explainFuture}
+            onAddStep={() => requireEditableStepMutation(() => setCreateStepOpen(true))}
+            onDuplicateStep={duplicateStep}
+            onMoveStep={moveStep}
+            onDeleteStep={requestDeleteStep}
           />
         </TabsContent>
         <TabsContent value="preview" className="mt-4">
@@ -508,6 +592,18 @@ export function GuidedFlowWorkspace({
           </TabsContent>
         ) : null}
       </Tabs>
+
+      <GuidedCreateStepDialog
+        open={createStepOpen}
+        onOpenChange={setCreateStepOpen}
+        onCreate={createStep}
+      />
+      <GuidedDeleteStepDialog
+        model={model}
+        stepId={deleteStepId}
+        onClose={() => setDeleteStepId(undefined)}
+        onDelete={deleteStep}
+      />
     </div>
   );
 }

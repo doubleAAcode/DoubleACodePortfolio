@@ -964,10 +964,11 @@ Work-package 2B status: **In progress - the deterministic visual-tree Guided
 editor, dedicated Selected step tab, safe field-level draft editing, explicit
 destinations, live validation, undo/redo, dirty-state protection, and authorized
 admin/client saves with optimistic server-conflict protection are implemented.
+Stable step creation, duplication, ordering, and reference-safe deletion are
+also implemented for both audiences.
 The map exposes at most three WhatsApp reply branches per step and visibly flags
-legacy overflow, loops, missing
-destinations, and unconnected saved steps. Step create/duplicate/reorder/delete,
-referenced-route repair and media replacement remain
+legacy overflow, loops, missing destinations, and unconnected saved steps.
+Choice creation/removal, complete problem coverage, and media replacement remain
 before the 2B gate can close.**
 
 Milestone 2 work-package contract:
@@ -987,9 +988,11 @@ Milestone 2 work-package contract:
       path during this milestone.
 - [x] Map Guided steps and explicit destinations to the existing canonical v2
       flow document without introducing a second UI-owned flow format.
-- [ ] Load, create, duplicate, edit, reorder, enable/disable, and delete steps;
-      save recoverable drafts; publish immutable versions; and inspect or restore
-      version history through authorized APIs.
+- [x] Load, create, duplicate, edit, reorder, enable/disable, and delete steps,
+      including explicit incoming-route repair; save recoverable drafts through
+      authorized APIs.
+- [ ] Publish immutable versions and inspect or restore version history through
+      authorized APIs in work package 2C.
 - [ ] Support WhatsApp trigger, text, image, template, question, menu, branch,
       contact field, tag, assignment, handoff, wait, jump, subflow, and close
       nodes.
@@ -1148,6 +1151,7 @@ the active roadmap:
 | 2026-07-18 | Guided uses a vertical master-detail editor instead of the Lovable horizontal step-card strip. | The connected real flow exposed the strip's poor scanability and editing context. The user explicitly authorized this route-level departure so steps remain vertically navigable while the selected step's copy, choices, destinations, behavior, and problems stay together. The shared Flow Manager shell and visual language remain canonical. |
 | 2026-07-18 | Guided uses a deterministic visual conversation tree with a dedicated Selected step tab and no more than three reply branches per step. | The user selected the centered start, reply-path, and child-card layout for at-a-glance routing, plus tab-based editing for a clean workspace. It derives from canonical data and is not the freeform Canvas. |
 | 2026-07-19 | Guided draft saves use a monotonic version revision and an atomic compare-and-swap update. | Concurrent admin or client sessions must never silently overwrite a newer draft. A stale save returns `409 FLOW_DRAFT_CONFLICT`, keeps local edits open, and requires an explicit reload instead of auto-merging or claiming success. |
+| 2026-07-19 | Guided step ordering changes saved presentation order only; routes continue to target stable node IDs. Referenced non-start steps can be deleted only after the user explicitly redirects all inbound routes to one surviving step or removes those destinations. | Reordering must not silently alter conversation behavior. Explicit repair prevents dangling references, while keeping the start step undeletable in 2B avoids an implicit trigger/start migration before those rules are designed. |
 
 ## Roadmap Changelog
 
@@ -1215,3 +1219,4 @@ current-status sections above define the active implementation state.
 | 2026-07-18 | Released the Guided visual tree through retrigger commit `c4e4dec` after the first automatic deployment event did not promote. | The canonical origin redirected to `www` as expected and then returned `200` with `X-Connect-Release: m2b-guided-tree-v2`. Deployed admin and signed-client flow reads each returned sanitized `401` without a session. Rollback is code-only by reverting `a25b5ce` and `c4e4dec`; no schema, draft, published flow, or runtime data changed. Authenticated production visual acceptance remains open until the product owner refreshes the now-promoted build; referenced-step repair and server conflict handling remain the next 2B backend work. |
 | 2026-07-19 | Implemented Milestone 2B Guided draft conflict control for admin and client saves. Draft versions now carry a monotonic revision; authorized saves atomically compare the submitted version/revision before updating and return `409 FLOW_DRAFT_CONFLICT` when another session won. The Guided workspace keeps rejected local work, blocks repeat saves, supports copying the local JSON, and requires explicit confirmation before loading the latest server draft. | Applied `wa_guided_draft_conflict_control.sql` to production Supabase after a zero-write failed parse and clean retry. Postflight found 30 version rows, one draft, two published versions, zero invalid revisions, the positive-revision constraint, intact RLS/service-role grants, two active pointers, and zero invalid pointers. A real two-tab authenticated browser test against production data proved first-save success, stale-save rejection, retained local edits, disabled save, copy feedback, cancel-safe confirmation, latest reload, and exact restoration to `Start`; reload confirmed no QA marker. The builder had no document overflow at `390px` or `1280px`. Typecheck, scoped ESLint, `99/99` main tests, `15/15` reliability tests, production build, and diff checks pass. Canonical deployment and denied production API probes remain before this slice is accepted. |
 | 2026-07-19 | Released Guided draft conflict control from exact commit `c707da9`; this vertical slice is accepted while Milestone 2B remains active for step mutations, referenced-route repair, and media replacement. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-draft-conflicts-v1`, and capability `guided-draft-conflict-control`. Deployed admin and signed-client draft mutation endpoints each returned `401` without a session. The authenticated two-tab proof used local sessions against production Supabase because a production UI credential remains unavailable; this is the residual browser risk. Rollback is code-only by reverting `c707da9`; the additive revision column and constraint can remain safely because older code ignores them, and the real draft was restored to `Start` with no QA marker. The next authorized 2B slice is stable step creation/duplication/reorder/deletion with explicit referenced-route repair; publishing, Canvas, and provider sending remain gated. |
+| 2026-07-19 | Implemented the next Milestone 2B vertical slice: authorized Guided drafts now support stable step creation, duplication, presentation-only reordering, and deletion with explicit incoming-route repair. Add and duplicate select the new stable node in Selected step; move controls preserve every destination ID; the start step cannot be deleted; referenced deletion requires either redirecting all inbound routes to one surviving step or removing those destinations. Choice creation/removal, broader problem coverage, and media replacement remain before the 2B gate can close. | Unit coverage proves unique stable node/edge IDs, route-preserving reorder, blocked start deletion, mandatory repair, redirect, and destination removal. An authenticated browser journey against the production draft created `step_message`, duplicated it as `step_message_copy`, reordered, saved, reloaded, deleted both, saved, and reloaded the original 8-step draft with no QA marker. A real referenced-step dialog listed `Start: choice store_info`, kept confirmation disabled until repair was selected, and cancelled without dirtying the draft. Desktop and `390x844` mobile checks found no document overflow and the add-step dialog fit the viewport. Typecheck, scoped ESLint, `103/103` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. No schema or published/runtime data changed. Canonical deployment and denied production mutation probes remain before this slice is accepted. |

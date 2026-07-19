@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Copy,
   GitBranch,
   Image as ImageIcon,
   ListTree,
@@ -20,6 +21,13 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,6 +59,10 @@ export function GuidedFlowEditor({
   onUpdateNode,
   onUpdateOption,
   onFuture,
+  onAddStep,
+  onDuplicateStep,
+  onMoveStep,
+  onDeleteStep,
   view = "tree",
   onEdit,
 }: {
@@ -65,6 +77,10 @@ export function GuidedFlowEditor({
     update: (option: FlowNodeOption) => FlowNodeOption,
   ) => void;
   onFuture: (feature: string, description: string) => void;
+  onAddStep: () => void;
+  onDuplicateStep: (id: string) => void;
+  onMoveStep: (id: string, direction: "up" | "down") => void;
+  onDeleteStep: (id: string) => void;
   view?: "tree" | "selected";
   onEdit?: (id: string) => void;
 }) {
@@ -110,6 +126,10 @@ export function GuidedFlowEditor({
           onEdit?.(id);
         }}
         onFuture={onFuture}
+        onAddStep={onAddStep}
+        onDuplicateStep={onDuplicateStep}
+        onMoveStep={onMoveStep}
+        onDeleteStep={onDeleteStep}
       />
     );
   }
@@ -129,14 +149,9 @@ export function GuidedFlowEditor({
               data-flow-manager-live-action
               size="icon"
               variant="outline"
-              title="Add step - Future"
-              aria-label="Add step - Future"
-              onClick={() =>
-                onFuture(
-                  "Add step",
-                  "Step creation is next after deletion repair and stable destination rules are complete.",
-                )
-              }
+              title="Add step"
+              aria-label="Add step"
+              onClick={onAddStep}
             >
               <Plus className="size-4" />
             </Button>
@@ -211,14 +226,10 @@ export function GuidedFlowEditor({
                 data-flow-manager-live-action
                 size="icon"
                 variant="ghost"
-                title="Move step up - Future"
-                aria-label="Move step up - Future"
-                onClick={() =>
-                  onFuture(
-                    "Reorder step",
-                    "Reordering will update explicit destinations without changing stable step IDs.",
-                  )
-                }
+                title="Move step up"
+                aria-label="Move step up"
+                disabled={selected.isStart || selectedIndex <= (model.document.startNodeId ? 1 : 0)}
+                onClick={() => onMoveStep(selected.id, "up")}
               >
                 <ArrowUp className="size-4" />
               </Button>
@@ -226,14 +237,10 @@ export function GuidedFlowEditor({
                 data-flow-manager-live-action
                 size="icon"
                 variant="ghost"
-                title="Move step down - Future"
-                aria-label="Move step down - Future"
-                onClick={() =>
-                  onFuture(
-                    "Reorder step",
-                    "Reordering will update explicit destinations without changing stable step IDs.",
-                  )
-                }
+                title="Move step down"
+                aria-label="Move step down"
+                disabled={selected.isStart || selectedIndex >= model.steps.length - 1}
+                onClick={() => onMoveStep(selected.id, "down")}
               >
                 <ArrowDown className="size-4" />
               </Button>
@@ -241,15 +248,21 @@ export function GuidedFlowEditor({
                 data-flow-manager-live-action
                 size="icon"
                 variant="ghost"
+                title="Duplicate step"
+                aria-label="Duplicate step"
+                onClick={() => onDuplicateStep(selected.id)}
+              >
+                <Copy className="size-4" />
+              </Button>
+              <Button
+                data-flow-manager-live-action
+                size="icon"
+                variant="ghost"
                 className="text-destructive"
-                title="Delete step - Future"
-                aria-label="Delete step - Future"
-                onClick={() =>
-                  onFuture(
-                    "Delete step",
-                    "Deletion requires an explicit repair choice for every route that points to this step.",
-                  )
-                }
+                title={selected.isStart ? "Start step cannot be deleted" : "Delete step"}
+                aria-label={selected.isStart ? "Start step cannot be deleted" : "Delete step"}
+                disabled={selected.isStart}
+                onClick={() => onDeleteStep(selected.id)}
               >
                 <Trash2 className="size-4" />
               </Button>
@@ -662,11 +675,19 @@ function StructuredFlowTree({
   selectedId,
   onEdit,
   onFuture,
+  onAddStep,
+  onDuplicateStep,
+  onMoveStep,
+  onDeleteStep,
 }: {
   model: GuidedFlowModel;
   selectedId: string;
   onEdit: (id: string) => void;
   onFuture: (feature: string, description: string) => void;
+  onAddStep: () => void;
+  onDuplicateStep: (id: string) => void;
+  onMoveStep: (id: string, direction: "up" | "down") => void;
+  onDeleteStep: (id: string) => void;
 }) {
   const start = model.steps.find((step) => step.isStart) ?? model.steps[0];
   const reachableIds = useMemo(
@@ -703,13 +724,16 @@ function StructuredFlowTree({
             Follow each reply from the start. Select Edit to change a step.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
           <span className="rounded-md border bg-muted/40 px-2 py-1">
             {model.steps.length} saved steps
           </span>
           <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-sky-800">
             Max 3 WhatsApp replies
           </span>
+          <Button size="sm" variant="outline" onClick={onAddStep}>
+            <Plus className="size-4" /> Add step
+          </Button>
         </div>
       </div>
 
@@ -737,7 +761,9 @@ function StructuredFlowTree({
             path={[]}
             depth={0}
             onEdit={onEdit}
-            onFuture={onFuture}
+            onDuplicateStep={onDuplicateStep}
+            onMoveStep={onMoveStep}
+            onDeleteStep={onDeleteStep}
           />
 
           <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-3">
@@ -819,7 +845,9 @@ function FlowTreeNode({
   path,
   depth,
   onEdit,
-  onFuture,
+  onDuplicateStep,
+  onMoveStep,
+  onDeleteStep,
 }: {
   step: GuidedFlowStep;
   steps: GuidedFlowStep[];
@@ -827,7 +855,9 @@ function FlowTreeNode({
   path: string[];
   depth: number;
   onEdit: (id: string) => void;
-  onFuture: (feature: string, description: string) => void;
+  onDuplicateStep: (id: string) => void;
+  onMoveStep: (id: string, direction: "up" | "down") => void;
+  onDeleteStep: (id: string) => void;
 }) {
   const routes = routesForStep(step);
   const optionRoutes = routes.filter((route) => route.kind === "option");
@@ -840,9 +870,12 @@ function FlowTreeNode({
       <FlowStepCard
         step={step}
         stepNumber={stepNumber(steps, step.id) ?? 1}
+        stepCount={steps.length}
         selected={step.id === selectedId}
         onEdit={onEdit}
-        onFuture={onFuture}
+        onDuplicateStep={onDuplicateStep}
+        onMoveStep={onMoveStep}
+        onDeleteStep={onDeleteStep}
       />
 
       {optionRoutes.length > WHATSAPP_REPLY_OPTION_LIMIT ? (
@@ -935,7 +968,9 @@ function FlowTreeNode({
                       path={currentPath}
                       depth={depth + 1}
                       onEdit={onEdit}
-                      onFuture={onFuture}
+                      onDuplicateStep={onDuplicateStep}
+                      onMoveStep={onMoveStep}
+                      onDeleteStep={onDeleteStep}
                     />
                   )}
                 </div>
@@ -958,15 +993,21 @@ function FlowTreeNode({
 function FlowStepCard({
   step,
   stepNumber,
+  stepCount,
   selected,
   onEdit,
-  onFuture,
+  onDuplicateStep,
+  onMoveStep,
+  onDeleteStep,
 }: {
   step: GuidedFlowStep;
   stepNumber: number;
+  stepCount: number;
   selected: boolean;
   onEdit: (id: string) => void;
-  onFuture: (feature: string, description: string) => void;
+  onDuplicateStep: (id: string) => void;
+  onMoveStep: (id: string, direction: "up" | "down") => void;
+  onDeleteStep: (id: string) => void;
 }) {
   return (
     <div
@@ -1008,23 +1049,46 @@ function FlowStepCard({
           >
             <Pencil className="size-3.5" /> Edit
           </Button>
-          <Button
-            data-flow-manager-live-action
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            title="More step actions - Future"
-            aria-label="More step actions - Future"
-            onClick={() =>
-              onFuture(
-                "More step actions",
-                "Duplicate, reorder, and delete ship after referenced-step repair is complete.",
-              )
-            }
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                data-flow-manager-live-action
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                title="More step actions"
+                aria-label="More step actions"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => onDuplicateStep(step.id)}>
+                <Copy className="size-4" /> Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={step.isStart || stepNumber <= 2}
+                onSelect={() => onMoveStep(step.id, "up")}
+              >
+                <ArrowUp className="size-4" /> Move up
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={step.isStart || stepNumber >= stepCount}
+                onSelect={() => onMoveStep(step.id, "down")}
+              >
+                <ArrowDown className="size-4" /> Move down
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={step.isStart}
+                className="text-destructive focus:text-destructive"
+                onSelect={() => onDeleteStep(step.id)}
+              >
+                <Trash2 className="size-4" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

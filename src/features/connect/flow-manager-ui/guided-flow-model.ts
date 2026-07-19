@@ -193,32 +193,9 @@ export function createGuidedFlowModel(
 }
 
 function orderNodes(document: CanonicalFlowDocument) {
-  const nodeById = new Map(document.nodes.map((node) => [node.id, node]));
-  const outgoing = new Map<string, string[]>();
-  for (const edge of document.edges) {
-    outgoing.set(edge.from, [...(outgoing.get(edge.from) ?? []), edge.to]);
-  }
-  for (const node of document.nodes) {
-    for (const option of node.options ?? []) {
-      if (!option.targetNodeId) continue;
-      outgoing.set(node.id, [...(outgoing.get(node.id) ?? []), option.targetNodeId]);
-    }
-  }
-
-  const ordered: CanonicalFlowNode[] = [];
-  const visited = new Set<string>();
-  const queue = document.startNodeId ? [document.startNodeId] : [];
-  while (queue.length) {
-    const id = queue.shift()!;
-    if (visited.has(id)) continue;
-    visited.add(id);
-    const node = nodeById.get(id);
-    if (!node) continue;
-    ordered.push(node);
-    queue.push(...(outgoing.get(id) ?? []));
-  }
-  ordered.push(...document.nodes.filter((node) => !visited.has(node.id)));
-  return ordered;
+  const start = document.nodes.find((node) => node.id === document.startNodeId);
+  if (!start) return document.nodes;
+  return [start, ...document.nodes.filter((node) => node.id !== start.id)];
 }
 
 function nodeTitle(node: CanonicalFlowNode, startNodeId: string | null) {
