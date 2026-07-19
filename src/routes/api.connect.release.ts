@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2c-business-template-picker-v1";
+export const CONNECT_RELEASE = "m2c-live-test-flow-version-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "guided-version-restore",
               "guided-publish",
               "business-template-picker",
+              "business-live-test-flow-version",
             ],
           },
           {

@@ -326,6 +326,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.index.tsx",
     "utf8",
   );
+  const adminBusinessLiveTest = readFileSync(
+    "src/routes/connect.admin.businesses.$id.live-test.tsx",
+    "utf8",
+  );
   const businessTemplatePicker = readFileSync(
     "src/features/connect/admin/businesses/business-template-picker.tsx",
     "utf8",
@@ -369,6 +373,12 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(businessTemplatePicker, /action: "clone_flow_template"/);
   assert.match(businessTemplatePicker, /Applying a template creates a new editable draft/);
   assert.doesNotMatch(businessTemplatePicker, /preview-data|mock-data|mock-client/);
+  assert.match(adminBusinessLiveTest, /getBusinessFlowDetails/);
+  assert.match(adminBusinessLiveTest, /getWaMessageEvents/);
+  assert.match(adminBusinessLiveTest, /data-business-live-flow-version/);
+  assert.match(adminBusinessLiveTest, /New inbound WhatsApp chats start on this published version/);
+  assert.match(adminBusinessLiveTest, /Existing chats stay\s+pinned/);
+  assert.doesNotMatch(adminBusinessLiveTest, /preview-data|mock-data|mock-client/);
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
