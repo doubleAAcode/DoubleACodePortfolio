@@ -357,7 +357,15 @@ function CatalogRoutesPage() {
                         aria-label={`Delete ${group.name_english}`}
                         className="text-destructive"
                         disabled={Boolean(savingAction)}
-                        onClick={() => void deleteRoute(group)}
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          void deleteRoute(group);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" && event.key !== " ") return;
+                          event.preventDefault();
+                          void deleteRoute(group);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -500,7 +508,9 @@ function CatalogRoutesPage() {
                     if (!editorFormRef.current) return;
                     void saveRoute(readRouteForm(editorFormRef.current, form));
                   }}
-                  onClick={() => {
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
                     if (!editorFormRef.current) return;
                     void saveRoute(readRouteForm(editorFormRef.current, form));
                   }}
