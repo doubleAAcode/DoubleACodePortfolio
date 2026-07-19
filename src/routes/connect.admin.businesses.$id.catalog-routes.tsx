@@ -388,102 +388,110 @@ function CatalogRoutesPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{form.id ? "Edit browse group" : "Create browse group"}</DialogTitle>
-            <DialogDescription>
-              These labels appear in the WhatsApp browse flow. Values are managed in the next tab.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="route-name-en" className="text-xs">
-                  Name (EN)
-                </Label>
-                <Input
-                  id="route-name-en"
-                  value={form.nameEnglish}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      nameEnglish: event.target.value,
-                      slug: current.slug || slugPreview(event.target.value),
-                    }))
-                  }
-                  placeholder="Shop by brand"
-                />
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void saveRoute();
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>{form.id ? "Edit browse group" : "Create browse group"}</DialogTitle>
+              <DialogDescription>
+                These labels appear in the WhatsApp browse flow. Values are managed in the next tab.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="route-name-en" className="text-xs">
+                    Name (EN)
+                  </Label>
+                  <Input
+                    id="route-name-en"
+                    value={form.nameEnglish}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        nameEnglish: event.target.value,
+                        slug: current.slug || slugPreview(event.target.value),
+                      }))
+                    }
+                    placeholder="Shop by brand"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="route-name-ar" className="text-xs">
+                    Name (AR)
+                  </Label>
+                  <Input
+                    id="route-name-ar"
+                    dir="rtl"
+                    value={form.nameArabic}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, nameArabic: event.target.value }))
+                    }
+                    placeholder="تسوق حسب العلامة"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="route-name-ar" className="text-xs">
-                  Name (AR)
-                </Label>
-                <Input
-                  id="route-name-ar"
-                  dir="rtl"
-                  value={form.nameArabic}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, nameArabic: event.target.value }))
-                  }
-                  placeholder="تسوق حسب العلامة"
-                />
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                <div className="space-y-1">
+                  <Label htmlFor="route-slug" className="text-xs">
+                    Technical key
+                  </Label>
+                  <Input
+                    id="route-slug"
+                    value={form.slug}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, slug: slugPreview(event.target.value) }))
+                    }
+                    placeholder="shop-by-brand"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="route-sort" className="text-xs">
+                    Sort
+                  </Label>
+                  <Input
+                    id="route-sort"
+                    type="number"
+                    min={0}
+                    value={form.sortOrder}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        sortOrder: Number.parseInt(event.target.value, 10) || 0,
+                      }))
+                    }
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-              <div className="space-y-1">
-                <Label htmlFor="route-slug" className="text-xs">
-                  Technical key
-                </Label>
-                <Input
-                  id="route-slug"
-                  value={form.slug}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, slug: slugPreview(event.target.value) }))
-                  }
-                  placeholder="shop-by-brand"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="route-sort" className="text-xs">
-                  Sort
-                </Label>
-                <Input
-                  id="route-sort"
-                  type="number"
-                  min={0}
-                  value={form.sortOrder}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      sortOrder: Number.parseInt(event.target.value, 10) || 0,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <label className="flex items-center justify-between rounded-md border p-3">
-              <span>
-                <span className="block text-sm font-medium">Active for customers</span>
-                <span className="block text-xs text-muted-foreground">
-                  Inactive routes stay saved but are hidden from WhatsApp browse menus.
+              <label className="flex items-center justify-between rounded-md border p-3">
+                <span>
+                  <span className="block text-sm font-medium">Active for customers</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Inactive routes stay saved but are hidden from WhatsApp browse menus.
+                  </span>
                 </span>
-              </span>
-              <Switch
-                checked={form.isActive}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({ ...current, isActive: checked }))
-                }
-              />
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => void saveRoute()} disabled={Boolean(savingAction)}>
-              {savingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Save browse group
-            </Button>
-          </DialogFooter>
+                <Switch
+                  checked={form.isActive}
+                  onCheckedChange={(checked) =>
+                    setForm((current) => ({ ...current, isActive: checked }))
+                  }
+                />
+              </label>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={Boolean(savingAction)}>
+                {savingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Save browse group
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
