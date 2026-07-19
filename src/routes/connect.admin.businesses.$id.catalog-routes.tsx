@@ -246,7 +246,12 @@ function CatalogRoutesPage() {
                 Customer browse routes such as categories, brands, offers, or price lists.
               </CardDescription>
             </div>
-            <Button onClick={openCreateDialog} disabled={Boolean(savingAction)}>
+            <Button
+              type="button"
+              data-testid="business-catalog-route-create"
+              onClick={openCreateDialog}
+              disabled={Boolean(savingAction)}
+            >
               <Plus className="h-4 w-4" />
               Create browse group
             </Button>

@@ -403,6 +403,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessCatalogRoutes, /action: "save_catalog_group"/);
   assert.match(adminBusinessCatalogRoutes, /action: "delete_catalog_group"/);
   assert.match(adminBusinessCatalogRoutes, /data-business-catalog-routes-live="true"/);
+  assert.match(adminBusinessCatalogRoutes, /data-testid="business-catalog-route-create"/);
   assert.match(adminBusinessCatalogRoutes, /productGroupValues/);
   assert.doesNotMatch(
     adminBusinessCatalogRoutes,
