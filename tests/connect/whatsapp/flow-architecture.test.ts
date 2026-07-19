@@ -330,6 +330,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.live-test.tsx",
     "utf8",
   );
+  const adminBusinessDiagnostics = readFileSync(
+    "src/routes/connect.admin.businesses.$id.diagnostics.tsx",
+    "utf8",
+  );
   const businessTemplatePicker = readFileSync(
     "src/features/connect/admin/businesses/business-template-picker.tsx",
     "utf8",
@@ -379,6 +383,17 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessLiveTest, /New inbound WhatsApp chats start on this published version/);
   assert.match(adminBusinessLiveTest, /Existing chats stay\s+pinned/);
   assert.doesNotMatch(adminBusinessLiveTest, /preview-data|mock-data|mock-client/);
+  assert.match(adminBusinessDiagnostics, /useBusinessDetails/);
+  assert.match(adminBusinessDiagnostics, /inspectAdminCustomerConversation/);
+  assert.match(adminBusinessDiagnostics, /resetAdminCustomerConversation/);
+  assert.match(adminBusinessDiagnostics, /data-business-diagnostics-live="true"/);
+  assert.match(adminBusinessDiagnostics, /Runtime version evidence/);
+  assert.match(adminBusinessDiagnostics, /flowVersionId/);
+  assert.match(adminBusinessDiagnostics, /Message trace/);
+  assert.doesNotMatch(
+    adminBusinessDiagnostics,
+    /Atlas Electronics|Shop by Brand|preview-data|mock-data|mock-client/,
+  );
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);

@@ -20,6 +20,7 @@ const dashboardTwoFlowImageRoute = read("src/routes/api.connect.dashboard-2.flow
 const whatsappHealthRoute = read("src/routes/api.connect.admin.whatsapp-health.ts");
 const businessWhatsAppRoute = read("src/routes/connect.admin.businesses.$id.whatsapp.tsx");
 const businessLiveTestRoute = read("src/routes/connect.admin.businesses.$id.live-test.tsx");
+const businessDiagnosticsRoute = read("src/routes/connect.admin.businesses.$id.diagnostics.tsx");
 const flowManagerFeatureStatus = read("src/features/connect/flow-manager-ui/feature-status.ts");
 const flowManagerPreviewBoundary = read(
   "src/features/connect/flow-manager-ui/preview-boundary.tsx",
@@ -238,6 +239,11 @@ test("admin support diagnostics can inspect and reset a customer conversation", 
   assert.match(adminClient, /export async function inspectAdminCustomerConversation/);
   assert.match(adminClient, /export async function resetAdminCustomerConversation/);
   assert.match(adminClient, /AdminConversationDiagnostics/);
+  assert.match(businessDiagnosticsRoute, /inspectAdminCustomerConversation/);
+  assert.match(businessDiagnosticsRoute, /resetAdminCustomerConversation/);
+  assert.match(businessDiagnosticsRoute, /Runtime version evidence/);
+  assert.match(businessDiagnosticsRoute, /flowVersionId/);
+  assert.doesNotMatch(businessDiagnosticsRoute, /Atlas Electronics|Shop by Brand|mock-data/);
 });
 
 test("Lovable business flow builder reads the authorized canonical Guided workspace", () => {
