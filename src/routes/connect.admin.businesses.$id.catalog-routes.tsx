@@ -159,21 +159,20 @@ function CatalogRoutesPage() {
     const currentIndex = groups.findIndex((entry) => entry.id === group.id);
     const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (currentIndex < 0 || nextIndex < 0 || nextIndex >= groups.length) return;
-    const reordered = [...groups];
-    const [moved] = reordered.splice(currentIndex, 1);
-    if (!moved) return;
-    reordered.splice(nextIndex, 0, moved);
+    const displaced = groups[nextIndex];
+    if (!displaced) return;
 
     setSavingAction(`move:${group.id}`);
     setNotice(null);
     try {
-      let nextDetails = details;
-      for (const [index, entry] of reordered.entries()) {
-        nextDetails = await applyAdminBusinessAction(id, {
-          action: "save_catalog_group",
-          group: toGroupInput(entry, index * 10),
-        });
-      }
+      await applyAdminBusinessAction(id, {
+        action: "save_catalog_group",
+        group: toGroupInput(displaced, group.sort_order),
+      });
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "save_catalog_group",
+        group: toGroupInput(group, displaced.sort_order),
+      });
       setDetails(nextDetails);
       setNotice({ tone: "success", message: "Browse group order saved." });
     } catch (error) {
