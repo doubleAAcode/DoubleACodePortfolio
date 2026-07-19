@@ -316,6 +316,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/features/connect/flow-manager-ui/guided-flow-editor.tsx",
     "utf8",
   );
+  const guidedDraft = readFileSync(
+    "src/features/connect/flow-manager-ui/guided-flow-draft.ts",
+    "utf8",
+  );
   const adminBusinesses = readFileSync("src/routes/connect.admin.businesses.index.tsx", "utf8");
   const adminBusinessLayout = readFileSync("src/routes/connect.admin.businesses.$id.tsx", "utf8");
   const adminBusinessSetup = readFileSync(
@@ -359,7 +363,8 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
   assert.match(guidedEditor, /Conversation map/);
-  assert.match(guidedEditor, /WHATSAPP_REPLY_OPTION_LIMIT = 3/);
+  assert.match(guidedDraft, /GUIDED_WHATSAPP_REPLY_OPTION_LIMIT = 3/);
+  assert.match(guidedEditor, /GUIDED_WHATSAPP_REPLY_OPTION_LIMIT/);
   assert.match(guidedEditor, /Max 3 WhatsApp replies/);
   assert.match(guidedEditor, /StructuredFlowTree/);
   assert.match(guidedEditor, /FlowTreeNode/);

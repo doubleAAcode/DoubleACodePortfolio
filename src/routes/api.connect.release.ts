@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2b-step-mutations-v1";
+export const CONNECT_RELEASE = "m2b-choice-mutations-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "guided-draft-edit",
               "guided-draft-conflict-control",
               "guided-step-mutations",
+              "guided-choice-mutations",
             ],
           },
           {

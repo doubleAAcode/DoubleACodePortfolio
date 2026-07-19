@@ -7,6 +7,15 @@ import type { FlowDefinition, FlowNodeOption } from "../shared/flow-template-typ
 
 export type GuidedNewStepType = "MESSAGE" | "IMAGE_MESSAGE" | "MAIN_MENU" | "HUMAN_HANDOFF" | "END";
 
+export const GUIDED_WHATSAPP_REPLY_OPTION_LIMIT = 3;
+export const GUIDED_WHATSAPP_BUTTON_TITLE_MAX = 20;
+
+export type GuidedNewChoiceInput = {
+  labelEn: string;
+  labelAr?: string;
+  targetNodeId: string;
+};
+
 export type GuidedInboundReference =
   | {
       kind: "option";
@@ -59,10 +68,87 @@ export function updateGuidedOption(
   optionKey: string,
   update: (option: FlowNodeOption) => FlowNodeOption,
 ): CanonicalFlowDocument {
-  return updateGuidedNode(document, nodeId, (node) => ({
-    ...node,
-    options: node.options?.map((option) => (option.key === optionKey ? update(option) : option)),
+  const node = document.nodes.find((candidate) => candidate.id === nodeId);
+  const current = node?.options?.find((option) => option.key === optionKey);
+  if (!node || !current) throw new Error("The choice to update no longer exists.");
+  const nextOption = update(current);
+  if (nextOption.key !== optionKey) {
+    throw new Error("Stable choice keys cannot be changed.");
+  }
+  const nextDocument = updateGuidedNode(document, nodeId, (candidate) => ({
+    ...candidate,
+    options: candidate.options?.map((option) => (option.key === optionKey ? nextOption : option)),
   }));
+  return synchronizeGuidedOptionEdge(nextDocument, nodeId, optionKey, nextOption.targetNodeId);
+}
+
+export function addGuidedOption(
+  document: CanonicalFlowDocument,
+  nodeId: string,
+  input: GuidedNewChoiceInput,
+) {
+  const node = document.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node) throw new Error("The step for this choice no longer exists.");
+  const options = node.options ?? [];
+  if (options.length >= GUIDED_WHATSAPP_REPLY_OPTION_LIMIT) {
+    throw new Error("A WhatsApp step can have at most three reply choices.");
+  }
+  const labelEn = input.labelEn.trim();
+  const labelAr = input.labelAr?.trim() ?? "";
+  if (!labelEn) throw new Error("Add the English button text.");
+  if (labelEn.length > GUIDED_WHATSAPP_BUTTON_TITLE_MAX) {
+    throw new Error("WhatsApp button text must be 20 characters or fewer.");
+  }
+  if (labelAr.length > GUIDED_WHATSAPP_BUTTON_TITLE_MAX) {
+    throw new Error("WhatsApp Arabic button text must be 20 characters or fewer.");
+  }
+  if (options.some((option) => option.label.en?.trim().toLowerCase() === labelEn.toLowerCase())) {
+    throw new Error("Each choice needs different English button text.");
+  }
+  if (input.targetNodeId === nodeId) {
+    throw new Error("Choose a different destination step.");
+  }
+  if (!document.nodes.some((candidate) => candidate.id === input.targetNodeId)) {
+    throw new Error("Choose a valid destination step.");
+  }
+
+  const optionKey = nextUniqueId(
+    options.map((option) => option.key),
+    labelEn,
+  );
+  const option: FlowNodeOption = {
+    key: optionKey,
+    label: { en: labelEn, ar: labelAr },
+    active: true,
+    sortOrder: Math.max(0, ...options.map((candidate) => candidate.sortOrder ?? 0)) + 1,
+    targetNodeId: input.targetNodeId,
+  };
+  const nextDocument = updateGuidedNode(document, nodeId, (candidate) => ({
+    ...candidate,
+    options: [...(candidate.options ?? []), option],
+  }));
+  return {
+    optionKey,
+    document: synchronizeGuidedOptionEdge(nextDocument, nodeId, optionKey, input.targetNodeId),
+  };
+}
+
+export function removeGuidedOption(
+  document: CanonicalFlowDocument,
+  nodeId: string,
+  optionKey: string,
+) {
+  const node = document.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node?.options?.some((option) => option.key === optionKey)) {
+    throw new Error("The choice to remove no longer exists.");
+  }
+  const nextDocument = updateGuidedNode(document, nodeId, (candidate) => ({
+    ...candidate,
+    options: candidate.options
+      ?.filter((option) => option.key !== optionKey)
+      .map((option, index) => ({ ...option, sortOrder: index + 1 })),
+  }));
+  return synchronizeGuidedOptionEdge(nextDocument, nodeId, optionKey, undefined);
 }
 
 export function createGuidedNode(
@@ -252,6 +338,33 @@ function nextUniqueId(existingIds: string[], base: string) {
   let suffix = 2;
   while (existing.has(`${normalizedBase}_${suffix}`)) suffix += 1;
   return `${normalizedBase}_${suffix}`;
+}
+
+function synchronizeGuidedOptionEdge(
+  document: CanonicalFlowDocument,
+  nodeId: string,
+  optionKey: string,
+  targetNodeId: string | undefined,
+) {
+  let synchronized = false;
+  const edges = document.edges.flatMap((edge) => {
+    if (edge.from !== nodeId || edge.condition !== optionKey) return [edge];
+    if (!targetNodeId || synchronized) return [];
+    synchronized = true;
+    return [{ ...edge, to: targetNodeId }];
+  });
+  if (targetNodeId && !synchronized) {
+    edges.push({
+      id: nextUniqueId(
+        document.edges.map((edge) => edge.id),
+        `edge_${nodeId}_${optionKey}`,
+      ),
+      from: nodeId,
+      to: targetNodeId,
+      condition: optionKey,
+    });
+  }
+  return { ...document, edges };
 }
 
 function humanize(value: string) {

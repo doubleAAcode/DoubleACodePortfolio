@@ -40,6 +40,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
+import {
+  GUIDED_WHATSAPP_BUTTON_TITLE_MAX,
+  GUIDED_WHATSAPP_REPLY_OPTION_LIMIT,
+} from "@/features/connect/flow-manager-ui/guided-flow-draft";
 import type {
   GuidedFlowModel,
   GuidedFlowStep,
@@ -49,7 +53,7 @@ import type { CanonicalFlowNode } from "@/features/connect/shared/flow-document"
 import type { FlowNodeOption } from "@/features/connect/shared/flow-template-types";
 import { cn } from "@/lib/utils";
 
-export const WHATSAPP_REPLY_OPTION_LIMIT = 3;
+export const WHATSAPP_REPLY_OPTION_LIMIT = GUIDED_WHATSAPP_REPLY_OPTION_LIMIT;
 
 export function GuidedFlowEditor({
   model,
@@ -63,6 +67,8 @@ export function GuidedFlowEditor({
   onDuplicateStep,
   onMoveStep,
   onDeleteStep,
+  onAddChoice,
+  onRemoveChoice,
   view = "tree",
   onEdit,
 }: {
@@ -81,6 +87,8 @@ export function GuidedFlowEditor({
   onDuplicateStep: (id: string) => void;
   onMoveStep: (id: string, direction: "up" | "down") => void;
   onDeleteStep: (id: string) => void;
+  onAddChoice: (nodeId: string) => void;
+  onRemoveChoice: (nodeId: string, optionKey: string) => void;
   view?: "tree" | "selected";
   onEdit?: (id: string) => void;
 }) {
@@ -130,6 +138,7 @@ export function GuidedFlowEditor({
         onDuplicateStep={onDuplicateStep}
         onMoveStep={onMoveStep}
         onDeleteStep={onDeleteStep}
+        onAddChoice={onAddChoice}
       />
     );
   }
@@ -392,32 +401,45 @@ export function GuidedFlowEditor({
                     data-flow-manager-live-action
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      if ((node.options?.length ?? 0) >= WHATSAPP_REPLY_OPTION_LIMIT) {
-                        onFuture(
-                          "Three-option WhatsApp limit",
-                          "A WhatsApp reply-button step can have at most three options. Edit one of the existing choices instead.",
-                        );
-                        return;
-                      }
-                      onFuture(
-                        "Add choice",
-                        "New choices ship with duplicate-key validation and destination repair. This builder will allow no more than three WhatsApp reply options.",
-                      );
-                    }}
+                    disabled={(node.options?.length ?? 0) >= WHATSAPP_REPLY_OPTION_LIMIT}
+                    title={
+                      (node.options?.length ?? 0) >= WHATSAPP_REPLY_OPTION_LIMIT
+                        ? "WhatsApp allows three reply buttons"
+                        : "Add choice"
+                    }
+                    onClick={() => onAddChoice(node.id)}
                   >
-                    <Plus className="size-4" /> Add choice <FutureLabel />
+                    <Plus className="size-4" /> Add choice
+                    <span className="text-[10px] text-muted-foreground">
+                      {node.options?.length ?? 0}/{WHATSAPP_REPLY_OPTION_LIMIT}
+                    </span>
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {node.options?.map((option) => (
+                {node.options?.map((option, optionIndex) => (
                   <div key={option.key} className="rounded-md border bg-muted/15 p-3">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold">Reply {optionIndex + 1}</span>
+                      <Button
+                        data-flow-manager-live-action
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-destructive"
+                        title="Remove reply"
+                        aria-label={`Remove choice ${option.key}`}
+                        onClick={() => onRemoveChoice(node.id, option.key)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <Field label="Button text (EN)">
                         <Input
                           aria-label={`Button text in English for ${option.key}`}
                           value={option.label.en ?? ""}
+                          maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
                           readOnly={!editable}
                           onClick={readOnlyNotice}
                           onChange={(event) =>
@@ -432,6 +454,7 @@ export function GuidedFlowEditor({
                         <Input
                           aria-label={`Button text in Arabic for ${option.key}`}
                           value={option.label.ar ?? ""}
+                          maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
                           dir="rtl"
                           readOnly={!editable}
                           onClick={readOnlyNotice}
@@ -679,6 +702,7 @@ function StructuredFlowTree({
   onDuplicateStep,
   onMoveStep,
   onDeleteStep,
+  onAddChoice,
 }: {
   model: GuidedFlowModel;
   selectedId: string;
@@ -688,6 +712,7 @@ function StructuredFlowTree({
   onDuplicateStep: (id: string) => void;
   onMoveStep: (id: string, direction: "up" | "down") => void;
   onDeleteStep: (id: string) => void;
+  onAddChoice: (nodeId: string) => void;
 }) {
   const start = model.steps.find((step) => step.isStart) ?? model.steps[0];
   const reachableIds = useMemo(
@@ -702,17 +727,7 @@ function StructuredFlowTree({
   if (!start) return null;
 
   const addReplyOption = () => {
-    if (start.options.length >= WHATSAPP_REPLY_OPTION_LIMIT) {
-      onFuture(
-        "Three-option WhatsApp limit",
-        "A WhatsApp reply-button step can have at most three options. Edit one of the existing choices instead.",
-      );
-      return;
-    }
-    onFuture(
-      "Add reply option",
-      "Choice creation will ship with stable option keys and destination repair. This builder will never allow more than three WhatsApp reply options.",
-    );
+    onAddChoice(start.id);
   };
 
   return (
@@ -745,7 +760,7 @@ function StructuredFlowTree({
               <div className="font-semibold">Saved flow exceeds the WhatsApp reply limit</div>
               <div className="mt-1 text-xs">
                 {overflowSteps.map((step) => `${step.title} (${step.options.length})`).join(", ")}.
-                Open each step and leave no more than three active choices before publishing.
+                Open each step and leave no more than three saved choices before publishing.
               </div>
             </div>
           </div>
@@ -772,6 +787,12 @@ function StructuredFlowTree({
               size="sm"
               variant="outline"
               className="border-dashed"
+              disabled={start.options.length >= WHATSAPP_REPLY_OPTION_LIMIT}
+              title={
+                start.options.length >= WHATSAPP_REPLY_OPTION_LIMIT
+                  ? "WhatsApp allows three reply buttons"
+                  : "Add reply option"
+              }
               onClick={addReplyOption}
             >
               <Plus className="size-4" /> Add reply option
@@ -779,9 +800,7 @@ function StructuredFlowTree({
                 <span className="rounded-sm bg-muted px-1 py-0.5 text-[9px] uppercase">
                   Limit 3
                 </span>
-              ) : (
-                <FutureLabel />
-              )}
+              ) : null}
             </Button>
             <Button
               data-flow-manager-live-action

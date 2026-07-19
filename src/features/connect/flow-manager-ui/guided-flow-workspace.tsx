@@ -44,20 +44,25 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
 import {
+  addGuidedOption,
   createGuidedNode,
   createGuidedDraftFlow,
   deleteGuidedNode,
   duplicateGuidedNode,
   moveGuidedNode,
+  removeGuidedOption,
   serializeGuidedDocument,
   type GuidedDeleteRepair,
+  type GuidedNewChoiceInput,
   type GuidedNewStepType,
   updateGuidedNode,
   updateGuidedOption,
 } from "@/features/connect/flow-manager-ui/guided-flow-draft";
 import { GuidedFlowEditor } from "@/features/connect/flow-manager-ui/guided-flow-editor";
 import {
+  GuidedCreateChoiceDialog,
   GuidedCreateStepDialog,
+  GuidedDeleteChoiceDialog,
   GuidedDeleteStepDialog,
 } from "@/features/connect/flow-manager-ui/guided-flow-step-dialogs";
 import {
@@ -105,6 +110,11 @@ export function GuidedFlowWorkspace({
   const [saveConflict, setSaveConflict] = useState<string>();
   const [createStepOpen, setCreateStepOpen] = useState(false);
   const [deleteStepId, setDeleteStepId] = useState<string>();
+  const [createChoiceNodeId, setCreateChoiceNodeId] = useState<string>();
+  const [deleteChoice, setDeleteChoice] = useState<{
+    nodeId: string;
+    optionKey: string;
+  }>();
 
   const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
@@ -273,6 +283,24 @@ export function GuidedFlowWorkspace({
     commitDocument((document) => deleteGuidedNode(document, nodeId, repair));
     if (selectedStepId === nodeId) setSelectedStepId(fallback?.id);
     toast.success("Step deleted");
+  }
+
+  function requestAddChoice(nodeId: string) {
+    requireEditableStepMutation(() => setCreateChoiceNodeId(nodeId));
+  }
+
+  function createChoice(nodeId: string, input: GuidedNewChoiceInput) {
+    commitDocument((document) => addGuidedOption(document, nodeId, input).document);
+    toast.success("Reply added");
+  }
+
+  function requestRemoveChoice(nodeId: string, optionKey: string) {
+    requireEditableStepMutation(() => setDeleteChoice({ nodeId, optionKey }));
+  }
+
+  function removeChoice(nodeId: string, optionKey: string) {
+    commitDocument((document) => removeGuidedOption(document, nodeId, optionKey));
+    toast.success("Reply removed");
   }
 
   async function saveDraft() {
@@ -542,6 +570,8 @@ export function GuidedFlowWorkspace({
             onDuplicateStep={duplicateStep}
             onMoveStep={moveStep}
             onDeleteStep={requestDeleteStep}
+            onAddChoice={requestAddChoice}
+            onRemoveChoice={requestRemoveChoice}
             onEdit={(nodeId) => {
               setSelectedStepId(nodeId);
               setActiveTab("selected");
@@ -566,6 +596,8 @@ export function GuidedFlowWorkspace({
             onDuplicateStep={duplicateStep}
             onMoveStep={moveStep}
             onDeleteStep={requestDeleteStep}
+            onAddChoice={requestAddChoice}
+            onRemoveChoice={requestRemoveChoice}
           />
         </TabsContent>
         <TabsContent value="preview" className="mt-4">
@@ -603,6 +635,18 @@ export function GuidedFlowWorkspace({
         stepId={deleteStepId}
         onClose={() => setDeleteStepId(undefined)}
         onDelete={deleteStep}
+      />
+      <GuidedCreateChoiceDialog
+        model={model}
+        nodeId={createChoiceNodeId}
+        onClose={() => setCreateChoiceNodeId(undefined)}
+        onCreate={createChoice}
+      />
+      <GuidedDeleteChoiceDialog
+        model={model}
+        choice={deleteChoice}
+        onClose={() => setDeleteChoice(undefined)}
+        onRemove={removeChoice}
       />
     </div>
   );

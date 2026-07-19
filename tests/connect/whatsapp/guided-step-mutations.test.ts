@@ -3,11 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+  addGuidedOption,
   createGuidedNode,
   deleteGuidedNode,
   duplicateGuidedNode,
   listGuidedInboundReferences,
   moveGuidedNode,
+  removeGuidedOption,
+  updateGuidedOption,
 } from "../../../src/features/connect/flow-manager-ui/guided-flow-draft.ts";
 import type { CanonicalFlowDocument } from "../../../src/features/connect/shared/flow-document.ts";
 
@@ -87,6 +90,113 @@ test("Guided deletion requires and applies explicit inbound route repair", () =>
   assert.throws(() => deleteGuidedNode(document, "start"), /start step cannot be deleted/i);
 });
 
+test("Guided choice creation enforces WhatsApp limits and creates one stable route", () => {
+  const first = addGuidedOption(fixture(), "start", {
+    labelEn: "Ask prices",
+    labelAr: "Prices AR",
+    targetNodeId: "details",
+  });
+  assert.equal(first.optionKey, "ask_prices");
+  assert.deepEqual(first.document.nodes[0]?.options?.[0], {
+    key: "ask_prices",
+    label: { en: "Ask prices", ar: "Prices AR" },
+    active: true,
+    sortOrder: 1,
+    targetNodeId: "details",
+  });
+  assert.deepEqual(
+    first.document.edges.filter((edge) => edge.from === "start" && edge.condition === "ask_prices"),
+    [
+      {
+        id: "edge_start_ask_prices",
+        from: "start",
+        to: "details",
+        condition: "ask_prices",
+      },
+    ],
+  );
+  assert.throws(
+    () =>
+      addGuidedOption(first.document, "start", {
+        labelEn: "Ask prices",
+        targetNodeId: "end",
+      }),
+    /different English button text/,
+  );
+  assert.throws(
+    () =>
+      addGuidedOption(fixture(), "start", {
+        labelEn: "Arabic too long",
+        labelAr: "x".repeat(21),
+        targetNodeId: "end",
+      }),
+    /Arabic button text must be 20 characters/,
+  );
+
+  const second = addGuidedOption(first.document, "start", {
+    labelEn: "Store info",
+    targetNodeId: "menu",
+  });
+  const third = addGuidedOption(second.document, "start", {
+    labelEn: "Talk to us",
+    targetNodeId: "end",
+  });
+  assert.throws(
+    () =>
+      addGuidedOption(third.document, "start", {
+        labelEn: "Fourth reply",
+        targetNodeId: "end",
+      }),
+    /at most three reply choices/,
+  );
+});
+
+test("Guided choice updates and removal keep canonical options and edges synchronized", () => {
+  const document = fixture();
+  const redirected = updateGuidedOption(document, "menu", "details", (option) => ({
+    ...option,
+    targetNodeId: "end",
+  }));
+  const redirectedEdges = redirected.edges.filter(
+    (edge) => edge.from === "menu" && edge.condition === "details",
+  );
+  assert.deepEqual(redirectedEdges, [
+    { id: "edge-details", from: "menu", to: "end", condition: "details" },
+  ]);
+
+  const cleared = updateGuidedOption(redirected, "menu", "details", (option) => ({
+    ...option,
+    targetNodeId: undefined,
+  }));
+  assert.equal(
+    cleared.edges.some((edge) => edge.from === "menu" && edge.condition === "details"),
+    false,
+  );
+
+  const withSecond = addGuidedOption(document, "menu", {
+    labelEn: "End now",
+    targetNodeId: "end",
+  });
+  const removed = removeGuidedOption(withSecond.document, "menu", "details");
+  assert.deepEqual(removed.nodes.find((node) => node.id === "menu")?.options, [
+    {
+      key: "end_now",
+      label: { en: "End now", ar: "" },
+      active: true,
+      sortOrder: 1,
+      targetNodeId: "end",
+    },
+  ]);
+  assert.equal(
+    removed.edges.some((edge) => edge.from === "menu" && edge.condition === "details"),
+    false,
+  );
+  assert.equal(
+    removed.edges.filter((edge) => edge.from === "menu" && edge.condition === "end_now").length,
+    1,
+  );
+});
+
 test("Guided step controls are real draft actions with a route-repair dialog", async () => {
   const [editor, workspace, dialogs] = await Promise.all([
     readFile("src/features/connect/flow-manager-ui/guided-flow-editor.tsx", "utf8"),
@@ -105,6 +215,11 @@ test("Guided step controls are real draft actions with a route-repair dialog", a
   assert.match(dialogs, /Repair incoming routes/);
   assert.match(dialogs, /Remove their destinations/);
   assert.match(dialogs, /Redirect to/);
+  assert.match(editor, /onAddChoice/);
+  assert.match(editor, /onRemoveChoice/);
+  assert.doesNotMatch(editor, /New choices ship with/);
+  assert.match(dialogs, /New choice destination/);
+  assert.match(dialogs, /Confirm remove choice/);
 });
 
 function fixture(): CanonicalFlowDocument {
