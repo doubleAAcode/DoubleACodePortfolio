@@ -7,9 +7,10 @@ import {
   Pencil,
   Plus,
   Route as RouteIcon,
+  Save,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,7 @@ function CatalogRoutesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RouteFormState>(() => emptyRouteForm(0));
   const [savingAction, setSavingAction] = useState("");
+  const editorFormRef = useRef<HTMLFormElement | null>(null);
   const [notice, setNotice] = useState<{ tone: "success" | "destructive"; message: string } | null>(
     null,
   );
@@ -389,17 +391,11 @@ function CatalogRoutesPage() {
           </CardHeader>
           <CardContent>
             <form
+              ref={editorFormRef}
               className="space-y-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                const submitted = new FormData(event.currentTarget);
-                void saveRoute({
-                  ...form,
-                  nameEnglish: String(submitted.get("nameEnglish") ?? ""),
-                  nameArabic: String(submitted.get("nameArabic") ?? ""),
-                  slug: slugPreview(String(submitted.get("slug") ?? "")),
-                  sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
-                });
+                void saveRoute(readRouteForm(event.currentTarget, form));
               }}
             >
               <div className="space-y-4">
@@ -494,10 +490,20 @@ function CatalogRoutesPage() {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={Boolean(savingAction)}>
+                <Button
+                  type="button"
+                  size="icon"
+                  aria-label="Save browse group"
+                  disabled={Boolean(savingAction)}
+                  onClick={() => {
+                    if (!editorFormRef.current) return;
+                    void saveRoute(readRouteForm(editorFormRef.current, form));
+                  }}
+                >
                   {savingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Save browse group
+                  {!savingAction ? <Save className="h-4 w-4" /> : null}
                 </Button>
+                <span className="self-center text-sm font-medium">Save browse group</span>
               </div>
             </form>
           </CardContent>
@@ -549,6 +555,17 @@ function toGroupInput(group: WaCatalogGroupRow, sortOrder: number) {
     slug: group.slug,
     isActive: group.is_active,
     sortOrder,
+  };
+}
+
+function readRouteForm(formElement: HTMLFormElement, current: RouteFormState): RouteFormState {
+  const submitted = new FormData(formElement);
+  return {
+    ...current,
+    nameEnglish: String(submitted.get("nameEnglish") ?? ""),
+    nameArabic: String(submitted.get("nameArabic") ?? ""),
+    slug: slugPreview(String(submitted.get("slug") ?? "")),
+    sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
   };
 }
 
