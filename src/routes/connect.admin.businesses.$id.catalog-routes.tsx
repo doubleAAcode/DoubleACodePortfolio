@@ -69,6 +69,19 @@ function CatalogRoutesPage() {
     [details?.catalogGroups],
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("newRoute") !== "1") return;
+
+    setForm(emptyRouteForm(nextSortOrder(groups)));
+    setNotice(null);
+    setDialogOpen(true);
+    url.searchParams.delete("newRoute");
+    window.history.replaceState(null, "", url);
+  }, [groups]);
+
   if (!details) {
     return (
       <Card>
@@ -248,14 +261,14 @@ function CatalogRoutesPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-end">
-            <Button
-              type="button"
-              data-testid="business-catalog-route-create"
-              onClick={() => openCreateDialog()}
-              disabled={Boolean(savingAction)}
-            >
-              <Plus className="h-4 w-4" />
-              Create browse group
+            <Button asChild data-testid="business-catalog-route-create">
+              <a
+                href={`/connect/admin/businesses/${id}/catalog-routes?newRoute=1`}
+                aria-disabled={Boolean(savingAction)}
+              >
+                <Plus className="h-4 w-4" />
+                Create browse group
+              </a>
             </Button>
           </div>
 
