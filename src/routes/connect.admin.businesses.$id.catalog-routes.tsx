@@ -251,7 +251,7 @@ function CatalogRoutesPage() {
             <Button
               type="button"
               data-testid="business-catalog-route-create"
-              onClick={openCreateDialog}
+              onClick={() => openCreateDialog()}
               disabled={Boolean(savingAction)}
             >
               <Plus className="h-4 w-4" />
