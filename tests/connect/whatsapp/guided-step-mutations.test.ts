@@ -10,6 +10,7 @@ import {
   listGuidedInboundReferences,
   moveGuidedNode,
   removeGuidedOption,
+  updateGuidedAutomaticDestination,
   updateGuidedOption,
 } from "../../../src/features/connect/flow-manager-ui/guided-flow-draft.ts";
 import type { CanonicalFlowDocument } from "../../../src/features/connect/shared/flow-document.ts";
@@ -194,6 +195,33 @@ test("Guided choice updates and removal keep canonical options and edges synchro
   assert.equal(
     removed.edges.filter((edge) => edge.from === "menu" && edge.condition === "end_now").length,
     1,
+  );
+});
+
+test("Guided automatic destinations preserve one stable edge and repair duplicates", () => {
+  const document = fixture();
+  const redirected = updateGuidedAutomaticDestination(document, "details", "menu");
+  assert.deepEqual(
+    redirected.edges.filter((edge) => edge.from === "details" && !edge.condition),
+    [{ id: "edge-end", from: "details", to: "menu", condition: null }],
+  );
+
+  const duplicated: CanonicalFlowDocument = {
+    ...redirected,
+    edges: [
+      ...redirected.edges,
+      { id: "edge-end-copy", from: "details", to: "start", condition: null },
+    ],
+  };
+  const repaired = updateGuidedAutomaticDestination(duplicated, "details", "end");
+  assert.deepEqual(
+    repaired.edges.filter((edge) => edge.from === "details" && !edge.condition),
+    [{ id: "edge-end", from: "details", to: "end", condition: null }],
+  );
+  const removed = updateGuidedAutomaticDestination(repaired, "details", undefined);
+  assert.equal(
+    removed.edges.some((edge) => edge.from === "details" && !edge.condition),
+    false,
   );
 });
 

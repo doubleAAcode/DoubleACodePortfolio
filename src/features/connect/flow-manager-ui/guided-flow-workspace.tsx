@@ -52,6 +52,7 @@ import {
   moveGuidedNode,
   removeGuidedOption,
   serializeGuidedDocument,
+  updateGuidedAutomaticDestination,
   type GuidedDeleteRepair,
   type GuidedNewChoiceInput,
   type GuidedNewStepType,
@@ -70,6 +71,12 @@ import {
   type GuidedFlowModel,
   type GuidedFlowStep,
 } from "@/features/connect/flow-manager-ui/guided-flow-model";
+import {
+  createGuidedFlowProblems,
+  guidedProblemActionLabel,
+  guidedProblemControl,
+  type GuidedProblemControl,
+} from "@/features/connect/flow-manager-ui/guided-flow-problems";
 import type { CanonicalFlowDocument } from "@/features/connect/shared/flow-document";
 import { FLOW_DRAFT_CONFLICT_CODE } from "@/features/connect/shared/flow-draft-conflict";
 import type { BusinessFlowDetails } from "@/features/connect/shared/flow-template-store.server";
@@ -77,10 +84,6 @@ import type {
   FlowDefinition,
   FlowValidationIssue,
 } from "@/features/connect/shared/flow-template-types";
-import {
-  flowDiagnosticsToLegacyResult,
-  validateFlow,
-} from "@/features/connect/shared/flow-validation";
 import { cn } from "@/lib/utils";
 
 type SaveDraftInput = {
@@ -88,6 +91,12 @@ type SaveDraftInput = {
   flowName: string;
   versionId: string;
   expectedRevision: number;
+};
+
+type ProblemFocusRequest = {
+  nodeId?: string;
+  control: GuidedProblemControl;
+  optionKey?: string;
 };
 
 export function GuidedFlowWorkspace({
@@ -115,6 +124,7 @@ export function GuidedFlowWorkspace({
     nodeId: string;
     optionKey: string;
   }>();
+  const [problemFocus, setProblemFocus] = useState<ProblemFocusRequest>();
 
   const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
@@ -149,9 +159,11 @@ export function GuidedFlowWorkspace({
     if (!baseResult.ok || !workingDocument) return baseResult;
     const baseVersion = baseResult.model.version;
     const flowJson = createGuidedDraftFlow(baseVersion.flow_json, workingDocument);
-    const validation = flowDiagnosticsToLegacyResult(
-      validateFlow(workingDocument, { mode: "draft" }).diagnostics,
-    );
+    const problems = createGuidedFlowProblems(workingDocument);
+    const validation = {
+      ok: !problems.some((issue) => issue.severity === "ERROR"),
+      issues: problems,
+    };
     const workingVersion = {
       ...baseVersion,
       flow_json: flowJson,
@@ -183,6 +195,34 @@ export function GuidedFlowWorkspace({
     return () => window.removeEventListener("beforeunload", preventUnload);
   }, [stateDirty]);
 
+  useEffect(() => {
+    if (!problemFocus) return;
+    const targetTab = problemFocus.control === "map" ? "guided" : "selected";
+    if (activeTab !== targetTab) return;
+    if (problemFocus.nodeId && selectedStepId !== problemFocus.nodeId) return;
+    const timeout = window.setTimeout(() => {
+      let target: HTMLElement | undefined;
+      if (problemFocus.control === "map") {
+        target = [...document.querySelectorAll<HTMLElement>("[data-guided-tree-node]")].find(
+          (element) => element.dataset.guidedTreeNode === problemFocus.nodeId,
+        );
+      } else {
+        const candidates = [
+          ...document.querySelectorAll<HTMLElement>(
+            `[data-guided-control="${problemFocus.control}"]`,
+          ),
+        ];
+        target = problemFocus.optionKey
+          ? candidates.find((element) => element.dataset.guidedOptionKey === problemFocus.optionKey)
+          : candidates[0];
+      }
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+      setProblemFocus(undefined);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [activeTab, problemFocus, selectedStepId]);
+
   if (!result.ok) {
     return (
       <WorkspaceState
@@ -204,6 +244,22 @@ export function GuidedFlowWorkspace({
 
   function explainFuture(feature: string, description: string) {
     toast.info(`${feature} - Future`, { description });
+  }
+
+  function openProblem(issue: FlowValidationIssue) {
+    const control = guidedProblemControl(issue);
+    if (control === "advanced") {
+      setActiveTab("advanced");
+      setProblemFocus(undefined);
+      return;
+    }
+    if (issue.nodeId) setSelectedStepId(issue.nodeId);
+    setActiveTab(control === "map" ? "guided" : "selected");
+    setProblemFocus({
+      nodeId: issue.nodeId,
+      control,
+      optionKey: issue.path?.match(/^options\.([^.]+)/)?.[1],
+    });
   }
 
   function commitDocument(update: (document: CanonicalFlowDocument) => CanonicalFlowDocument) {
@@ -565,6 +621,11 @@ export function GuidedFlowWorkspace({
             onUpdateOption={(nodeId, optionKey, update) =>
               commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
             }
+            onUpdateAutomaticDestination={(nodeId, targetNodeId) =>
+              commitDocument((document) =>
+                updateGuidedAutomaticDestination(document, nodeId, targetNodeId),
+              )
+            }
             onFuture={explainFuture}
             onAddStep={() => requireEditableStepMutation(() => setCreateStepOpen(true))}
             onDuplicateStep={duplicateStep}
@@ -591,6 +652,11 @@ export function GuidedFlowWorkspace({
             onUpdateOption={(nodeId, optionKey, update) =>
               commitDocument((document) => updateGuidedOption(document, nodeId, optionKey, update))
             }
+            onUpdateAutomaticDestination={(nodeId, targetNodeId) =>
+              commitDocument((document) =>
+                updateGuidedAutomaticDestination(document, nodeId, targetNodeId),
+              )
+            }
             onFuture={explainFuture}
             onAddStep={() => requireEditableStepMutation(() => setCreateStepOpen(true))}
             onDuplicateStep={duplicateStep}
@@ -609,10 +675,7 @@ export function GuidedFlowWorkspace({
           <ValidationTab
             diagnostics={model.diagnostics}
             steps={model.steps}
-            onFocus={(nodeId) => {
-              setSelectedStepId(nodeId);
-              setActiveTab("selected");
-            }}
+            onFocus={openProblem}
           />
         </TabsContent>
         <TabsContent value="advanced" className="mt-4">
@@ -784,26 +847,38 @@ function ValidationTab({
 }: {
   diagnostics: FlowValidationIssue[];
   steps: GuidedFlowStep[];
-  onFocus: (nodeId: string) => void;
+  onFocus: (issue: FlowValidationIssue) => void;
 }) {
   if (!diagnostics.length) {
     return (
       <WorkspaceState
         icon={<AlertCircle className="size-5 text-emerald-700" />}
-        title="No draft problems"
-        message="The current Guided draft has no recorded error or warning. Publishing remains deferred to 2C."
+        title="No flow problems"
+        message="This draft has no publish blocker or repair warning. Publishing remains deferred to 2C."
       />
     );
   }
+  const blockerCount = diagnostics.filter((diagnostic) => diagnostic.severity === "ERROR").length;
+  const warningCount = diagnostics.length - blockerCount;
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 px-4 py-3 text-sm">
+        <div className="font-medium">
+          {blockerCount} publish {blockerCount === 1 ? "blocker" : "blockers"}
+          <span className="mx-2 text-muted-foreground">/</span>
+          {warningCount} {warningCount === 1 ? "warning" : "warnings"}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Fix blockers before publish. Warnings identify draft cleanup.
+        </p>
+      </div>
       {diagnostics.map((diagnostic, index) => {
         const step = diagnostic.nodeId
           ? steps.find((candidate) => candidate.id === diagnostic.nodeId)
           : undefined;
         const destructive = diagnostic.severity === "ERROR";
         return (
-          <Card key={`${diagnostic.code}-${diagnostic.nodeId ?? index}`}>
+          <Card key={`${diagnostic.code}-${diagnostic.nodeId ?? index}-${diagnostic.path ?? ""}`}>
             <CardContent className="p-4">
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                 <div
@@ -819,7 +894,7 @@ function ValidationTab({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge tone={destructive ? "destructive" : "warning"}>
-                      {destructive ? "Error" : "Warning"}
+                      {destructive ? "Blocks publish" : "Warning"}
                     </StatusBadge>
                     <span className="text-sm font-medium">{step?.title ?? "Flow"}</span>
                   </div>
@@ -830,17 +905,15 @@ function ValidationTab({
                     </p>
                   ) : null}
                 </div>
-                {diagnostic.nodeId ? (
-                  <Button
-                    data-flow-manager-live-action
-                    className="col-start-2 sm:col-start-auto"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onFocus(diagnostic.nodeId!)}
-                  >
-                    Open step
-                  </Button>
-                ) : null}
+                <Button
+                  data-flow-manager-live-action
+                  className="col-start-2 sm:col-start-auto"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onFocus(diagnostic)}
+                >
+                  {guidedProblemActionLabel(guidedProblemControl(diagnostic))}
+                </Button>
               </div>
             </CardContent>
           </Card>

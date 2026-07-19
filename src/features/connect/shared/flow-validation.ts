@@ -91,6 +91,7 @@ export function flowDiagnosticsToLegacyResult(diagnostics: FlowDiagnostic[]) {
       edgeId: diagnostic.edgeId,
       path: diagnostic.path,
       suggestedFix: diagnostic.suggestedFix,
+      phase: diagnostic.phase,
     })),
   };
 }
@@ -175,6 +176,7 @@ function validateStructure(document: CanonicalFlowDocument, diagnostics: FlowDia
 
 function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnostic[]) {
   const reachable = getReachableNodes(document);
+  const nodeIds = new Set(document.nodes.map((node) => node.id));
   if (!document.startNodeId) {
     diagnostics.push(
       warning(
@@ -182,6 +184,15 @@ function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnos
         "Choose a first WhatsApp step before publishing.",
         undefined,
         "Open the Conversation map and connect the first customer-facing step.",
+      ),
+    );
+  } else if (!nodeIds.has(document.startNodeId)) {
+    diagnostics.push(
+      warning(
+        "START_TARGET_MISSING",
+        "The configured first WhatsApp step no longer exists.",
+        undefined,
+        "Open the Advanced tab and reconnect startNodeId to a saved step.",
       ),
     );
   }
@@ -208,8 +219,8 @@ function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnos
       );
     }
     if (node.type === "IMAGE_MESSAGE") validateImageDraft(node, diagnostics);
-    if (node.type === "MAIN_MENU") {
-      validateChoiceDraft(node, diagnostics);
+    if (node.type === "MAIN_MENU" || node.options?.length) {
+      validateChoiceDraft(document, node, diagnostics);
     }
     if (node.type === "CONDITION") {
       diagnostics.push(
@@ -221,13 +232,36 @@ function validateDraft(document: CanonicalFlowDocument, diagnostics: FlowDiagnos
         ),
       );
     }
-    if (!TERMINAL_TYPES.has(node.type) && !outgoing(document.edges, node.id).length) {
+    const nodeEdges = outgoing(document.edges, node.id);
+    if (TERMINAL_TYPES.has(node.type) && nodeEdges.length) {
+      diagnostics.push(
+        warning(
+          "TERMINAL_CONTINUES",
+          `${nodeName(node)} ends or hands off the conversation but still has a next step.`,
+          node.id,
+          "Remove every outgoing route from this terminal step.",
+        ),
+      );
+    } else if (!TERMINAL_TYPES.has(node.type) && !nodeEdges.length) {
       diagnostics.push(
         warning(
           "DEAD_END",
           `${nodeName(node)} has no next step.`,
           node.id,
           "Choose what happens after this step, or end the conversation here.",
+        ),
+      );
+    }
+    if (
+      AUTO_TRANSITION_TYPES.has(node.type) &&
+      nodeEdges.filter((edge) => !text(edge.condition)).length > 1
+    ) {
+      diagnostics.push(
+        warning(
+          "AUTOMATIC_ROUTE_AMBIGUOUS",
+          `${nodeName(node)} has more than one automatic next step.`,
+          node.id,
+          "Keep one automatic destination or replace the routes with explicit customer choices.",
         ),
       );
     }
@@ -302,8 +336,21 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
       );
     }
     if (node.type === "IMAGE_MESSAGE") validateImagePublish(node, diagnostics);
-    if (node.type === "MAIN_MENU") validateChoicePublish(document, node, diagnostics);
-    if (!isExecutableTerminal(node) && !outgoing(document.edges, node.id).length) {
+    if (node.type === "MAIN_MENU" || node.options?.length) {
+      validateChoicePublish(document, node, diagnostics);
+    }
+    const nodeEdges = outgoing(document.edges, node.id);
+    if (node.type === "END" && nodeEdges.length) {
+      diagnostics.push(
+        error(
+          "PUBLISH_TERMINAL_CONTINUES",
+          `${nodeName(node)} ends the conversation but still has a next step.`,
+          node.id,
+          undefined,
+          "Remove every outgoing route from this terminal step.",
+        ),
+      );
+    } else if (!isExecutableTerminal(node) && !nodeEdges.length) {
       diagnostics.push(
         error(
           "PUBLISH_DEAD_END",
@@ -314,13 +361,33 @@ function validatePublish(document: CanonicalFlowDocument, diagnostics: FlowDiagn
         ),
       );
     }
+    if (
+      AUTO_TRANSITION_TYPES.has(node.type) &&
+      nodeEdges.filter((edge) => !text(edge.condition)).length > 1
+    ) {
+      diagnostics.push(
+        error(
+          "PUBLISH_AUTOMATIC_ROUTE_AMBIGUOUS",
+          `${nodeName(node)} has more than one automatic next step.`,
+          node.id,
+          undefined,
+          "Keep one automatic destination or replace the routes with explicit customer choices.",
+        ),
+      );
+    }
   }
 
   detectGuaranteedAutomaticCycle(document, diagnostics);
 }
 
-function validateChoiceDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnostic[]) {
+function validateChoiceDraft(
+  document: CanonicalFlowDocument,
+  node: CanonicalFlowNode,
+  diagnostics: FlowDiagnostic[],
+) {
+  const allOptions = node.options ?? [];
   const options = activeOptions(node);
+  const nodeIds = new Set(document.nodes.map((candidate) => candidate.id));
   if (!options.length) {
     diagnostics.push(
       warning(
@@ -331,16 +398,152 @@ function validateChoiceDraft(node: CanonicalFlowNode, diagnostics: FlowDiagnosti
       ),
     );
   }
-  for (const option of options) {
-    if (!option.label?.en?.trim()) {
-      diagnostics.push(
-        warning(
+  if (options.length > WHATSAPP_MAX_BUTTONS) {
+    diagnostics.push(
+      warning(
+        "WHATSAPP_BUTTON_LIMIT",
+        `${nodeName(node)} has ${options.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
+        node.id,
+        "Deactivate or remove extra options so only three active WhatsApp buttons remain.",
+      ),
+    );
+  }
+  const optionKeys = new Set<string>();
+  const labels = new Set<string>();
+  for (const option of allOptions) {
+    const optionPath = `options.${option.key || "unknown"}`;
+    const key = option.key?.trim();
+    if (!key) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_KEY_MISSING",
+          `${nodeName(node)} has an option without a stable key.`,
+          node.id,
+          "Remove and recreate this option so it receives a stable key.",
+        ),
+        path: optionPath,
+      });
+    } else if (optionKeys.has(key)) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_KEY_DUPLICATE",
+          `${nodeName(node)} has duplicate option key ${key}.`,
+          node.id,
+          "Remove and recreate one duplicated option before publishing.",
+        ),
+        path: optionPath,
+      });
+    }
+    if (key) optionKeys.add(key);
+    if (option.active === false) continue;
+
+    const label = option.label?.en?.trim();
+    if (!label) {
+      diagnostics.push({
+        ...warning(
           "CHOICE_LABEL_MISSING",
           `${nodeName(node)} has an option without an English label.`,
           node.id,
           "Add the button text customers should see.",
         ),
-      );
+        path: `${optionPath}.label.en`,
+      });
+    } else {
+      const normalizedLabel = label.toLowerCase();
+      if (labels.has(normalizedLabel)) {
+        diagnostics.push({
+          ...warning(
+            "CHOICE_LABEL_DUPLICATE",
+            `${nodeName(node)} has duplicate option label ${label}.`,
+            node.id,
+            "Rename one of the duplicated active options.",
+          ),
+          path: `${optionPath}.label.en`,
+        });
+      }
+      labels.add(normalizedLabel);
+      if (label.length > WHATSAPP_BUTTON_TITLE_MAX) {
+        diagnostics.push({
+          ...warning(
+            "CHOICE_LABEL_TOO_LONG",
+            `${label} is too long for a WhatsApp button.`,
+            node.id,
+            `Shorten this button to ${WHATSAPP_BUTTON_TITLE_MAX} characters or fewer.`,
+          ),
+          path: `${optionPath}.label.en`,
+        });
+      }
+    }
+    const labelAr = option.label?.ar?.trim();
+    if (labelAr && labelAr.length > WHATSAPP_BUTTON_TITLE_MAX) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_ARABIC_LABEL_TOO_LONG",
+          `${labelAr} is too long for a WhatsApp button.`,
+          node.id,
+          `Shorten this Arabic button to ${WHATSAPP_BUTTON_TITLE_MAX} characters or fewer.`,
+        ),
+        path: `${optionPath}.label.ar`,
+      });
+    }
+
+    const targetNodeId = option.targetNodeId?.trim();
+    const matchingEdges = key
+      ? outgoing(document.edges, node.id).filter((edge) => edge.condition === key)
+      : [];
+    if (!targetNodeId) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_TARGET_MISSING",
+          `${nodeName(node)} option ${key || label || "reply"} needs a destination.`,
+          node.id,
+          "Choose what happens after the customer taps this option.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    } else if (!nodeIds.has(targetNodeId)) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_TARGET_INVALID",
+          `${nodeName(node)} option ${key || label} points to a missing step.`,
+          node.id,
+          "Choose an existing destination step.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (key && targetNodeId && !matchingEdges.length) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_EDGE_MISSING",
+          `${nodeName(node)} option ${key} is missing its canonical route.`,
+          node.id,
+          "Choose its destination again to repair the saved route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (matchingEdges.length > 1) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_EDGE_DUPLICATE",
+          `${nodeName(node)} option ${key} has more than one saved route.`,
+          node.id,
+          "Choose its destination again to keep exactly one route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (targetNodeId && matchingEdges.some((edge) => edge.to !== targetNodeId)) {
+      diagnostics.push({
+        ...warning(
+          "CHOICE_EDGE_TARGET_MISMATCH",
+          `${nodeName(node)} option ${key || label} has conflicting destinations.`,
+          node.id,
+          "Choose its destination again to synchronize the option and route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
     }
   }
 }
@@ -350,8 +553,10 @@ function validateChoicePublish(
   node: CanonicalFlowNode,
   diagnostics: FlowDiagnostic[],
 ) {
-  const options = activeOptions(node);
-  if (!options.length) {
+  const allOptions = node.options ?? [];
+  const active = activeOptions(node);
+  const nodeIds = new Set(document.nodes.map((candidate) => candidate.id));
+  if (!active.length) {
     diagnostics.push(
       error(
         "PUBLISH_CHOICE_OPTIONS_MISSING",
@@ -362,67 +567,164 @@ function validateChoicePublish(
       ),
     );
   }
-  if (options.length > WHATSAPP_MAX_BUTTONS) {
+  if (active.length > WHATSAPP_MAX_BUTTONS) {
     diagnostics.push(
       error(
         "PUBLISH_WHATSAPP_BUTTON_LIMIT",
-        `${nodeName(node)} has ${options.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
+        `${nodeName(node)} has ${active.length} active options. WhatsApp supports ${WHATSAPP_MAX_BUTTONS}.`,
         node.id,
         undefined,
         "Deactivate or remove extra options so only three active WhatsApp buttons remain.",
       ),
     );
   }
+  const optionKeys = new Set<string>();
   const labels = new Set<string>();
-  for (const option of options) {
+  for (const option of allOptions) {
+    const optionPath = `options.${option.key || "unknown"}`;
+    const optionKey = option.key?.trim();
+    if (!optionKey) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_KEY_MISSING",
+          `${nodeName(node)} has an option without a stable key.`,
+          node.id,
+          undefined,
+          "Remove and recreate this option so it receives a stable key.",
+        ),
+        path: optionPath,
+      });
+    } else if (optionKeys.has(optionKey)) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_KEY_DUPLICATE",
+          `${nodeName(node)} has duplicate option key ${optionKey}.`,
+          node.id,
+          undefined,
+          "Remove and recreate one duplicated option.",
+        ),
+        path: optionPath,
+      });
+    }
+    if (optionKey) optionKeys.add(optionKey);
+    if (option.active === false) continue;
+
     const label = option.label?.en?.trim();
     if (!label) {
-      diagnostics.push(
-        error(
+      diagnostics.push({
+        ...error(
           "PUBLISH_CHOICE_LABEL_MISSING",
           `${nodeName(node)} has an option without an English label.`,
           node.id,
           undefined,
           "Add the button text customers should see.",
         ),
-      );
+        path: `${optionPath}.label.en`,
+      });
     } else {
       const key = label.toLowerCase();
       if (labels.has(key)) {
-        diagnostics.push(
-          error(
+        diagnostics.push({
+          ...error(
             "PUBLISH_CHOICE_LABEL_DUPLICATE",
             `${nodeName(node)} has duplicate option label ${label}.`,
             node.id,
             undefined,
             "Rename one of the duplicated active options.",
           ),
-        );
+          path: `${optionPath}.label.en`,
+        });
       }
       labels.add(key);
       if (label.length > WHATSAPP_BUTTON_TITLE_MAX) {
-        diagnostics.push(
-          error(
+        diagnostics.push({
+          ...error(
             "PUBLISH_CHOICE_LABEL_TOO_LONG",
             `${label} is too long for a WhatsApp button.`,
             node.id,
             undefined,
             `Shorten this button to ${WHATSAPP_BUTTON_TITLE_MAX} characters or fewer.`,
           ),
-        );
+          path: `${optionPath}.label.en`,
+        });
       }
     }
-    const key = option.key?.trim();
-    if (key && !outgoing(document.edges, node.id).some((edge) => edge.condition === key)) {
-      diagnostics.push(
-        error(
+    const labelAr = option.label?.ar?.trim();
+    if (labelAr && labelAr.length > WHATSAPP_BUTTON_TITLE_MAX) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_ARABIC_LABEL_TOO_LONG",
+          `${labelAr} is too long for a WhatsApp button.`,
+          node.id,
+          undefined,
+          `Shorten this Arabic button to ${WHATSAPP_BUTTON_TITLE_MAX} characters or fewer.`,
+        ),
+        path: `${optionPath}.label.ar`,
+      });
+    }
+
+    const targetNodeId = option.targetNodeId?.trim();
+    const matchingEdges = optionKey
+      ? outgoing(document.edges, node.id).filter((edge) => edge.condition === optionKey)
+      : [];
+    if (!targetNodeId) {
+      diagnostics.push({
+        ...error(
           "PUBLISH_CHOICE_TARGET_MISSING",
-          `${nodeName(node)} option ${key} needs a target.`,
+          `${nodeName(node)} option ${optionKey || label || "reply"} needs a target.`,
           node.id,
           undefined,
           "Choose what should happen after the customer taps this option.",
         ),
-      );
+        path: `${optionPath}.targetNodeId`,
+      });
+    } else if (!nodeIds.has(targetNodeId)) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_TARGET_INVALID",
+          `${nodeName(node)} option ${optionKey || label} points to a missing step.`,
+          node.id,
+          undefined,
+          "Choose an existing destination step.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (optionKey && targetNodeId && !matchingEdges.length) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_EDGE_MISSING",
+          `${nodeName(node)} option ${optionKey} is missing its canonical route.`,
+          node.id,
+          undefined,
+          "Choose its destination again to repair the saved route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (matchingEdges.length > 1) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_EDGE_DUPLICATE",
+          `${nodeName(node)} option ${optionKey} has more than one saved route.`,
+          node.id,
+          undefined,
+          "Choose its destination again to keep exactly one route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
+    }
+    if (targetNodeId && matchingEdges.some((edge) => edge.to !== targetNodeId)) {
+      diagnostics.push({
+        ...error(
+          "PUBLISH_CHOICE_EDGE_TARGET_MISMATCH",
+          `${nodeName(node)} option ${optionKey || label} has conflicting destinations.`,
+          node.id,
+          undefined,
+          "Choose its destination again to synchronize the option and route.",
+        ),
+        path: `${optionPath}.targetNodeId`,
+      });
     }
   }
 }
@@ -575,7 +877,11 @@ function error(
   edgeId?: string,
   suggestedFix?: string,
 ): FlowDiagnostic {
-  return { code, message, severity: "error", phase: "structural", nodeId, edgeId, suggestedFix };
+  const phase =
+    code.startsWith("PUBLISH_") || code.endsWith("_FOR_PUBLISH")
+      ? ("publish" as const)
+      : ("structural" as const);
+  return { code, message, severity: "error", phase, nodeId, edgeId, suggestedFix };
 }
 
 function warning(

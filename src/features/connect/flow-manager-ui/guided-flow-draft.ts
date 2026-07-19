@@ -151,6 +151,42 @@ export function removeGuidedOption(
   return synchronizeGuidedOptionEdge(nextDocument, nodeId, optionKey, undefined);
 }
 
+export function updateGuidedAutomaticDestination(
+  document: CanonicalFlowDocument,
+  nodeId: string,
+  targetNodeId: string | undefined,
+) {
+  if (!document.nodes.some((node) => node.id === nodeId)) {
+    throw new Error("The step to route no longer exists.");
+  }
+  if (targetNodeId === nodeId) {
+    throw new Error("Choose a different automatic destination.");
+  }
+  if (targetNodeId && !document.nodes.some((node) => node.id === targetNodeId)) {
+    throw new Error("Choose a valid automatic destination.");
+  }
+
+  let synchronized = false;
+  const edges = document.edges.flatMap((edge) => {
+    if (edge.from !== nodeId || edge.condition?.trim()) return [edge];
+    if (!targetNodeId || synchronized) return [];
+    synchronized = true;
+    return [{ ...edge, to: targetNodeId, condition: null }];
+  });
+  if (targetNodeId && !synchronized) {
+    edges.push({
+      id: nextUniqueId(
+        document.edges.map((edge) => edge.id),
+        `edge_${nodeId}_next`,
+      ),
+      from: nodeId,
+      to: targetNodeId,
+      condition: null,
+    });
+  }
+  return { ...document, edges };
+}
+
 export function createGuidedNode(
   document: CanonicalFlowDocument,
   input: { type: GuidedNewStepType; title: string },

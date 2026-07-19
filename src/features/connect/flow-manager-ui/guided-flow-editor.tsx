@@ -62,6 +62,7 @@ export function GuidedFlowEditor({
   onSelect,
   onUpdateNode,
   onUpdateOption,
+  onUpdateAutomaticDestination,
   onFuture,
   onAddStep,
   onDuplicateStep,
@@ -82,6 +83,7 @@ export function GuidedFlowEditor({
     optionKey: string,
     update: (option: FlowNodeOption) => FlowNodeOption,
   ) => void;
+  onUpdateAutomaticDestination: (nodeId: string, targetNodeId: string | undefined) => void;
   onFuture: (feature: string, description: string) => void;
   onAddStep: () => void;
   onDuplicateStep: (id: string) => void;
@@ -97,6 +99,9 @@ export function GuidedFlowEditor({
   const node = selected
     ? model.document.nodes.find((candidate) => candidate.id === selected.id)
     : undefined;
+  const automaticEdges = node
+    ? model.document.edges.filter((edge) => edge.from === node.id && !edge.condition?.trim())
+    : [];
   const filteredSteps = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return model.steps;
@@ -290,6 +295,7 @@ export function GuidedFlowEditor({
                 <Field label="Admin title">
                   <Input
                     aria-label="Admin title"
+                    data-guided-control="behavior"
                     value={node.title ?? selected.title}
                     readOnly={!editable}
                     onClick={readOnlyNotice}
@@ -318,6 +324,7 @@ export function GuidedFlowEditor({
                 <Field label="English">
                   <Textarea
                     aria-label="Customer message in English"
+                    data-guided-control="message"
                     value={node.messages?.en ?? ""}
                     rows={5}
                     readOnly={!editable}
@@ -333,6 +340,7 @@ export function GuidedFlowEditor({
                 <Field label="Arabic">
                   <Textarea
                     aria-label="Customer message in Arabic"
+                    data-guided-control="message"
                     value={node.messages?.ar ?? ""}
                     rows={5}
                     dir="rtl"
@@ -399,6 +407,7 @@ export function GuidedFlowEditor({
                   </div>
                   <Button
                     data-flow-manager-live-action
+                    data-guided-control="choices"
                     size="sm"
                     variant="outline"
                     disabled={(node.options?.length ?? 0) >= WHATSAPP_REPLY_OPTION_LIMIT}
@@ -417,6 +426,49 @@ export function GuidedFlowEditor({
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                {!(node.options?.length ?? 0) || automaticEdges.length ? (
+                  <div className="rounded-md border bg-muted/15 p-3">
+                    <Field label="Automatic continuation">
+                      <Select
+                        value={automaticEdges[0]?.to ?? "none"}
+                        onValueChange={(value) => {
+                          if (!editable) return readOnlyNotice();
+                          onUpdateAutomaticDestination(
+                            node.id,
+                            value === "none" ? undefined : value,
+                          );
+                        }}
+                      >
+                        <SelectTrigger
+                          data-guided-control="destination"
+                          aria-label="Automatic destination"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No automatic destination</SelectItem>
+                          {model.steps
+                            .filter((candidate) => candidate.id !== node.id)
+                            .map((candidate) => (
+                              <SelectItem key={candidate.id} value={candidate.id}>
+                                {candidate.title}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {node.type === "END" || node.type === "HUMAN_HANDOFF"
+                        ? "End and handoff steps should have no automatic destination."
+                        : "Used when this step finishes without waiting for a customer reply."}
+                    </p>
+                    {automaticEdges.length > 1 ? (
+                      <p className="mt-2 text-xs font-medium text-destructive">
+                        Multiple automatic routes are saved. Choose one destination to repair them.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 {node.options?.map((option, optionIndex) => (
                   <div key={option.key} className="rounded-md border bg-muted/15 p-3">
                     <div className="mb-3 flex items-center justify-between gap-3">
@@ -438,6 +490,8 @@ export function GuidedFlowEditor({
                       <Field label="Button text (EN)">
                         <Input
                           aria-label={`Button text in English for ${option.key}`}
+                          data-guided-control="choices"
+                          data-guided-option-key={option.key}
                           value={option.label.en ?? ""}
                           maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
                           readOnly={!editable}
@@ -453,6 +507,8 @@ export function GuidedFlowEditor({
                       <Field label="Button text (AR)">
                         <Input
                           aria-label={`Button text in Arabic for ${option.key}`}
+                          data-guided-control="choices"
+                          data-guided-option-key={option.key}
                           value={option.label.ar ?? ""}
                           maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
                           dir="rtl"
@@ -479,7 +535,11 @@ export function GuidedFlowEditor({
                             }));
                           }}
                         >
-                          <SelectTrigger aria-label={`Destination for ${option.key}`}>
+                          <SelectTrigger
+                            data-guided-control="destination"
+                            data-guided-option-key={option.key}
+                            aria-label={`Destination for ${option.key}`}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -581,6 +641,7 @@ export function GuidedFlowEditor({
                 )}
                 <Button
                   data-flow-manager-live-action
+                  data-guided-control="media"
                   variant="outline"
                   size="sm"
                   className="w-full"
@@ -642,6 +703,7 @@ export function GuidedFlowEditor({
                   <span>Optional</span>
                   <Switch
                     aria-label="Optional step"
+                    data-guided-control="behavior"
                     checked={node.optional === true}
                     onCheckedChange={(checked) => {
                       if (!editable) return readOnlyNotice();
@@ -1030,8 +1092,10 @@ function FlowStepCard({
 }) {
   return (
     <div
+      data-guided-tree-node={step.id}
+      tabIndex={-1}
       className={cn(
-        "w-[252px] overflow-hidden rounded-lg border bg-background shadow-sm",
+        "w-[252px] overflow-hidden rounded-lg border bg-background shadow-sm focus:outline-none focus:ring-2 focus:ring-primary",
         selected && "border-primary ring-1 ring-primary",
       )}
     >

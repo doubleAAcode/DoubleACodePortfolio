@@ -812,11 +812,11 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: begin only Milestone 2B safe draft editing.
-Implement recoverable Guided step mutations, destinations, validation/problem
-navigation, undo/redo, dirty-state protection, conflict handling, and retryable
-saves through the existing authorized APIs. Publishing remains deferred to 2C,
-Canvas remains `Future`, and provider sending remains off.
+Current authorized next action: complete only the Milestone 2B media-replacement
+slice in Guided. Reuse the authenticated media route and canonical image fields,
+preserve the current draft on upload/save failures, and verify replacement and
+reload without changing the published version. Publishing remains deferred to
+2C, Canvas remains `Future`, and provider sending remains off.
 
 Milestone 1 platform controls:
 
@@ -967,11 +967,14 @@ admin/client saves with optimistic server-conflict protection are implemented.
 Stable step creation, duplication, ordering, and reference-safe deletion are
 also implemented for both audiences. Choice creation/removal now enforces three
 saved WhatsApp replies, immutable stable keys, unique English labels, and one
-explicit synchronized destination per reply.
+explicit synchronized destination per reply. The ordered Problems experience
+evaluates draft and publish rules, sorts blockers before warnings, removes
+duplicate forms of the same problem, and navigates directly to the affected map
+step or repair control.
 The map exposes at most three WhatsApp reply branches per step and visibly flags
 legacy overflow, loops, missing destinations, and unconnected saved steps.
-Complete problem coverage and media replacement remain before the 2B gate can
-close.**
+Media replacement is the remaining 2B implementation slice. Media/template
+availability checks remain tied to that slice and 2C publish readiness.**
 
 Milestone 2 work-package contract:
 
@@ -1001,13 +1004,16 @@ Milestone 2 work-package contract:
 - [x] Make branching understandable without graph handles: every option or
       condition names its next step, missing destinations are immediately
       visible, and deleting a referenced step requires an explicit repair.
-- [ ] Provide field-level validation plus one ordered problem list that names the
+- [x] Provide field-level validation plus one ordered problem list that names the
       affected step, explains the issue in plain language, and navigates directly
       to the control that fixes it. Distinguish publish-blocking errors from
       warnings.
-- [ ] Detect at least missing required content, invalid or unreachable targets,
+- [~] Detect at least missing required content, invalid or unreachable targets,
       unreachable steps, dead ends, duplicate option values, unsupported node
       configuration, unavailable media/templates, and invalid start/end paths.
+      Draft/publish diagnostics cover every listed structural and routing class;
+      provider availability for uploaded media and approved templates remains
+      with media replacement and 2C publish readiness.
 - [x] Protect work with dirty-state indicators, navigation warnings, retryable
       saves, server-conflict handling, undo/redo for the current editing session,
       and no fake success state after a rejected mutation.
@@ -1155,6 +1161,7 @@ the active roadmap:
 | 2026-07-19 | Guided draft saves use a monotonic version revision and an atomic compare-and-swap update. | Concurrent admin or client sessions must never silently overwrite a newer draft. A stale save returns `409 FLOW_DRAFT_CONFLICT`, keeps local edits open, and requires an explicit reload instead of auto-merging or claiming success. |
 | 2026-07-19 | Guided step ordering changes saved presentation order only; routes continue to target stable node IDs. Referenced non-start steps can be deleted only after the user explicitly redirects all inbound routes to one surviving step or removes those destinations. | Reordering must not silently alter conversation behavior. Explicit repair prevents dangling references, while keeping the start step undeletable in 2B avoids an implicit trigger/start migration before those rules are designed. |
 | 2026-07-19 | Guided creates no more than three saved WhatsApp reply choices on a step. Every new choice requires unique English button text of at most 20 characters and one existing non-self destination; its stable key cannot be edited. Choice and matching canonical edge mutations are atomic. | Enforcing the provider limit during creation is clearer than allowing inactive overflow. Synchronizing the option and conditional edge prevents destination edits from retaining a stale second continuation, while stable keys keep runtime decisions and future diagnostics referentially safe. |
+| 2026-07-19 | Guided continuously evaluates publish readiness while keeping incomplete drafts saveable. Problems are deduplicated, ordered with publish blockers first, and linked to the exact map step or repair control. | Draft work must remain recoverable, but an operator also needs an honest preview of what will block publishing. Runtime-compatible terminal behavior remains publishable; legacy or unnecessary terminal routes stay visible as cleanup warnings instead of falsely rejecting supported templates. |
 
 ## Roadmap Changelog
 
@@ -1226,3 +1233,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Released Guided step mutations from exact commit `dea871e`; this vertical slice is accepted while Milestone 2B remains active. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-step-mutations-v1`, and capability `guided-step-mutations` alongside the existing Guided read/edit/conflict capabilities. The deployed admin business mutation and signed-client draft mutation endpoints each returned `401` without a session. Rollback is code-only by reverting `dea871e`; no schema changed, the authenticated production-data QA draft was restored to its original 8 steps with no marker, and published/runtime records were untouched. The next authorized 2B slice is WhatsApp choice creation/removal with the three-reply limit and explicit stable destinations; broader problem coverage and media replacement remain queued behind it. |
 | 2026-07-19 | Implemented the WhatsApp choice-mutation slice for both Guided audiences. Add reply now requires unique English text of at most 20 characters and one explicit saved destination, creates an immutable stable key, and stops at three saved choices. Remove reply uses a destructive confirmation and removes only that option route. Destination editing now atomically synchronizes the canonical conditional edge, fixing a stale-edge condition that could otherwise preserve an unintended old continuation. | Domain tests cover creation, duplicate labels, stable option/edge IDs, the three-choice limit, destination redirect/clear, edge deduplication, removal, and sort-order repair. An authenticated browser journey against production data created stable step `step_main_menu`, added `qa_route -> End`, saved/reloaded, redirected it to Human handoff, saved/reloaded with the old End route absent, removed it, saved/reloaded, then deleted the QA step and restored the exact original 8-step draft with 4 original problems and no QA marker/key. The add-reply dialog was visually accepted at `390x844` with all fields/actions reachable and no viewport overflow. Typecheck, scoped ESLint, `105/105` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. No schema, published version, or runtime session changed. Canonical deployment and denied mutation probes remain before acceptance. |
 | 2026-07-19 | Released Guided WhatsApp choice mutations from exact commit `6b2d5c4`; this vertical slice is accepted while Milestone 2B remains active for complete problem coverage and media replacement. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-choice-mutations-v1`, and capability `guided-choice-mutations` alongside Guided read/edit/conflict/step-mutation capabilities. The deployed admin business mutation and signed-client draft mutation endpoints each returned `401` without a session. Rollback is code-only by reverting `6b2d5c4`; no schema changed, the real draft is restored to the original 8 steps with no QA marker/key, and published/runtime records were untouched. The next authorized 2B slice is ordered, complete problem coverage with direct navigation to the affected step and fix control; media replacement remains queued behind it. |
+| 2026-07-19 | Implemented the Milestone 2B ordered Problems experience and automatic-route repair control for both Guided audiences. The same canonical validator now exposes draft warnings and reachable publish blockers, deduplicates equivalent diagnostics, orders blockers first, and routes each action to the affected map step, message, choice, destination, media, behavior, or advanced control. Choice validation now covers stable keys, labels, provider length/quantity limits, targets, and canonical edge synchronization; automatic routes detect duplicates and can be redirected or cleared without changing stable edge identity. | Tests cover ordered/deduplicated blockers and warnings, diagnostic-to-control mapping, exact focus contracts, automatic-route deduplication, official template compatibility, and the existing protected order pipeline. Authenticated browser QA against the production-backed 8-step draft created a temporary reachable invalid reply menu, observed two publish blockers before warnings, followed `Fix message`, `Fix choices`, and `Fix route` to active controls, then undid both changes to the exact clean 8-step draft. The real six-warning list and `Show on map` navigation were accepted on desktop and `390x844` mobile. Typecheck, scoped ESLint, `109/109` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. No schema, saved draft, published version, or runtime session changed. Canonical deployment and denied mutation probes remain before acceptance; media replacement is next. |

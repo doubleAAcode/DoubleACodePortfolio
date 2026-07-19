@@ -205,6 +205,7 @@ export type FlowValidationIssue = {
   edgeId?: string;
   path?: string;
   suggestedFix?: string;
+  phase?: "structural" | "draft" | "publish" | "runtime";
 };
 
 export type FlowValidationResult = {
