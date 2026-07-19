@@ -1,6 +1,9 @@
 import "@tanstack/react-start/server-only";
 
-import { isServerSupabaseConfigured, supabaseServerRest } from "@/lib/supabase/server-rest.server";
+import {
+  isServerSupabaseConfigured,
+  supabaseServerRest,
+} from "../../../lib/supabase/server-rest.server.ts";
 
 import {
   createDefaultFlowDefinition,
@@ -9,11 +12,11 @@ import {
   type FlowDefinition,
   type FlowTemplateStatus,
   type FlowValidationResult,
-} from "./flow-template-types";
-import { validateFlowForEditor } from "./flow-editor";
-import { assertExpectedDraftRevision, FlowDraftConflictError } from "./flow-draft-conflict";
-import { withCanonicalFlowDocument } from "./flow-document";
-import { flowDiagnosticsToLegacyResult, validateFlow } from "./flow-validation";
+} from "./flow-template-types.ts";
+import { validateFlowForEditor } from "./flow-editor.ts";
+import { assertExpectedDraftRevision, FlowDraftConflictError } from "./flow-draft-conflict.ts";
+import { withCanonicalFlowDocument } from "./flow-document.ts";
+import { flowDiagnosticsToLegacyResult, validateFlow } from "./flow-validation.ts";
 
 export type FlowTemplateRow = {
   id: string;
@@ -79,6 +82,22 @@ export type ActiveBusinessFlow = {
   versionNumber: number;
   flow: FlowDefinition;
 };
+
+export class FlowVersionActionError extends Error {
+  readonly code: "FLOW_VERSION_NOT_FOUND" | "FLOW_VERSION_NOT_RESTORABLE";
+  readonly status: 404 | 409;
+
+  constructor(
+    code: "FLOW_VERSION_NOT_FOUND" | "FLOW_VERSION_NOT_RESTORABLE",
+    message: string,
+    status: 404 | 409,
+  ) {
+    super(message);
+    this.name = "FlowVersionActionError";
+    this.code = code;
+    this.status = status;
+  }
+}
 
 const memoryTemplates = new Map<string, FlowTemplateRow>();
 const memoryTemplateVersions = new Map<string, FlowTemplateVersionRow>();
@@ -455,6 +474,78 @@ export async function publishBusinessFlowVersion({
     active_version_id: publishedVersion.id,
     updated_at: now,
   });
+  return getBusinessFlowDetails(businessId);
+}
+
+export async function restoreBusinessFlowVersionToDraft({
+  businessId,
+  versionId,
+  adminUser,
+}: {
+  businessId: string;
+  versionId: string;
+  adminUser: string;
+}) {
+  const details = await getBusinessFlowDetails(businessId);
+  if (!details.flow) {
+    throw new FlowVersionActionError("FLOW_VERSION_NOT_FOUND", "Business flow was not found.", 404);
+  }
+  const source = details.versions.find((version) => version.id === versionId);
+  if (!source) {
+    throw new FlowVersionActionError(
+      "FLOW_VERSION_NOT_FOUND",
+      "Business flow version was not found.",
+      404,
+    );
+  }
+  if (source.status === "DRAFT") {
+    throw new FlowVersionActionError(
+      "FLOW_VERSION_NOT_RESTORABLE",
+      "Choose a published or archived version to restore.",
+      409,
+    );
+  }
+
+  const flow = structuredClone(withCanonicalFlowDocument(source.flow_json));
+  const saveValidation = validateForPersistence(flow, "save");
+  if (!saveValidation.ok) {
+    throw new FlowVersionActionError(
+      "FLOW_VERSION_NOT_RESTORABLE",
+      "This version cannot be restored until its saved flow data is repaired.",
+      409,
+    );
+  }
+  const draftValidation = validateForPersistence(flow, "draft");
+  const now = new Date().toISOString();
+
+  if (isServerSupabaseConfigured()) {
+    await supabaseServerRest<BusinessFlowVersionRow>("/rpc/wa_restore_business_flow_version", {
+      method: "POST",
+      body: JSON.stringify({
+        p_business_id: businessId,
+        p_source_version_id: source.id,
+        p_actor: adminUser,
+        p_validation_result: draftValidation,
+      }),
+    });
+  } else {
+    const versionNumber = Math.max(0, ...details.versions.map((entry) => entry.version_number)) + 1;
+    await archiveBusinessDraftVersions(details.flow.id);
+    await upsertBusinessFlowVersion({
+      id: `${details.flow.id}-v${versionNumber}`,
+      business_flow_id: details.flow.id,
+      version_number: versionNumber,
+      status: "DRAFT",
+      flow_json: flow,
+      validation_result: draftValidation,
+      created_by_user_id: adminUser,
+      revision: 1,
+      published_at: null,
+      created_at: now,
+    });
+    await upsertBusinessFlow({ ...details.flow, updated_at: now });
+  }
+
   return getBusinessFlowDetails(businessId);
 }
 

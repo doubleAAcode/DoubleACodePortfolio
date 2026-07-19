@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Redo2,
   RefreshCw,
+  RotateCcw,
   Save,
   Undo2,
 } from "lucide-react";
@@ -106,11 +107,13 @@ export function GuidedFlowWorkspace({
   showCanvasTab = true,
   onSaveDraft,
   onUploadImage,
+  onRestoreVersion,
 }: {
   details: BusinessFlowDetails;
   showCanvasTab?: boolean;
   onSaveDraft?: (input: SaveDraftInput) => Promise<BusinessFlowDetails>;
   onUploadImage?: (file: File) => Promise<{ path: string; url: string }>;
+  onRestoreVersion?: (versionId: string) => Promise<BusinessFlowDetails>;
 }) {
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
   const [selectedStepId, setSelectedStepId] = useState<string>();
@@ -120,6 +123,7 @@ export function GuidedFlowWorkspace({
   const [historyIndex, setHistoryIndex] = useState(0);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [saving, setSaving] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [saveConflict, setSaveConflict] = useState<string>();
   const [createStepOpen, setCreateStepOpen] = useState(false);
   const [deleteStepId, setDeleteStepId] = useState<string>();
@@ -426,14 +430,7 @@ export function GuidedFlowWorkspace({
         versionId: model.version.id,
         expectedRevision: model.version.revision,
       });
-      const savedResult = createGuidedFlowModel(saved);
-      if (!savedResult.ok) throw new Error(savedResult.message);
-      const document = structuredClone(savedResult.model.document);
-      setSelectedVersionId(savedResult.model.version.id);
-      setHistoryVersionId(savedResult.model.version.id);
-      setHistory([document]);
-      setHistoryIndex(0);
-      setSavedSnapshot(serializeGuidedDocument(document));
+      adoptServerDetails(saved);
       setSaveConflict(undefined);
       toast.success("Draft saved");
     } catch (error) {
@@ -449,6 +446,35 @@ export function GuidedFlowWorkspace({
     } finally {
       setSaving(false);
     }
+  }
+
+  async function restoreVersion() {
+    if (!onRestoreVersion || model.version.status === "DRAFT") return;
+    setRestoring(true);
+    try {
+      const restored = await onRestoreVersion(model.version.id);
+      adoptServerDetails(restored);
+      toast.success(`Version ${model.version.version_number} restored as a new draft`, {
+        description: "The live version has not changed.",
+      });
+    } catch (error) {
+      toast.error("Version was not restored", {
+        description: error instanceof Error ? error.message : "Try again.",
+      });
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  function adoptServerDetails(serverDetails: BusinessFlowDetails) {
+    const serverResult = createGuidedFlowModel(serverDetails);
+    if (!serverResult.ok) throw new Error(serverResult.message);
+    const document = structuredClone(serverResult.model.document);
+    setSelectedVersionId(serverResult.model.version.id);
+    setHistoryVersionId(serverResult.model.version.id);
+    setHistory([document]);
+    setHistoryIndex(0);
+    setSavedSnapshot(serializeGuidedDocument(document));
   }
 
   function changeVersion(versionId: string) {
@@ -492,14 +518,19 @@ export function GuidedFlowWorkspace({
             <SelectTrigger
               className="h-9 w-48 max-w-full"
               aria-label="Flow version"
-              disabled={saving || Boolean(mediaUploadingNodeId)}
+              disabled={saving || restoring || Boolean(mediaUploadingNodeId)}
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {model.versions.map((version) => (
                 <SelectItem key={version.id} value={version.id}>
-                  {version.status === "DRAFT" ? "Draft" : "Published"} v{version.version_number}
+                  {version.status === "DRAFT"
+                    ? "Draft"
+                    : version.status === "PUBLISHED"
+                      ? "Live"
+                      : "History"}{" "}
+                  v{version.version_number}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -512,7 +543,7 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Undo"
               title="Undo"
-              disabled={!canUndo || saving || Boolean(mediaUploadingNodeId)}
+              disabled={!canUndo || saving || restoring || Boolean(mediaUploadingNodeId)}
               onClick={() => setHistoryIndex((index) => index - 1)}
             >
               <Undo2 className="size-4" />
@@ -524,17 +555,53 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Redo"
               title="Redo"
-              disabled={!canRedo || saving || Boolean(mediaUploadingNodeId)}
+              disabled={!canRedo || saving || restoring || Boolean(mediaUploadingNodeId)}
               onClick={() => setHistoryIndex((index) => index + 1)}
             >
               <Redo2 className="size-4" />
             </Button>
           </div>
+          {!editable && onRestoreVersion ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  data-flow-manager-live-action
+                  variant="outline"
+                  size="sm"
+                  disabled={restoring || Boolean(mediaUploadingNodeId)}
+                >
+                  {restoring ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="size-4" />
+                  )}
+                  {restoring ? "Restoring..." : "Restore as draft"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Restore version {model.version.version_number} as a new draft?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your current draft will move to history. The live version stays unchanged until
+                    you publish the restored draft.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => void restoreVersion()}>
+                    Restore as draft
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : null}
           <Button
             data-flow-manager-live-action
             variant="outline"
             size="sm"
-            disabled={saving || Boolean(saveConflict) || Boolean(mediaUploadingNodeId)}
+            disabled={saving || restoring || Boolean(saveConflict) || Boolean(mediaUploadingNodeId)}
             onClick={() => void saveDraft()}
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}

@@ -19,9 +19,11 @@ import {
 } from "./dashboard-store.server";
 import {
   cloneTemplateToBusiness,
+  FlowVersionActionError,
   getBusinessFlowDetails,
   listFlowTemplates,
   publishBusinessFlowVersion,
+  restoreBusinessFlowVersionToDraft,
   saveBusinessFlowDraft,
 } from "./flow-template-store.server";
 import { FlowDraftConflictError } from "./flow-draft-conflict";
@@ -176,6 +178,7 @@ export function createDashboardFlowHandlers(envSuffix = "") {
               expectedRevision?: number;
             }
           | { action: "publish_version"; versionId: string }
+          | { action: "restore_version"; versionId: string }
           | { action: "clone_template"; templateId: string }
           | ({ action: "save_checkout_settings" } & DashboardFlowSettingsInput)
           | null;
@@ -218,6 +221,18 @@ export function createDashboardFlowHandlers(envSuffix = "") {
           await publishBusinessFlowVersion({
             businessId: session.businessId,
             versionId: action.versionId,
+          });
+        } else if (action.action === "restore_version") {
+          if (!action.versionId?.trim()) {
+            return Response.json(
+              { ok: false, error: "A history version is required." },
+              { status: 400 },
+            );
+          }
+          await restoreBusinessFlowVersionToDraft({
+            businessId: session.businessId,
+            versionId: action.versionId,
+            adminUser: actor,
           });
         } else if (action.action === "clone_template") {
           if (!action.templateId?.trim()) {
@@ -493,6 +508,12 @@ function parseLifecycleAction(value: string | undefined): DashboardLifecycleActi
 function dashboardApiError(error: unknown) {
   if (error instanceof FlowDraftConflictError) {
     return Response.json({ ok: false, code: error.code, error: error.message }, { status: 409 });
+  }
+  if (error instanceof FlowVersionActionError) {
+    return Response.json(
+      { ok: false, code: error.code, error: error.message },
+      { status: error.status },
+    );
   }
   const message = error instanceof Error ? error.message : "Dashboard request failed.";
   console.error("[wa-dashboard:api] request failed", { message });

@@ -181,6 +181,14 @@ function ClientAutomations() {
                 details={flowQuery.data.details}
                 showCanvasTab={false}
                 onUploadImage={uploadWaDashboardFlowImage}
+                onRestoreVersion={async (versionId) => {
+                  const snapshot = await applyWaDashboardFlowAction({
+                    action: "restore_version",
+                    versionId,
+                  });
+                  await flowQuery.refetch();
+                  return snapshot.details;
+                }}
                 onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
                   const snapshot = await applyWaDashboardFlowAction({
                     action: "save_draft",

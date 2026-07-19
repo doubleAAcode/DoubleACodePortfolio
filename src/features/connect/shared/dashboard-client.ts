@@ -38,6 +38,7 @@ export type WaDashboardFlowAction =
       expectedRevision: number;
     }
   | { action: "publish_version"; versionId: string }
+  | { action: "restore_version"; versionId: string }
   | { action: "clone_template"; templateId: string }
   | {
       action: "save_checkout_settings";

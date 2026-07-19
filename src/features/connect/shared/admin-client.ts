@@ -177,6 +177,7 @@ export async function applyAdminBusinessAction(
         versionId: string;
         expectedRevision: number;
       }
+    | { action: "restore_business_flow_version"; versionId: string }
     | { action: "publish_business_flow"; versionId: string },
 ) {
   const result = await apiFetch<ApiResult<AdminBusinessDetails>>(

@@ -22,9 +22,9 @@ const partialRouteMessages: Record<string, string> = {
   "/connect/admin/businesses/live-test":
     "Connection data, approved test sends, and message events are live. Full roundtrip verification and diagnostics remain future work.",
   "/connect/admin/businesses/flow-builder":
-    "Guided uses the real canonical WhatsApp draft. Step and reply mutations, stable routing, reference-safe deletion, field and media editing, undo/redo, ordered problem repair, and Save draft are connected. Publishing and Canvas remain Future.",
+    "Guided uses the real canonical WhatsApp draft. Step and reply mutations, stable routing, reference-safe deletion, field and media editing, version inspection and restore-to-draft, undo/redo, ordered problem repair, and Save draft are connected. Publishing and Canvas remain Future.",
   "/connect/client/automations":
-    "The workflow list and Guided editor use the authorized canonical WhatsApp flow. Step and reply mutations, stable routing, reference-safe deletion, field and media editing, undo/redo, ordered problem repair, and saving are connected. Publishing, run metrics, and Canvas remain Future.",
+    "The workflow list and Guided editor use the authorized canonical WhatsApp flow. Step and reply mutations, stable routing, reference-safe deletion, field and media editing, version inspection and restore-to-draft, undo/redo, ordered problem repair, and saving are connected. Publishing, run metrics, and Canvas remain Future.",
 };
 
 export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }) {
