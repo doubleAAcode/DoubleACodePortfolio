@@ -495,6 +495,11 @@ function CatalogRoutesPage() {
                   size="icon"
                   aria-label="Save browse group"
                   disabled={Boolean(savingAction)}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    if (!editorFormRef.current) return;
+                    void saveRoute(readRouteForm(editorFormRef.current, form));
+                  }}
                   onClick={() => {
                     if (!editorFormRef.current) return;
                     void saveRoute(readRouteForm(editorFormRef.current, form));
