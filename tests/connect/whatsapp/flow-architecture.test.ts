@@ -404,10 +404,11 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessCatalogRoutes, /action: "delete_catalog_group"/);
   assert.match(adminBusinessCatalogRoutes, /data-business-catalog-routes-live="true"/);
   assert.match(adminBusinessCatalogRoutes, /data-testid="business-catalog-route-create"/);
+  assert.match(adminBusinessCatalogRoutes, /business-catalog-route-delete-confirm/);
   assert.match(adminBusinessCatalogRoutes, /productGroupValues/);
   assert.doesNotMatch(
     adminBusinessCatalogRoutes,
-    /browseGroups|preview-data|mock-data|mock-client/,
+    /browseGroups|preview-data|mock-data|mock-client|window\.confirm/,
   );
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);

@@ -44,6 +44,7 @@ function CatalogRoutesPage() {
   const [details, setDetails] = useState<AdminBusinessDetailsResult | null>(initialDetails);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RouteFormState>(() => emptyRouteForm(0));
+  const [deleteTargetId, setDeleteTargetId] = useState("");
   const [savingAction, setSavingAction] = useState("");
   const editorFormRef = useRef<HTMLFormElement | null>(null);
   const [notice, setNotice] = useState<{ tone: "success" | "destructive"; message: string } | null>(
@@ -87,14 +88,17 @@ function CatalogRoutesPage() {
   }
 
   const routeStats = getRouteStats(details);
+  const deleteTarget = groups.find((group) => group.id === deleteTargetId);
 
   function openCreateDialog() {
     setForm(emptyRouteForm(nextSortOrder(groups)));
+    setDeleteTargetId("");
     setNotice(null);
     setDialogOpen(true);
   }
 
   function openEditDialog(group: WaCatalogGroupRow) {
+    setDeleteTargetId("");
     setForm({
       id: group.id,
       nameEnglish: group.name_english,
@@ -183,19 +187,6 @@ function CatalogRoutesPage() {
   }
 
   async function deleteRoute(group: WaCatalogGroupRow) {
-    const stats = routeStats.get(group.id);
-    const valueCount = stats?.valueCount ?? 0;
-    const productCount = stats?.productCount ?? 0;
-    if (
-      !window.confirm(
-        productCount > 0
-          ? "This browse group has product placements. Try deleting anyway to let the backend explain what must be removed first?"
-          : `Delete "${group.name_english}" and its ${valueCount} route value${valueCount === 1 ? "" : "s"}?`,
-      )
-    ) {
-      return;
-    }
-
     setSavingAction(`delete:${group.id}`);
     setNotice(null);
     try {
@@ -204,6 +195,7 @@ function CatalogRoutesPage() {
         groupId: group.id,
       });
       setDetails(nextDetails);
+      setDeleteTargetId("");
       setNotice({ tone: "success", message: "Browse group deleted." });
     } catch (error) {
       setNotice({
@@ -357,14 +349,10 @@ function CatalogRoutesPage() {
                         aria-label={`Delete ${group.name_english}`}
                         className="text-destructive"
                         disabled={Boolean(savingAction)}
-                        onPointerDown={(event) => {
-                          event.preventDefault();
-                          void deleteRoute(group);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key !== "Enter" && event.key !== " ") return;
-                          event.preventDefault();
-                          void deleteRoute(group);
+                        onClick={() => {
+                          setDialogOpen(false);
+                          setNotice(null);
+                          setDeleteTargetId(group.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -387,6 +375,64 @@ function CatalogRoutesPage() {
           )}
         </CardContent>
       </Card>
+
+      {deleteTarget ? (
+        <Card
+          className="border-destructive/30 bg-destructive/5"
+          data-testid="business-catalog-route-delete-confirm"
+        >
+          <CardHeader>
+            <CardTitle>Delete browse group?</CardTitle>
+            <CardDescription>
+              This will remove {deleteTarget.name_english}. The backend will block deletion if
+              products or route values still depend on it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
+                {(routeStats.get(deleteTarget.id)?.valueCount ?? 0).toLocaleString()} values,{" "}
+                {(routeStats.get(deleteTarget.id)?.productCount ?? 0).toLocaleString()} product
+                placements
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setDeleteTargetId("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  aria-label={`Confirm delete ${deleteTarget.name_english}`}
+                  disabled={Boolean(savingAction)}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    void deleteRoute(deleteTarget);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    void deleteRoute(deleteTarget);
+                  }}
+                >
+                  {savingAction === `delete:${deleteTarget.id}` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+                <span className="text-sm font-medium text-destructive">Delete browse group</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {dialogOpen ? (
         <Card data-testid="business-catalog-route-editor">
