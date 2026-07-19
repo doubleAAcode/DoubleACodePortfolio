@@ -9,6 +9,8 @@ export type GuidedNewStepType = "MESSAGE" | "IMAGE_MESSAGE" | "MAIN_MENU" | "HUM
 
 export const GUIDED_WHATSAPP_REPLY_OPTION_LIMIT = 3;
 export const GUIDED_WHATSAPP_BUTTON_TITLE_MAX = 20;
+export const GUIDED_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+export const GUIDED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type GuidedNewChoiceInput = {
   labelEn: string;
@@ -60,6 +62,35 @@ export function updateGuidedNode(
     ...document,
     nodes: document.nodes.map((node) => (node.id === nodeId ? update(node) : node)),
   };
+}
+
+export function validateGuidedImageFile(file: Pick<File, "size" | "type">) {
+  if (!GUIDED_IMAGE_TYPES.includes(file.type as (typeof GUIDED_IMAGE_TYPES)[number])) {
+    return "Upload a JPG, PNG, or WebP image.";
+  }
+  if (file.size > GUIDED_IMAGE_MAX_BYTES) return "Image must be 3 MB or smaller.";
+  if (file.size <= 0) return "The selected image is empty.";
+  return undefined;
+}
+
+export function updateGuidedImageMedia(
+  document: CanonicalFlowDocument,
+  nodeId: string,
+  mediaUrl: string | undefined,
+) {
+  const node = document.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node) throw new Error("The image step no longer exists.");
+  if (node.type !== "IMAGE_MESSAGE") {
+    throw new Error("Images can only be attached to an Image message step.");
+  }
+  const normalizedUrl = mediaUrl?.trim();
+  if (normalizedUrl && !/^https?:\/\//i.test(normalizedUrl)) {
+    throw new Error("The uploaded image URL is not public.");
+  }
+  return updateGuidedNode(document, nodeId, (current) => ({
+    ...current,
+    mediaUrl: normalizedUrl || undefined,
+  }));
 }
 
 export function updateGuidedOption(

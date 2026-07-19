@@ -53,6 +53,8 @@ import {
   removeGuidedOption,
   serializeGuidedDocument,
   updateGuidedAutomaticDestination,
+  updateGuidedImageMedia,
+  validateGuidedImageFile,
   type GuidedDeleteRepair,
   type GuidedNewChoiceInput,
   type GuidedNewStepType,
@@ -103,10 +105,12 @@ export function GuidedFlowWorkspace({
   details,
   showCanvasTab = true,
   onSaveDraft,
+  onUploadImage,
 }: {
   details: BusinessFlowDetails;
   showCanvasTab?: boolean;
   onSaveDraft?: (input: SaveDraftInput) => Promise<BusinessFlowDetails>;
+  onUploadImage?: (file: File) => Promise<{ path: string; url: string }>;
 }) {
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
   const [selectedStepId, setSelectedStepId] = useState<string>();
@@ -125,6 +129,7 @@ export function GuidedFlowWorkspace({
     optionKey: string;
   }>();
   const [problemFocus, setProblemFocus] = useState<ProblemFocusRequest>();
+  const [mediaUploadingNodeId, setMediaUploadingNodeId] = useState<string>();
 
   const baseResult = useMemo(
     () => createGuidedFlowModel(details, selectedVersionId),
@@ -263,6 +268,10 @@ export function GuidedFlowWorkspace({
   }
 
   function commitDocument(update: (document: CanonicalFlowDocument) => CanonicalFlowDocument) {
+    if (mediaUploadingNodeId) {
+      toast.info("Wait for the image upload to finish.");
+      return;
+    }
     if (!editable) {
       explainFuture(
         "Read-only version",
@@ -278,6 +287,10 @@ export function GuidedFlowWorkspace({
   }
 
   function requireEditableStepMutation(action: () => void) {
+    if (mediaUploadingNodeId) {
+      toast.info("Wait for the image upload to finish.");
+      return;
+    }
     if (editable) {
       action();
       return;
@@ -359,6 +372,40 @@ export function GuidedFlowWorkspace({
     toast.success("Reply removed");
   }
 
+  async function uploadImage(nodeId: string, file: File) {
+    if (!editable || !onUploadImage) {
+      explainFuture(
+        "Read-only version",
+        "Choose the Draft version to replace flow images. Published versions remain immutable.",
+      );
+      return;
+    }
+    const fileError = validateGuidedImageFile(file);
+    if (fileError) {
+      toast.error("Image was not uploaded", { description: fileError });
+      return;
+    }
+    setMediaUploadingNodeId(nodeId);
+    try {
+      const image = await onUploadImage(file);
+      commitDocument((document) => updateGuidedImageMedia(document, nodeId, image.url));
+      toast.success("Image added to the draft", {
+        description: "Save the draft to keep this image in the flow.",
+      });
+    } catch (error) {
+      toast.error("Image was not uploaded", {
+        description: error instanceof Error ? error.message : "Try the upload again.",
+      });
+    } finally {
+      setMediaUploadingNodeId(undefined);
+    }
+  }
+
+  function removeImage(nodeId: string) {
+    commitDocument((document) => updateGuidedImageMedia(document, nodeId, undefined));
+    toast.success("Image removed from the draft");
+  }
+
   async function saveDraft() {
     if (!editable || !onSaveDraft) {
       explainFuture(
@@ -434,12 +481,19 @@ export function GuidedFlowWorkspace({
             </StatusBadge>
             <span>{model.steps.length} steps</span>
             {dirty ? <StatusBadge tone="warning">Unsaved changes</StatusBadge> : null}
+            {mediaUploadingNodeId ? (
+              <StatusBadge tone="neutral">Uploading image</StatusBadge>
+            ) : null}
             {!editable ? <StatusBadge tone="neutral">Read only</StatusBadge> : null}
           </div>
         </div>
         <div className="flex max-w-full flex-wrap items-center gap-2">
           <Select value={model.version.id} onValueChange={changeVersion}>
-            <SelectTrigger className="h-9 w-48 max-w-full" aria-label="Flow version">
+            <SelectTrigger
+              className="h-9 w-48 max-w-full"
+              aria-label="Flow version"
+              disabled={saving || Boolean(mediaUploadingNodeId)}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -458,7 +512,7 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Undo"
               title="Undo"
-              disabled={!canUndo || saving}
+              disabled={!canUndo || saving || Boolean(mediaUploadingNodeId)}
               onClick={() => setHistoryIndex((index) => index - 1)}
             >
               <Undo2 className="size-4" />
@@ -470,7 +524,7 @@ export function GuidedFlowWorkspace({
               className="size-8"
               aria-label="Redo"
               title="Redo"
-              disabled={!canRedo || saving}
+              disabled={!canRedo || saving || Boolean(mediaUploadingNodeId)}
               onClick={() => setHistoryIndex((index) => index + 1)}
             >
               <Redo2 className="size-4" />
@@ -480,7 +534,7 @@ export function GuidedFlowWorkspace({
             data-flow-manager-live-action
             variant="outline"
             size="sm"
-            disabled={saving || Boolean(saveConflict)}
+            disabled={saving || Boolean(saveConflict) || Boolean(mediaUploadingNodeId)}
             onClick={() => void saveDraft()}
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
@@ -614,6 +668,8 @@ export function GuidedFlowWorkspace({
             model={model}
             selectedId={selectedStep?.id}
             editable={editable}
+            locked={Boolean(mediaUploadingNodeId)}
+            uploadingNodeId={mediaUploadingNodeId}
             onSelect={setSelectedStepId}
             onUpdateNode={(nodeId, update) =>
               commitDocument((document) => updateGuidedNode(document, nodeId, update))
@@ -633,6 +689,8 @@ export function GuidedFlowWorkspace({
             onDeleteStep={requestDeleteStep}
             onAddChoice={requestAddChoice}
             onRemoveChoice={requestRemoveChoice}
+            onUploadImage={onUploadImage ? uploadImage : undefined}
+            onRemoveImage={removeImage}
             onEdit={(nodeId) => {
               setSelectedStepId(nodeId);
               setActiveTab("selected");
@@ -645,6 +703,8 @@ export function GuidedFlowWorkspace({
             model={model}
             selectedId={selectedStep?.id}
             editable={editable}
+            locked={Boolean(mediaUploadingNodeId)}
+            uploadingNodeId={mediaUploadingNodeId}
             onSelect={setSelectedStepId}
             onUpdateNode={(nodeId, update) =>
               commitDocument((document) => updateGuidedNode(document, nodeId, update))
@@ -664,6 +724,8 @@ export function GuidedFlowWorkspace({
             onDeleteStep={requestDeleteStep}
             onAddChoice={requestAddChoice}
             onRemoveChoice={requestRemoveChoice}
+            onUploadImage={onUploadImage ? uploadImage : undefined}
+            onRemoveImage={removeImage}
           />
         </TabsContent>
         <TabsContent value="preview" className="mt-4">

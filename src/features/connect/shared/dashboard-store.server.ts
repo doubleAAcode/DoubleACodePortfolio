@@ -822,6 +822,10 @@ async function uploadWaImage(
     throw new Error("Image must be 3 MB or smaller.");
   }
 
+  if (file.size <= 0) {
+    throw new Error("The selected image is empty.");
+  }
+
   const config = getServerSupabaseConfig();
   if (!config.url || !config.serviceRoleKey) {
     throw new Error("Supabase server storage is not configured.");
@@ -848,8 +852,12 @@ async function uploadWaImage(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || "Image upload failed.");
+    console.error("[connect:image-upload] Supabase storage request failed", {
+      businessId,
+      folder,
+      status: response.status,
+    });
+    throw new Error("Image upload failed. Try again.");
   }
 
   return {

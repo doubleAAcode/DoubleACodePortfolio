@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "m2b-guided-problems-v1";
+export const CONNECT_RELEASE = "m2b-guided-media-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "guided-step-mutations",
               "guided-choice-mutations",
               "guided-problem-navigation",
+              "guided-media-replacement",
             ],
           },
           {

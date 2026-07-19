@@ -9,6 +9,7 @@ import {
 import {
   applyAdminBusinessAction,
   getBusinessFlowDetails,
+  uploadAdminFlowImage,
 } from "@/features/connect/shared/admin-client";
 
 export const Route = createFileRoute("/connect/admin/businesses/$id/flow-builder")({
@@ -33,6 +34,7 @@ function FlowBuilderPage() {
   return (
     <GuidedFlowWorkspace
       details={flowQuery.data}
+      onUploadImage={(file) => uploadAdminFlowImage(id, file)}
       onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
         await applyAdminBusinessAction(id, {
           action: "save_business_flow_draft",

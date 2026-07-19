@@ -92,11 +92,19 @@ export async function applyWaDashboardCatalogAction(action: DashboardCatalogActi
 }
 
 export async function uploadWaDashboardImage(file: File) {
+  return uploadWaDashboardImageTo("/upload", file);
+}
+
+export async function uploadWaDashboardFlowImage(file: File) {
+  return uploadWaDashboardImageTo("/flow-image", file);
+}
+
+async function uploadWaDashboardImageTo(path: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
   const result = await apiFetch<
     { ok: true; image: { path: string; url: string } } | { ok: false; error: string }
-  >(dashboardApiPath("/upload"), {
+  >(dashboardApiPath(path), {
     method: "POST",
     body: formData,
   });

@@ -7,6 +7,7 @@ import {
   GitBranch,
   Image as ImageIcon,
   ListTree,
+  Loader2,
   MessageSquare,
   MoreHorizontal,
   Pencil,
@@ -17,7 +18,7 @@ import {
   UploadCloud,
   User,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +60,8 @@ export function GuidedFlowEditor({
   model,
   selectedId,
   editable,
+  locked = false,
+  uploadingNodeId,
   onSelect,
   onUpdateNode,
   onUpdateOption,
@@ -70,12 +73,16 @@ export function GuidedFlowEditor({
   onDeleteStep,
   onAddChoice,
   onRemoveChoice,
+  onUploadImage,
+  onRemoveImage,
   view = "tree",
   onEdit,
 }: {
   model: GuidedFlowModel;
   selectedId?: string;
   editable: boolean;
+  locked?: boolean;
+  uploadingNodeId?: string;
   onSelect: (id: string) => void;
   onUpdateNode: (nodeId: string, update: (node: CanonicalFlowNode) => CanonicalFlowNode) => void;
   onUpdateOption: (
@@ -91,10 +98,13 @@ export function GuidedFlowEditor({
   onDeleteStep: (id: string) => void;
   onAddChoice: (nodeId: string) => void;
   onRemoveChoice: (nodeId: string, optionKey: string) => void;
+  onUploadImage?: (nodeId: string, file: File) => Promise<void>;
+  onRemoveImage: (nodeId: string) => void;
   view?: "tree" | "selected";
   onEdit?: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const selected = model.steps.find((step) => step.id === selectedId) ?? model.steps[0];
   const node = selected
     ? model.document.nodes.find((candidate) => candidate.id === selected.id)
@@ -121,7 +131,11 @@ export function GuidedFlowEditor({
   }
 
   const selectedIndex = model.steps.findIndex((step) => step.id === selected.id);
+  const canEdit = editable && !locked;
+  const isImageStep = node.type === "IMAGE_MESSAGE";
+  const uploadingThisImage = uploadingNodeId === node.id;
   const readOnlyNotice = () => {
+    if (locked) return;
     if (editable) return;
     onFuture(
       "Read-only version",
@@ -297,7 +311,7 @@ export function GuidedFlowEditor({
                     aria-label="Admin title"
                     data-guided-control="behavior"
                     value={node.title ?? selected.title}
-                    readOnly={!editable}
+                    readOnly={!canEdit}
                     onClick={readOnlyNotice}
                     onChange={(event) =>
                       onUpdateNode(node.id, (current) => ({
@@ -327,7 +341,7 @@ export function GuidedFlowEditor({
                     data-guided-control="message"
                     value={node.messages?.en ?? ""}
                     rows={5}
-                    readOnly={!editable}
+                    readOnly={!canEdit}
                     onClick={readOnlyNotice}
                     onChange={(event) =>
                       onUpdateNode(node.id, (current) => ({
@@ -344,7 +358,7 @@ export function GuidedFlowEditor({
                     value={node.messages?.ar ?? ""}
                     rows={5}
                     dir="rtl"
-                    readOnly={!editable}
+                    readOnly={!canEdit}
                     onClick={readOnlyNotice}
                     onChange={(event) =>
                       onUpdateNode(node.id, (current) => ({
@@ -367,7 +381,7 @@ export function GuidedFlowEditor({
                     <Input
                       aria-label="Customer label in English"
                       value={node.labels?.en ?? ""}
-                      readOnly={!editable}
+                      readOnly={!canEdit}
                       onClick={readOnlyNotice}
                       onChange={(event) =>
                         onUpdateNode(node.id, (current) => ({
@@ -382,7 +396,7 @@ export function GuidedFlowEditor({
                       aria-label="Customer label in Arabic"
                       value={node.labels?.ar ?? ""}
                       dir="rtl"
-                      readOnly={!editable}
+                      readOnly={!canEdit}
                       onClick={readOnlyNotice}
                       onChange={(event) =>
                         onUpdateNode(node.id, (current) => ({
@@ -432,7 +446,7 @@ export function GuidedFlowEditor({
                       <Select
                         value={automaticEdges[0]?.to ?? "none"}
                         onValueChange={(value) => {
-                          if (!editable) return readOnlyNotice();
+                          if (!canEdit) return readOnlyNotice();
                           onUpdateAutomaticDestination(
                             node.id,
                             value === "none" ? undefined : value,
@@ -494,7 +508,7 @@ export function GuidedFlowEditor({
                           data-guided-option-key={option.key}
                           value={option.label.en ?? ""}
                           maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
-                          readOnly={!editable}
+                          readOnly={!canEdit}
                           onClick={readOnlyNotice}
                           onChange={(event) =>
                             onUpdateOption(node.id, option.key, (current) => ({
@@ -512,7 +526,7 @@ export function GuidedFlowEditor({
                           value={option.label.ar ?? ""}
                           maxLength={GUIDED_WHATSAPP_BUTTON_TITLE_MAX}
                           dir="rtl"
-                          readOnly={!editable}
+                          readOnly={!canEdit}
                           onClick={readOnlyNotice}
                           onChange={(event) =>
                             onUpdateOption(node.id, option.key, (current) => ({
@@ -528,7 +542,7 @@ export function GuidedFlowEditor({
                         <Select
                           value={option.targetNodeId ?? "none"}
                           onValueChange={(value) => {
-                            if (!editable) return readOnlyNotice();
+                            if (!canEdit) return readOnlyNotice();
                             onUpdateOption(node.id, option.key, (current) => ({
                               ...current,
                               targetNodeId: value === "none" ? undefined : value,
@@ -559,7 +573,7 @@ export function GuidedFlowEditor({
                           aria-label={`Active choice ${option.key}`}
                           checked={option.active !== false}
                           onCheckedChange={(checked) => {
-                            if (!editable) return readOnlyNotice();
+                            if (!canEdit) return readOnlyNotice();
                             onUpdateOption(node.id, option.key, (current) => ({
                               ...current,
                               active: checked,
@@ -639,27 +653,72 @@ export function GuidedFlowEditor({
                     No image attached
                   </div>
                 )}
-                <Button
-                  data-flow-manager-live-action
-                  data-guided-control="media"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() =>
-                    onFuture(
-                      "Upload image",
-                      "Image replacement is connected after draft conflict handling is complete.",
-                    )
-                  }
-                >
-                  <UploadCloud className="size-4" /> Upload image <FutureLabel />
-                </Button>
+                {!isImageStep ? (
+                  <p className="text-xs text-muted-foreground">
+                    Select or add an Image message step to attach media.
+                  </p>
+                ) : null}
+                <input
+                  ref={imageInputRef}
+                  className="sr-only"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Choose flow image"
+                  disabled={!canEdit || !isImageStep || !onUploadImage}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void onUploadImage?.(node.id, file);
+                  }}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    data-flow-manager-live-action
+                    data-guided-control="media"
+                    variant="outline"
+                    size="sm"
+                    className="min-w-0 flex-1"
+                    disabled={locked || !isImageStep || !onUploadImage}
+                    onClick={() => {
+                      if (!editable) return readOnlyNotice();
+                      imageInputRef.current?.click();
+                    }}
+                  >
+                    {uploadingThisImage ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <UploadCloud className="size-4" />
+                    )}
+                    {uploadingThisImage
+                      ? "Uploading..."
+                      : node.mediaUrl
+                        ? "Replace image"
+                        : "Upload image"}
+                  </Button>
+                  {node.mediaUrl && isImageStep ? (
+                    <Button
+                      data-flow-manager-live-action
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 text-destructive"
+                      aria-label="Remove image"
+                      title="Remove image"
+                      disabled={locked}
+                      onClick={() => {
+                        if (!editable) return readOnlyNotice();
+                        onRemoveImage(node.id);
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
                 <Field label="Caption (EN)">
                   <Textarea
                     aria-label="Image caption in English"
                     rows={2}
                     value={node.mediaCaption?.en ?? ""}
-                    readOnly={!editable}
+                    readOnly={!canEdit || !isImageStep}
                     onClick={readOnlyNotice}
                     onChange={(event) =>
                       onUpdateNode(node.id, (current) => ({
@@ -675,7 +734,7 @@ export function GuidedFlowEditor({
                     rows={2}
                     dir="rtl"
                     value={node.mediaCaption?.ar ?? ""}
-                    readOnly={!editable}
+                    readOnly={!canEdit || !isImageStep}
                     onClick={readOnlyNotice}
                     onChange={(event) =>
                       onUpdateNode(node.id, (current) => ({
@@ -706,7 +765,7 @@ export function GuidedFlowEditor({
                     data-guided-control="behavior"
                     checked={node.optional === true}
                     onCheckedChange={(checked) => {
-                      if (!editable) return readOnlyNotice();
+                      if (!canEdit) return readOnlyNotice();
                       onUpdateNode(node.id, (current) => ({ ...current, optional: checked }));
                     }}
                   />

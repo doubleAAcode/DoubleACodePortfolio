@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "@/features/connect/flow-manager-ui/preview-
 import {
   applyWaDashboardFlowAction,
   getWaDashboardFlow,
+  uploadWaDashboardFlowImage,
   type WaDashboardFlowSnapshot,
 } from "@/features/connect/shared/dashboard-client";
 
@@ -179,6 +180,7 @@ function ClientAutomations() {
               <GuidedFlowWorkspace
                 details={flowQuery.data.details}
                 showCanvasTab={false}
+                onUploadImage={uploadWaDashboardFlowImage}
                 onSaveDraft={async ({ flowJson, flowName, versionId, expectedRevision }) => {
                   const snapshot = await applyWaDashboardFlowAction({
                     action: "save_draft",

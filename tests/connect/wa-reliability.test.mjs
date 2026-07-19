@@ -11,9 +11,12 @@ const diagnosticsHandler = read("src/features/connect/shared/diagnostics.server.
 const dashboardHandlers = read("src/features/connect/shared/dashboard-api-handlers.server.ts");
 const adminHandlers = read("src/features/connect/shared/admin-api-handlers.server.ts");
 const adminClient = read("src/features/connect/shared/admin-client.ts");
+const dashboardClient = read("src/features/connect/shared/dashboard-client.ts");
 const appReviewDemo = read("src/features/connect/shared/app-review-demo.server.ts");
 const dashboardStore = read("src/features/connect/shared/dashboard-store.server.ts");
 const flowImageRoute = read("src/routes/api.connect.admin.businesses.$businessId.flow-image.ts");
+const dashboardFlowImageRoute = read("src/routes/api.connect.dashboard.flow-image.ts");
+const dashboardTwoFlowImageRoute = read("src/routes/api.connect.dashboard-2.flow-image.ts");
 const whatsappHealthRoute = read("src/routes/api.connect.admin.whatsapp-health.ts");
 const businessWhatsAppRoute = read("src/routes/connect.admin.businesses.$id.whatsapp.tsx");
 const businessLiveTestRoute = read("src/routes/connect.admin.businesses.$id.live-test.tsx");
@@ -182,7 +185,7 @@ test("visual human handoff sends once and then stays paused", () => {
   assert.match(enterVisualNode, /runtimeTextResponse\(flow, node, language\)/);
 });
 
-test("admin flow image uploads use authenticated FormData storage route", () => {
+test("admin and client flow image uploads use authenticated FormData storage routes", () => {
   assert.match(dashboardStore, /export async function uploadWaFlowImage/);
   assert.match(dashboardStore, /"flow-images"/);
   assert.match(adminHandlers, /createInternalAdminBusinessFlowImageUploadHandlers/);
@@ -193,6 +196,13 @@ test("admin flow image uploads use authenticated FormData storage route", () => 
   assert.match(adminClient, /body:\s*formData/);
   assert.match(adminClient, /init\.body instanceof FormData/);
   assert.match(flowImageRoute, /\/api\/connect\/admin\/businesses\/\$businessId\/flow-image/);
+  assert.match(dashboardHandlers, /createDashboardFlowImageUploadHandlers/);
+  assert.match(dashboardHandlers, /getDashboardSessionFromRequest\(request, envSuffix\)/);
+  assert.match(dashboardHandlers, /uploadWaFlowImage/);
+  assert.match(dashboardClient, /uploadWaDashboardFlowImage/);
+  assert.match(dashboardClient, /uploadWaDashboardImageTo\("\/flow-image", file\)/);
+  assert.match(dashboardFlowImageRoute, /createDashboardFlowImageUploadHandlers\(\)/);
+  assert.match(dashboardTwoFlowImageRoute, /createDashboardFlowImageUploadHandlers\("2"\)/);
 });
 
 test("admin WhatsApp health check uses runtime-only Meta credentials", () => {

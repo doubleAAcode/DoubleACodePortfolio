@@ -174,6 +174,7 @@ import { Route as ApiConnectDashboardOrdersRouteImport } from './routes/api.conn
 import { Route as ApiConnectDashboardNotificationsRouteImport } from './routes/api.connect.dashboard.notifications'
 import { Route as ApiConnectDashboardLogoutRouteImport } from './routes/api.connect.dashboard.logout'
 import { Route as ApiConnectDashboardLoginRouteImport } from './routes/api.connect.dashboard.login'
+import { Route as ApiConnectDashboardFlowImageRouteImport } from './routes/api.connect.dashboard.flow-image'
 import { Route as ApiConnectDashboardFlowRouteImport } from './routes/api.connect.dashboard.flow'
 import { Route as ApiConnectDashboardDiagnosticsRouteImport } from './routes/api.connect.dashboard.diagnostics'
 import { Route as ApiConnectDashboardCatalogRouteImport } from './routes/api.connect.dashboard.catalog'
@@ -182,6 +183,7 @@ import { Route as ApiConnectDashboard2SessionRouteImport } from './routes/api.co
 import { Route as ApiConnectDashboard2OrdersRouteImport } from './routes/api.connect.dashboard-2.orders'
 import { Route as ApiConnectDashboard2LogoutRouteImport } from './routes/api.connect.dashboard-2.logout'
 import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.connect.dashboard-2.login'
+import { Route as ApiConnectDashboard2FlowImageRouteImport } from './routes/api.connect.dashboard-2.flow-image'
 import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.connect.dashboard-2.flow'
 import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
 import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
@@ -1120,6 +1122,12 @@ const ApiConnectDashboardLoginRoute =
     path: '/api/connect/dashboard/login',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiConnectDashboardFlowImageRoute =
+  ApiConnectDashboardFlowImageRouteImport.update({
+    id: '/api/connect/dashboard/flow-image',
+    path: '/api/connect/dashboard/flow-image',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConnectDashboardFlowRoute = ApiConnectDashboardFlowRouteImport.update({
   id: '/api/connect/dashboard/flow',
   path: '/api/connect/dashboard/flow',
@@ -1165,6 +1173,12 @@ const ApiConnectDashboard2LoginRoute =
   ApiConnectDashboard2LoginRouteImport.update({
     id: '/api/connect/dashboard-2/login',
     path: '/api/connect/dashboard-2/login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2FlowImageRoute =
+  ApiConnectDashboard2FlowImageRouteImport.update({
+    id: '/api/connect/dashboard-2/flow-image',
+    path: '/api/connect/dashboard-2/flow-image',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiConnectDashboard2FlowRoute =
@@ -1687,6 +1701,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
+  '/api/connect/dashboard-2/flow-image': typeof ApiConnectDashboard2FlowImageRoute
   '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
   '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
   '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
@@ -1695,6 +1710,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
   '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
   '/api/connect/dashboard/flow': typeof ApiConnectDashboardFlowRoute
+  '/api/connect/dashboard/flow-image': typeof ApiConnectDashboardFlowImageRoute
   '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
   '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
   '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
@@ -1908,6 +1924,7 @@ export interface FileRoutesByTo {
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
+  '/api/connect/dashboard-2/flow-image': typeof ApiConnectDashboard2FlowImageRoute
   '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
   '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
   '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
@@ -1916,6 +1933,7 @@ export interface FileRoutesByTo {
   '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
   '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
   '/api/connect/dashboard/flow': typeof ApiConnectDashboardFlowRoute
+  '/api/connect/dashboard/flow-image': typeof ApiConnectDashboardFlowImageRoute
   '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
   '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
   '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
@@ -2144,6 +2162,7 @@ export interface FileRoutesById {
   '/api/connect/dashboard-2/catalog': typeof ApiConnectDashboard2CatalogRoute
   '/api/connect/dashboard-2/diagnostics': typeof ApiConnectDashboard2DiagnosticsRoute
   '/api/connect/dashboard-2/flow': typeof ApiConnectDashboard2FlowRoute
+  '/api/connect/dashboard-2/flow-image': typeof ApiConnectDashboard2FlowImageRoute
   '/api/connect/dashboard-2/login': typeof ApiConnectDashboard2LoginRoute
   '/api/connect/dashboard-2/logout': typeof ApiConnectDashboard2LogoutRoute
   '/api/connect/dashboard-2/orders': typeof ApiConnectDashboard2OrdersRouteWithChildren
@@ -2152,6 +2171,7 @@ export interface FileRoutesById {
   '/api/connect/dashboard/catalog': typeof ApiConnectDashboardCatalogRoute
   '/api/connect/dashboard/diagnostics': typeof ApiConnectDashboardDiagnosticsRoute
   '/api/connect/dashboard/flow': typeof ApiConnectDashboardFlowRoute
+  '/api/connect/dashboard/flow-image': typeof ApiConnectDashboardFlowImageRoute
   '/api/connect/dashboard/login': typeof ApiConnectDashboardLoginRoute
   '/api/connect/dashboard/logout': typeof ApiConnectDashboardLogoutRoute
   '/api/connect/dashboard/notifications': typeof ApiConnectDashboardNotificationsRoute
@@ -2382,6 +2402,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
+    | '/api/connect/dashboard-2/flow-image'
     | '/api/connect/dashboard-2/login'
     | '/api/connect/dashboard-2/logout'
     | '/api/connect/dashboard-2/orders'
@@ -2390,6 +2411,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/catalog'
     | '/api/connect/dashboard/diagnostics'
     | '/api/connect/dashboard/flow'
+    | '/api/connect/dashboard/flow-image'
     | '/api/connect/dashboard/login'
     | '/api/connect/dashboard/logout'
     | '/api/connect/dashboard/notifications'
@@ -2603,6 +2625,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
+    | '/api/connect/dashboard-2/flow-image'
     | '/api/connect/dashboard-2/login'
     | '/api/connect/dashboard-2/logout'
     | '/api/connect/dashboard-2/orders'
@@ -2611,6 +2634,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/catalog'
     | '/api/connect/dashboard/diagnostics'
     | '/api/connect/dashboard/flow'
+    | '/api/connect/dashboard/flow-image'
     | '/api/connect/dashboard/login'
     | '/api/connect/dashboard/logout'
     | '/api/connect/dashboard/notifications'
@@ -2838,6 +2862,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard-2/catalog'
     | '/api/connect/dashboard-2/diagnostics'
     | '/api/connect/dashboard-2/flow'
+    | '/api/connect/dashboard-2/flow-image'
     | '/api/connect/dashboard-2/login'
     | '/api/connect/dashboard-2/logout'
     | '/api/connect/dashboard-2/orders'
@@ -2846,6 +2871,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/catalog'
     | '/api/connect/dashboard/diagnostics'
     | '/api/connect/dashboard/flow'
+    | '/api/connect/dashboard/flow-image'
     | '/api/connect/dashboard/login'
     | '/api/connect/dashboard/logout'
     | '/api/connect/dashboard/notifications'
@@ -2990,6 +3016,7 @@ export interface RootRouteChildren {
   ApiConnectDashboard2CatalogRoute: typeof ApiConnectDashboard2CatalogRoute
   ApiConnectDashboard2DiagnosticsRoute: typeof ApiConnectDashboard2DiagnosticsRoute
   ApiConnectDashboard2FlowRoute: typeof ApiConnectDashboard2FlowRoute
+  ApiConnectDashboard2FlowImageRoute: typeof ApiConnectDashboard2FlowImageRoute
   ApiConnectDashboard2LoginRoute: typeof ApiConnectDashboard2LoginRoute
   ApiConnectDashboard2LogoutRoute: typeof ApiConnectDashboard2LogoutRoute
   ApiConnectDashboard2OrdersRoute: typeof ApiConnectDashboard2OrdersRouteWithChildren
@@ -2998,6 +3025,7 @@ export interface RootRouteChildren {
   ApiConnectDashboardCatalogRoute: typeof ApiConnectDashboardCatalogRoute
   ApiConnectDashboardDiagnosticsRoute: typeof ApiConnectDashboardDiagnosticsRoute
   ApiConnectDashboardFlowRoute: typeof ApiConnectDashboardFlowRoute
+  ApiConnectDashboardFlowImageRoute: typeof ApiConnectDashboardFlowImageRoute
   ApiConnectDashboardLoginRoute: typeof ApiConnectDashboardLoginRoute
   ApiConnectDashboardLogoutRoute: typeof ApiConnectDashboardLogoutRoute
   ApiConnectDashboardNotificationsRoute: typeof ApiConnectDashboardNotificationsRoute
@@ -4166,6 +4194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectDashboardLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/dashboard/flow-image': {
+      id: '/api/connect/dashboard/flow-image'
+      path: '/api/connect/dashboard/flow-image'
+      fullPath: '/api/connect/dashboard/flow-image'
+      preLoaderRoute: typeof ApiConnectDashboardFlowImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/connect/dashboard/flow': {
       id: '/api/connect/dashboard/flow'
       path: '/api/connect/dashboard/flow'
@@ -4220,6 +4255,13 @@ declare module '@tanstack/react-router' {
       path: '/api/connect/dashboard-2/login'
       fullPath: '/api/connect/dashboard-2/login'
       preLoaderRoute: typeof ApiConnectDashboard2LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/flow-image': {
+      id: '/api/connect/dashboard-2/flow-image'
+      path: '/api/connect/dashboard-2/flow-image'
+      fullPath: '/api/connect/dashboard-2/flow-image'
+      preLoaderRoute: typeof ApiConnectDashboard2FlowImageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/connect/dashboard-2/flow': {
@@ -5506,6 +5548,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectDashboard2CatalogRoute: ApiConnectDashboard2CatalogRoute,
   ApiConnectDashboard2DiagnosticsRoute: ApiConnectDashboard2DiagnosticsRoute,
   ApiConnectDashboard2FlowRoute: ApiConnectDashboard2FlowRoute,
+  ApiConnectDashboard2FlowImageRoute: ApiConnectDashboard2FlowImageRoute,
   ApiConnectDashboard2LoginRoute: ApiConnectDashboard2LoginRoute,
   ApiConnectDashboard2LogoutRoute: ApiConnectDashboard2LogoutRoute,
   ApiConnectDashboard2OrdersRoute: ApiConnectDashboard2OrdersRouteWithChildren,
@@ -5514,6 +5557,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectDashboardCatalogRoute: ApiConnectDashboardCatalogRoute,
   ApiConnectDashboardDiagnosticsRoute: ApiConnectDashboardDiagnosticsRoute,
   ApiConnectDashboardFlowRoute: ApiConnectDashboardFlowRoute,
+  ApiConnectDashboardFlowImageRoute: ApiConnectDashboardFlowImageRoute,
   ApiConnectDashboardLoginRoute: ApiConnectDashboardLoginRoute,
   ApiConnectDashboardLogoutRoute: ApiConnectDashboardLogoutRoute,
   ApiConnectDashboardNotificationsRoute: ApiConnectDashboardNotificationsRoute,

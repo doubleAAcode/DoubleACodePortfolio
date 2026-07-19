@@ -812,11 +812,10 @@ Milestone 1 work-package contract:
 | 1C Human operations      | Durable outbox, text reply, service-window enforcement, lifecycle, assignment, notes, tags, unread, canned replies | Additive outbox SQL, shared command service, sender integration, API mutations               | Retry-safe real reply, attempt/status history, blocked out-of-window free text, reload persistence, audit and kill-switch verification.    |
 | 1D Flow Manager surfaces | Exact admin Live Operations, client Inbox, and Contacts use real APIs                                              | Connected Lovable routes, query/mutation adapters, feature registry, port preservation rules | No promoted-route mock imports; desktop/mobile states; real admin/client journey; provider/API failures visible.                           |
 
-Current authorized next action: complete only the Milestone 2B media-replacement
-slice in Guided. Reuse the authenticated media route and canonical image fields,
-preserve the current draft on upload/save failures, and verify replacement and
-reload without changing the published version. Publishing remains deferred to
-2C, Canvas remains `Future`, and provider sending remains off.
+Current authorized next action: release and accept the exact Milestone 2B
+media-replacement implementation. Confirm the canonical release marker and
+denied admin/client upload boundaries before promoting 2C. Publishing remains
+deferred to 2C, Canvas remains `Future`, and provider sending remains off.
 
 Milestone 1 platform controls:
 
@@ -950,17 +949,18 @@ timeline; assignment, note, tag, and close/reopen actions survive reload; anothe
 tenant cannot read or mutate the conversation.
 
 Current implementation sequence: **Milestone 1A through 1D and Milestone 2A are
-complete with accepted production gates. Milestone 2B safe draft editing is the
-only active work package.**
+complete with accepted production gates. Milestone 2B implementation is
+complete; its production release gate is the only active work.**
 
 ### Milestone 2 - Guided Flow Builder and Runtime
 
-Status: **Active - work package 2B only**
+Status: **Active - work package 2B release gate only**
 
 Work-package 2A status: **Complete - production release
 `m2a-guided-foundation-v1` accepted.**
 
-Work-package 2B status: **In progress - the deterministic visual-tree Guided
+Work-package 2B status: **Implementation complete - production release
+acceptance pending. The deterministic visual-tree Guided
 editor, dedicated Selected step tab, safe field-level draft editing, explicit
 destinations, live validation, undo/redo, dirty-state protection, and authorized
 admin/client saves with optimistic server-conflict protection are implemented.
@@ -971,10 +971,14 @@ explicit synchronized destination per reply. The ordered Problems experience
 evaluates draft and publish rules, sorts blockers before warnings, removes
 duplicate forms of the same problem, and navigates directly to the affected map
 step or repair control.
+Image steps now validate, upload, replace, and remove JPG, PNG, or WebP media up
+to 3 MB through tenant-scoped admin and signed-client routes. Successful uploads
+become ordinary undoable draft changes that still require Save draft; failures
+leave the current document unchanged, and published versions stay immutable.
 The map exposes at most three WhatsApp reply branches per step and visibly flags
 legacy overflow, loops, missing destinations, and unconnected saved steps.
-Media replacement is the remaining 2B implementation slice. Media/template
-availability checks remain tied to that slice and 2C publish readiness.**
+Provider availability checks for referenced media and approved templates remain
+part of 2C publish readiness.**
 
 Milestone 2 work-package contract:
 
@@ -1012,8 +1016,8 @@ Milestone 2 work-package contract:
       unreachable steps, dead ends, duplicate option values, unsupported node
       configuration, unavailable media/templates, and invalid start/end paths.
       Draft/publish diagnostics cover every listed structural and routing class;
-      provider availability for uploaded media and approved templates remains
-      with media replacement and 2C publish readiness.
+      provider availability for referenced media and approved templates remains
+      with 2C publish readiness.
 - [x] Protect work with dirty-state indicators, navigation warnings, retryable
       saves, server-conflict handling, undo/redo for the current editing session,
       and no fake success state after a rejected mutation.
@@ -1162,6 +1166,7 @@ the active roadmap:
 | 2026-07-19 | Guided step ordering changes saved presentation order only; routes continue to target stable node IDs. Referenced non-start steps can be deleted only after the user explicitly redirects all inbound routes to one surviving step or removes those destinations. | Reordering must not silently alter conversation behavior. Explicit repair prevents dangling references, while keeping the start step undeletable in 2B avoids an implicit trigger/start migration before those rules are designed. |
 | 2026-07-19 | Guided creates no more than three saved WhatsApp reply choices on a step. Every new choice requires unique English button text of at most 20 characters and one existing non-self destination; its stable key cannot be edited. Choice and matching canonical edge mutations are atomic. | Enforcing the provider limit during creation is clearer than allowing inactive overflow. Synchronizing the option and conditional edge prevents destination edits from retaining a stale second continuation, while stable keys keep runtime decisions and future diagnostics referentially safe. |
 | 2026-07-19 | Guided continuously evaluates publish readiness while keeping incomplete drafts saveable. Problems are deduplicated, ordered with publish blockers first, and linked to the exact map step or repair control. | Draft work must remain recoverable, but an operator also needs an honest preview of what will block publishing. Runtime-compatible terminal behavior remains publishable; legacy or unnecessary terminal routes stay visible as cleanup warnings instead of falsely rejecting supported templates. |
+| 2026-07-19 | Guided image media is stored through tenant-scoped audience routes, then referenced by URL only after a successful upload. Replacement and removal are undoable draft edits and remain separate from Save draft; upload failure never changes the canonical document, and published versions stay immutable. | Storage creation and flow persistence have different failure boundaries. Keeping Save explicit preserves the existing conflict/retry model, while a dedicated `flow-images` folder prevents workflow media from being confused with catalog product assets. |
 
 ## Roadmap Changelog
 
@@ -1235,3 +1240,4 @@ current-status sections above define the active implementation state.
 | 2026-07-19 | Released Guided WhatsApp choice mutations from exact commit `6b2d5c4`; this vertical slice is accepted while Milestone 2B remains active for complete problem coverage and media replacement. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-choice-mutations-v1`, and capability `guided-choice-mutations` alongside Guided read/edit/conflict/step-mutation capabilities. The deployed admin business mutation and signed-client draft mutation endpoints each returned `401` without a session. Rollback is code-only by reverting `6b2d5c4`; no schema changed, the real draft is restored to the original 8 steps with no QA marker/key, and published/runtime records were untouched. The next authorized 2B slice is ordered, complete problem coverage with direct navigation to the affected step and fix control; media replacement remains queued behind it. |
 | 2026-07-19 | Implemented the Milestone 2B ordered Problems experience and automatic-route repair control for both Guided audiences. The same canonical validator now exposes draft warnings and reachable publish blockers, deduplicates equivalent diagnostics, orders blockers first, and routes each action to the affected map step, message, choice, destination, media, behavior, or advanced control. Choice validation now covers stable keys, labels, provider length/quantity limits, targets, and canonical edge synchronization; automatic routes detect duplicates and can be redirected or cleared without changing stable edge identity. | Tests cover ordered/deduplicated blockers and warnings, diagnostic-to-control mapping, exact focus contracts, automatic-route deduplication, official template compatibility, and the existing protected order pipeline. Authenticated browser QA against the production-backed 8-step draft created a temporary reachable invalid reply menu, observed two publish blockers before warnings, followed `Fix message`, `Fix choices`, and `Fix route` to active controls, then undid both changes to the exact clean 8-step draft. The real six-warning list and `Show on map` navigation were accepted on desktop and `390x844` mobile. Typecheck, scoped ESLint, `109/109` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. No schema, saved draft, published version, or runtime session changed. Canonical deployment and denied mutation probes remain before acceptance; media replacement is next. |
 | 2026-07-19 | Released Guided ordered Problems and route repair from exact commit `40ca44c`; this vertical slice is accepted while Milestone 2B remains active for media replacement. | The canonical origin redirected to `www` as expected and returned `200`, `X-Connect-Release: m2b-guided-problems-v1`, and capability `guided-problem-navigation` alongside all earlier Guided capabilities. The deployed admin business mutation and signed-client draft mutation endpoints each returned `401` without a session. Rollback is code-only by reverting `40ca44c`; no schema or provider control changed, the production-backed draft remains the original clean 8 steps after local undo, and published/runtime records were untouched. The next authorized 2B slice is authenticated media replacement with recoverable upload/save failures and reload verification; publishing remains gated in 2C. |
+| 2026-07-19 | Implemented the final Milestone 2B slice: Guided image steps now upload, replace, and remove media through dedicated tenant-scoped admin and signed-client routes. JPG, PNG, and WebP files are constrained to 3 MB; storage failures are sanitized; upload state locks conflicting draft controls; successful media changes remain undoable and explicitly unsaved until Save draft; published versions remain read-only. The Flow Manager boundary no longer labels media replacement Future, while publishing and Canvas remain visibly Future. | Pure mutation and route contracts cover type/size/empty-file validation, stable node/edge/caption identity, signed audience scoping, the `flow-images` tenant folder, and sanitized provider failure handling. Authenticated end-to-end QA uploaded a synthetic PNG through the signed client route, persisted its public URL into the real canonical draft, reloaded it, restored the original image and revision, and removed the temporary object; published/runtime records were untouched. Browser QA removed the saved image, observed a seventh problem and exact `Fix media` navigation, then undid to the original clean 8-step/six-warning draft. The `390x844` view contains the image, replace/remove controls, and bilingual captions without horizontal overflow. Typecheck, scoped ESLint, `111/111` main tests, `15/15` WhatsApp reliability tests, production build, and diff checks pass. Release marker `m2b-guided-media-v1`, canonical deployment, and denied production upload probes remain before 2B acceptance. |

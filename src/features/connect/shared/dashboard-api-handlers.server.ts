@@ -14,6 +14,7 @@ import {
   saveWaDashboardFlowSettings,
   type DashboardCatalogAction,
   type DashboardFlowSettingsInput,
+  uploadWaFlowImage,
   uploadWaProductImage,
 } from "./dashboard-store.server";
 import {
@@ -258,6 +259,17 @@ async function getDashboardFlowSnapshot(businessId: string) {
 }
 
 export function createDashboardUploadHandlers(envSuffix = "") {
+  return createDashboardImageUploadHandlers(envSuffix, uploadWaProductImage);
+}
+
+export function createDashboardFlowImageUploadHandlers(envSuffix = "") {
+  return createDashboardImageUploadHandlers(envSuffix, uploadWaFlowImage);
+}
+
+function createDashboardImageUploadHandlers(
+  envSuffix: string,
+  upload: (file: File, businessId: string) => Promise<{ path: string; url: string }>,
+) {
   return {
     POST: async ({ request }: { request: Request }) => {
       try {
@@ -272,7 +284,7 @@ export function createDashboardUploadHandlers(envSuffix = "") {
           return Response.json({ ok: false, error: "Choose an image to upload." }, { status: 400 });
         }
 
-        const image = await uploadWaProductImage(file, session.businessId);
+        const image = await upload(file, session.businessId);
         return Response.json({ ok: true, image });
       } catch (error) {
         return dashboardApiError(error);
