@@ -338,6 +338,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.catalog-routes.tsx",
     "utf8",
   );
+  const adminBusinessRouteValues = readFileSync(
+    "src/routes/connect.admin.businesses.$id.route-values.tsx",
+    "utf8",
+  );
   const businessTemplatePicker = readFileSync(
     "src/features/connect/admin/businesses/business-template-picker.tsx",
     "utf8",
@@ -410,6 +414,19 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     adminBusinessCatalogRoutes,
     /browseGroups|preview-data|mock-data|mock-client|window\.confirm/,
   );
+  assert.match(adminBusinessRouteValues, /useBusinessDetails/);
+  assert.match(adminBusinessRouteValues, /applyAdminBusinessAction/);
+  assert.match(adminBusinessRouteValues, /action: "save_catalog_group_value"/);
+  assert.match(adminBusinessRouteValues, /action: "delete_catalog_group_value"/);
+  assert.match(adminBusinessRouteValues, /action: "save_catalog_value_products"/);
+  assert.match(adminBusinessRouteValues, /data-business-route-values-live="true"/);
+  assert.match(adminBusinessRouteValues, /business-route-value-delete-confirm/);
+  assert.match(adminBusinessRouteValues, /productGroupValues/);
+  assert.match(adminBusinessRouteValues, /catalogProducts/);
+  assert.doesNotMatch(
+    adminBusinessRouteValues,
+    /browseGroups|routeValues|preview-data|mock-data|mock-client|window\.confirm/,
+  );
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
@@ -449,6 +466,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(styles, /data-flow-manager-status="future"/);
   assert.match(styles, /\[role="tab"\]:not\(\[data-flow-manager-live="true"\]\)::after/);
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.catalog-routes\.tsx/);
+  assert.match(portTool, /connect\.admin\.businesses\.\$id\.route-values\.tsx/);
   assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
   assert.match(portTool, /connectedAdminRouteFiles = new Set/);
   assert.match(portTool, /connect\.admin\.businesses\.index\.tsx/);

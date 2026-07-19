@@ -15,6 +15,7 @@ const connectedAdminRouteFiles = new Set([
   "connect.admin.businesses.$id.tsx",
   "connect.admin.businesses.$id.index.tsx",
   "connect.admin.businesses.$id.catalog-routes.tsx",
+  "connect.admin.businesses.$id.route-values.tsx",
 ]);
 
 const adminRoots = [
