@@ -127,6 +127,7 @@ export function GuidedFlowWorkspace({
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [saveConflict, setSaveConflict] = useState<string>();
   const [createStepOpen, setCreateStepOpen] = useState(false);
   const [deleteStepId, setDeleteStepId] = useState<string>();
@@ -254,6 +255,15 @@ export function GuidedFlowWorkspace({
   const canUndo = historyVersionId === model.version.id && historyIndex > 0;
   const canRedo = historyVersionId === model.version.id && historyIndex < history.length - 1;
   const publishBlockers = model.diagnostics.filter((issue) => issue.severity === "ERROR");
+  const busyLabel = saving
+    ? "Saving draft..."
+    : publishing
+      ? "Publishing flow..."
+      : restoring
+        ? "Restoring version..."
+        : mediaUploadingNodeId
+          ? "Uploading image..."
+          : "";
 
   function explainFuture(feature: string, description: string) {
     toast.info(`${feature} - Future`, { description });
@@ -495,6 +505,7 @@ export function GuidedFlowWorkspace({
     try {
       const published = await onPublishVersion(model.version.id);
       adoptServerDetails(published);
+      setPublishDialogOpen(false);
       toast.success(`Flow published from draft v${model.version.version_number}`, {
         description:
           "New chats will use the published version. Existing chats keep their pinned version.",
@@ -538,7 +549,16 @@ export function GuidedFlowWorkspace({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="relative min-w-0 space-y-4" aria-busy={Boolean(busyLabel)}>
+      {busyLabel ? (
+        <div
+          role="status"
+          className="sticky top-2 z-40 flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-950 shadow-sm"
+        >
+          <Loader2 className="size-4 animate-spin text-sky-700" />
+          {busyLabel}
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs text-muted-foreground">WhatsApp conversation flow</div>
@@ -653,7 +673,7 @@ export function GuidedFlowWorkspace({
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {saving ? "Saving..." : "Save draft"}
           </Button>
-          <AlertDialog>
+          <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button
                 data-flow-manager-live-action
@@ -680,19 +700,45 @@ export function GuidedFlowWorkspace({
                 {publishing ? "Publishing..." : "Publish"}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-slate-200 bg-white text-slate-950 shadow-xl">
               <AlertDialogHeader>
-                <AlertDialogTitle>Publish this saved draft?</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="text-slate-950">
+                  Publish this saved draft?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-600">
                   New WhatsApp chats will start using this flow after publishing. Existing chats
                   keep the version they already started with.
                 </AlertDialogDescription>
               </AlertDialogHeader>
+              {publishing ? (
+                <div
+                  role="status"
+                  className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950"
+                >
+                  <Loader2 className="size-4 animate-spin text-sky-700" />
+                  Publishing and refreshing the live flow...
+                </div>
+              ) : null}
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void publishVersion()}>
-                  Publish flow
-                </AlertDialogAction>
+                <AlertDialogCancel
+                  className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+                  disabled={publishing}
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <Button
+                  type="button"
+                  disabled={publishing}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={() => void publishVersion()}
+                >
+                  {publishing ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <GitBranch className="size-4" />
+                  )}
+                  {publishing ? "Publishing..." : "Publish flow"}
+                </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

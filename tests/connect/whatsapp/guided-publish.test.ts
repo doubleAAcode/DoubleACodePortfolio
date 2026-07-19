@@ -74,6 +74,12 @@ test("Guided publish is connected for admin and client with blocker and pinning 
   assert.match(workspace, /Save the draft before publishing/);
   assert.match(workspace, /Fix publish blockers first/);
   assert.match(workspace, /Existing chats\s+keep the version they already started with/);
+  assert.match(workspace, /open=\{publishDialogOpen\}/);
+  assert.match(workspace, /Publishing and refreshing the live flow/);
+  assert.match(workspace, /border-slate-200 bg-white text-slate-950/);
+  assert.match(workspace, /bg-blue-600 text-white/);
+  assert.match(workspace, /role="status"/);
+  assert.match(workspace, /Saving draft\.\.\./);
   assert.match(workspace, /Publish flow/);
   assert.doesNotMatch(workspace, /Publish <FutureLabel/);
   assert.match(adminRoute, /action: "publish_business_flow"/);
