@@ -239,13 +239,15 @@ function CatalogRoutesPage() {
     <div className="space-y-4" data-business-catalog-routes-live="true">
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>Browse groups</CardTitle>
-              <CardDescription>
-                Customer browse routes such as categories, brands, offers, or price lists.
-              </CardDescription>
-            </div>
+          <div>
+            <CardTitle>Browse groups</CardTitle>
+            <CardDescription>
+              Customer browse routes such as categories, brands, offers, or price lists.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex justify-end">
             <Button
               type="button"
               data-testid="business-catalog-route-create"
@@ -256,8 +258,7 @@ function CatalogRoutesPage() {
               Create browse group
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
+
           {notice ? (
             <div
               className={`rounded-md border p-3 text-sm ${
