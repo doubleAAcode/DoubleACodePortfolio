@@ -35,6 +35,8 @@ import type {
   WaCatalogGroupRow,
   WaCatalogGroupValueRow,
   WaCategoryRow,
+  WaProductOptionRow,
+  WaProductOptionValueRow,
   WaProductRow,
 } from "@/features/connect/shared/dashboard-store.server";
 
@@ -60,6 +62,24 @@ type ProductFormState = {
   groupValueIds: string[];
 };
 
+type ProductOptionFormState = {
+  id?: string;
+  productId: string;
+  nameEnglish: string;
+  nameArabic: string;
+  sortOrder: number;
+  isRequired: boolean;
+};
+
+type ProductOptionValueFormState = {
+  id?: string;
+  optionId: string;
+  valueEnglish: string;
+  valueArabic: string;
+  imageUrl: string;
+  sortOrder: number;
+};
+
 const NO_CATEGORY = "__none";
 const ALL_CATEGORIES = "__all";
 
@@ -71,12 +91,18 @@ function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [editorOpen, setEditorOpen] = useState(false);
   const [form, setForm] = useState<ProductFormState>(() => emptyProductForm());
+  const [optionForm, setOptionForm] = useState<ProductOptionFormState | null>(null);
+  const [optionValueForm, setOptionValueForm] = useState<ProductOptionValueFormState | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState("");
+  const [deleteOptionId, setDeleteOptionId] = useState("");
+  const [deleteOptionValueId, setDeleteOptionValueId] = useState("");
   const [savingAction, setSavingAction] = useState("");
   const [notice, setNotice] = useState<{ tone: "success" | "destructive"; message: string } | null>(
     null,
   );
   const editorFormRef = useRef<HTMLFormElement | null>(null);
+  const optionFormRef = useRef<HTMLFormElement | null>(null);
+  const optionValueFormRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     setDetails(initialDetails);
@@ -131,6 +157,20 @@ function ProductsPage() {
 
   const productStats = getProductStats(details);
   const deleteTarget = products.find((product) => product.id === deleteTargetId);
+  const currentProduct = form.id
+    ? (products.find((product) => product.id === form.id) ?? null)
+    : null;
+  const currentProductOptions = sortOptions(
+    form.id ? details.productOptions.filter((option) => option.product_id === form.id) : [],
+  );
+  const currentProductOptionIds = new Set(currentProductOptions.map((option) => option.id));
+  const currentProductOptionValues = sortOptionValues(
+    details.productOptionValues.filter((value) => currentProductOptionIds.has(value.option_id)),
+  );
+  const deleteOptionTarget = currentProductOptions.find((option) => option.id === deleteOptionId);
+  const deleteOptionValueTarget = currentProductOptionValues.find(
+    (value) => value.id === deleteOptionValueId,
+  );
   const filteredProducts = products.filter((product) => {
     const text = `${product.name_english} ${product.name_arabic} ${product.code}`.toLowerCase();
     const matchesQuery = !query.trim() || text.includes(query.trim().toLowerCase());
@@ -156,16 +196,57 @@ function ProductsPage() {
       return;
     }
     setForm(emptyProductForm(nextSortOrder(products)));
+    setOptionForm(null);
+    setOptionValueForm(null);
     setDeleteTargetId("");
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
     setNotice(null);
     setEditorOpen(true);
   }
 
   function openEditEditor(product: WaProductRow) {
     setForm(toProductForm(product, productStats.get(product.id)?.routeValueIds ?? []));
+    setOptionForm(null);
+    setOptionValueForm(null);
     setDeleteTargetId("");
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
     setNotice(null);
     setEditorOpen(true);
+  }
+
+  function openCreateOption(productId: string) {
+    setOptionForm(emptyOptionForm(productId, nextOptionSortOrder(currentProductOptions)));
+    setOptionValueForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setNotice(null);
+  }
+
+  function openEditOption(option: WaProductOptionRow) {
+    setOptionForm(toOptionForm(option));
+    setOptionValueForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setNotice(null);
+  }
+
+  function openCreateOptionValue(option: WaProductOptionRow) {
+    const values = currentProductOptionValues.filter((value) => value.option_id === option.id);
+    setOptionValueForm(emptyOptionValueForm(option.id, nextOptionValueSortOrder(values)));
+    setOptionForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setNotice(null);
+  }
+
+  function openEditOptionValue(value: WaProductOptionValueRow) {
+    setOptionValueForm(toOptionValueForm(value));
+    setOptionForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setNotice(null);
   }
 
   async function saveProduct(nextForm = form) {
@@ -255,6 +336,128 @@ function ProductsPage() {
       setNotice({
         tone: "destructive",
         message: error instanceof Error ? error.message : "Could not delete this product.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function saveOption(nextForm: ProductOptionFormState) {
+    if (!nextForm.productId) {
+      setNotice({ tone: "destructive", message: "Save the product before adding options." });
+      return;
+    }
+    if (!nextForm.nameEnglish.trim() || !nextForm.nameArabic.trim()) {
+      setNotice({ tone: "destructive", message: "English and Arabic option names are required." });
+      return;
+    }
+
+    setSavingAction(nextForm.id ? `option:${nextForm.id}` : "option:create");
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "save_admin_product_option",
+        option: {
+          id: nextForm.id,
+          product_id: nextForm.productId,
+          name_english: nextForm.nameEnglish,
+          name_arabic: nextForm.nameArabic,
+          sort_order: nextForm.sortOrder,
+          is_required: nextForm.isRequired,
+        },
+      });
+      setDetails(nextDetails);
+      setOptionForm(null);
+      setNotice({ tone: "success", message: nextForm.id ? "Option saved." : "Option created." });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Could not save this option.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function deleteOption(option: WaProductOptionRow) {
+    setSavingAction(`option:delete:${option.id}`);
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "delete_admin_product_option",
+        optionId: option.id,
+      });
+      setDetails(nextDetails);
+      setDeleteOptionId("");
+      setNotice({ tone: "success", message: "Option deleted." });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Could not delete this option.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function saveOptionValue(nextForm: ProductOptionValueFormState) {
+    if (!nextForm.optionId) {
+      setNotice({ tone: "destructive", message: "Choose an option before adding values." });
+      return;
+    }
+    if (!nextForm.valueEnglish.trim() || !nextForm.valueArabic.trim()) {
+      setNotice({
+        tone: "destructive",
+        message: "English and Arabic option value names are required.",
+      });
+      return;
+    }
+
+    setSavingAction(nextForm.id ? `option-value:${nextForm.id}` : "option-value:create");
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "save_admin_product_option_value",
+        optionValue: {
+          id: nextForm.id,
+          option_id: nextForm.optionId,
+          value_english: nextForm.valueEnglish,
+          value_arabic: nextForm.valueArabic,
+          image_url: nextForm.imageUrl || null,
+          sort_order: nextForm.sortOrder,
+        },
+      });
+      setDetails(nextDetails);
+      setOptionValueForm(null);
+      setNotice({
+        tone: "success",
+        message: nextForm.id ? "Option value saved." : "Option value created.",
+      });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Could not save this option value.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function deleteOptionValue(value: WaProductOptionValueRow) {
+    setSavingAction(`option-value:delete:${value.id}`);
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "delete_admin_product_option_value",
+        optionValueId: value.id,
+      });
+      setDetails(nextDetails);
+      setDeleteOptionValueId("");
+      setNotice({ tone: "success", message: "Option value deleted." });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Could not delete this option value.",
       });
     } finally {
       setSavingAction("");
@@ -907,6 +1110,494 @@ function ProductsPage() {
                 )}
               </div>
 
+              {currentProduct ? (
+                <div className="space-y-4" data-testid="business-product-options-live">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold">Product options and values</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Define choices such as size, color, or add-ons before building variants.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => openCreateOption(currentProduct.id)}
+                      data-testid="business-product-option-create"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add option
+                    </Button>
+                  </div>
+
+                  {currentProductOptions.length ? (
+                    <div className="space-y-3">
+                      {currentProductOptions.map((option) => {
+                        const values = currentProductOptionValues.filter(
+                          (value) => value.option_id === option.id,
+                        );
+                        return (
+                          <div key={option.id} className="rounded-md border">
+                            <div className="flex flex-wrap items-start justify-between gap-3 border-b p-3">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-medium">{option.name_english}</span>
+                                  <span className="text-xs text-muted-foreground" dir="rtl">
+                                    {option.name_arabic}
+                                  </span>
+                                  {option.is_required ? (
+                                    <StatusBadge tone="success">Required</StatusBadge>
+                                  ) : (
+                                    <StatusBadge tone="neutral">Optional</StatusBadge>
+                                  )}
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  {values.length} values / Sort {option.sort_order}
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openCreateOptionValue(option)}
+                                  data-testid="business-product-option-value-create"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  Value
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={`Edit option ${option.name_english}`}
+                                  onClick={() => openEditOption(option)}
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive"
+                                  aria-label={`Delete option ${option.name_english}`}
+                                  disabled={Boolean(savingAction)}
+                                  onClick={() => {
+                                    setOptionForm(null);
+                                    setOptionValueForm(null);
+                                    setDeleteOptionValueId("");
+                                    setNotice(null);
+                                    setDeleteOptionId(option.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            {values.length ? (
+                              <div className="divide-y">
+                                {values.map((value) => (
+                                  <div
+                                    key={value.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 p-3"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <OptionValueImage value={value} />
+                                      <div className="min-w-0">
+                                        <div className="truncate font-medium">
+                                          {value.value_english}
+                                        </div>
+                                        <div
+                                          className="truncate text-xs text-muted-foreground"
+                                          dir="rtl"
+                                        >
+                                          {value.value_arabic}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Sort {value.sort_order}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Edit value ${value.value_english}`}
+                                        onClick={() => openEditOptionValue(value)}
+                                      >
+                                        <Edit2 className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive"
+                                        aria-label={`Delete value ${value.value_english}`}
+                                        disabled={Boolean(savingAction)}
+                                        onClick={() => {
+                                          setOptionForm(null);
+                                          setOptionValueForm(null);
+                                          setDeleteOptionId("");
+                                          setNotice(null);
+                                          setDeleteOptionValueId(value.id);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-3 text-sm text-muted-foreground">
+                                Add values before creating variants for this option.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                      No options yet. Add an option when customers need to choose size, color, or
+                      similar values.
+                    </div>
+                  )}
+
+                  {deleteOptionTarget ? (
+                    <div
+                      className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+                      data-testid="business-product-option-delete-confirm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium">Delete option?</div>
+                          <div className="text-sm text-muted-foreground">
+                            This removes {deleteOptionTarget.name_english} and its values if the
+                            backend allows it.
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleteOptionId("")}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            aria-label={`Confirm delete option ${deleteOptionTarget.name_english}`}
+                            disabled={Boolean(savingAction)}
+                            onClick={() => void deleteOption(deleteOptionTarget)}
+                          >
+                            {savingAction === `option:delete:${deleteOptionTarget.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <span className="text-sm font-medium text-destructive">
+                            Delete option
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {deleteOptionValueTarget ? (
+                    <div
+                      className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+                      data-testid="business-product-option-value-delete-confirm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium">Delete option value?</div>
+                          <div className="text-sm text-muted-foreground">
+                            This removes {deleteOptionValueTarget.value_english}. The backend will
+                            block unsafe deletes if variants still use it.
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleteOptionValueId("")}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            aria-label={`Confirm delete value ${deleteOptionValueTarget.value_english}`}
+                            disabled={Boolean(savingAction)}
+                            onClick={() => void deleteOptionValue(deleteOptionValueTarget)}
+                          >
+                            {savingAction ===
+                            `option-value:delete:${deleteOptionValueTarget.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <span className="text-sm font-medium text-destructive">Delete value</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {optionForm ? (
+                    <form
+                      ref={optionFormRef}
+                      className="rounded-md border p-3"
+                      data-testid="business-product-option-editor"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void saveOption(readOptionForm(event.currentTarget, optionForm));
+                      }}
+                    >
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold">
+                          {optionForm.id ? "Edit option" : "Create option"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Options group related values, such as Color or Size.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-name-en" className="text-xs">
+                            Name (EN)
+                          </Label>
+                          <Input
+                            id="product-option-name-en"
+                            name="nameEnglish"
+                            value={optionForm.nameEnglish}
+                            onChange={(event) =>
+                              setOptionForm((current) =>
+                                current ? { ...current, nameEnglish: event.target.value } : current,
+                              )
+                            }
+                            placeholder="Size"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-name-ar" className="text-xs">
+                            Name (AR)
+                          </Label>
+                          <Input
+                            id="product-option-name-ar"
+                            name="nameArabic"
+                            dir="rtl"
+                            value={optionForm.nameArabic}
+                            onChange={(event) =>
+                              setOptionForm((current) =>
+                                current ? { ...current, nameArabic: event.target.value } : current,
+                              )
+                            }
+                            placeholder="Arabic option"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-sort" className="text-xs">
+                            Sort
+                          </Label>
+                          <Input
+                            id="product-option-sort"
+                            name="sortOrder"
+                            type="number"
+                            min={0}
+                            value={optionForm.sortOrder}
+                            onChange={(event) =>
+                              setOptionForm((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      sortOrder: Number.parseInt(event.target.value, 10) || 0,
+                                    }
+                                  : current,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <label className="mt-3 flex items-center justify-between rounded-md border p-3">
+                        <span>
+                          <span className="block text-sm font-medium">Required choice</span>
+                          <span className="block text-xs text-muted-foreground">
+                            Customers must choose a value before the item can be added.
+                          </span>
+                        </span>
+                        <Switch
+                          checked={optionForm.isRequired}
+                          onCheckedChange={(checked) =>
+                            setOptionForm((current) =>
+                              current ? { ...current, isRequired: checked } : current,
+                            )
+                          }
+                        />
+                      </label>
+                      <div className="mt-3 flex flex-wrap justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setOptionForm(null)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          aria-label="Save option"
+                          disabled={Boolean(savingAction)}
+                          onClick={() => {
+                            if (!optionFormRef.current || !optionForm) return;
+                            void saveOption(readOptionForm(optionFormRef.current, optionForm));
+                          }}
+                        >
+                          {savingAction.startsWith("option:") ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <span className="self-center text-sm font-medium">Save option</span>
+                      </div>
+                    </form>
+                  ) : null}
+
+                  {optionValueForm ? (
+                    <form
+                      ref={optionValueFormRef}
+                      className="rounded-md border p-3"
+                      data-testid="business-product-option-value-editor"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void saveOptionValue(
+                          readOptionValueForm(event.currentTarget, optionValueForm),
+                        );
+                      }}
+                    >
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold">
+                          {optionValueForm.id ? "Edit option value" : "Create option value"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Values are the choices customers see under one option.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-value-en" className="text-xs">
+                            Value (EN)
+                          </Label>
+                          <Input
+                            id="product-option-value-en"
+                            name="valueEnglish"
+                            value={optionValueForm.valueEnglish}
+                            onChange={(event) =>
+                              setOptionValueForm((current) =>
+                                current
+                                  ? { ...current, valueEnglish: event.target.value }
+                                  : current,
+                              )
+                            }
+                            placeholder="Large"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-value-ar" className="text-xs">
+                            Value (AR)
+                          </Label>
+                          <Input
+                            id="product-option-value-ar"
+                            name="valueArabic"
+                            dir="rtl"
+                            value={optionValueForm.valueArabic}
+                            onChange={(event) =>
+                              setOptionValueForm((current) =>
+                                current ? { ...current, valueArabic: event.target.value } : current,
+                              )
+                            }
+                            placeholder="Arabic value"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-option-value-sort" className="text-xs">
+                            Sort
+                          </Label>
+                          <Input
+                            id="product-option-value-sort"
+                            name="sortOrder"
+                            type="number"
+                            min={0}
+                            value={optionValueForm.sortOrder}
+                            onChange={(event) =>
+                              setOptionValueForm((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      sortOrder: Number.parseInt(event.target.value, 10) || 0,
+                                    }
+                                  : current,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        <Label htmlFor="product-option-value-image" className="text-xs">
+                          Optional image URL
+                        </Label>
+                        <Input
+                          id="product-option-value-image"
+                          name="imageUrl"
+                          value={optionValueForm.imageUrl}
+                          onChange={(event) =>
+                            setOptionValueForm((current) =>
+                              current ? { ...current, imageUrl: event.target.value } : current,
+                            )
+                          }
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div className="mt-3 flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setOptionValueForm(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          aria-label="Save option value"
+                          disabled={Boolean(savingAction)}
+                          onClick={() => {
+                            if (!optionValueFormRef.current || !optionValueForm) return;
+                            void saveOptionValue(
+                              readOptionValueForm(optionValueFormRef.current, optionValueForm),
+                            );
+                          }}
+                        >
+                          {savingAction.startsWith("option-value:") ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <span className="self-center text-sm font-medium">Save value</span>
+                      </div>
+                    </form>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="rounded-md border border-muted bg-muted/20 p-3 text-sm text-muted-foreground">
+                  Save the product first, then add options and values.
+                </div>
+              )}
+
               <div className="flex flex-wrap justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>
                   Cancel
@@ -964,6 +1655,30 @@ function ProductImage({ product }: { product: WaProductRow }) {
   return (
     <div className="grid h-11 w-11 place-items-center rounded-md bg-muted text-muted-foreground">
       <Package className="h-5 w-5" />
+    </div>
+  );
+}
+
+function OptionValueImage({ value }: { value: WaProductOptionValueRow }) {
+  if (value.image_url) {
+    return (
+      <div className="h-9 w-9 overflow-hidden rounded-md border bg-muted">
+        <img
+          src={value.image_url}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid h-9 w-9 place-items-center rounded-md bg-muted text-muted-foreground">
+      <ImageIcon className="h-4 w-4" />
     </div>
   );
 }
@@ -1080,8 +1795,87 @@ function readProductForm(
   };
 }
 
+function emptyOptionForm(productId: string, sortOrder = 0): ProductOptionFormState {
+  return {
+    productId,
+    nameEnglish: "",
+    nameArabic: "",
+    sortOrder,
+    isRequired: true,
+  };
+}
+
+function toOptionForm(option: WaProductOptionRow): ProductOptionFormState {
+  return {
+    id: option.id,
+    productId: option.product_id,
+    nameEnglish: option.name_english,
+    nameArabic: option.name_arabic,
+    sortOrder: option.sort_order,
+    isRequired: option.is_required,
+  };
+}
+
+function readOptionForm(
+  formElement: HTMLFormElement,
+  current: ProductOptionFormState,
+): ProductOptionFormState {
+  const submitted = new FormData(formElement);
+  return {
+    ...current,
+    nameEnglish: String(submitted.get("nameEnglish") ?? ""),
+    nameArabic: String(submitted.get("nameArabic") ?? ""),
+    sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
+  };
+}
+
+function emptyOptionValueForm(optionId: string, sortOrder = 0): ProductOptionValueFormState {
+  return {
+    optionId,
+    valueEnglish: "",
+    valueArabic: "",
+    imageUrl: "",
+    sortOrder,
+  };
+}
+
+function toOptionValueForm(value: WaProductOptionValueRow): ProductOptionValueFormState {
+  return {
+    id: value.id,
+    optionId: value.option_id,
+    valueEnglish: value.value_english,
+    valueArabic: value.value_arabic,
+    imageUrl: value.image_url ?? "",
+    sortOrder: value.sort_order,
+  };
+}
+
+function readOptionValueForm(
+  formElement: HTMLFormElement,
+  current: ProductOptionValueFormState,
+): ProductOptionValueFormState {
+  const submitted = new FormData(formElement);
+  return {
+    ...current,
+    valueEnglish: String(submitted.get("valueEnglish") ?? ""),
+    valueArabic: String(submitted.get("valueArabic") ?? ""),
+    imageUrl: String(submitted.get("imageUrl") ?? ""),
+    sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
+  };
+}
+
 function nextSortOrder(products: WaProductRow[]) {
   const lastSortOrder = products.reduce((max, product) => Math.max(max, product.sort_order), -10);
+  return lastSortOrder + 10;
+}
+
+function nextOptionSortOrder(options: WaProductOptionRow[]) {
+  const lastSortOrder = options.reduce((max, option) => Math.max(max, option.sort_order), -10);
+  return lastSortOrder + 10;
+}
+
+function nextOptionValueSortOrder(values: WaProductOptionValueRow[]) {
+  const lastSortOrder = values.reduce((max, value) => Math.max(max, value.sort_order), -10);
   return lastSortOrder + 10;
 }
 
@@ -1110,6 +1904,20 @@ function sortValues(values: WaCatalogGroupValueRow[]) {
   return [...values].sort(
     (left, right) =>
       left.sort_order - right.sort_order || left.name_english.localeCompare(right.name_english),
+  );
+}
+
+function sortOptions(options: WaProductOptionRow[]) {
+  return [...options].sort(
+    (left, right) =>
+      left.sort_order - right.sort_order || left.name_english.localeCompare(right.name_english),
+  );
+}
+
+function sortOptionValues(values: WaProductOptionValueRow[]) {
+  return [...values].sort(
+    (left, right) =>
+      left.sort_order - right.sort_order || left.value_english.localeCompare(right.value_english),
   );
 }
 

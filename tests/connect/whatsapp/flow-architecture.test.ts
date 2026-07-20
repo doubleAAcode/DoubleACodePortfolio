@@ -435,14 +435,24 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessProducts, /applyAdminBusinessAction/);
   assert.match(adminBusinessProducts, /action: "save_admin_product"/);
   assert.match(adminBusinessProducts, /action: "delete_admin_product"/);
+  assert.match(adminBusinessProducts, /action: "save_admin_product_option"/);
+  assert.match(adminBusinessProducts, /action: "delete_admin_product_option"/);
+  assert.match(adminBusinessProducts, /action: "save_admin_product_option_value"/);
+  assert.match(adminBusinessProducts, /action: "delete_admin_product_option_value"/);
   assert.match(adminBusinessProducts, /data-business-products-live="true"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-route-placement"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-delete-confirm"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-options-live"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-option-editor"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-option-value-editor"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-option-delete-confirm"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-option-value-delete-confirm"/);
   assert.match(adminBusinessProducts, /catalogProducts/);
   assert.match(adminBusinessProducts, /catalogCategories/);
   assert.match(adminBusinessProducts, /catalogGroupValues/);
   assert.match(adminBusinessProducts, /productGroupValues/);
   assert.match(adminBusinessProducts, /productOptions/);
+  assert.match(adminBusinessProducts, /productOptionValues/);
   assert.match(adminBusinessProducts, /productVariants/);
   assert.match(adminBusinessProducts, /productCustomFields/);
   assert.doesNotMatch(
