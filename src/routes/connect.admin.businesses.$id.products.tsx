@@ -1180,7 +1180,17 @@ function ProductsPage() {
                                   className="text-destructive"
                                   aria-label={`Delete option ${option.name_english}`}
                                   disabled={Boolean(savingAction)}
-                                  onClick={() => {
+                                  onPointerDown={(event) => {
+                                    event.preventDefault();
+                                    setOptionForm(null);
+                                    setOptionValueForm(null);
+                                    setDeleteOptionValueId("");
+                                    setNotice(null);
+                                    setDeleteOptionId(option.id);
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (event.key !== "Enter" && event.key !== " ") return;
+                                    event.preventDefault();
                                     setOptionForm(null);
                                     setOptionValueForm(null);
                                     setDeleteOptionValueId("");
@@ -1233,7 +1243,17 @@ function ProductsPage() {
                                         className="text-destructive"
                                         aria-label={`Delete value ${value.value_english}`}
                                         disabled={Boolean(savingAction)}
-                                        onClick={() => {
+                                        onPointerDown={(event) => {
+                                          event.preventDefault();
+                                          setOptionForm(null);
+                                          setOptionValueForm(null);
+                                          setDeleteOptionId("");
+                                          setNotice(null);
+                                          setDeleteOptionValueId(value.id);
+                                        }}
+                                        onKeyDown={(event) => {
+                                          if (event.key !== "Enter" && event.key !== " ") return;
+                                          event.preventDefault();
                                           setOptionForm(null);
                                           setOptionValueForm(null);
                                           setDeleteOptionId("");
@@ -1290,7 +1310,15 @@ function ProductsPage() {
                             variant="destructive"
                             aria-label={`Confirm delete option ${deleteOptionTarget.name_english}`}
                             disabled={Boolean(savingAction)}
-                            onClick={() => void deleteOption(deleteOptionTarget)}
+                            onPointerDown={(event) => {
+                              event.preventDefault();
+                              void deleteOption(deleteOptionTarget);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              void deleteOption(deleteOptionTarget);
+                            }}
                           >
                             {savingAction === `option:delete:${deleteOptionTarget.id}` ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1333,7 +1361,15 @@ function ProductsPage() {
                             variant="destructive"
                             aria-label={`Confirm delete value ${deleteOptionValueTarget.value_english}`}
                             disabled={Boolean(savingAction)}
-                            onClick={() => void deleteOptionValue(deleteOptionValueTarget)}
+                            onPointerDown={(event) => {
+                              event.preventDefault();
+                              void deleteOptionValue(deleteOptionValueTarget);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              void deleteOptionValue(deleteOptionValueTarget);
+                            }}
                           >
                             {savingAction ===
                             `option-value:delete:${deleteOptionValueTarget.id}` ? (

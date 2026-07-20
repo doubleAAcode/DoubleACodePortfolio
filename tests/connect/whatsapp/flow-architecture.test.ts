@@ -453,6 +453,11 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     adminBusinessProducts,
     /onPointerDown=\{\(event\) => \{[\s\S]*saveOptionValue\(optionValueForm\)/,
   );
+  assert.match(adminBusinessProducts, /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteOptionId/);
+  assert.match(
+    adminBusinessProducts,
+    /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteOptionValueId/,
+  );
   assert.doesNotMatch(adminBusinessProducts, /readOptionForm|readOptionValueForm/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-delete-confirm"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-value-delete-confirm"/);
