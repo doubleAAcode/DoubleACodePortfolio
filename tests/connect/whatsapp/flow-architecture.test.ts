@@ -514,6 +514,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessCheckout, /action: "delete_admin_payment_method"/);
   assert.match(adminBusinessCheckout, /data-business-checkout-live="true"/);
   assert.match(adminBusinessCheckout, /data-testid="business-checkout-save"/);
+  assert.match(adminBusinessCheckout, /data-flow-manager-live-action/);
   assert.match(adminBusinessCheckout, /data-testid="business-checkout-notice"/);
   assert.match(adminBusinessCheckout, /deliveryAreas/);
   assert.match(adminBusinessCheckout, /pickupLocations/);
@@ -550,6 +551,8 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessSetup, /useBusinessDetails/);
   assert.match(adminBusinessSetup, /details\.checklist/);
   assert.match(previewBoundary, /UI preview only\. Data is illustrative/);
+  assert.match(previewBoundary, /SubmitEvent/);
+  assert.match(previewBoundary, /data-flow-manager-live-action/);
   assert.match(previewBoundary, /Business records, search, status filters/);
   assert.match(previewBoundary, /workflow list and Guided editor use the authorized/);
   assert.match(previewBoundary, /data-flow-manager-status=\{status\}/);

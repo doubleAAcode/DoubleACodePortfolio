@@ -64,6 +64,13 @@ export function FlowManagerPreviewBoundary({ children }: { children: ReactNode }
   }
 
   function blockPreviewSubmit(event: FormEvent<HTMLDivElement>) {
+    const form = event.target;
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (form instanceof Element && form.hasAttribute("data-flow-manager-live-action")) return;
+    if (submitter instanceof Element && submitter.hasAttribute("data-flow-manager-live-action")) {
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
   }

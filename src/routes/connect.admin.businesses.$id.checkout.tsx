@@ -663,6 +663,7 @@ function CheckoutPage() {
           onClick={saveSettings}
           disabled={savingAction === "settings"}
           data-testid="business-checkout-save"
+          data-flow-manager-live-action
         >
           {savingAction === "settings" ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -847,7 +848,13 @@ function ChoiceRow({
         <Button variant="outline" size="sm" onClick={onEdit}>
           Edit
         </Button>
-        <Button variant="outline" size="icon" onClick={onDeleteOpen} aria-label={`Delete ${title}`}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onDeleteOpen}
+          aria-label={`Delete ${title}`}
+          data-flow-manager-live-action
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -861,7 +868,13 @@ function ChoiceRow({
             <Button variant="outline" size="sm" onClick={onDeleteCancel}>
               Cancel
             </Button>
-            <Button variant="destructive" size="sm" onClick={onDeleteConfirm} disabled={deleting}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onDeleteConfirm}
+              disabled={deleting}
+              data-flow-manager-live-action
+            >
               {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete
             </Button>
@@ -889,6 +902,7 @@ function DeliveryAreaEditor({
     <form
       className="space-y-3 rounded-md border bg-muted/30 p-3"
       data-testid="business-checkout-delivery-area-editor"
+      data-flow-manager-live-action
       onSubmit={(event) => {
         event.preventDefault();
         onSave(form);
@@ -947,6 +961,7 @@ function PickupLocationEditor({
     <form
       className="space-y-3 rounded-md border bg-muted/30 p-3"
       data-testid="business-checkout-pickup-location-editor"
+      data-flow-manager-live-action
       onSubmit={(event) => {
         event.preventDefault();
         onSave(form);
@@ -1001,6 +1016,7 @@ function PaymentMethodEditor({
     <form
       className="space-y-3 rounded-md border bg-muted/30 p-3"
       data-testid="business-checkout-payment-method-editor"
+      data-flow-manager-live-action
       onSubmit={(event) => {
         event.preventDefault();
         onSave(form);
@@ -1091,7 +1107,7 @@ function FormActions({
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={saving}>
+        <Button type="submit" size="sm" disabled={saving} data-flow-manager-live-action>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save
         </Button>
