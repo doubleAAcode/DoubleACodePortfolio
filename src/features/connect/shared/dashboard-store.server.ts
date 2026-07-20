@@ -604,6 +604,7 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
 
     case "deleteProduct":
       requireOwned(data.products, action.payload.id, "Product");
+      await assertProductCanBeDeleted(businessId, data, action.payload.id);
       await deleteRow("/wa_products", action.payload.id);
       break;
 
@@ -624,6 +625,7 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
 
     case "deleteOption":
       requireOwned(data.options, action.payload.id, "Option");
+      assertProductOptionCanBeDeleted(data, action.payload.id);
       await deleteRow("/wa_product_options", action.payload.id);
       break;
 
@@ -656,6 +658,7 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
 
     case "deleteOptionValue":
       requireOptionValueOwned(data, action.payload.id);
+      assertProductOptionValueCanBeDeleted(data, action.payload.id);
       await deleteRow("/wa_product_option_values", action.payload.id);
       break;
 
@@ -685,6 +688,7 @@ export async function applyWaDashboardAction(businessId: string, action: Dashboa
 
     case "deleteVariant":
       requireOwned(data.variants, action.payload.id, "Variant");
+      await assertProductVariantCanBeDeleted(businessId, action.payload.id);
       await deleteRow("/wa_product_variants", action.payload.id);
       break;
 
@@ -895,6 +899,78 @@ async function deleteRow(path: string, id: string) {
     method: "DELETE",
     prefer: "return=minimal",
   });
+}
+
+async function assertProductCanBeDeleted(
+  businessId: string,
+  data: WaDashboardData,
+  productId: string,
+) {
+  const variantIds = data.variants
+    .filter((variant) => variant.product_id === productId)
+    .map((variant) => variant.id);
+  const stockTargetIds = [productId, ...variantIds];
+
+  const [directOrderItems, variantOrderItems, reservations] = await Promise.all([
+    supabaseServerRest<Array<{ id: string }>>(
+      `/wa_order_items?select=id&product_id=eq.${encodeURIComponent(productId)}&limit=1`,
+    ),
+    variantIds.length
+      ? supabaseServerRest<Array<{ id: string }>>(
+          `/wa_order_items?select=id&variant_id=in.(${formatInList(variantIds)})&limit=1`,
+        )
+      : Promise.resolve([]),
+    supabaseServerRest<Array<{ id: string }>>(
+      `/wa_stock_reservations?select=id&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_variant_id=in.(${formatInList(stockTargetIds)})&limit=1`,
+    ),
+  ]);
+
+  if (directOrderItems.length || variantOrderItems.length || reservations.length) {
+    throw new Error(
+      "This product is already used by orders or stock reservations. Archive it instead of deleting it.",
+    );
+  }
+}
+
+async function assertProductVariantCanBeDeleted(businessId: string, variantId: string) {
+  const [orderItems, reservations] = await Promise.all([
+    supabaseServerRest<Array<{ id: string }>>(
+      `/wa_order_items?select=id&variant_id=eq.${encodeURIComponent(variantId)}&limit=1`,
+    ),
+    supabaseServerRest<Array<{ id: string }>>(
+      `/wa_stock_reservations?select=id&business_id=eq.${encodeURIComponent(
+        businessId,
+      )}&product_variant_id=eq.${encodeURIComponent(variantId)}&limit=1`,
+    ),
+  ]);
+
+  if (orderItems.length || reservations.length) {
+    throw new Error(
+      "This variant is already used by orders or stock reservations. Mark it unavailable instead of deleting it.",
+    );
+  }
+}
+
+function assertProductOptionCanBeDeleted(data: WaDashboardData, optionId: string) {
+  const valueCount = data.optionValues.filter((value) => value.option_id === optionId).length;
+  if (valueCount > 0) {
+    throw new Error("Remove this option's values before deleting the option.");
+  }
+}
+
+function assertProductOptionValueCanBeDeleted(data: WaDashboardData, valueId: string) {
+  const variantCount = data.variants.filter((variant) =>
+    variant.selected_option_value_ids.includes(valueId),
+  ).length;
+  if (variantCount > 0) {
+    throw new Error("Remove variants that use this option value before deleting it.");
+  }
+}
+
+function formatInList(values: string[]) {
+  return values.map((value) => `"${encodeURIComponent(value)}"`).join(",");
 }
 
 async function safeOptionalTable<T>(path: string): Promise<T> {

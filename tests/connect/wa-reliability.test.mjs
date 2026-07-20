@@ -215,6 +215,21 @@ test("admin and client flow image uploads use authenticated FormData storage rou
   assert.match(dashboardTwoFlowImageRoute, /createDashboardFlowImageUploadHandlers\("2"\)/);
 });
 
+test("catalog delete actions preserve order history and variant integrity", () => {
+  assert.match(dashboardStore, /assertProductCanBeDeleted/);
+  assert.match(dashboardStore, /assertProductVariantCanBeDeleted/);
+  assert.match(dashboardStore, /assertProductOptionCanBeDeleted/);
+  assert.match(dashboardStore, /assertProductOptionValueCanBeDeleted/);
+  assert.match(dashboardStore, /\/wa_order_items\?select=id&product_id=eq\./);
+  assert.match(dashboardStore, /\/wa_order_items\?select=id&variant_id=in\.\(/);
+  assert.match(dashboardStore, /\/wa_stock_reservations\?select=id&business_id=eq\./);
+  assert.match(dashboardStore, /product_variant_id=in\.\(/);
+  assert.match(dashboardStore, /Archive it instead of deleting it/);
+  assert.match(dashboardStore, /Mark it unavailable instead of deleting it/);
+  assert.match(dashboardStore, /Remove this option's values before deleting the option/);
+  assert.match(dashboardStore, /Remove variants that use this option value before deleting it/);
+});
+
 test("admin WhatsApp health check uses runtime-only Meta credentials", () => {
   assert.match(appReviewDemo, /export async function checkWhatsAppConnectionHealth/);
   assert.match(appReviewDemo, /getWhatsAppServerConfig\(connection\.configSuffix\)/);
