@@ -32,6 +32,9 @@ import {
   deleteAdminCatalogGroup,
   deleteAdminCatalogGroupValue,
   deleteAdminCategory,
+  deleteAdminDeliveryArea,
+  deleteAdminPaymentMethod,
+  deleteAdminPickupLocation,
   deleteAdminProduct,
   deleteAdminProductCustomField,
   deleteAdminProductOption,
@@ -47,6 +50,9 @@ import {
   saveAdminCatalogValueProducts,
   saveAdminCategory,
   saveAdminCheckoutSettings,
+  saveAdminDeliveryArea,
+  saveAdminPaymentMethod,
+  saveAdminPickupLocation,
   saveAdminProduct,
   saveAdminProductCustomField,
   saveAdminProductOption,
@@ -56,6 +62,9 @@ import {
   upsertAdminConnection,
   recordAdminAuditLog,
   type AdminCheckoutSettingsInput,
+  type AdminDeliveryAreaInput,
+  type AdminPaymentMethodInput,
+  type AdminPickupLocationInput,
   type AdminCatalogValueProductsInput,
   type AdminCatalogGroupInput,
   type AdminCatalogGroupValueInput,
@@ -196,6 +205,12 @@ export function createInternalAdminBusinessDetailsHandlers() {
           role?: "OWNER" | "MANAGER" | "STAFF";
           connection?: CreateAdminBusinessInput["connection"];
           settings?: AdminCheckoutSettingsInput;
+          area?: AdminDeliveryAreaInput;
+          areaId?: string;
+          location?: AdminPickupLocationInput;
+          locationId?: string;
+          method?: AdminPaymentMethodInput;
+          methodId?: string;
           group?: AdminCatalogGroupInput;
           groupId?: string;
           value?: AdminCatalogGroupValueInput;
@@ -272,6 +287,66 @@ export function createInternalAdminBusinessDetailsHandlers() {
           const data = await saveAdminCheckoutSettings({
             businessId: params.businessId,
             input: body.settings,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_delivery_area" && body.area) {
+          const data = await saveAdminDeliveryArea({
+            businessId: params.businessId,
+            input: body.area as AdminDeliveryAreaInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_delivery_area" && body.areaId) {
+          const data = await deleteAdminDeliveryArea({
+            businessId: params.businessId,
+            areaId: body.areaId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_pickup_location" && body.location) {
+          const data = await saveAdminPickupLocation({
+            businessId: params.businessId,
+            input: body.location as AdminPickupLocationInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_pickup_location" && body.locationId) {
+          const data = await deleteAdminPickupLocation({
+            businessId: params.businessId,
+            locationId: body.locationId,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "save_admin_payment_method" && body.method) {
+          const data = await saveAdminPaymentMethod({
+            businessId: params.businessId,
+            input: body.method as AdminPaymentMethodInput,
+            adminUser: session.username,
+            request,
+          });
+          return Response.json({ ok: true, data });
+        }
+
+        if (body?.action === "delete_admin_payment_method" && body.methodId) {
+          const data = await deleteAdminPaymentMethod({
+            businessId: params.businessId,
+            methodId: body.methodId,
             adminUser: session.username,
             request,
           });

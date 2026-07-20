@@ -11,6 +11,7 @@ const diagnosticsHandler = read("src/features/connect/shared/diagnostics.server.
 const dashboardHandlers = read("src/features/connect/shared/dashboard-api-handlers.server.ts");
 const adminHandlers = read("src/features/connect/shared/admin-api-handlers.server.ts");
 const adminClient = read("src/features/connect/shared/admin-client.ts");
+const adminStore = read("src/features/connect/shared/admin-store.server.ts");
 const dashboardClient = read("src/features/connect/shared/dashboard-client.ts");
 const appReviewDemo = read("src/features/connect/shared/app-review-demo.server.ts");
 const dashboardStore = read("src/features/connect/shared/dashboard-store.server.ts");
@@ -228,6 +229,32 @@ test("catalog delete actions preserve order history and variant integrity", () =
   assert.match(dashboardStore, /Mark it unavailable instead of deleting it/);
   assert.match(dashboardStore, /Remove this option's values before deleting the option/);
   assert.match(dashboardStore, /Remove variants that use this option value before deleting it/);
+});
+
+test("admin checkout settings use protected live mutations", () => {
+  assert.match(adminStore, /export type AdminCheckoutSettingsInput/);
+  assert.match(adminStore, /Enable delivery or pickup before saving checkout settings/);
+  assert.match(adminStore, /type: "saveBusiness"/);
+  assert.match(adminStore, /saveBusinessBotFlowSettings/);
+  assert.match(adminStore, /ADMIN_CHECKOUT_SETTINGS_SAVED/);
+  assert.match(adminStore, /export async function saveAdminDeliveryArea/);
+  assert.match(adminStore, /type: "saveDeliveryArea"/);
+  assert.match(adminStore, /export async function saveAdminPickupLocation/);
+  assert.match(adminStore, /type: "savePickupLocation"/);
+  assert.match(adminStore, /export async function saveAdminPaymentMethod/);
+  assert.match(adminStore, /type: "savePaymentMethod"/);
+  assert.match(adminStore, /deliveryAreas: WaDeliveryAreaRow\[\]/);
+  assert.match(adminStore, /pickupLocations: WaPickupLocationRow\[\]/);
+  assert.match(adminStore, /paymentMethods: WaPaymentMethodRow\[\]/);
+  assert.match(adminHandlers, /save_admin_delivery_area/);
+  assert.match(adminHandlers, /delete_admin_delivery_area/);
+  assert.match(adminHandlers, /save_admin_pickup_location/);
+  assert.match(adminHandlers, /delete_admin_pickup_location/);
+  assert.match(adminHandlers, /save_admin_payment_method/);
+  assert.match(adminHandlers, /delete_admin_payment_method/);
+  assert.match(adminClient, /save_admin_delivery_area/);
+  assert.match(adminClient, /save_admin_pickup_location/);
+  assert.match(adminClient, /save_admin_payment_method/);
 });
 
 test("admin WhatsApp health check uses runtime-only Meta credentials", () => {

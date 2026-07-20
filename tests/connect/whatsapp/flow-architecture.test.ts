@@ -346,6 +346,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.products.tsx",
     "utf8",
   );
+  const adminBusinessCheckout = readFileSync(
+    "src/routes/connect.admin.businesses.$id.checkout.tsx",
+    "utf8",
+  );
   const businessTemplatePicker = readFileSync(
     "src/features/connect/admin/businesses/business-template-picker.tsx",
     "utf8",
@@ -499,6 +503,25 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     adminBusinessProducts,
     /const filtered = products\.filter|preview-data|mock-data|mock-client|window\.confirm/,
   );
+  assert.match(adminBusinessCheckout, /useBusinessDetails/);
+  assert.match(adminBusinessCheckout, /applyAdminBusinessAction/);
+  assert.match(adminBusinessCheckout, /action: "save_checkout_settings"/);
+  assert.match(adminBusinessCheckout, /action: "save_admin_delivery_area"/);
+  assert.match(adminBusinessCheckout, /action: "delete_admin_delivery_area"/);
+  assert.match(adminBusinessCheckout, /action: "save_admin_pickup_location"/);
+  assert.match(adminBusinessCheckout, /action: "delete_admin_pickup_location"/);
+  assert.match(adminBusinessCheckout, /action: "save_admin_payment_method"/);
+  assert.match(adminBusinessCheckout, /action: "delete_admin_payment_method"/);
+  assert.match(adminBusinessCheckout, /data-business-checkout-live="true"/);
+  assert.match(adminBusinessCheckout, /data-testid="business-checkout-save"/);
+  assert.match(adminBusinessCheckout, /data-testid="business-checkout-notice"/);
+  assert.match(adminBusinessCheckout, /deliveryAreas/);
+  assert.match(adminBusinessCheckout, /pickupLocations/);
+  assert.match(adminBusinessCheckout, /paymentMethods/);
+  assert.doesNotMatch(
+    adminBusinessCheckout,
+    /preview-data|mock-data|mock-client|defaultValue=|window\.confirm/,
+  );
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
@@ -540,6 +563,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.catalog-routes\.tsx/);
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.route-values\.tsx/);
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.products\.tsx/);
+  assert.match(portTool, /connect\.admin\.businesses\.\$id\.checkout\.tsx/);
   assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
   assert.match(portTool, /connectedAdminRouteFiles = new Set/);
   assert.match(portTool, /connect\.admin\.businesses\.index\.tsx/);

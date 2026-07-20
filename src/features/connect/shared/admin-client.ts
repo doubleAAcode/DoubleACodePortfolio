@@ -15,6 +15,9 @@ import type {
   AdminCatalogGroupValueInput,
   AdminCategoryInput,
   AdminCheckoutSettingsInput,
+  AdminDeliveryAreaInput,
+  AdminPaymentMethodInput,
+  AdminPickupLocationInput,
   AdminProductCustomFieldInput,
   AdminProductInput,
   AdminProductOptionInput,
@@ -154,6 +157,12 @@ export async function applyAdminBusinessAction(
     | { action: "assign_user"; email: string; role: "OWNER" | "MANAGER" | "STAFF" }
     | { action: "save_connection"; connection: CreateAdminBusinessInput["connection"] }
     | { action: "save_checkout_settings"; settings: AdminCheckoutSettingsInput }
+    | { action: "save_admin_delivery_area"; area: AdminDeliveryAreaInput }
+    | { action: "delete_admin_delivery_area"; areaId: string }
+    | { action: "save_admin_pickup_location"; location: AdminPickupLocationInput }
+    | { action: "delete_admin_pickup_location"; locationId: string }
+    | { action: "save_admin_payment_method"; method: AdminPaymentMethodInput }
+    | { action: "delete_admin_payment_method"; methodId: string }
     | { action: "save_catalog_group"; group: AdminCatalogGroupInput }
     | { action: "delete_catalog_group"; groupId: string }
     | { action: "save_catalog_group_value"; value: AdminCatalogGroupValueInput }

@@ -273,7 +273,7 @@ export type SaveCustomFieldInput = Omit<
   id?: string;
 };
 
-type SaveBusinessInput = Pick<
+export type SaveBusinessInput = Pick<
   WaBusinessRow,
   | "name"
   | "default_language"
@@ -285,7 +285,7 @@ type SaveBusinessInput = Pick<
   | "is_active"
 >;
 
-type SaveDeliveryAreaInput = {
+export type SaveDeliveryAreaInput = {
   id?: string;
   name_english: string;
   name_arabic: string;
@@ -294,7 +294,7 @@ type SaveDeliveryAreaInput = {
   sort_order: number;
 };
 
-type SavePickupLocationInput = {
+export type SavePickupLocationInput = {
   id?: string;
   name_english: string;
   name_arabic: string;
@@ -304,7 +304,7 @@ type SavePickupLocationInput = {
   sort_order: number;
 };
 
-type SavePaymentMethodInput = {
+export type SavePaymentMethodInput = {
   id?: string;
   label_english: string;
   label_arabic: string;

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const CONNECT_RELEASE = "business-products-delete-blockers-live-v1";
+export const CONNECT_RELEASE = "business-checkout-settings-live-v1";
 
 export const Route = createFileRoute("/api/connect/release")({
   server: {
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/api/connect/release")({
               "business-products-custom-fields-live",
               "business-products-media-live",
               "business-products-delete-blockers-live",
+              "business-checkout-settings-live",
             ],
           },
           {

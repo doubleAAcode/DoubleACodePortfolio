@@ -15,6 +15,9 @@ import type {
   WaCatalogGroupRow,
   WaCatalogGroupValueRow,
   WaCategoryRow,
+  WaDeliveryAreaRow,
+  WaPaymentMethodRow,
+  WaPickupLocationRow,
   WaProductCustomFieldRow,
   WaProductGroupValueRow,
   WaProductOptionRow,
@@ -23,6 +26,9 @@ import type {
   WaProductVariantRow,
   SaveCategoryInput,
   SaveCustomFieldInput,
+  SaveDeliveryAreaInput,
+  SavePaymentMethodInput,
+  SavePickupLocationInput,
   SaveOptionInput,
   SaveOptionValueInput,
   SaveProductInput,
@@ -147,6 +153,9 @@ export type AdminBusinessDetails = {
   productOptionValues: WaProductOptionValueRow[];
   productVariants: WaProductVariantRow[];
   productCustomFields: WaProductCustomFieldRow[];
+  deliveryAreas: WaDeliveryAreaRow[];
+  pickupLocations: WaPickupLocationRow[];
+  paymentMethods: WaPaymentMethodRow[];
   counts: {
     categories: number;
     products: number;
@@ -161,10 +170,18 @@ export type AdminBusinessDetails = {
 };
 
 export type AdminCheckoutSettingsInput = {
+  business: Pick<
+    AdminBusinessRow,
+    "allow_delivery" | "allow_pickup" | "minimum_order_amount" | "require_owner_approval"
+  >;
   botFlowSettings: BotFlowSettingsInput;
   orderConfirmationMessageEnglish: string;
   orderConfirmationMessageArabic: string;
 };
+
+export type AdminDeliveryAreaInput = SaveDeliveryAreaInput;
+export type AdminPickupLocationInput = SavePickupLocationInput;
+export type AdminPaymentMethodInput = SavePaymentMethodInput;
 
 export type AdminCatalogGroupInput = {
   id?: string;
@@ -327,6 +344,9 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     productOptionValues,
     productVariants,
     productCustomFields,
+    deliveryAreas,
+    pickupLocations,
+    paymentMethods,
   ] = await Promise.all([
     listBusinesses(`id=eq.${encodeURIComponent(businessId)}`),
     listBusinessUsers(businessId),
@@ -352,6 +372,9 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     listProductOptionValues(businessId),
     listProductVariants(businessId),
     listProductCustomFields(businessId),
+    listDeliveryAreas(businessId),
+    listPickupLocations(businessId),
+    listPaymentMethods(businessId),
   ]);
   const business = businesses[0];
   if (!business) throw new Error("Business was not found.");
@@ -370,6 +393,9 @@ export async function getAdminBusinessDetails(businessId: string): Promise<Admin
     productOptionValues,
     productVariants,
     productCustomFields,
+    deliveryAreas,
+    pickupLocations,
+    paymentMethods,
     counts: {
       categories,
       products,
@@ -919,6 +945,22 @@ export async function saveAdminCheckoutSettings({
   request: Request;
 }) {
   const previous = await getAdminBusinessDetails(businessId);
+  if (!input.business.allow_delivery && !input.business.allow_pickup) {
+    throw new Error("Enable delivery or pickup before saving checkout settings.");
+  }
+  await applyWaDashboardAction(businessId, {
+    type: "saveBusiness",
+    payload: {
+      name: previous.business.name,
+      default_language: previous.business.default_language,
+      currency: previous.business.currency,
+      allow_delivery: Boolean(input.business.allow_delivery),
+      allow_pickup: Boolean(input.business.allow_pickup),
+      minimum_order_amount: Number(input.business.minimum_order_amount ?? 0),
+      require_owner_approval: Boolean(input.business.require_owner_approval),
+      is_active: previous.business.is_active,
+    },
+  });
   await saveBusinessBotFlowSettings(businessId, input.botFlowSettings);
   await supabaseServerRest(`/wa_businesses?id=eq.${encodeURIComponent(businessId)}`, {
     method: "PATCH",
@@ -940,15 +982,167 @@ export async function saveAdminCheckoutSettings({
     targetType: "BUSINESS",
     targetId: businessId,
     previousValue: {
+      allowDelivery: previous.business.allow_delivery,
+      allowPickup: previous.business.allow_pickup,
+      minimumOrderAmount: previous.business.minimum_order_amount,
+      requireOwnerApproval: previous.business.require_owner_approval,
       botFlowUpdatedAt: previous.botFlowSettings.updatedAt,
       orderConfirmationMessageEnglish: previous.business.order_confirmation_message_english,
       orderConfirmationMessageArabic: previous.business.order_confirmation_message_arabic,
     },
     newValue: {
+      business: input.business,
       botFlowSettings: input.botFlowSettings,
       orderConfirmationMessageEnglish: input.orderConfirmationMessageEnglish,
       orderConfirmationMessageArabic: input.orderConfirmationMessageArabic,
     },
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminDeliveryArea({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminDeliveryAreaInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "saveDeliveryArea", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_DELIVERY_AREA_SAVED",
+    targetType: "DELIVERY_AREA",
+    targetId: input.id,
+    newValue: input,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminDeliveryArea({
+  businessId,
+  areaId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  areaId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "deleteDeliveryArea", payload: { id: areaId } });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_DELIVERY_AREA_DELETED",
+    targetType: "DELIVERY_AREA",
+    targetId: areaId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminPickupLocation({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminPickupLocationInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "savePickupLocation", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PICKUP_LOCATION_SAVED",
+    targetType: "PICKUP_LOCATION",
+    targetId: input.id,
+    newValue: input,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminPickupLocation({
+  businessId,
+  locationId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  locationId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, {
+    type: "deletePickupLocation",
+    payload: { id: locationId },
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PICKUP_LOCATION_DELETED",
+    targetType: "PICKUP_LOCATION",
+    targetId: locationId,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function saveAdminPaymentMethod({
+  businessId,
+  input,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  input: AdminPaymentMethodInput;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, { type: "savePaymentMethod", payload: input });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PAYMENT_METHOD_SAVED",
+    targetType: "PAYMENT_METHOD",
+    targetId: input.id,
+    newValue: input,
+  });
+  return getAdminBusinessDetails(businessId);
+}
+
+export async function deleteAdminPaymentMethod({
+  businessId,
+  methodId,
+  adminUser,
+  request,
+}: {
+  businessId: string;
+  methodId: string;
+  adminUser: string;
+  request: Request;
+}) {
+  await applyWaDashboardAction(businessId, {
+    type: "deletePaymentMethod",
+    payload: { id: methodId },
+  });
+  await audit({
+    adminUser,
+    request,
+    businessId,
+    action: "ADMIN_PAYMENT_METHOD_DELETED",
+    targetType: "PAYMENT_METHOD",
+    targetId: methodId,
   });
   return getAdminBusinessDetails(businessId);
 }
@@ -1622,6 +1816,39 @@ async function listProductCustomFields(businessId: string) {
     )}&order=sort_order.asc`,
   ).catch((error) => {
     if (isMissingTable(error, "wa_product_custom_fields")) return [];
+    throw error;
+  });
+}
+
+async function listDeliveryAreas(businessId: string) {
+  return supabaseServerRest<WaDeliveryAreaRow[]>(
+    `/wa_delivery_areas?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_delivery_areas")) return [];
+    throw error;
+  });
+}
+
+async function listPickupLocations(businessId: string) {
+  return supabaseServerRest<WaPickupLocationRow[]>(
+    `/wa_pickup_locations?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_pickup_locations")) return [];
+    throw error;
+  });
+}
+
+async function listPaymentMethods(businessId: string) {
+  return supabaseServerRest<WaPaymentMethodRow[]>(
+    `/wa_payment_methods?select=*&business_id=eq.${encodeURIComponent(
+      businessId,
+    )}&order=sort_order.asc`,
+  ).catch((error) => {
+    if (isMissingTable(error, "wa_payment_methods")) return [];
     throw error;
   });
 }
