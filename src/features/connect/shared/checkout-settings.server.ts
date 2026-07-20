@@ -139,7 +139,21 @@ const checkoutSettings: BusinessCheckoutSettings[] = [
   },
 ];
 
+const checkoutSettingsOverrides = new Map<string, BusinessCheckoutSettings>();
+
+export function setBusinessCheckoutSettingsForTest(settings: BusinessCheckoutSettings) {
+  checkoutSettingsOverrides.set(settings.businessId, settings);
+}
+
+export function resetBusinessCheckoutSettingsForTest(businessId?: string) {
+  if (businessId) checkoutSettingsOverrides.delete(businessId);
+  else checkoutSettingsOverrides.clear();
+}
+
 export async function getBusinessCheckoutSettings(businessId: string) {
+  const override = checkoutSettingsOverrides.get(businessId);
+  if (override) return override;
+
   if (isServerSupabaseConfigured()) {
     const [businessRows, pickupRows, deliveryRows, paymentRows] = await Promise.all([
       supabaseServerRest<BusinessRow[]>(
