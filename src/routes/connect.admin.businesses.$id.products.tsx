@@ -1445,23 +1445,16 @@ function ProductsPage() {
                         <Button type="button" variant="outline" onClick={() => setOptionForm(null)}>
                           Cancel
                         </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          aria-label="Save option"
-                          disabled={Boolean(savingAction)}
-                          onClick={() => {
-                            if (!optionFormRef.current || !optionForm) return;
-                            void saveOption(readOptionForm(optionFormRef.current, optionForm));
-                          }}
-                        >
+                        <Button type="submit" disabled={Boolean(savingAction)}>
                           {savingAction.startsWith("option:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Save className="h-4 w-4" />
                           )}
+                          <span>
+                            {savingAction.startsWith("option:") ? "Saving..." : "Save option"}
+                          </span>
                         </Button>
-                        <span className="self-center text-sm font-medium">Save option</span>
                       </div>
                     </form>
                   ) : null}
@@ -1569,25 +1562,18 @@ function ProductsPage() {
                         >
                           Cancel
                         </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          aria-label="Save option value"
-                          disabled={Boolean(savingAction)}
-                          onClick={() => {
-                            if (!optionValueFormRef.current || !optionValueForm) return;
-                            void saveOptionValue(
-                              readOptionValueForm(optionValueFormRef.current, optionValueForm),
-                            );
-                          }}
-                        >
+                        <Button type="submit" disabled={Boolean(savingAction)}>
                           {savingAction.startsWith("option-value:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Save className="h-4 w-4" />
                           )}
+                          <span>
+                            {savingAction.startsWith("option-value:")
+                              ? "Saving..."
+                              : "Save option value"}
+                          </span>
                         </Button>
-                        <span className="self-center text-sm font-medium">Save value</span>
                       </div>
                     </form>
                   ) : null}
