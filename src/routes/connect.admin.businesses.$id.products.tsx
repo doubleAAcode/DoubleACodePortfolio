@@ -1441,7 +1441,15 @@ function ProductsPage() {
                         <Button
                           type="button"
                           disabled={Boolean(savingAction)}
-                          onClick={() => void saveOption(optionForm)}
+                          onPointerDown={(event) => {
+                            event.preventDefault();
+                            void saveOption(optionForm);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            void saveOption(optionForm);
+                          }}
                         >
                           {savingAction.startsWith("option:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1555,7 +1563,15 @@ function ProductsPage() {
                         <Button
                           type="button"
                           disabled={Boolean(savingAction)}
-                          onClick={() => void saveOptionValue(optionValueForm)}
+                          onPointerDown={(event) => {
+                            event.preventDefault();
+                            void saveOptionValue(optionValueForm);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            void saveOptionValue(optionValueForm);
+                          }}
                         >
                           {savingAction.startsWith("option-value:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
