@@ -295,6 +295,20 @@ export async function uploadAdminFlowImage(businessId: string, file: File) {
   return result.data;
 }
 
+export async function uploadAdminProductImage(businessId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const result = await apiFetch<ApiResult<{ path: string; url: string }>>(
+    `/api/connect/admin/businesses/${encodeURIComponent(businessId)}/product-image`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
+}
+
 export async function getAdminLogs(businessId?: string) {
   const query = businessId ? `?businessId=${encodeURIComponent(businessId)}` : "";
   const result = await apiFetch<ApiResult<{ webhooks: unknown[]; audit: unknown[] }>>(

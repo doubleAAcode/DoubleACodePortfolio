@@ -9,6 +9,7 @@ import {
   Save,
   Search,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -29,6 +30,7 @@ import { useBusinessDetails } from "@/features/connect/admin/businesses/business
 import { StatusBadge } from "@/features/connect/flow-manager-ui/components/status-badge";
 import {
   applyAdminBusinessAction,
+  uploadAdminProductImage,
   type AdminBusinessDetailsResult,
 } from "@/features/connect/shared/admin-client";
 import type {
@@ -130,6 +132,7 @@ function ProductsPage() {
   const [deleteVariantId, setDeleteVariantId] = useState("");
   const [deleteCustomFieldId, setDeleteCustomFieldId] = useState("");
   const [savingAction, setSavingAction] = useState("");
+  const [uploadingAction, setUploadingAction] = useState("");
   const [notice, setNotice] = useState<{ tone: "success" | "destructive"; message: string } | null>(
     null,
   );
@@ -483,6 +486,38 @@ function ProductsPage() {
       });
     } finally {
       setSavingAction("");
+    }
+  }
+
+  async function uploadProductImage(file: File | undefined, target: "product" | "option-value") {
+    if (!file) return;
+    if (!currentProduct) {
+      setNotice({ tone: "destructive", message: "Save the product before uploading images." });
+      return;
+    }
+
+    const action = target === "product" ? "product-image" : "option-value-image";
+    setUploadingAction(action);
+    setNotice(null);
+    try {
+      const image = await uploadAdminProductImage(id, file);
+      if (target === "product") {
+        setForm((current) => ({ ...current, imageUrl: image.url }));
+        setNotice({ tone: "success", message: "Product image uploaded. Save product to keep it." });
+      } else {
+        setOptionValueForm((current) => (current ? { ...current, imageUrl: image.url } : current));
+        setNotice({
+          tone: "success",
+          message: "Option value image uploaded. Save option value to keep it.",
+        });
+      }
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Image upload failed.",
+      });
+    } finally {
+      setUploadingAction("");
     }
   }
 
@@ -1251,15 +1286,61 @@ function ProductsPage() {
                   <Label htmlFor="product-image-url" className="text-xs">
                     Image URL
                   </Label>
-                  <Input
-                    id="product-image-url"
-                    name="imageUrl"
-                    value={form.imageUrl}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, imageUrl: event.target.value }))
-                    }
-                    placeholder="https://..."
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="product-image-url"
+                      name="imageUrl"
+                      value={form.imageUrl}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, imageUrl: event.target.value }))
+                      }
+                      placeholder="https://..."
+                    />
+                    <input
+                      id="product-image-file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      data-testid="business-product-image-file"
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = "";
+                        void uploadProductImage(file, "product");
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        !currentProduct || Boolean(savingAction) || Boolean(uploadingAction)
+                      }
+                      onClick={() => document.getElementById("product-image-file")?.click()}
+                      data-testid="business-product-image-upload"
+                    >
+                      {uploadingAction === "product-image" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <span>{uploadingAction === "product-image" ? "Uploading..." : "Upload"}</span>
+                    </Button>
+                  </div>
+                  {form.imageUrl ? (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="h-10 w-10 overflow-hidden rounded-md border bg-muted">
+                        <img
+                          src={form.imageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
+                      <span>Save product after changing media.</span>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="product-category" className="text-xs">
@@ -1888,17 +1969,67 @@ function ProductsPage() {
                       <Label htmlFor="product-option-value-image" className="text-xs">
                         Optional image URL
                       </Label>
-                      <Input
-                        id="product-option-value-image"
-                        name="imageUrl"
-                        value={optionValueForm.imageUrl}
-                        onChange={(event) =>
-                          setOptionValueForm((current) =>
-                            current ? { ...current, imageUrl: event.target.value } : current,
-                          )
-                        }
-                        placeholder="https://..."
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="product-option-value-image"
+                          name="imageUrl"
+                          value={optionValueForm.imageUrl}
+                          onChange={(event) =>
+                            setOptionValueForm((current) =>
+                              current ? { ...current, imageUrl: event.target.value } : current,
+                            )
+                          }
+                          placeholder="https://..."
+                        />
+                        <input
+                          id="product-option-value-image-file"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          data-testid="business-product-option-value-image-file"
+                          onChange={(event) => {
+                            const file = event.currentTarget.files?.[0];
+                            event.currentTarget.value = "";
+                            void uploadProductImage(file, "option-value");
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={
+                            !currentProduct || Boolean(savingAction) || Boolean(uploadingAction)
+                          }
+                          onClick={() =>
+                            document.getElementById("product-option-value-image-file")?.click()
+                          }
+                          data-testid="business-product-option-value-image-upload"
+                        >
+                          {uploadingAction === "option-value-image" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
+                          <span>
+                            {uploadingAction === "option-value-image" ? "Uploading..." : "Upload"}
+                          </span>
+                        </Button>
+                      </div>
+                      {optionValueForm.imageUrl ? (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="h-10 w-10 overflow-hidden rounded-md border bg-muted">
+                            <img
+                              src={optionValueForm.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </div>
+                          <span>Save option value after changing media.</span>
+                        </div>
+                      ) : null}
                     </div>
                     <div className="mt-3 flex flex-wrap justify-end gap-2">
                       <Button
@@ -1910,7 +2041,7 @@ function ProductsPage() {
                       </Button>
                       <Button
                         type="button"
-                        disabled={Boolean(savingAction)}
+                        disabled={Boolean(savingAction) || Boolean(uploadingAction)}
                         onPointerDown={(event) => {
                           event.preventDefault();
                           void saveOptionValue(optionValueForm);
@@ -2754,7 +2885,7 @@ function ProductsPage() {
                   type="button"
                   size="icon"
                   aria-label="Save product"
-                  disabled={Boolean(savingAction)}
+                  disabled={Boolean(savingAction) || Boolean(uploadingAction)}
                   onPointerDown={(event) => {
                     event.preventDefault();
                     if (!editorFormRef.current) return;

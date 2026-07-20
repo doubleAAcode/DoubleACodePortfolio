@@ -433,6 +433,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   );
   assert.match(adminBusinessProducts, /useBusinessDetails/);
   assert.match(adminBusinessProducts, /applyAdminBusinessAction/);
+  assert.match(adminBusinessProducts, /uploadAdminProductImage/);
   assert.match(adminBusinessProducts, /action: "save_admin_product"/);
   assert.match(adminBusinessProducts, /action: "delete_admin_product"/);
   assert.match(adminBusinessProducts, /action: "save_admin_product_option"/);
@@ -444,11 +445,13 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessProducts, /action: "save_admin_product_custom_field"/);
   assert.match(adminBusinessProducts, /action: "delete_admin_product_custom_field"/);
   assert.match(adminBusinessProducts, /data-business-products-live="true"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-image-upload"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-route-placement"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-delete-confirm"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-options-live"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-editor"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-value-editor"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-option-value-image-upload"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-variants-live"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-variant-editor"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-variant-delete-confirm"/);

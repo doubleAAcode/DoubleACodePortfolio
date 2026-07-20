@@ -221,6 +221,7 @@ import { Route as ConnectAdminBusinessesIdFlowBuilderRouteImport } from './route
 import { Route as ConnectAdminBusinessesIdDiagnosticsRouteImport } from './routes/connect.admin.businesses.$id.diagnostics'
 import { Route as ConnectAdminBusinessesIdCheckoutRouteImport } from './routes/connect.admin.businesses.$id.checkout'
 import { Route as ConnectAdminBusinessesIdCatalogRoutesRouteImport } from './routes/connect.admin.businesses.$id.catalog-routes'
+import { Route as ApiWaAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.product-image'
 import { Route as ApiWaAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow-image'
 import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
 import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/api.connect.dashboard.orders.$orderId'
@@ -241,6 +242,7 @@ import { Route as ApiConnectClientConversationsConversationIdNotesRouteImport } 
 import { Route as ApiConnectClientConversationsConversationIdMessagesRouteImport } from './routes/api/connect/client/conversations.$conversationId.messages'
 import { Route as ApiConnectAdminConversationsConversationIdNotesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.notes'
 import { Route as ApiConnectAdminConversationsConversationIdMessagesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.messages'
+import { Route as ApiConnectAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.product-image'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow'
 import { Route as ApiConnectClientConversationsConversationIdTagsTagIdRouteImport } from './routes/api/connect/client/conversations.$conversationId.tags.$tagId'
@@ -1397,6 +1399,12 @@ const ConnectAdminBusinessesIdCatalogRoutesRoute =
     path: '/catalog-routes',
     getParentRoute: () => ConnectAdminBusinessesIdRoute,
   } as any)
+const ApiWaAdminBusinessesBusinessIdProductImageRoute =
+  ApiWaAdminBusinessesBusinessIdProductImageRouteImport.update({
+    id: '/product-image',
+    path: '/product-image',
+    getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
+  } as any)
 const ApiWaAdminBusinessesBusinessIdFlowImageRoute =
   ApiWaAdminBusinessesBusinessIdFlowImageRouteImport.update({
     id: '/flow-image',
@@ -1516,6 +1524,12 @@ const ApiConnectAdminConversationsConversationIdMessagesRoute =
     id: '/messages',
     path: '/messages',
     getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdProductImageRoute =
+  ApiConnectAdminBusinessesBusinessIdProductImageRouteImport.update({
+    id: '/product-image',
+    path: '/product-image',
+    getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
   } as any)
 const ApiConnectAdminBusinessesBusinessIdFlowImageRoute =
   ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport.update({
@@ -1762,6 +1776,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/api/wa-admin/businesses/$businessId/product-image': typeof ApiWaAdminBusinessesBusinessIdProductImageRoute
   '/connect/admin/businesses/$id/catalog-routes': typeof ConnectAdminBusinessesIdCatalogRoutesRoute
   '/connect/admin/businesses/$id/checkout': typeof ConnectAdminBusinessesIdCheckoutRoute
   '/connect/admin/businesses/$id/diagnostics': typeof ConnectAdminBusinessesIdDiagnosticsRoute
@@ -1773,6 +1788,7 @@ export interface FileRoutesByFullPath {
   '/connect/admin/businesses/$id/': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/businesses/$businessId/product-image': typeof ApiConnectAdminBusinessesBusinessIdProductImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
   '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
@@ -1984,6 +2000,7 @@ export interface FileRoutesByTo {
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/api/wa-admin/businesses/$businessId/product-image': typeof ApiWaAdminBusinessesBusinessIdProductImageRoute
   '/connect/admin/businesses/$id/catalog-routes': typeof ConnectAdminBusinessesIdCatalogRoutesRoute
   '/connect/admin/businesses/$id/checkout': typeof ConnectAdminBusinessesIdCheckoutRoute
   '/connect/admin/businesses/$id/diagnostics': typeof ConnectAdminBusinessesIdDiagnosticsRoute
@@ -1995,6 +2012,7 @@ export interface FileRoutesByTo {
   '/connect/admin/businesses/$id': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/businesses/$businessId/product-image': typeof ApiConnectAdminBusinessesBusinessIdProductImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
   '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
@@ -2223,6 +2241,7 @@ export interface FileRoutesById {
   '/api/connect/dashboard/orders/$orderId': typeof ApiConnectDashboardOrdersOrderIdRoute
   '/api/wa-admin/businesses/$businessId/flow': typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   '/api/wa-admin/businesses/$businessId/flow-image': typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  '/api/wa-admin/businesses/$businessId/product-image': typeof ApiWaAdminBusinessesBusinessIdProductImageRoute
   '/connect/admin/businesses/$id/catalog-routes': typeof ConnectAdminBusinessesIdCatalogRoutesRoute
   '/connect/admin/businesses/$id/checkout': typeof ConnectAdminBusinessesIdCheckoutRoute
   '/connect/admin/businesses/$id/diagnostics': typeof ConnectAdminBusinessesIdDiagnosticsRoute
@@ -2234,6 +2253,7 @@ export interface FileRoutesById {
   '/connect/admin/businesses/$id/': typeof ConnectAdminBusinessesIdIndexRoute
   '/api/connect/admin/businesses/$businessId/flow': typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   '/api/connect/admin/businesses/$businessId/flow-image': typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  '/api/connect/admin/businesses/$businessId/product-image': typeof ApiConnectAdminBusinessesBusinessIdProductImageRoute
   '/api/connect/admin/conversations/$conversationId/messages': typeof ApiConnectAdminConversationsConversationIdMessagesRoute
   '/api/connect/admin/conversations/$conversationId/notes': typeof ApiConnectAdminConversationsConversationIdNotesRoute
   '/api/connect/client/conversations/$conversationId/messages': typeof ApiConnectClientConversationsConversationIdMessagesRoute
@@ -2463,6 +2483,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/api/wa-admin/businesses/$businessId/product-image'
     | '/connect/admin/businesses/$id/catalog-routes'
     | '/connect/admin/businesses/$id/checkout'
     | '/connect/admin/businesses/$id/diagnostics'
@@ -2474,6 +2495,7 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id/'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/businesses/$businessId/product-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
     | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
@@ -2685,6 +2707,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/api/wa-admin/businesses/$businessId/product-image'
     | '/connect/admin/businesses/$id/catalog-routes'
     | '/connect/admin/businesses/$id/checkout'
     | '/connect/admin/businesses/$id/diagnostics'
@@ -2696,6 +2719,7 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/businesses/$businessId/product-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
     | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
@@ -2923,6 +2947,7 @@ export interface FileRouteTypes {
     | '/api/connect/dashboard/orders/$orderId'
     | '/api/wa-admin/businesses/$businessId/flow'
     | '/api/wa-admin/businesses/$businessId/flow-image'
+    | '/api/wa-admin/businesses/$businessId/product-image'
     | '/connect/admin/businesses/$id/catalog-routes'
     | '/connect/admin/businesses/$id/checkout'
     | '/connect/admin/businesses/$id/diagnostics'
@@ -2934,6 +2959,7 @@ export interface FileRouteTypes {
     | '/connect/admin/businesses/$id/'
     | '/api/connect/admin/businesses/$businessId/flow'
     | '/api/connect/admin/businesses/$businessId/flow-image'
+    | '/api/connect/admin/businesses/$businessId/product-image'
     | '/api/connect/admin/conversations/$conversationId/messages'
     | '/api/connect/admin/conversations/$conversationId/notes'
     | '/api/connect/client/conversations/$conversationId/messages'
@@ -4523,6 +4549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectAdminBusinessesIdCatalogRoutesRouteImport
       parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
+    '/api/wa-admin/businesses/$businessId/product-image': {
+      id: '/api/wa-admin/businesses/$businessId/product-image'
+      path: '/product-image'
+      fullPath: '/api/wa-admin/businesses/$businessId/product-image'
+      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdProductImageRouteImport
+      parentRoute: typeof ApiWaAdminBusinessesBusinessIdRoute
+    }
     '/api/wa-admin/businesses/$businessId/flow-image': {
       id: '/api/wa-admin/businesses/$businessId/flow-image'
       path: '/flow-image'
@@ -4662,6 +4695,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/connect/admin/conversations/$conversationId/messages'
       preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRouteImport
       parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+    }
+    '/api/connect/admin/businesses/$businessId/product-image': {
+      id: '/api/connect/admin/businesses/$businessId/product-image'
+      path: '/product-image'
+      fullPath: '/api/connect/admin/businesses/$businessId/product-image'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdProductImageRouteImport
+      parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
     }
     '/api/connect/admin/businesses/$businessId/flow-image': {
       id: '/api/connect/admin/businesses/$businessId/flow-image'
@@ -5190,6 +5230,7 @@ const StoresRouteWithChildren =
 interface ApiWaAdminBusinessesBusinessIdRouteChildren {
   ApiWaAdminBusinessesBusinessIdFlowRoute: typeof ApiWaAdminBusinessesBusinessIdFlowRoute
   ApiWaAdminBusinessesBusinessIdFlowImageRoute: typeof ApiWaAdminBusinessesBusinessIdFlowImageRoute
+  ApiWaAdminBusinessesBusinessIdProductImageRoute: typeof ApiWaAdminBusinessesBusinessIdProductImageRoute
 }
 
 const ApiWaAdminBusinessesBusinessIdRouteChildren: ApiWaAdminBusinessesBusinessIdRouteChildren =
@@ -5198,6 +5239,8 @@ const ApiWaAdminBusinessesBusinessIdRouteChildren: ApiWaAdminBusinessesBusinessI
       ApiWaAdminBusinessesBusinessIdFlowRoute,
     ApiWaAdminBusinessesBusinessIdFlowImageRoute:
       ApiWaAdminBusinessesBusinessIdFlowImageRoute,
+    ApiWaAdminBusinessesBusinessIdProductImageRoute:
+      ApiWaAdminBusinessesBusinessIdProductImageRoute,
   }
 
 const ApiWaAdminBusinessesBusinessIdRouteWithChildren =
@@ -5259,6 +5302,7 @@ const ApiWaDashboardOrdersRouteWithChildren =
 interface ApiConnectAdminBusinessesBusinessIdRouteChildren {
   ApiConnectAdminBusinessesBusinessIdFlowRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRoute
   ApiConnectAdminBusinessesBusinessIdFlowImageRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowImageRoute
+  ApiConnectAdminBusinessesBusinessIdProductImageRoute: typeof ApiConnectAdminBusinessesBusinessIdProductImageRoute
 }
 
 const ApiConnectAdminBusinessesBusinessIdRouteChildren: ApiConnectAdminBusinessesBusinessIdRouteChildren =
@@ -5267,6 +5311,8 @@ const ApiConnectAdminBusinessesBusinessIdRouteChildren: ApiConnectAdminBusinesse
       ApiConnectAdminBusinessesBusinessIdFlowRoute,
     ApiConnectAdminBusinessesBusinessIdFlowImageRoute:
       ApiConnectAdminBusinessesBusinessIdFlowImageRoute,
+    ApiConnectAdminBusinessesBusinessIdProductImageRoute:
+      ApiConnectAdminBusinessesBusinessIdProductImageRoute,
   }
 
 const ApiConnectAdminBusinessesBusinessIdRouteWithChildren =

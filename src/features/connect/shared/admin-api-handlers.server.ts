@@ -22,7 +22,7 @@ import {
   deleteConversationSession,
   getActiveConversationSession,
 } from "./conversation-store.server";
-import { uploadWaFlowImage } from "./dashboard-store.server";
+import { uploadWaFlowImage, uploadWaProductImage } from "./dashboard-store.server";
 import { listWaMessageEvents } from "./message-events.server";
 import { getCustomerPhoneLookupCandidates, maskCustomerIdentifier } from "./reliability";
 import { sendWhatsAppTemplate, sendWhatsAppText } from "./sender.server";
@@ -824,6 +824,36 @@ export function createInternalAdminBusinessFlowImageUploadHandlers() {
           businessId: params.businessId,
           action: "FLOW_IMAGE_UPLOADED",
           targetType: "WA_FLOW_IMAGE",
+          targetId: image.path,
+          newValue: image,
+        });
+
+        return Response.json({ ok: true, data: image });
+      } catch (error) {
+        return adminApiError(error);
+      }
+    },
+  };
+}
+
+export function createInternalAdminBusinessProductImageUploadHandlers() {
+  return {
+    POST: async ({ request, params }: { request: Request; params: { businessId: string } }) => {
+      try {
+        const session = requireAdmin(request);
+        const formData = await request.formData();
+        const file = formData.get("file");
+        if (!(file instanceof File)) {
+          return Response.json({ ok: false, error: "Choose an image to upload." }, { status: 400 });
+        }
+
+        const image = await uploadWaProductImage(file, params.businessId);
+        await recordAdminAuditLog({
+          adminUser: session.username,
+          request,
+          businessId: params.businessId,
+          action: "PRODUCT_IMAGE_UPLOADED",
+          targetType: "WA_PRODUCT_IMAGE",
           targetId: image.path,
           newValue: image,
         });

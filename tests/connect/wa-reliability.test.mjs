@@ -15,6 +15,9 @@ const dashboardClient = read("src/features/connect/shared/dashboard-client.ts");
 const appReviewDemo = read("src/features/connect/shared/app-review-demo.server.ts");
 const dashboardStore = read("src/features/connect/shared/dashboard-store.server.ts");
 const flowImageRoute = read("src/routes/api.connect.admin.businesses.$businessId.flow-image.ts");
+const productImageRoute = read(
+  "src/routes/api.connect.admin.businesses.$businessId.product-image.ts",
+);
 const dashboardFlowImageRoute = read("src/routes/api.connect.dashboard.flow-image.ts");
 const dashboardTwoFlowImageRoute = read("src/routes/api.connect.dashboard-2.flow-image.ts");
 const whatsappHealthRoute = read("src/routes/api.connect.admin.whatsapp-health.ts");
@@ -188,15 +191,21 @@ test("visual human handoff sends once and then stays paused", () => {
 
 test("admin and client flow image uploads use authenticated FormData storage routes", () => {
   assert.match(dashboardStore, /export async function uploadWaFlowImage/);
+  assert.match(dashboardStore, /export async function uploadWaProductImage/);
   assert.match(dashboardStore, /"flow-images"/);
+  assert.match(dashboardStore, /"products"/);
   assert.match(adminHandlers, /createInternalAdminBusinessFlowImageUploadHandlers/);
+  assert.match(adminHandlers, /createInternalAdminBusinessProductImageUploadHandlers/);
   assert.match(adminHandlers, /requireAdmin\(request\)/);
   assert.match(adminHandlers, /request\.formData\(\)/);
   assert.match(adminHandlers, /uploadWaFlowImage\(file, params\.businessId\)/);
+  assert.match(adminHandlers, /uploadWaProductImage\(file, params\.businessId\)/);
   assert.match(adminClient, /export async function uploadAdminFlowImage/);
+  assert.match(adminClient, /export async function uploadAdminProductImage/);
   assert.match(adminClient, /body:\s*formData/);
   assert.match(adminClient, /init\.body instanceof FormData/);
   assert.match(flowImageRoute, /\/api\/connect\/admin\/businesses\/\$businessId\/flow-image/);
+  assert.match(productImageRoute, /\/api\/connect\/admin\/businesses\/\$businessId\/product-image/);
   assert.match(dashboardHandlers, /createDashboardFlowImageUploadHandlers/);
   assert.match(dashboardHandlers, /getDashboardSessionFromRequest\(request, envSuffix\)/);
   assert.match(dashboardHandlers, /uploadWaFlowImage/);
