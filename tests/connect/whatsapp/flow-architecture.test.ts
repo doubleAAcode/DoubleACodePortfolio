@@ -445,8 +445,12 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessProducts, /data-testid="business-product-options-live"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-editor"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-value-editor"/);
-  assert.match(adminBusinessProducts, /type="submit"[\s\S]*Save option/);
-  assert.match(adminBusinessProducts, /type="submit"[\s\S]*Save option value/);
+  assert.match(adminBusinessProducts, /onClick=\{\(\) => void saveOption\(optionForm\)\}/);
+  assert.match(
+    adminBusinessProducts,
+    /onClick=\{\(\) => void saveOptionValue\(optionValueForm\)\}/,
+  );
+  assert.doesNotMatch(adminBusinessProducts, /readOptionForm|readOptionValueForm/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-delete-confirm"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-value-delete-confirm"/);
   assert.match(adminBusinessProducts, /catalogProducts/);

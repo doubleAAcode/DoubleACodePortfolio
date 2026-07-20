@@ -101,8 +101,6 @@ function ProductsPage() {
     null,
   );
   const editorFormRef = useRef<HTMLFormElement | null>(null);
-  const optionFormRef = useRef<HTMLFormElement | null>(null);
-  const optionValueFormRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     setDetails(initialDetails);
@@ -1351,14 +1349,9 @@ function ProductsPage() {
                   ) : null}
 
                   {optionForm ? (
-                    <form
-                      ref={optionFormRef}
+                    <div
                       className="rounded-md border p-3"
                       data-testid="business-product-option-editor"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void saveOption(readOptionForm(event.currentTarget, optionForm));
-                      }}
                     >
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold">
@@ -1445,7 +1438,11 @@ function ProductsPage() {
                         <Button type="button" variant="outline" onClick={() => setOptionForm(null)}>
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={Boolean(savingAction)}>
+                        <Button
+                          type="button"
+                          disabled={Boolean(savingAction)}
+                          onClick={() => void saveOption(optionForm)}
+                        >
                           {savingAction.startsWith("option:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -1456,20 +1453,13 @@ function ProductsPage() {
                           </span>
                         </Button>
                       </div>
-                    </form>
+                    </div>
                   ) : null}
 
                   {optionValueForm ? (
-                    <form
-                      ref={optionValueFormRef}
+                    <div
                       className="rounded-md border p-3"
                       data-testid="business-product-option-value-editor"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void saveOptionValue(
-                          readOptionValueForm(event.currentTarget, optionValueForm),
-                        );
-                      }}
                     >
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold">
@@ -1562,7 +1552,11 @@ function ProductsPage() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={Boolean(savingAction)}>
+                        <Button
+                          type="button"
+                          disabled={Boolean(savingAction)}
+                          onClick={() => void saveOptionValue(optionValueForm)}
+                        >
                           {savingAction.startsWith("option-value:") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -1575,7 +1569,7 @@ function ProductsPage() {
                           </span>
                         </Button>
                       </div>
-                    </form>
+                    </div>
                   ) : null}
                 </div>
               ) : (
@@ -1802,19 +1796,6 @@ function toOptionForm(option: WaProductOptionRow): ProductOptionFormState {
   };
 }
 
-function readOptionForm(
-  formElement: HTMLFormElement,
-  current: ProductOptionFormState,
-): ProductOptionFormState {
-  const submitted = new FormData(formElement);
-  return {
-    ...current,
-    nameEnglish: String(submitted.get("nameEnglish") ?? ""),
-    nameArabic: String(submitted.get("nameArabic") ?? ""),
-    sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
-  };
-}
-
 function emptyOptionValueForm(optionId: string, sortOrder = 0): ProductOptionValueFormState {
   return {
     optionId,
@@ -1833,20 +1814,6 @@ function toOptionValueForm(value: WaProductOptionValueRow): ProductOptionValueFo
     valueArabic: value.value_arabic,
     imageUrl: value.image_url ?? "",
     sortOrder: value.sort_order,
-  };
-}
-
-function readOptionValueForm(
-  formElement: HTMLFormElement,
-  current: ProductOptionValueFormState,
-): ProductOptionValueFormState {
-  const submitted = new FormData(formElement);
-  return {
-    ...current,
-    valueEnglish: String(submitted.get("valueEnglish") ?? ""),
-    valueArabic: String(submitted.get("valueArabic") ?? ""),
-    imageUrl: String(submitted.get("imageUrl") ?? ""),
-    sortOrder: Number.parseInt(String(submitted.get("sortOrder") ?? ""), 10) || 0,
   };
 }
 
