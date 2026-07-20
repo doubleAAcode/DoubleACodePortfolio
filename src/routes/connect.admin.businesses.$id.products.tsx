@@ -37,6 +37,7 @@ import type {
   WaCategoryRow,
   WaProductOptionRow,
   WaProductOptionValueRow,
+  WaProductCustomFieldRow,
   WaProductRow,
   WaProductVariantRow,
 } from "@/features/connect/shared/dashboard-store.server";
@@ -91,6 +92,23 @@ type ProductVariantFormState = {
   selectedOptionValueIds: Record<string, string>;
 };
 
+type ProductCustomFieldFormState = {
+  id?: string;
+  productId: string;
+  type: WaProductCustomFieldRow["type"];
+  labelEnglish: string;
+  labelArabic: string;
+  placeholderEnglish: string;
+  placeholderArabic: string;
+  isRequired: boolean;
+  minimumLength: string;
+  maximumLength: string;
+  minimumValue: string;
+  maximumValue: string;
+  choices: Array<{ id: string; labelEnglish: string; labelArabic: string }>;
+  sortOrder: number;
+};
+
 const NO_CATEGORY = "__none";
 const ALL_CATEGORIES = "__all";
 
@@ -105,10 +123,12 @@ function ProductsPage() {
   const [optionForm, setOptionForm] = useState<ProductOptionFormState | null>(null);
   const [optionValueForm, setOptionValueForm] = useState<ProductOptionValueFormState | null>(null);
   const [variantForm, setVariantForm] = useState<ProductVariantFormState | null>(null);
+  const [customFieldForm, setCustomFieldForm] = useState<ProductCustomFieldFormState | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState("");
   const [deleteOptionId, setDeleteOptionId] = useState("");
   const [deleteOptionValueId, setDeleteOptionValueId] = useState("");
   const [deleteVariantId, setDeleteVariantId] = useState("");
+  const [deleteCustomFieldId, setDeleteCustomFieldId] = useState("");
   const [savingAction, setSavingAction] = useState("");
   const [notice, setNotice] = useState<{ tone: "success" | "destructive"; message: string } | null>(
     null,
@@ -188,6 +208,9 @@ function ProductsPage() {
   const currentProductVariants = sortVariants(
     form.id ? details.productVariants.filter((variant) => variant.product_id === form.id) : [],
   );
+  const currentProductCustomFields = sortCustomFields(
+    form.id ? details.productCustomFields.filter((field) => field.product_id === form.id) : [],
+  );
   const optionValuesById = new Map(
     currentProductOptionValues.map((value) => [value.id, value] as const),
   );
@@ -197,6 +220,9 @@ function ProductsPage() {
   );
   const deleteVariantTarget = currentProductVariants.find(
     (variant) => variant.id === deleteVariantId,
+  );
+  const deleteCustomFieldTarget = currentProductCustomFields.find(
+    (field) => field.id === deleteCustomFieldId,
   );
   const filteredProducts = products.filter((product) => {
     const text = `${product.name_english} ${product.name_arabic} ${product.code}`.toLowerCase();
@@ -226,10 +252,12 @@ function ProductsPage() {
     setOptionForm(null);
     setOptionValueForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteTargetId("");
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
     setEditorOpen(true);
   }
@@ -239,10 +267,12 @@ function ProductsPage() {
     setOptionForm(null);
     setOptionValueForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteTargetId("");
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
     setEditorOpen(true);
   }
@@ -251,9 +281,11 @@ function ProductsPage() {
     setOptionForm(emptyOptionForm(productId, nextOptionSortOrder(currentProductOptions)));
     setOptionValueForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -261,9 +293,11 @@ function ProductsPage() {
     setOptionForm(toOptionForm(option));
     setOptionValueForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -272,9 +306,11 @@ function ProductsPage() {
     setOptionValueForm(emptyOptionValueForm(option.id, nextOptionValueSortOrder(values)));
     setOptionForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -282,9 +318,11 @@ function ProductsPage() {
     setOptionValueForm(toOptionValueForm(value));
     setOptionForm(null);
     setVariantForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -305,9 +343,11 @@ function ProductsPage() {
     );
     setOptionForm(null);
     setOptionValueForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -315,9 +355,41 @@ function ProductsPage() {
     setVariantForm(toVariantForm(variant, currentProductVariantGroups));
     setOptionForm(null);
     setOptionValueForm(null);
+    setCustomFieldForm(null);
     setDeleteOptionId("");
     setDeleteOptionValueId("");
     setDeleteVariantId("");
+    setDeleteCustomFieldId("");
+    setNotice(null);
+  }
+
+  function openCreateCustomField() {
+    if (!currentProduct) {
+      setNotice({ tone: "destructive", message: "Save the product before adding questions." });
+      return;
+    }
+    setCustomFieldForm(
+      emptyCustomFieldForm(currentProduct.id, nextCustomFieldSortOrder(currentProductCustomFields)),
+    );
+    setOptionForm(null);
+    setOptionValueForm(null);
+    setVariantForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setDeleteVariantId("");
+    setDeleteCustomFieldId("");
+    setNotice(null);
+  }
+
+  function openEditCustomField(field: WaProductCustomFieldRow) {
+    setCustomFieldForm(toCustomFieldForm(field));
+    setOptionForm(null);
+    setOptionValueForm(null);
+    setVariantForm(null);
+    setDeleteOptionId("");
+    setDeleteOptionValueId("");
+    setDeleteVariantId("");
+    setDeleteCustomFieldId("");
     setNotice(null);
   }
 
@@ -606,6 +678,99 @@ function ProductsPage() {
       setNotice({
         tone: "destructive",
         message: error instanceof Error ? error.message : "Could not delete this variant.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function saveCustomField(nextForm: ProductCustomFieldFormState) {
+    if (!nextForm.productId) {
+      setNotice({ tone: "destructive", message: "Save the product before adding questions." });
+      return;
+    }
+    if (!nextForm.labelEnglish.trim() || !nextForm.labelArabic.trim()) {
+      setNotice({
+        tone: "destructive",
+        message: "English and Arabic question labels are required.",
+      });
+      return;
+    }
+    if (
+      nextForm.type === "single_choice" &&
+      !nextForm.choices.some((choice) => choice.labelEnglish.trim())
+    ) {
+      setNotice({
+        tone: "destructive",
+        message: "Add at least one English choice for a single-choice question.",
+      });
+      return;
+    }
+
+    setSavingAction(nextForm.id ? `custom-field:${nextForm.id}` : "custom-field:create");
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "save_admin_product_custom_field",
+        field: {
+          id: nextForm.id,
+          product_id: nextForm.productId,
+          type: nextForm.type,
+          label_english: nextForm.labelEnglish,
+          label_arabic: nextForm.labelArabic,
+          placeholder_english: nextForm.placeholderEnglish || null,
+          placeholder_arabic: nextForm.placeholderArabic || null,
+          is_required: nextForm.isRequired,
+          minimum_length: parseNullableInt(nextForm.minimumLength),
+          maximum_length: parseNullableInt(nextForm.maximumLength),
+          minimum_value: parseNullableNumber(nextForm.minimumValue),
+          maximum_value: parseNullableNumber(nextForm.maximumValue),
+          choices:
+            nextForm.type === "single_choice"
+              ? nextForm.choices
+                  .filter((choice) => choice.labelEnglish.trim())
+                  .map((choice) => ({
+                    id: choice.id,
+                    labelEnglish: choice.labelEnglish,
+                    labelArabic: choice.labelArabic,
+                  }))
+              : null,
+          sort_order: nextForm.sortOrder,
+        },
+      });
+      setDetails(nextDetails);
+      setCustomFieldForm(null);
+      setNotice({
+        tone: "success",
+        message: nextForm.id ? "Checkout question saved." : "Checkout question created.",
+      });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message: error instanceof Error ? error.message : "Could not save this checkout question.",
+      });
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function deleteCustomField(field: WaProductCustomFieldRow) {
+    setSavingAction(`custom-field:delete:${field.id}`);
+    setNotice(null);
+    try {
+      const nextDetails = await applyAdminBusinessAction(id, {
+        action: "delete_admin_product_custom_field",
+        fieldId: field.id,
+      });
+      setDetails(nextDetails);
+      setCustomFieldForm(null);
+      setDeleteCustomFieldId("");
+      setNotice({ tone: "success", message: "Checkout question deleted." });
+    } catch (error) {
+      setNotice({
+        tone: "destructive",
+        message:
+          error instanceof Error ? error.message : "Could not delete this checkout question.",
       });
     } finally {
       setSavingAction("");
@@ -2075,6 +2240,504 @@ function ProductsPage() {
                     </div>
                   ) : null}
                 </div>
+
+                <div className="space-y-3" data-testid="business-product-custom-fields-live">
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-t pt-4">
+                    <div>
+                      <h3 className="text-sm font-semibold">Checkout questions</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Ask product-specific questions before checkout, such as engraving text or
+                        gift wrapping.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openCreateCustomField}
+                      disabled={!currentProduct || Boolean(savingAction)}
+                      data-testid="business-product-custom-field-create"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add question
+                    </Button>
+                  </div>
+
+                  {currentProductCustomFields.length ? (
+                    <div className="divide-y rounded-md border">
+                      {currentProductCustomFields.map((field) => (
+                        <div
+                          key={field.id}
+                          className="flex flex-wrap items-center justify-between gap-3 p-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{field.label_english}</span>
+                              <StatusBadge tone={field.is_required ? "success" : "neutral"}>
+                                {field.is_required ? "Required" : "Optional"}
+                              </StatusBadge>
+                              <StatusBadge tone="neutral">
+                                {customFieldTypeLabel(field.type)}
+                              </StatusBadge>
+                            </div>
+                            <div className="mt-1 text-sm text-muted-foreground" dir="rtl">
+                              {field.label_arabic}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {customFieldConstraintLabel(field)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Edit question ${field.label_english}`}
+                              onClick={() => openEditCustomField(field)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              aria-label={`Delete question ${field.label_english}`}
+                              disabled={Boolean(savingAction)}
+                              onPointerDown={(event) => {
+                                event.preventDefault();
+                                setCustomFieldForm(null);
+                                setDeleteCustomFieldId(field.id);
+                                setNotice(null);
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key !== "Enter" && event.key !== " ") return;
+                                event.preventDefault();
+                                setCustomFieldForm(null);
+                                setDeleteCustomFieldId(field.id);
+                                setNotice(null);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                      No checkout questions yet. Add one when this product needs extra customer
+                      input.
+                    </div>
+                  )}
+
+                  {deleteCustomFieldTarget ? (
+                    <div
+                      className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+                      data-testid="business-product-custom-field-delete-confirm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium">Delete checkout question?</div>
+                          <div className="text-sm text-muted-foreground">
+                            This removes {deleteCustomFieldTarget.label_english} from future
+                            checkout prompts for this product.
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleteCustomFieldId("")}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            aria-label={`Confirm delete question ${deleteCustomFieldTarget.label_english}`}
+                            disabled={Boolean(savingAction)}
+                            onPointerDown={(event) => {
+                              event.preventDefault();
+                              void deleteCustomField(deleteCustomFieldTarget);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              void deleteCustomField(deleteCustomFieldTarget);
+                            }}
+                          >
+                            {savingAction ===
+                            `custom-field:delete:${deleteCustomFieldTarget.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <span className="text-sm font-medium text-destructive">
+                            Delete question
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {customFieldForm ? (
+                    <div
+                      className="rounded-md border p-3"
+                      data-testid="business-product-custom-field-editor"
+                    >
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold">
+                          {customFieldForm.id
+                            ? "Edit checkout question"
+                            : "Create checkout question"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Product questions are asked after product selection and before protected
+                          order creation.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem]">
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-label-en" className="text-xs">
+                            Label (EN)
+                          </Label>
+                          <Input
+                            id="product-custom-field-label-en"
+                            value={customFieldForm.labelEnglish}
+                            onChange={(event) =>
+                              setCustomFieldForm((current) =>
+                                current
+                                  ? { ...current, labelEnglish: event.target.value }
+                                  : current,
+                              )
+                            }
+                            placeholder="Engraving text"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-label-ar" className="text-xs">
+                            Label (AR)
+                          </Label>
+                          <Input
+                            id="product-custom-field-label-ar"
+                            dir="rtl"
+                            value={customFieldForm.labelArabic}
+                            onChange={(event) =>
+                              setCustomFieldForm((current) =>
+                                current ? { ...current, labelArabic: event.target.value } : current,
+                              )
+                            }
+                            placeholder="Arabic label"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-type" className="text-xs">
+                            Type
+                          </Label>
+                          <Select
+                            value={customFieldForm.type}
+                            onValueChange={(value) =>
+                              setCustomFieldForm((current) =>
+                                current
+                                  ? normalizeCustomFieldFormForType({
+                                      ...current,
+                                      type: value as WaProductCustomFieldRow["type"],
+                                    })
+                                  : current,
+                              )
+                            }
+                          >
+                            <SelectTrigger id="product-custom-field-type">
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="short_text">Short text</SelectItem>
+                              <SelectItem value="long_text">Long text</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                              <SelectItem value="yes_no">Yes / no</SelectItem>
+                              <SelectItem value="single_choice">Single choice</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-placeholder-en" className="text-xs">
+                            Placeholder (EN)
+                          </Label>
+                          <Input
+                            id="product-custom-field-placeholder-en"
+                            value={customFieldForm.placeholderEnglish}
+                            onChange={(event) =>
+                              setCustomFieldForm((current) =>
+                                current
+                                  ? { ...current, placeholderEnglish: event.target.value }
+                                  : current,
+                              )
+                            }
+                            placeholder="Optional hint"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-placeholder-ar" className="text-xs">
+                            Placeholder (AR)
+                          </Label>
+                          <Input
+                            id="product-custom-field-placeholder-ar"
+                            dir="rtl"
+                            value={customFieldForm.placeholderArabic}
+                            onChange={(event) =>
+                              setCustomFieldForm((current) =>
+                                current
+                                  ? { ...current, placeholderArabic: event.target.value }
+                                  : current,
+                              )
+                            }
+                            placeholder="Arabic hint"
+                          />
+                        </div>
+                      </div>
+
+                      {customFieldForm.type === "short_text" ||
+                      customFieldForm.type === "long_text" ? (
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="product-custom-field-min-length" className="text-xs">
+                              Minimum length
+                            </Label>
+                            <Input
+                              id="product-custom-field-min-length"
+                              type="number"
+                              min={0}
+                              value={customFieldForm.minimumLength}
+                              onChange={(event) =>
+                                setCustomFieldForm((current) =>
+                                  current
+                                    ? { ...current, minimumLength: event.target.value }
+                                    : current,
+                                )
+                              }
+                              placeholder="Optional"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="product-custom-field-max-length" className="text-xs">
+                              Maximum length
+                            </Label>
+                            <Input
+                              id="product-custom-field-max-length"
+                              type="number"
+                              min={0}
+                              value={customFieldForm.maximumLength}
+                              onChange={(event) =>
+                                setCustomFieldForm((current) =>
+                                  current
+                                    ? { ...current, maximumLength: event.target.value }
+                                    : current,
+                                )
+                              }
+                              placeholder="Optional"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {customFieldForm.type === "number" ? (
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="product-custom-field-min-value" className="text-xs">
+                              Minimum value
+                            </Label>
+                            <Input
+                              id="product-custom-field-min-value"
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={customFieldForm.minimumValue}
+                              onChange={(event) =>
+                                setCustomFieldForm((current) =>
+                                  current
+                                    ? { ...current, minimumValue: event.target.value }
+                                    : current,
+                                )
+                              }
+                              placeholder="Optional"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="product-custom-field-max-value" className="text-xs">
+                              Maximum value
+                            </Label>
+                            <Input
+                              id="product-custom-field-max-value"
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={customFieldForm.maximumValue}
+                              onChange={(event) =>
+                                setCustomFieldForm((current) =>
+                                  current
+                                    ? { ...current, maximumValue: event.target.value }
+                                    : current,
+                                )
+                              }
+                              placeholder="Optional"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {customFieldForm.type === "single_choice" ? (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Label className="text-xs">Choices</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setCustomFieldForm((current) =>
+                                  current
+                                    ? {
+                                        ...current,
+                                        choices: [...current.choices, emptyCustomChoice()],
+                                      }
+                                    : current,
+                                )
+                              }
+                            >
+                              <Plus className="h-4 w-4" />
+                              Choice
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {customFieldForm.choices.map((choice, choiceIndex) => (
+                              <div
+                                key={`${choice.id}-${choiceIndex}`}
+                                className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem]"
+                              >
+                                <Input
+                                  value={choice.labelEnglish}
+                                  onChange={(event) =>
+                                    setCustomFieldForm((current) =>
+                                      updateCustomChoice(current, choiceIndex, {
+                                        labelEnglish: event.target.value,
+                                      }),
+                                    )
+                                  }
+                                  placeholder="Choice EN"
+                                />
+                                <Input
+                                  dir="rtl"
+                                  value={choice.labelArabic}
+                                  onChange={(event) =>
+                                    setCustomFieldForm((current) =>
+                                      updateCustomChoice(current, choiceIndex, {
+                                        labelArabic: event.target.value,
+                                      }),
+                                    )
+                                  }
+                                  placeholder="Arabic choice"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive"
+                                  aria-label={`Remove choice ${choiceIndex + 1}`}
+                                  onClick={() =>
+                                    setCustomFieldForm((current) =>
+                                      removeCustomChoice(current, choiceIndex),
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_8rem]">
+                        <label className="flex items-center justify-between rounded-md border p-3">
+                          <span>
+                            <span className="block text-sm font-medium">Required answer</span>
+                            <span className="block text-xs text-muted-foreground">
+                              Customer must answer this question before checkout.
+                            </span>
+                          </span>
+                          <Switch
+                            checked={customFieldForm.isRequired}
+                            onCheckedChange={(checked) =>
+                              setCustomFieldForm((current) =>
+                                current ? { ...current, isRequired: checked } : current,
+                              )
+                            }
+                          />
+                        </label>
+                        <div className="space-y-1">
+                          <Label htmlFor="product-custom-field-sort" className="text-xs">
+                            Sort
+                          </Label>
+                          <Input
+                            id="product-custom-field-sort"
+                            type="number"
+                            min={0}
+                            value={customFieldForm.sortOrder}
+                            onChange={(event) =>
+                              setCustomFieldForm((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      sortOrder: Number.parseInt(event.target.value, 10) || 0,
+                                    }
+                                  : current,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCustomFieldForm(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          disabled={Boolean(savingAction)}
+                          onPointerDown={(event) => {
+                            event.preventDefault();
+                            void saveCustomField(customFieldForm);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            void saveCustomField(customFieldForm);
+                          }}
+                        >
+                          {savingAction.startsWith("custom-field:") ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          <span>
+                            {savingAction.startsWith("custom-field:")
+                              ? "Saving..."
+                              : "Save question"}
+                          </span>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
               {!currentProduct ? (
@@ -2371,6 +3034,127 @@ function selectedVariantValueIds(
     .filter((valueId): valueId is string => Boolean(valueId));
 }
 
+function emptyCustomFieldForm(productId: string, sortOrder = 0): ProductCustomFieldFormState {
+  return {
+    productId,
+    type: "short_text",
+    labelEnglish: "",
+    labelArabic: "",
+    placeholderEnglish: "",
+    placeholderArabic: "",
+    isRequired: false,
+    minimumLength: "",
+    maximumLength: "",
+    minimumValue: "",
+    maximumValue: "",
+    choices: [emptyCustomChoice()],
+    sortOrder,
+  };
+}
+
+function toCustomFieldForm(field: WaProductCustomFieldRow): ProductCustomFieldFormState {
+  return normalizeCustomFieldFormForType({
+    id: field.id,
+    productId: field.product_id,
+    type: field.type,
+    labelEnglish: field.label_english,
+    labelArabic: field.label_arabic,
+    placeholderEnglish: field.placeholder_english ?? "",
+    placeholderArabic: field.placeholder_arabic ?? "",
+    isRequired: field.is_required,
+    minimumLength: field.minimum_length == null ? "" : String(field.minimum_length),
+    maximumLength: field.maximum_length == null ? "" : String(field.maximum_length),
+    minimumValue: field.minimum_value == null ? "" : String(field.minimum_value),
+    maximumValue: field.maximum_value == null ? "" : String(field.maximum_value),
+    choices: field.choices?.length
+      ? field.choices.map((choice) => ({ ...choice }))
+      : [emptyCustomChoice()],
+    sortOrder: field.sort_order,
+  });
+}
+
+function normalizeCustomFieldFormForType(
+  form: ProductCustomFieldFormState,
+): ProductCustomFieldFormState {
+  if (form.type === "short_text" || form.type === "long_text") {
+    return {
+      ...form,
+      minimumValue: "",
+      maximumValue: "",
+      choices: form.choices.length ? form.choices : [emptyCustomChoice()],
+    };
+  }
+  if (form.type === "number") {
+    return {
+      ...form,
+      minimumLength: "",
+      maximumLength: "",
+      choices: form.choices.length ? form.choices : [emptyCustomChoice()],
+    };
+  }
+  if (form.type === "single_choice") {
+    return {
+      ...form,
+      minimumLength: "",
+      maximumLength: "",
+      minimumValue: "",
+      maximumValue: "",
+      choices: form.choices.length ? form.choices : [emptyCustomChoice()],
+    };
+  }
+  return {
+    ...form,
+    minimumLength: "",
+    maximumLength: "",
+    minimumValue: "",
+    maximumValue: "",
+    choices: form.choices.length ? form.choices : [emptyCustomChoice()],
+  };
+}
+
+function emptyCustomChoice() {
+  return {
+    id: `choice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    labelEnglish: "",
+    labelArabic: "",
+  };
+}
+
+function updateCustomChoice(
+  form: ProductCustomFieldFormState | null,
+  index: number,
+  patch: Partial<ProductCustomFieldFormState["choices"][number]>,
+) {
+  if (!form) return form;
+  return {
+    ...form,
+    choices: form.choices.map((choice, choiceIndex) =>
+      choiceIndex === index ? { ...choice, ...patch } : choice,
+    ),
+  };
+}
+
+function removeCustomChoice(form: ProductCustomFieldFormState | null, index: number) {
+  if (!form) return form;
+  const choices = form.choices.filter((_, choiceIndex) => choiceIndex !== index);
+  return {
+    ...form,
+    choices: choices.length ? choices : [emptyCustomChoice()],
+  };
+}
+
+function parseNullableInt(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseNullableNumber(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function nextSortOrder(products: WaProductRow[]) {
   const lastSortOrder = products.reduce((max, product) => Math.max(max, product.sort_order), -10);
   return lastSortOrder + 10;
@@ -2383,6 +3167,11 @@ function nextOptionSortOrder(options: WaProductOptionRow[]) {
 
 function nextOptionValueSortOrder(values: WaProductOptionValueRow[]) {
   const lastSortOrder = values.reduce((max, value) => Math.max(max, value.sort_order), -10);
+  return lastSortOrder + 10;
+}
+
+function nextCustomFieldSortOrder(fields: WaProductCustomFieldRow[]) {
+  const lastSortOrder = fields.reduce((max, field) => Math.max(max, field.sort_order), -10);
   return lastSortOrder + 10;
 }
 
@@ -2432,6 +3221,13 @@ function sortVariants(variants: WaProductVariantRow[]) {
   return [...variants].sort((left, right) => left.sku.localeCompare(right.sku));
 }
 
+function sortCustomFields(fields: WaProductCustomFieldRow[]) {
+  return [...fields].sort(
+    (left, right) =>
+      left.sort_order - right.sort_order || left.label_english.localeCompare(right.label_english),
+  );
+}
+
 function formatMoney(value: number | string) {
   const price = Number(value);
   if (!Number.isFinite(price)) return String(value);
@@ -2450,4 +3246,44 @@ function variantValueLabel(
     .map((valueId) => valuesById.get(valueId)?.value_english)
     .filter((label): label is string => Boolean(label));
   return labels.length ? labels.join(" / ") : "No selected values";
+}
+
+function customFieldTypeLabel(type: WaProductCustomFieldRow["type"]) {
+  switch (type) {
+    case "short_text":
+      return "Short text";
+    case "long_text":
+      return "Long text";
+    case "number":
+      return "Number";
+    case "yes_no":
+      return "Yes / no";
+    case "single_choice":
+      return "Single choice";
+  }
+}
+
+function customFieldConstraintLabel(field: WaProductCustomFieldRow) {
+  if (field.type === "single_choice") {
+    return `${field.choices?.length ?? 0} choices / Sort ${field.sort_order}`;
+  }
+  if (field.type === "number") {
+    const range = [
+      field.minimum_value == null ? null : `min ${field.minimum_value}`,
+      field.maximum_value == null ? null : `max ${field.maximum_value}`,
+    ]
+      .filter(Boolean)
+      .join(" / ");
+    return `${range || "No numeric limits"} / Sort ${field.sort_order}`;
+  }
+  if (field.type === "short_text" || field.type === "long_text") {
+    const range = [
+      field.minimum_length == null ? null : `min ${field.minimum_length}`,
+      field.maximum_length == null ? null : `max ${field.maximum_length}`,
+    ]
+      .filter(Boolean)
+      .join(" / ");
+    return `${range || "No length limits"} / Sort ${field.sort_order}`;
+  }
+  return `Sort ${field.sort_order}`;
 }

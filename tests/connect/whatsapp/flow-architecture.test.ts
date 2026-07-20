@@ -441,6 +441,8 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessProducts, /action: "delete_admin_product_option_value"/);
   assert.match(adminBusinessProducts, /action: "save_admin_product_variant"/);
   assert.match(adminBusinessProducts, /action: "delete_admin_product_variant"/);
+  assert.match(adminBusinessProducts, /action: "save_admin_product_custom_field"/);
+  assert.match(adminBusinessProducts, /action: "delete_admin_product_custom_field"/);
   assert.match(adminBusinessProducts, /data-business-products-live="true"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-route-placement"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-delete-confirm"/);
@@ -450,6 +452,9 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(adminBusinessProducts, /data-testid="business-product-variants-live"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-variant-editor"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-variant-delete-confirm"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-custom-fields-live"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-custom-field-editor"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-custom-field-delete-confirm"/);
   assert.match(
     adminBusinessProducts,
     /onPointerDown=\{\(event\) => \{[\s\S]*saveOption\(optionForm\)/,
@@ -462,12 +467,20 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     adminBusinessProducts,
     /onPointerDown=\{\(event\) => \{[\s\S]*saveVariant\(variantForm\)/,
   );
+  assert.match(
+    adminBusinessProducts,
+    /onPointerDown=\{\(event\) => \{[\s\S]*saveCustomField\(customFieldForm\)/,
+  );
   assert.match(adminBusinessProducts, /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteOptionId/);
   assert.match(
     adminBusinessProducts,
     /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteOptionValueId/,
   );
   assert.match(adminBusinessProducts, /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteVariantId/);
+  assert.match(
+    adminBusinessProducts,
+    /onPointerDown=\{\(event\) => \{[\s\S]*setDeleteCustomFieldId/,
+  );
   assert.doesNotMatch(adminBusinessProducts, /readOptionForm|readOptionValueForm/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-delete-confirm"/);
   assert.match(adminBusinessProducts, /data-testid="business-product-option-value-delete-confirm"/);
