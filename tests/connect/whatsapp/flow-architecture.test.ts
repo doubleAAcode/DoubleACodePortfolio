@@ -342,6 +342,10 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     "src/routes/connect.admin.businesses.$id.route-values.tsx",
     "utf8",
   );
+  const adminBusinessProducts = readFileSync(
+    "src/routes/connect.admin.businesses.$id.products.tsx",
+    "utf8",
+  );
   const businessTemplatePicker = readFileSync(
     "src/features/connect/admin/businesses/business-template-picker.tsx",
     "utf8",
@@ -427,6 +431,24 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
     adminBusinessRouteValues,
     /browseGroups|routeValues|preview-data|mock-data|mock-client|window\.confirm/,
   );
+  assert.match(adminBusinessProducts, /useBusinessDetails/);
+  assert.match(adminBusinessProducts, /applyAdminBusinessAction/);
+  assert.match(adminBusinessProducts, /action: "save_admin_product"/);
+  assert.match(adminBusinessProducts, /action: "delete_admin_product"/);
+  assert.match(adminBusinessProducts, /data-business-products-live="true"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-route-placement"/);
+  assert.match(adminBusinessProducts, /data-testid="business-product-delete-confirm"/);
+  assert.match(adminBusinessProducts, /catalogProducts/);
+  assert.match(adminBusinessProducts, /catalogCategories/);
+  assert.match(adminBusinessProducts, /catalogGroupValues/);
+  assert.match(adminBusinessProducts, /productGroupValues/);
+  assert.match(adminBusinessProducts, /productOptions/);
+  assert.match(adminBusinessProducts, /productVariants/);
+  assert.match(adminBusinessProducts, /productCustomFields/);
+  assert.doesNotMatch(
+    adminBusinessProducts,
+    /const filtered = products\.filter|preview-data|mock-data|mock-client|window\.confirm/,
+  );
   assert.match(guidedWorkspace, /data-flow-manager-live="true"/);
   assert.match(guidedWorkspace, /data-flow-manager-live-action/);
   assert.doesNotMatch(guidedWorkspace, /preview-data|mock-data|mock-client/);
@@ -467,6 +489,7 @@ test("Connect routes mount Flow Manager presentation without legacy UI component
   assert.match(styles, /\[role="tab"\]:not\(\[data-flow-manager-live="true"\]\)::after/);
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.catalog-routes\.tsx/);
   assert.match(portTool, /connect\.admin\.businesses\.\$id\.route-values\.tsx/);
+  assert.match(portTool, /connect\.admin\.businesses\.\$id\.products\.tsx/);
   assert.match(portTool, /connectedClientRoutes = new Set\(\["automations\.tsx"\]\)/);
   assert.match(portTool, /connectedAdminRouteFiles = new Set/);
   assert.match(portTool, /connect\.admin\.businesses\.index\.tsx/);

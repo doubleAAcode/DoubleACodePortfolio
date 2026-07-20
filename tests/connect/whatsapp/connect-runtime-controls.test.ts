@@ -62,13 +62,14 @@ test("runtime control migration is service-role-only and digest-backed", async (
 
 test("public release endpoint exposes a stable response header marker", async () => {
   const route = await readFile("src/routes/api.connect.release.ts", "utf8");
-  assert.match(route, /business-route-values-live-v1/);
+  assert.match(route, /business-products-live-v1/);
   assert.match(route, /guided-media-replacement/);
   assert.match(route, /guided-version-restore/);
   assert.match(route, /guided-publish/);
   assert.match(route, /business-template-picker/);
   assert.match(route, /business-live-test-flow-version/);
   assert.match(route, /business-diagnostics-session-evidence/);
+  assert.match(route, /business-products-live-core/);
   assert.match(route, /"guided-flow-read"/);
   assert.match(route, /"guided-draft-edit"/);
   assert.match(route, /"guided-draft-conflict-control"/);
