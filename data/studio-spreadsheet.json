@@ -220,11 +220,19 @@
         "id": "402d6930-8214-431b-bd89-1a82829ec788",
         "date": "2026-07-23",
         "paidTo": "Saeed",
+        "amount": 75,
+        "payoutType": "Mixed",
+        "notes": ""
+      },
+      {
+        "id": "50fc8331-8fe9-46fa-bfd3-6899e5f78730",
+        "date": "2026-07-23",
+        "paidTo": "Hussein",
         "amount": 0,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-07-23T17:30:49.220Z"
+  "updatedAt": "2026-07-23T17:30:53.695Z"
 }
