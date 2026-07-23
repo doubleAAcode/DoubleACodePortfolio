@@ -107,7 +107,7 @@
         "date": "2026-07-23",
         "projectId": "P002",
         "amount": 100,
-        "collectedBy": "",
+        "collectedBy": "Hussein",
         "paymentMethod": "",
         "notes": ""
       }
@@ -218,5 +218,5 @@
       }
     ]
   },
-  "updatedAt": "2026-07-23T17:30:32.674Z"
+  "updatedAt": "2026-07-23T17:30:36.502Z"
 }
