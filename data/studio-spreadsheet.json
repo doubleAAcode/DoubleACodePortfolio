@@ -245,19 +245,19 @@
         "id": "a17d17f5-0537-4d4f-b74d-0f9dd7a4a211",
         "date": "2026-08-06",
         "paidTo": "Hussein",
-        "amount": 0,
+        "amount": 75,
         "payoutType": "Mixed",
         "notes": ""
       },
       {
         "id": "30f84649-d475-4290-80f5-c6f7cabc4fae",
         "date": "2026-08-06",
-        "paidTo": "Hussein",
+        "paidTo": "Saeed",
         "amount": 0,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-08-06T10:07:39.378Z"
+  "updatedAt": "2026-08-06T10:07:42.949Z"
 }
