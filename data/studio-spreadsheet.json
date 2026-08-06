@@ -114,8 +114,8 @@
       {
         "id": "a954289d-f633-4251-bff7-6f3763c1678e",
         "date": "2026-08-06",
-        "projectId": "P001",
-        "amount": 0,
+        "projectId": "P002",
+        "amount": 150,
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
@@ -243,5 +243,5 @@
       }
     ]
   },
-  "updatedAt": "2026-08-06T10:04:33.825Z"
+  "updatedAt": "2026-08-06T10:04:40.511Z"
 }
