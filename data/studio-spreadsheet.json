@@ -253,11 +253,11 @@
         "id": "30f84649-d475-4290-80f5-c6f7cabc4fae",
         "date": "2026-08-06",
         "paidTo": "Saeed",
-        "amount": 0,
+        "amount": 75,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-08-06T10:07:42.949Z"
+  "updatedAt": "2026-08-06T10:07:44.698Z"
 }
