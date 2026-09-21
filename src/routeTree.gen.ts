@@ -36,6 +36,8 @@ import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insight
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
 import { Route as QuotationsKhadamatiRouteImport } from './routes/quotations.khadamati'
 import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
+import { Route as InvoicemakerSupportRouteImport } from './routes/invoicemaker.support'
+import { Route as InvoicemakerPrivacyRouteImport } from './routes/invoicemaker.privacy'
 import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
@@ -381,6 +383,16 @@ const QuotationsKhadamatiRoute = QuotationsKhadamatiRouteImport.update({
 const MenusMarleysRoute = MenusMarleysRouteImport.update({
   id: '/menus/marleys',
   path: '/menus/marleys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicemakerSupportRoute = InvoicemakerSupportRouteImport.update({
+  id: '/invoicemaker/support',
+  path: '/invoicemaker/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicemakerPrivacyRoute = InvoicemakerPrivacyRouteImport.update({
+  id: '/invoicemaker/privacy',
+  path: '/invoicemaker/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardSimulatorRoute = DashboardSimulatorRouteImport.update({
@@ -1592,6 +1604,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
+  '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
+  '/invoicemaker/support': typeof InvoicemakerSupportRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -1823,6 +1837,8 @@ export interface FileRoutesByTo {
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
+  '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
+  '/invoicemaker/support': typeof InvoicemakerSupportRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
@@ -2057,6 +2073,8 @@ export interface FileRoutesById {
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/simulator': typeof DashboardSimulatorRoute
+  '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
+  '/invoicemaker/support': typeof InvoicemakerSupportRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -2299,6 +2317,8 @@ export interface FileRouteTypes {
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/dashboard/simulator'
+    | '/invoicemaker/privacy'
+    | '/invoicemaker/support'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/stores/pavone'
@@ -2530,6 +2550,8 @@ export interface FileRouteTypes {
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/dashboard/simulator'
+    | '/invoicemaker/privacy'
+    | '/invoicemaker/support'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/work/data-insights'
@@ -2763,6 +2785,8 @@ export interface FileRouteTypes {
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/dashboard/simulator'
+    | '/invoicemaker/privacy'
+    | '/invoicemaker/support'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/stores/pavone'
@@ -2982,6 +3006,8 @@ export interface RootRouteChildren {
   SpreadsheetRoute: typeof SpreadsheetRoute
   StoresRoute: typeof StoresRouteWithChildren
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
+  InvoicemakerPrivacyRoute: typeof InvoicemakerPrivacyRoute
+  InvoicemakerSupportRoute: typeof InvoicemakerSupportRoute
   MenusMarleysRoute: typeof MenusMarleysRoute
   QuotationsKhadamatiRoute: typeof QuotationsKhadamatiRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
@@ -3252,6 +3278,20 @@ declare module '@tanstack/react-router' {
       path: '/menus/marleys'
       fullPath: '/menus/marleys'
       preLoaderRoute: typeof MenusMarleysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoicemaker/support': {
+      id: '/invoicemaker/support'
+      path: '/invoicemaker/support'
+      fullPath: '/invoicemaker/support'
+      preLoaderRoute: typeof InvoicemakerSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoicemaker/privacy': {
+      id: '/invoicemaker/privacy'
+      path: '/invoicemaker/privacy'
+      fullPath: '/invoicemaker/privacy'
+      preLoaderRoute: typeof InvoicemakerPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/simulator': {
@@ -5529,6 +5569,8 @@ const rootRouteChildren: RootRouteChildren = {
   SpreadsheetRoute: SpreadsheetRoute,
   StoresRoute: StoresRouteWithChildren,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
+  InvoicemakerPrivacyRoute: InvoicemakerPrivacyRoute,
+  InvoicemakerSupportRoute: InvoicemakerSupportRoute,
   MenusMarleysRoute: MenusMarleysRoute,
   QuotationsKhadamatiRoute: QuotationsKhadamatiRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
