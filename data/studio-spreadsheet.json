@@ -193,8 +193,8 @@
         "date": "2026-09-30",
         "projectId": "P005",
         "expenseType": "Domain",
-        "paidBy": "Studio",
-        "amount": 0,
+        "paidBy": "Hussein",
+        "amount": 20,
         "notes": ""
       }
     ],
@@ -297,5 +297,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:28:18.044Z"
+  "updatedAt": "2026-09-30T18:28:22.446Z"
 }
