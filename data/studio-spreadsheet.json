@@ -136,7 +136,7 @@
         "id": "a6f71c5a-05eb-4d5d-8649-7225a172a1e2",
         "date": "2026-09-30",
         "projectId": "P005",
-        "amount": 0,
+        "amount": 200,
         "collectedBy": "",
         "paymentMethod": "",
         "notes": ""
@@ -280,5 +280,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:27:19.829Z"
+  "updatedAt": "2026-09-30T18:27:22.055Z"
 }
