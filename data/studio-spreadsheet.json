@@ -294,8 +294,16 @@
         "amount": 100,
         "payoutType": "Finder Fee",
         "notes": "Finders fee for arims italy project "
+      },
+      {
+        "id": "bd1609f6-4cf5-494b-89d9-1ca69f245b74",
+        "date": "2026-09-30",
+        "paidTo": "Hussein",
+        "amount": 0,
+        "payoutType": "Mixed",
+        "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:28:28.810Z"
+  "updatedAt": "2026-09-30T18:35:24.008Z"
 }
