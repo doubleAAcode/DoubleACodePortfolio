@@ -138,7 +138,7 @@
         "projectId": "P005",
         "amount": 200,
         "collectedBy": "",
-        "paymentMethod": "",
+        "paymentMethod": "whish",
         "notes": ""
       }
     ],
@@ -280,5 +280,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:27:22.055Z"
+  "updatedAt": "2026-09-30T18:27:26.380Z"
 }
