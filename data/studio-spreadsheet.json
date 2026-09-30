@@ -187,6 +187,15 @@
         "paidBy": "Hussein",
         "amount": 50,
         "notes": ""
+      },
+      {
+        "id": "da337f72-edcd-4392-bfab-347ef0ab3d63",
+        "date": "2026-09-30",
+        "projectId": "P001",
+        "expenseType": "",
+        "paidBy": "Studio",
+        "amount": 0,
+        "notes": ""
       }
     ],
     "payouts": [
@@ -288,5 +297,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:27:50.514Z"
+  "updatedAt": "2026-09-30T18:28:12.997Z"
 }
