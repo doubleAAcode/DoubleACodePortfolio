@@ -195,7 +195,7 @@
         "expenseType": "Domain",
         "paidBy": "Hussein",
         "amount": 20,
-        "notes": ""
+        "notes": "arimitaly.com"
       }
     ],
     "payouts": [
@@ -297,5 +297,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:28:22.446Z"
+  "updatedAt": "2026-09-30T18:28:28.810Z"
 }
