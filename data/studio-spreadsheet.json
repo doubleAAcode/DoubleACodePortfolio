@@ -281,12 +281,12 @@
       {
         "id": "6af83db8-471f-47ce-ae5a-35ca022dd27c",
         "date": "2026-09-30",
-        "paidTo": "Hussein",
-        "amount": 0,
+        "paidTo": "Third Party",
+        "amount": 100,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:27:33.311Z"
+  "updatedAt": "2026-09-30T18:27:38.346Z"
 }
