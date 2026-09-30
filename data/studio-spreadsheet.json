@@ -59,7 +59,7 @@
         "id": "3c8d794e-9e85-4f43-9870-8ef22d3a4c18",
         "projectId": "P005",
         "name": "Arim Italy",
-        "client": "",
+        "client": "Arim",
         "totalPrice": 0,
         "status": "Lead",
         "finder": "Nobody",
@@ -271,5 +271,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:26:46.314Z"
+  "updatedAt": "2026-09-30T18:26:48.956Z"
 }
