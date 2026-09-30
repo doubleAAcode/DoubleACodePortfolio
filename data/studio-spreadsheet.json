@@ -25,7 +25,7 @@
         "name": "am group",
         "client": "ali mahmoud",
         "totalPrice": 500,
-        "status": "In Progress",
+        "status": "Completed",
         "finder": "Nobody",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
@@ -313,5 +313,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:35:32.959Z"
+  "updatedAt": "2026-09-30T18:35:49.244Z"
 }
