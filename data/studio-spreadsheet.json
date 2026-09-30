@@ -49,7 +49,7 @@
         "name": "Double A",
         "client": "Us",
         "totalPrice": 0,
-        "status": "Lead",
+        "status": "Completed",
         "finder": "Nobody",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
@@ -313,5 +313,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:35:49.244Z"
+  "updatedAt": "2026-09-30T18:35:51.227Z"
 }
