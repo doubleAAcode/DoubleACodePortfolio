@@ -131,6 +131,15 @@
         "collectedBy": "",
         "paymentMethod": "whish",
         "notes": ""
+      },
+      {
+        "id": "a6f71c5a-05eb-4d5d-8649-7225a172a1e2",
+        "date": "2026-09-30",
+        "projectId": "P001",
+        "amount": 0,
+        "collectedBy": "",
+        "paymentMethod": "",
+        "notes": ""
       }
     ],
     "expenses": [
@@ -271,5 +280,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:26:58.022Z"
+  "updatedAt": "2026-09-30T18:27:16.051Z"
 }
