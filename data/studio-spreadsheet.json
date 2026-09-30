@@ -54,6 +54,18 @@
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
+      },
+      {
+        "id": "3c8d794e-9e85-4f43-9870-8ef22d3a4c18",
+        "projectId": "P005",
+        "name": "",
+        "client": "",
+        "totalPrice": 0,
+        "status": "Lead",
+        "finder": "Nobody",
+        "husseinWorkPercent": 0.5,
+        "saeedWorkPercent": 0.5,
+        "notes": ""
       }
     ],
     "clientPayments": [
@@ -259,5 +271,5 @@
       }
     ]
   },
-  "updatedAt": "2026-08-06T10:07:44.698Z"
+  "updatedAt": "2026-09-30T18:26:28.832Z"
 }
