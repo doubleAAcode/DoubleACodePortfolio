@@ -61,7 +61,7 @@
         "name": "Arim Italy",
         "client": "Arim",
         "totalPrice": 500,
-        "status": "Lead",
+        "status": "In Progress",
         "finder": "Nobody",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
@@ -271,5 +271,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:26:51.451Z"
+  "updatedAt": "2026-09-30T18:26:55.463Z"
 }
