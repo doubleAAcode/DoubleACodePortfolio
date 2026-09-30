@@ -283,10 +283,10 @@
         "date": "2026-09-30",
         "paidTo": "Third Party",
         "amount": 100,
-        "payoutType": "Mixed",
+        "payoutType": "Finder Fee",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:27:38.346Z"
+  "updatedAt": "2026-09-30T18:27:42.158Z"
 }
