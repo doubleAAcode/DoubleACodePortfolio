@@ -307,11 +307,11 @@
         "id": "6228b4e3-1d0f-43dc-8ebd-216aa7e3350d",
         "date": "2026-09-30",
         "paidTo": "Hussein",
-        "amount": 0,
+        "amount": 40,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:35:31.153Z"
+  "updatedAt": "2026-09-30T18:35:32.959Z"
 }
