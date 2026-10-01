@@ -6,7 +6,6 @@ import {
   Lock,
   LogOut,
   Plus,
-  ReceiptText,
   RefreshCw,
   RotateCcw,
   Settings,
@@ -19,6 +18,7 @@ import type {
   ClientPayment,
   ExpensePayer,
   Finder,
+  FinderFeeMode,
   PartnerPayout,
   PayoutType,
   Person,
@@ -104,6 +104,7 @@ const EMPTY_SHEET: StudioSpreadsheetData = {
 
 const PEOPLE: Person[] = ["Hussein", "Saeed", "Third Party"];
 const FINDERS: Finder[] = ["Nobody", "Hussein", "Saeed", "Third Party"];
+const FINDER_FEE_MODES: FinderFeeMode[] = ["default", "percent", "fixed"];
 const EXPENSE_PAYERS: ExpensePayer[] = ["Studio", "Hussein", "Saeed", "Third Party"];
 const PROJECT_STATUSES: ProjectStatus[] = ["Lead", "In Progress", "Completed", "Cancelled"];
 const PAYOUT_TYPES: PayoutType[] = ["Profit Share", "Expense Reimbursement", "Finder Fee", "Mixed"];
@@ -382,7 +383,7 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
   function addPayout() {
     updateData((current) => ({
       ...current,
-      payouts: [...current.payouts, emptyPayout()],
+      payouts: [...current.payouts, emptyPayout(current.projects[0]?.projectId ?? "")],
     }));
     setActiveTab("payouts");
   }
@@ -489,13 +490,30 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
           </span>
         </div>
 
-        <section className="mt-6 grid gap-px overflow-hidden rounded-3xl border border-border bg-border md:grid-cols-6">
-          <SummaryCard label="Contract value" value={model.dashboard.contractValue} />
-          <SummaryCard label="Client paid" value={model.dashboard.clientPaid} />
-          <SummaryCard label="Remaining" value={model.dashboard.remainingFromClients} />
-          <SummaryCard label="Expenses" value={model.dashboard.expenses} />
-          <SummaryCard label="Finder fees" value={model.dashboard.finderFees} />
-          <SummaryCard label="Net to split" value={model.dashboard.netProfitToSplit} />
+        <section className="mt-6">
+          <SectionHeading
+            eyebrow="Financial overview"
+            title="Where the business stands"
+            description="A quick view of contracted revenue, collected cash, costs, and partner earnings."
+          />
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <CountCard label="Active projects" hint="Currently in progress" value={model.dashboard.activeProjectCount} />
+            <SummaryCard label="Contracted" hint="Active project prices" value={model.dashboard.contractValue} />
+            <SummaryCard label="Collected" hint="Payments received" value={model.dashboard.clientPaid} />
+            <SummaryCard label="Still to collect" hint="Unpaid client balance" value={model.dashboard.remainingFromClients} />
+            <SummaryCard label="Business costs" hint="Active project expenses" value={model.dashboard.expenses} />
+            <FinderFeeCard
+              rate={data.settings.finderFeeRate}
+              feeTotal={model.dashboard.finderFees}
+              onRateChange={(finderFeeRate) =>
+                updateData((current) => ({
+                  ...current,
+                  settings: { ...current.settings, finderFeeRate },
+                }))
+              }
+            />
+            <SummaryCard label="Available to split" hint="Active projects after costs and fees" value={model.dashboard.netProfitToSplit} />
+          </div>
         </section>
 
         <nav className="mt-6 flex gap-2 overflow-x-auto border-b border-border pb-3">
@@ -567,60 +585,117 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
 
 function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: StudioModel }) {
   return (
-    <section className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="rounded-3xl border border-border bg-surface/55 p-5">
-        <div className="flex items-center gap-3">
-          <WalletCards className="h-5 w-5 text-accent" />
-          <h2 className="font-display text-xl font-semibold">Cash Collected By</h2>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {PEOPLE.map((person) => (
-            <MetricBlock key={person} label={person} value={model.dashboard.cashCollectedBy[person]} />
-          ))}
+    <section className="mt-8 space-y-8">
+      <div>
+        <SectionHeading
+          eyebrow="Cash and obligations"
+          title="What is ready to pay"
+          description="These amounts come only from projects marked In Progress. Completed projects remain in the other tabs."
+        />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-3xl border border-border bg-surface/55 p-5">
+            <div className="flex items-center gap-3">
+              <WalletCards className="h-5 w-5 text-accent" />
+              <h2 className="font-display text-xl font-semibold">Cash collected by</h2>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {PEOPLE.map((person) => (
+                <MetricBlock key={person} label={`${person} collected`} value={model.dashboard.cashCollectedBy[person]} />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-border bg-surface/55 p-5">
+            <div className="flex items-center gap-3">
+              <Banknote className="h-5 w-5 text-accent" />
+              <h2 className="font-display text-xl font-semibold">Partner amounts to pay</h2>
+            </div>
+            <div className="mt-5 space-y-4">
+              {PEOPLE.map((person) => (
+                <PayoutLine
+                  key={person}
+                  label={person}
+                  value={model.dashboard.partnerDue[person]}
+                  detail={`Gross ${formatMoney(model.dashboard.partnerGrossDue[person])} · Paid ${formatMoney(model.dashboard.partnerPaidOut[person])}`}
+                />
+              ))}
+            </div>
+            {model.dashboard.unallocatedPayouts > 0 ? (
+              <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {formatMoney(model.dashboard.unallocatedPayouts)} in payouts is not linked to a project. Assign a project in Payouts before treating these balances as final.
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-surface/55 p-5">
-        <div className="flex items-center gap-3">
-          <Banknote className="h-5 w-5 text-accent" />
-          <h2 className="font-display text-xl font-semibold">Net Balances</h2>
-        </div>
-        <div className="mt-5 space-y-4">
-          {PEOPLE.map((person) => (
-            <PayoutLine key={person} label={`${person} net balance`} value={model.balances[person].netBalance} />
-          ))}
+      <div>
+        <SectionHeading
+          eyebrow="Project follow-up"
+          title="Active projects and partner payouts"
+          description="Each row shows the amount currently due to Hussein, Saeed, and any third-party finder."
+        />
+        <div className="mt-4 overflow-x-auto rounded-3xl border border-border bg-surface/55">
+          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+            <TableHead headers={["Project", "Contracted", "Collected", "Still to collect", "Hussein remaining", "Saeed remaining", "Third party remaining"]} />
+            <tbody>
+              {model.dashboard.activeProjects.length ? model.dashboard.activeProjects.map((project) => {
+                const rollup = model.projects[project.projectId] ?? emptyProjectRollup(project);
+                return (
+                  <tr key={project.id} className="border-t border-border/70">
+                    <Td>
+                      <div className="font-medium text-foreground">{project.name || "Untitled project"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {project.projectId} · {project.client || "No client"}
+                      </div>
+                    </Td>
+                    <ReadOnlyMoney value={project.totalPrice} />
+                    <ReadOnlyMoney value={rollup.clientPaid} />
+                    <ReadOnlyMoney value={rollup.remainingFromClient} highlight={rollup.remainingFromClient > 0} />
+                    <ReadOnlyMoney value={rollup.totalDue.Hussein - (model.payoutsByProject[project.projectId]?.Hussein ?? 0)} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue.Saeed - (model.payoutsByProject[project.projectId]?.Saeed ?? 0)} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue["Third Party"] - (model.payoutsByProject[project.projectId]?.["Third Party"] ?? 0)} />
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <Td><span className="text-muted-foreground">No projects are currently marked In Progress.</span></Td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-surface/55 p-5 lg:col-span-2">
-        <div className="flex items-center gap-3">
-          <ReceiptText className="h-5 w-5 text-accent" />
-          <h2 className="font-display text-xl font-semibold">Recent Activity</h2>
-        </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
+      <div>
+        <SectionHeading
+          eyebrow="Latest entries"
+          title="Recent activity"
+          description="The latest five records in each ledger. Open the relevant tab to edit them."
+        />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <ActivityList
             title="Payments"
-            rows={data.clientPayments.slice(-5).reverse().map((payment) => ({
+            rows={data.clientPayments
+              .filter((payment) => model.dashboard.activeProjects.some((project) => project.projectId === payment.projectId))
+              .slice(-5)
+              .reverse()
+              .map((payment) => ({
               label: projectLabel(data, payment.projectId),
               meta: `${payment.collectedBy || "Unassigned"} · ${payment.paymentMethod || "No method"}`,
               value: payment.amount,
-            }))}
+              }))}
           />
           <ActivityList
             title="Expenses"
-            rows={data.expenses.slice(-5).reverse().map((expense) => ({
+            rows={data.expenses
+              .filter((expense) => model.dashboard.activeProjects.some((project) => project.projectId === expense.projectId))
+              .slice(-5)
+              .reverse()
+              .map((expense) => ({
               label: projectLabel(data, expense.projectId),
               meta: `${expense.paidBy} · ${expense.expenseType || "Expense"}`,
               value: expense.amount,
-            }))}
-          />
-          <ActivityList
-            title="Payouts"
-            rows={data.payouts.slice(-5).reverse().map((payout) => ({
-              label: payout.paidTo,
-              meta: `${payout.paidTo} · ${payout.payoutType}`,
-              value: payout.amount,
-            }))}
+              }))}
           />
         </div>
       </div>
@@ -664,6 +739,8 @@ function ProjectsView({
               "Total price",
               "Status",
               "Finder",
+              "Finder fee",
+              "Fee value",
               "Hussein %",
               "Saeed %",
               "Client paid",
@@ -689,6 +766,23 @@ function ProjectsView({
                   <Td><MoneyInput value={row.totalPrice} onChange={(value) => updateRow(row.id, { totalPrice: value })} /></Td>
                   <Td><SelectInput value={row.status} options={PROJECT_STATUSES} onChange={(value) => updateRow(row.id, { status: value as ProjectStatus })} /></Td>
                   <Td><SelectInput value={row.finder} options={FINDERS} onChange={(value) => updateRow(row.id, { finder: value as Finder })} /></Td>
+                  <Td>
+                    <SelectInput
+                      value={row.finderFeeMode}
+                      options={FINDER_FEE_MODES}
+                      labels={{ default: "Global default", percent: "Percentage", fixed: "Fixed amount ($)" }}
+                      onChange={(value) => updateRow(row.id, { finderFeeMode: value as FinderFeeMode })}
+                    />
+                  </Td>
+                  <Td>
+                    {row.finderFeeMode === "percent" ? (
+                      <PercentInput value={row.finderFeeValue} onChange={(value) => updateRow(row.id, { finderFeeValue: value })} />
+                    ) : row.finderFeeMode === "fixed" ? (
+                      <MoneyInput value={row.finderFeeValue} onChange={(value) => updateRow(row.id, { finderFeeValue: value })} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Global default</span>
+                    )}
+                  </Td>
                   <Td><PercentInput value={row.husseinWorkPercent} onChange={(value) => updateRow(row.id, { husseinWorkPercent: value })} /></Td>
                   <Td><PercentInput value={row.saeedWorkPercent} onChange={(value) => updateRow(row.id, { saeedWorkPercent: value })} /></Td>
                   <ReadOnlyMoney value={rollup.clientPaid} />
@@ -809,17 +903,18 @@ function PayoutsView({
   return (
     <SheetPanel
       title="Partner Payouts"
-      subtitle="Actual money paid out to each person. Payouts are not tied to a project."
+      subtitle="Actual money paid out to each person. Link each payout to a project so the dashboard can subtract it correctly."
       actionLabel="Add payout"
       onAdd={onAdd}
     >
       <LedgerTable
-        minWidth="820px"
-        headers={["Date", "Paid to", "Amount", "Payout type", "Notes", ""]}
+        minWidth="980px"
+        headers={["Date", "Project", "Paid to", "Amount", "Payout type", "Notes", ""]}
       >
         {data.payouts.map((row) => (
           <tr key={row.id} className="border-t border-border/70">
             <Td><DateInput value={row.date} onChange={(value) => updateRow(row.id, { date: value })} /></Td>
+            <Td><SelectInput value={row.projectId} options={["", ...projectIds(data)]} onChange={(value) => updateRow(row.id, { projectId: value })} /></Td>
             <Td><SelectInput value={row.paidTo} options={PEOPLE} onChange={(value) => updateRow(row.id, { paidTo: value as Person })} /></Td>
             <Td><MoneyInput value={row.amount} onChange={(value) => updateRow(row.id, { amount: value })} /></Td>
             <Td><SelectInput value={row.payoutType} options={PAYOUT_TYPES} onChange={(value) => updateRow(row.id, { payoutType: value as PayoutType })} /></Td>
@@ -889,11 +984,16 @@ function SettingsView({
         </div>
         <div className="mt-5 space-y-4">
           <label className="grid gap-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Finder fee rate</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Finder fee rate (%)
+            </span>
             <PercentInput
               value={settings.finderFeeRate}
               onChange={(finderFeeRate) => onUpdate({ ...settings, finderFeeRate })}
             />
+            <span className="text-xs text-muted-foreground">
+              Enter any rate from 0 to 100. Changes are saved with the workbook.
+            </span>
           </label>
           <label className="grid gap-2">
             <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Default Hussein work %</span>
@@ -990,15 +1090,94 @@ function TableHead({ headers }: { headers: string[] }) {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
   return (
-    <div className="bg-background p-5">
-      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className="mt-2 font-display text-2xl font-semibold text-gradient-brand">
+    <div>
+      <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-accent">{eyebrow}</div>
+      <h2 className="mt-1 font-display text-2xl font-semibold">{title}</h2>
+      <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function SummaryCard({ label, hint, value }: { label: string; hint: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface/55 p-4">
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-2xl font-semibold text-gradient-brand">
         {formatMoney(value)}
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+    </div>
+  );
+}
+
+function CountCard({ label, hint, value }: { label: string; hint: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-accent-bright">{label}</div>
+      <div className="mt-1 font-display text-3xl font-semibold text-accent-bright">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+    </div>
+  );
+}
+
+function FinderFeeCard({
+  rate,
+  feeTotal,
+  onRateChange,
+}: {
+  rate: number;
+  feeTotal: number;
+  onRateChange: (rate: number) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-accent-bright">
+        Finder fee
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          aria-label="Finder fee percentage"
+          value={Number.isFinite(rate) ? Math.round(clampRatio(rate) * 1000) / 10 : 0}
+          onChange={(event) => {
+            const parsed = Number(event.target.value);
+            if (Number.isFinite(parsed)) onRateChange(clampRatio(parsed / 100));
+          }}
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          className="w-20 rounded-lg border border-accent/40 bg-background px-2 py-1 font-mono text-lg outline-none focus:border-accent"
+        />
+        <span className="font-mono text-lg">%</span>
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        {formatMoney(feeTotal)} total · edit here or in Settings
       </div>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: ProjectStatus }) {
+  const color =
+    status === "Completed"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : status === "Cancelled"
+        ? "border-red-500/30 bg-red-500/10 text-red-300"
+        : status === "In Progress"
+          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+          : "border-border bg-background/60 text-muted-foreground";
+
+  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs ${color}`}>{status}</span>;
 }
 
 function MetricBlock({ label, value }: { label: string; value: number }) {
@@ -1029,10 +1208,13 @@ function ActivityList({ title, rows }: { title: string; rows: { label: string; m
   );
 }
 
-function PayoutLine({ label, value }: { label: string; value: number }) {
+function PayoutLine({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border pb-3 last:border-0 last:pb-0">
-      <span className="text-sm text-foreground">{label}</span>
+      <div>
+        <div className="text-sm text-foreground">{label}</div>
+        {detail ? <div className="text-xs text-muted-foreground">{detail}</div> : null}
+      </div>
       <span className="font-mono text-sm">{formatMoney(value)}</span>
     </div>
   );
@@ -1114,8 +1296,8 @@ function MoneyInput({ value, onChange }: { value: number; onChange: (value: numb
 function PercentInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
     <input
-      value={Number.isFinite(value) ? Math.round(value * 1000) / 10 : 0}
-      onChange={(event) => onChange(Math.max(0, Number(event.target.value)) / 100)}
+      value={Number.isFinite(value) ? Math.round(clampRatio(value) * 1000) / 10 : 0}
+      onChange={(event) => onChange(clampRatio(Number(event.target.value) / 100))}
       type="number"
       min="0"
       max="100"
@@ -1128,10 +1310,12 @@ function PercentInput({ value, onChange }: { value: number; onChange: (value: nu
 function SelectInput({
   value,
   options,
+  labels,
   onChange,
 }: {
   value: string;
   options: string[];
+  labels?: Record<string, string>;
   onChange: (value: string) => void;
 }) {
   return (
@@ -1142,7 +1326,7 @@ function SelectInput({
     >
       {options.map((option) => (
         <option key={option || "blank"} value={option}>
-          {option || "Unassigned"}
+          {labels?.[option] ?? (option || "Unassigned")}
         </option>
       ))}
     </select>
@@ -1206,8 +1390,11 @@ type PersonBalance = {
 
 type StudioModel = {
   projects: Record<string, ProjectRollup>;
+  payoutsByProject: Record<string, Record<Person, number>>;
   balances: Record<Person, PersonBalance>;
   dashboard: {
+    activeProjectCount: number;
+    activeProjects: StudioProject[];
     contractValue: number;
     clientPaid: number;
     remainingFromClients: number;
@@ -1215,36 +1402,45 @@ type StudioModel = {
     expenses: number;
     netProfitToSplit: number;
     cashCollectedBy: Record<Person, number>;
+    partnerDue: Record<Person, number>;
+    partnerGrossDue: Record<Person, number>;
+    partnerPaidOut: Record<Person, number>;
+    unallocatedPayouts: number;
   };
 };
 
 function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   const projects: Record<string, ProjectRollup> = {};
   const balances = emptyBalances();
-  const cashCollectedBy = emptyPersonRecord();
-
-  for (const payment of data.clientPayments) {
-    if (payment.collectedBy) cashCollectedBy[payment.collectedBy] += safeNumber(payment.amount);
-  }
 
   for (const project of data.projects) {
     const clientPaid = sumByProject(data.clientPayments, project.projectId, "amount");
     const expenses = sumByProject(data.expenses, project.projectId, "amount");
-    const finderFee = project.finder === "Nobody" ? 0 : Math.max(0, clientPaid - expenses) * data.settings.finderFeeRate;
+    const feeBase = Math.max(0, clientPaid - expenses);
+    const finderFeeRate = clampRatio(data.settings.finderFeeRate);
+    const finderFee =
+      project.finder === "Nobody"
+        ? 0
+        : project.finderFeeMode === "fixed"
+          ? Math.min(feeBase, nonNegativeNumber(project.finderFeeValue))
+          : feeBase *
+            (project.finderFeeMode === "percent"
+              ? clampRatio(project.finderFeeValue)
+              : finderFeeRate);
     const paidAfterFinderFee = clientPaid - finderFee;
-    const netProfitToSplit = paidAfterFinderFee - expenses;
+    const netProfitToSplit = Math.max(0, paidAfterFinderFee - expenses);
     const profitShare = emptyPersonRecord();
     const finderFeeTo = emptyPersonRecord();
     const reimbursements = emptyPersonRecord();
     const totalDue = emptyPersonRecord();
 
-    profitShare.Hussein = netProfitToSplit * safeNumber(project.husseinWorkPercent);
-    profitShare.Saeed = netProfitToSplit * safeNumber(project.saeedWorkPercent);
+    profitShare.Hussein = netProfitToSplit * clampRatio(project.husseinWorkPercent);
+    profitShare.Saeed = netProfitToSplit * clampRatio(project.saeedWorkPercent);
     if (project.finder !== "Nobody") finderFeeTo[project.finder] = finderFee;
 
     for (const expense of data.expenses.filter((item) => item.projectId === project.projectId)) {
       if (expense.paidBy === "Hussein" || expense.paidBy === "Saeed") {
-        reimbursements[expense.paidBy] += safeNumber(expense.amount);
+        reimbursements[expense.paidBy] += nonNegativeNumber(expense.amount);
       }
     }
 
@@ -1259,7 +1455,7 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
     projects[project.projectId] = {
       project,
       clientPaid,
-      remainingFromClient: Math.max(0, safeNumber(project.totalPrice) - clientPaid),
+      remainingFromClient: Math.max(0, nonNegativeNumber(project.totalPrice) - clientPaid),
       expenses,
       finderFee,
       paidAfterFinderFee,
@@ -1272,24 +1468,72 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   }
 
   for (const payout of data.payouts) {
-    balances[payout.paidTo].paidOut += safeNumber(payout.amount);
+    balances[payout.paidTo].paidOut += nonNegativeNumber(payout.amount);
   }
 
   for (const person of PEOPLE) {
     balances[person].netBalance = balances[person].totalDue - balances[person].paidOut;
   }
 
+  const activeProjects = data.projects.filter((project) => project.status === "In Progress");
+  const activeProjectIds = new Set(activeProjects.map((project) => project.projectId));
+  const cashCollectedBy = emptyPersonRecord();
+  const partnerDue = emptyPersonRecord();
+  const partnerGrossDue = emptyPersonRecord();
+  const partnerPaidOut = emptyPersonRecord();
+  const payoutsByProject: Record<string, Record<Person, number>> = {};
+  const unallocatedPayouts = data.payouts
+    .filter((payout) => !payout.projectId)
+    .reduce((sum, payout) => sum + nonNegativeNumber(payout.amount), 0);
+
+  for (const payout of data.payouts) {
+    if (!payout.projectId || !activeProjectIds.has(payout.projectId)) continue;
+    payoutsByProject[payout.projectId] ??= emptyPersonRecord();
+    payoutsByProject[payout.projectId][payout.paidTo] += nonNegativeNumber(payout.amount);
+  }
+
+  if (activeProjects.length === 1 && unallocatedPayouts > 0) {
+    const onlyActiveProjectId = activeProjects[0].projectId;
+    payoutsByProject[onlyActiveProjectId] ??= emptyPersonRecord();
+    for (const payout of data.payouts.filter((item) => !item.projectId)) {
+      payoutsByProject[onlyActiveProjectId][payout.paidTo] += nonNegativeNumber(payout.amount);
+    }
+  }
+
+  for (const payment of data.clientPayments) {
+    if (payment.collectedBy && activeProjectIds.has(payment.projectId)) {
+      cashCollectedBy[payment.collectedBy] += nonNegativeNumber(payment.amount);
+    }
+  }
+
+  for (const project of activeProjects) {
+    const rollup = projects[project.projectId];
+    if (!rollup) continue;
+    for (const person of PEOPLE) {
+      partnerGrossDue[person] += rollup.totalDue[person];
+      partnerPaidOut[person] += payoutsByProject[project.projectId]?.[person] ?? 0;
+      partnerDue[person] += Math.max(0, rollup.totalDue[person] - (payoutsByProject[project.projectId]?.[person] ?? 0));
+    }
+  }
+
   return {
     projects,
+    payoutsByProject,
     balances,
     dashboard: {
-      contractValue: data.projects.reduce((sum, project) => sum + safeNumber(project.totalPrice), 0),
-      clientPaid: Object.values(projects).reduce((sum, project) => sum + project.clientPaid, 0),
-      remainingFromClients: Object.values(projects).reduce((sum, project) => sum + project.remainingFromClient, 0),
-      finderFees: Object.values(projects).reduce((sum, project) => sum + project.finderFee, 0),
-      expenses: Object.values(projects).reduce((sum, project) => sum + project.expenses, 0),
-      netProfitToSplit: Object.values(projects).reduce((sum, project) => sum + project.netProfitToSplit, 0),
+      activeProjectCount: activeProjects.length,
+      activeProjects,
+      contractValue: activeProjects.reduce((sum, project) => sum + nonNegativeNumber(project.totalPrice), 0),
+      clientPaid: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.clientPaid ?? 0), 0),
+      remainingFromClients: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.remainingFromClient ?? 0), 0),
+      finderFees: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.finderFee ?? 0), 0),
+      expenses: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.expenses ?? 0), 0),
+      netProfitToSplit: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.netProfitToSplit ?? 0), 0),
       cashCollectedBy,
+      partnerDue,
+      partnerGrossDue,
+      partnerPaidOut,
+      unallocatedPayouts,
     },
   };
 }
@@ -1360,7 +1604,7 @@ function migrateLegacyRows(rows: LegacyRow[]): StudioSpreadsheetData {
       projectId,
       name: row.project ?? "",
       client: row.client ?? "",
-      totalPrice: safeNumber(row.projectPrice ?? row.amountPaid),
+      totalPrice: nonNegativeNumber(row.projectPrice ?? row.amountPaid),
       status: normalizeStatus(row.status),
       finder: normalizeFinder(row.finder),
       husseinWorkPercent: DEFAULT_SETTINGS.husseinDefaultWorkPercent,
@@ -1374,7 +1618,7 @@ function migrateLegacyRows(rows: LegacyRow[]): StudioSpreadsheetData {
       id: makeId(),
       date: todayInput(),
       projectId: projects[index]?.projectId ?? "",
-      amount: safeNumber(row.amountPaid),
+      amount: nonNegativeNumber(row.amountPaid),
       collectedBy: "" as const,
       paymentMethod: "",
       notes: "",
@@ -1389,7 +1633,7 @@ function migrateLegacyRows(rows: LegacyRow[]): StudioSpreadsheetData {
       projectId: projects[index]?.projectId ?? "",
       expenseType: "General",
       paidBy: normalizeExpensePayer(row.expensesPaidBy),
-      amount: safeNumber(row.expenses),
+      amount: nonNegativeNumber(row.expenses),
       notes: "",
     }))
     .filter((expense) => expense.amount > 0)
@@ -1407,9 +1651,15 @@ function migrateLegacyRows(rows: LegacyRow[]): StudioSpreadsheetData {
 
 function normalizeSettings(settings: Partial<StudioSettings> | undefined): StudioSettings {
   return {
-    finderFeeRate: safeNumber(settings?.finderFeeRate || DEFAULT_SETTINGS.finderFeeRate),
-    husseinDefaultWorkPercent: safeNumber(settings?.husseinDefaultWorkPercent || DEFAULT_SETTINGS.husseinDefaultWorkPercent),
-    saeedDefaultWorkPercent: safeNumber(settings?.saeedDefaultWorkPercent || DEFAULT_SETTINGS.saeedDefaultWorkPercent),
+    finderFeeRate: normalizeRatio(settings?.finderFeeRate, DEFAULT_SETTINGS.finderFeeRate),
+    husseinDefaultWorkPercent: normalizeRatio(
+      settings?.husseinDefaultWorkPercent,
+      DEFAULT_SETTINGS.husseinDefaultWorkPercent,
+    ),
+    saeedDefaultWorkPercent: normalizeRatio(
+      settings?.saeedDefaultWorkPercent,
+      DEFAULT_SETTINGS.saeedDefaultWorkPercent,
+    ),
   };
 }
 
@@ -1419,11 +1669,13 @@ function normalizeProject(project: Partial<StudioProject>): StudioProject {
     projectId: project.projectId?.trim() || "P001",
     name: project.name ?? "",
     client: project.client ?? "",
-    totalPrice: safeNumber(project.totalPrice),
+    totalPrice: nonNegativeNumber(project.totalPrice),
     status: normalizeStatus(project.status),
     finder: normalizeFinder(project.finder),
-    husseinWorkPercent: safeNumber(project.husseinWorkPercent),
-    saeedWorkPercent: safeNumber(project.saeedWorkPercent),
+    finderFeeMode: normalizeFinderFeeMode(project.finderFeeMode),
+    finderFeeValue: nonNegativeNumber(project.finderFeeValue),
+    husseinWorkPercent: normalizeRatio(project.husseinWorkPercent, DEFAULT_SETTINGS.husseinDefaultWorkPercent),
+    saeedWorkPercent: normalizeRatio(project.saeedWorkPercent, DEFAULT_SETTINGS.saeedDefaultWorkPercent),
     notes: project.notes ?? "",
   };
 }
@@ -1433,7 +1685,7 @@ function normalizePayment(payment: Partial<ClientPayment>): ClientPayment {
     id: payment.id ?? makeId(),
     date: payment.date || todayInput(),
     projectId: payment.projectId ?? "",
-    amount: safeNumber(payment.amount),
+    amount: nonNegativeNumber(payment.amount),
     collectedBy: normalizePersonOrBlank(payment.collectedBy),
     paymentMethod: payment.paymentMethod ?? "",
     notes: payment.notes ?? "",
@@ -1447,7 +1699,7 @@ function normalizeExpense(expense: Partial<ProjectExpense>): ProjectExpense {
     projectId: expense.projectId ?? "",
     expenseType: expense.expenseType ?? "",
     paidBy: normalizeExpensePayer(expense.paidBy),
-    amount: safeNumber(expense.amount),
+    amount: nonNegativeNumber(expense.amount),
     notes: expense.notes ?? "",
   };
 }
@@ -1456,8 +1708,9 @@ function normalizePayout(payout: Partial<PartnerPayout>): PartnerPayout {
   return {
     id: payout.id ?? makeId(),
     date: payout.date || todayInput(),
+    projectId: payout.projectId ?? "",
     paidTo: normalizePerson(payout.paidTo),
-    amount: safeNumber(payout.amount),
+    amount: nonNegativeNumber(payout.amount),
     payoutType: normalizePayoutType(payout.payoutType),
     notes: payout.notes ?? "",
   };
@@ -1477,6 +1730,11 @@ function normalizePersonOrBlank(value: unknown): Person | "" {
 function normalizeFinder(value: unknown): Finder {
   if (value === "Nobody" || value === "None" || !value) return "Nobody";
   return normalizePerson(value);
+}
+
+function normalizeFinderFeeMode(value: unknown): FinderFeeMode {
+  if (value === "percent" || value === "fixed") return value;
+  return "default";
 }
 
 function normalizeExpensePayer(value: unknown): ExpensePayer {
@@ -1507,6 +1765,8 @@ function emptyProject(projectId: string, settings: StudioSettings): StudioProjec
     totalPrice: 0,
     status: "Lead",
     finder: "Nobody",
+    finderFeeMode: "default",
+    finderFeeValue: 0,
     husseinWorkPercent: settings.husseinDefaultWorkPercent,
     saeedWorkPercent: settings.saeedDefaultWorkPercent,
     notes: "",
@@ -1537,10 +1797,11 @@ function emptyExpense(projectId: string): ProjectExpense {
   };
 }
 
-function emptyPayout(): PartnerPayout {
+function emptyPayout(projectId: string): PartnerPayout {
   return {
     id: makeId(),
     date: todayInput(),
+    projectId,
     paidTo: "Hussein",
     amount: 0,
     payoutType: "Mixed",
@@ -1578,12 +1839,24 @@ function sumByProject<T extends { projectId: string }>(
 ) {
   return rows
     .filter((row) => row.projectId === projectId)
-    .reduce((sum, row) => sum + safeNumber(row[key]), 0);
+    .reduce((sum, row) => sum + nonNegativeNumber(row[key]), 0);
 }
 
 function safeNumber(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function nonNegativeNumber(value: unknown) {
+  return Math.max(0, safeNumber(value));
+}
+
+function clampRatio(value: unknown) {
+  return Math.min(1, Math.max(0, safeNumber(value)));
+}
+
+function normalizeRatio(value: unknown, fallback: number) {
+  return clampRatio(value ?? fallback);
 }
 
 function makeId() {

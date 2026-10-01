@@ -3,6 +3,7 @@ export type Finder = Person | "Nobody";
 export type ExpensePayer = Person | "Studio";
 export type ProjectStatus = "Lead" | "In Progress" | "Completed" | "Cancelled";
 export type PayoutType = "Profit Share" | "Expense Reimbursement" | "Finder Fee" | "Mixed";
+export type FinderFeeMode = "default" | "percent" | "fixed";
 
 export type StudioSettings = {
   finderFeeRate: number;
@@ -18,6 +19,8 @@ export type StudioProject = {
   totalPrice: number;
   status: ProjectStatus;
   finder: Finder;
+  finderFeeMode: FinderFeeMode;
+  finderFeeValue: number;
   husseinWorkPercent: number;
   saeedWorkPercent: number;
   notes: string;
@@ -46,6 +49,7 @@ export type ProjectExpense = {
 export type PartnerPayout = {
   id: string;
   date: string;
+  projectId: string;
   paidTo: Person;
   amount: number;
   payoutType: PayoutType;
