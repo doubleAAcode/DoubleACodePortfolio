@@ -499,7 +499,16 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
             <SummaryCard label="Collected" hint="Payments received" value={model.dashboard.clientPaid} />
             <SummaryCard label="Still to collect" hint="Unpaid client balance" value={model.dashboard.remainingFromClients} />
             <SummaryCard label="Business costs" hint="Expenses recorded" value={model.dashboard.expenses} />
-            <SummaryCard label="Finder fees" hint="Based on current rate" value={model.dashboard.finderFees} />
+            <FinderFeeCard
+              rate={data.settings.finderFeeRate}
+              feeTotal={model.dashboard.finderFees}
+              onRateChange={(finderFeeRate) =>
+                updateData((current) => ({
+                  ...current,
+                  settings: { ...current.settings, finderFeeRate },
+                }))
+              }
+            />
             <SummaryCard label="Available to split" hint="After costs and fees" value={model.dashboard.netProfitToSplit} />
           </div>
         </section>
@@ -1073,6 +1082,43 @@ function SummaryCard({ label, hint, value }: { label: string; hint: string; valu
         {formatMoney(value)}
       </div>
       <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+    </div>
+  );
+}
+
+function FinderFeeCard({
+  rate,
+  feeTotal,
+  onRateChange,
+}: {
+  rate: number;
+  feeTotal: number;
+  onRateChange: (rate: number) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-accent-bright">
+        Finder fee
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          aria-label="Finder fee percentage"
+          value={Number.isFinite(rate) ? Math.round(clampRatio(rate) * 1000) / 10 : 0}
+          onChange={(event) => {
+            const parsed = Number(event.target.value);
+            if (Number.isFinite(parsed)) onRateChange(clampRatio(parsed / 100));
+          }}
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          className="w-20 rounded-lg border border-accent/40 bg-background px-2 py-1 font-mono text-lg outline-none focus:border-accent"
+        />
+        <span className="font-mono text-lg">%</span>
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        {formatMoney(feeTotal)} total · edit here or in Settings
+      </div>
     </div>
   );
 }
