@@ -325,7 +325,7 @@
       {
         "id": "6af83db8-471f-47ce-ae5a-35ca022dd27c",
         "date": "2026-09-30",
-        "projectId": "",
+        "projectId": "P005",
         "paidTo": "Third Party",
         "amount": 100,
         "payoutType": "Finder Fee",
@@ -351,5 +351,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T13:45:37.210Z"
+  "updatedAt": "2026-10-01T13:45:42.157Z"
 }
