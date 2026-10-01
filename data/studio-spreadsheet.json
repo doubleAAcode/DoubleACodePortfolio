@@ -73,7 +73,7 @@
         "name": "Ali Fadel",
         "client": "Ali Fadel",
         "totalPrice": 2000,
-        "status": "In Progress",
+        "status": "Lead",
         "finder": "Hussein",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
@@ -325,5 +325,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T12:43:27.379Z"
+  "updatedAt": "2026-10-01T12:44:27.928Z"
 }
