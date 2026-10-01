@@ -15,6 +15,8 @@
         "totalPrice": 250,
         "status": "Completed",
         "finder": "Nobody",
+        "finderFeeMode": "default",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -27,6 +29,8 @@
         "totalPrice": 500,
         "status": "Completed",
         "finder": "Nobody",
+        "finderFeeMode": "default",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -39,6 +43,8 @@
         "totalPrice": 600,
         "status": "Completed",
         "finder": "Saeed",
+        "finderFeeMode": "default",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -51,6 +57,8 @@
         "totalPrice": 0,
         "status": "Completed",
         "finder": "Nobody",
+        "finderFeeMode": "default",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -63,6 +71,8 @@
         "totalPrice": 550,
         "status": "In Progress",
         "finder": "Third Party",
+        "finderFeeMode": "fixed",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -75,6 +85,8 @@
         "totalPrice": 2000,
         "status": "Lead",
         "finder": "Hussein",
+        "finderFeeMode": "default",
+        "finderFeeValue": 0,
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -325,5 +337,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T12:47:28.694Z"
+  "updatedAt": "2026-10-01T13:12:48.536Z"
 }
