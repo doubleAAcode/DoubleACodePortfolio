@@ -495,10 +495,11 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
             description="A quick view of contracted revenue, collected cash, costs, and partner earnings."
           />
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <SummaryCard label="Contracted" hint="Total project prices" value={model.dashboard.contractValue} />
+            <CountCard label="Active projects" hint="Currently in progress" value={model.dashboard.activeProjectCount} />
+            <SummaryCard label="Contracted" hint="Active project prices" value={model.dashboard.contractValue} />
             <SummaryCard label="Collected" hint="Payments received" value={model.dashboard.clientPaid} />
             <SummaryCard label="Still to collect" hint="Unpaid client balance" value={model.dashboard.remainingFromClients} />
-            <SummaryCard label="Business costs" hint="Expenses recorded" value={model.dashboard.expenses} />
+            <SummaryCard label="Business costs" hint="Active project expenses" value={model.dashboard.expenses} />
             <FinderFeeCard
               rate={data.settings.finderFeeRate}
               feeTotal={model.dashboard.finderFees}
@@ -509,7 +510,7 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
                 }))
               }
             />
-            <SummaryCard label="Available to split" hint="After costs and fees" value={model.dashboard.netProfitToSplit} />
+            <SummaryCard label="Available to split" hint="Active projects after costs and fees" value={model.dashboard.netProfitToSplit} />
           </div>
         </section>
 
@@ -586,8 +587,8 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
       <div>
         <SectionHeading
           eyebrow="Cash and obligations"
-          title="Who has money, and who is owed"
-          description="Collected cash is shown by collector. Net amount owed is after recorded payouts."
+          title="What is ready to pay"
+          description="These amounts come only from projects marked In Progress. Completed projects remain in the other tabs."
         />
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="rounded-3xl border border-border bg-surface/55 p-5">
@@ -597,18 +598,18 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {PEOPLE.map((person) => (
-                <MetricBlock key={person} label={person} value={model.dashboard.cashCollectedBy[person]} />
+                <MetricBlock key={person} label={`${person} collected`} value={model.dashboard.cashCollectedBy[person]} />
               ))}
             </div>
           </div>
           <div className="rounded-3xl border border-border bg-surface/55 p-5">
             <div className="flex items-center gap-3">
               <Banknote className="h-5 w-5 text-accent" />
-              <h2 className="font-display text-xl font-semibold">Net amount still owed</h2>
+              <h2 className="font-display text-xl font-semibold">Partner amounts to pay</h2>
             </div>
             <div className="mt-5 space-y-4">
               {PEOPLE.map((person) => (
-                <PayoutLine key={person} label={person} value={model.balances[person].netBalance} />
+                <PayoutLine key={person} label={person} value={model.dashboard.partnerDue[person]} />
               ))}
             </div>
           </div>
@@ -618,14 +619,14 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
       <div>
         <SectionHeading
           eyebrow="Project follow-up"
-          title="Projects that need attention"
-          description="See what is unpaid and what each project has generated for the partners."
+          title="Active projects and partner payouts"
+          description="Each row shows the amount currently due to Hussein, Saeed, and any third-party finder."
         />
         <div className="mt-4 overflow-x-auto rounded-3xl border border-border bg-surface/55">
           <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-            <TableHead headers={["Project", "Status", "Contracted", "Collected", "Still to collect", "Available to split"]} />
+            <TableHead headers={["Project", "Contracted", "Collected", "Still to collect", "Hussein due", "Saeed due", "Third party due"]} />
             <tbody>
-              {data.projects.length ? data.projects.map((project) => {
+              {model.dashboard.activeProjects.length ? model.dashboard.activeProjects.map((project) => {
                 const rollup = model.projects[project.projectId] ?? emptyProjectRollup(project);
                 return (
                   <tr key={project.id} className="border-t border-border/70">
@@ -635,16 +636,17 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
                         {project.projectId} · {project.client || "No client"}
                       </div>
                     </Td>
-                    <Td><StatusBadge status={project.status} /></Td>
                     <ReadOnlyMoney value={project.totalPrice} />
                     <ReadOnlyMoney value={rollup.clientPaid} />
                     <ReadOnlyMoney value={rollup.remainingFromClient} highlight={rollup.remainingFromClient > 0} />
-                    <ReadOnlyMoney value={rollup.netProfitToSplit} />
+                    <ReadOnlyMoney value={rollup.totalDue.Hussein} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue.Saeed} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue["Third Party"]} />
                   </tr>
                 );
               }) : (
                 <tr>
-                  <Td><span className="text-muted-foreground">No projects yet. Add a project to start tracking the business.</span></Td>
+                  <Td><span className="text-muted-foreground">No projects are currently marked In Progress.</span></Td>
                 </tr>
               )}
             </tbody>
@@ -658,30 +660,30 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
           title="Recent activity"
           description="The latest five records in each ledger. Open the relevant tab to edit them."
         />
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <ActivityList
             title="Payments"
-            rows={data.clientPayments.slice(-5).reverse().map((payment) => ({
+            rows={data.clientPayments
+              .filter((payment) => model.dashboard.activeProjects.some((project) => project.projectId === payment.projectId))
+              .slice(-5)
+              .reverse()
+              .map((payment) => ({
               label: projectLabel(data, payment.projectId),
               meta: `${payment.collectedBy || "Unassigned"} · ${payment.paymentMethod || "No method"}`,
               value: payment.amount,
-            }))}
+              }))}
           />
           <ActivityList
             title="Expenses"
-            rows={data.expenses.slice(-5).reverse().map((expense) => ({
+            rows={data.expenses
+              .filter((expense) => model.dashboard.activeProjects.some((project) => project.projectId === expense.projectId))
+              .slice(-5)
+              .reverse()
+              .map((expense) => ({
               label: projectLabel(data, expense.projectId),
               meta: `${expense.paidBy} · ${expense.expenseType || "Expense"}`,
               value: expense.amount,
-            }))}
-          />
-          <ActivityList
-            title="Payouts"
-            rows={data.payouts.slice(-5).reverse().map((payout) => ({
-              label: payout.paidTo,
-              meta: `${payout.paidTo} · ${payout.payoutType}`,
-              value: payout.amount,
-            }))}
+              }))}
           />
         </div>
       </div>
@@ -1086,6 +1088,16 @@ function SummaryCard({ label, hint, value }: { label: string; hint: string; valu
   );
 }
 
+function CountCard({ label, hint, value }: { label: string; hint: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-accent-bright">{label}</div>
+      <div className="mt-1 font-display text-3xl font-semibold text-accent-bright">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+    </div>
+  );
+}
+
 function FinderFeeCard({
   rate,
   feeTotal,
@@ -1343,6 +1355,8 @@ type StudioModel = {
   projects: Record<string, ProjectRollup>;
   balances: Record<Person, PersonBalance>;
   dashboard: {
+    activeProjectCount: number;
+    activeProjects: StudioProject[];
     contractValue: number;
     clientPaid: number;
     remainingFromClients: number;
@@ -1350,17 +1364,13 @@ type StudioModel = {
     expenses: number;
     netProfitToSplit: number;
     cashCollectedBy: Record<Person, number>;
+    partnerDue: Record<Person, number>;
   };
 };
 
 function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   const projects: Record<string, ProjectRollup> = {};
   const balances = emptyBalances();
-  const cashCollectedBy = emptyPersonRecord();
-
-  for (const payment of data.clientPayments) {
-    if (payment.collectedBy) cashCollectedBy[payment.collectedBy] += nonNegativeNumber(payment.amount);
-  }
 
   for (const project of data.projects) {
     const clientPaid = sumByProject(data.clientPayments, project.projectId, "amount");
@@ -1415,17 +1425,37 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
     balances[person].netBalance = balances[person].totalDue - balances[person].paidOut;
   }
 
+  const activeProjects = data.projects.filter((project) => project.status === "In Progress");
+  const activeProjectIds = new Set(activeProjects.map((project) => project.projectId));
+  const cashCollectedBy = emptyPersonRecord();
+  const partnerDue = emptyPersonRecord();
+
+  for (const payment of data.clientPayments) {
+    if (payment.collectedBy && activeProjectIds.has(payment.projectId)) {
+      cashCollectedBy[payment.collectedBy] += nonNegativeNumber(payment.amount);
+    }
+  }
+
+  for (const project of activeProjects) {
+    const rollup = projects[project.projectId];
+    if (!rollup) continue;
+    for (const person of PEOPLE) partnerDue[person] += rollup.totalDue[person];
+  }
+
   return {
     projects,
     balances,
     dashboard: {
-      contractValue: data.projects.reduce((sum, project) => sum + nonNegativeNumber(project.totalPrice), 0),
-      clientPaid: Object.values(projects).reduce((sum, project) => sum + project.clientPaid, 0),
-      remainingFromClients: Object.values(projects).reduce((sum, project) => sum + project.remainingFromClient, 0),
-      finderFees: Object.values(projects).reduce((sum, project) => sum + project.finderFee, 0),
-      expenses: Object.values(projects).reduce((sum, project) => sum + project.expenses, 0),
-      netProfitToSplit: Object.values(projects).reduce((sum, project) => sum + project.netProfitToSplit, 0),
+      activeProjectCount: activeProjects.length,
+      activeProjects,
+      contractValue: activeProjects.reduce((sum, project) => sum + nonNegativeNumber(project.totalPrice), 0),
+      clientPaid: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.clientPaid ?? 0), 0),
+      remainingFromClients: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.remainingFromClient ?? 0), 0),
+      finderFees: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.finderFee ?? 0), 0),
+      expenses: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.expenses ?? 0), 0),
+      netProfitToSplit: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.netProfitToSplit ?? 0), 0),
       cashCollectedBy,
+      partnerDue,
     },
   };
 }
