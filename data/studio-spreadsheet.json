@@ -217,7 +217,7 @@
         "date": "2026-09-30",
         "projectId": "P005",
         "expenseType": "Domain",
-        "paidBy": "Hussein",
+        "paidBy": "Studio",
         "amount": 20,
         "notes": "arimitaly.com"
       }
@@ -337,5 +337,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T13:27:02.945Z"
+  "updatedAt": "2026-10-01T13:27:15.687Z"
 }
