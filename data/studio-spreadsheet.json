@@ -97,7 +97,7 @@
         "name": "dddddd",
         "client": "",
         "totalPrice": 0,
-        "status": "Lead",
+        "status": "Cancelled",
         "finder": "Nobody",
         "finderFeeMode": "default",
         "finderFeeValue": 0,
@@ -365,5 +365,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T14:00:24.081Z"
+  "updatedAt": "2026-10-01T14:00:28.964Z"
 }
