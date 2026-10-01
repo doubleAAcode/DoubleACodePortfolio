@@ -289,7 +289,7 @@
       {
         "id": "402d6930-8214-431b-bd89-1a82829ec788",
         "date": "2026-07-23",
-        "projectId": "",
+        "projectId": "P002",
         "paidTo": "Saeed",
         "amount": 75,
         "payoutType": "Mixed",
@@ -351,5 +351,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T13:47:44.528Z"
+  "updatedAt": "2026-10-01T13:47:47.270Z"
 }
