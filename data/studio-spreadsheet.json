@@ -60,7 +60,7 @@
         "projectId": "P005",
         "name": "Arim Italy",
         "client": "Arim",
-        "totalPrice": 500,
+        "totalPrice": 550,
         "status": "In Progress",
         "finder": "Third Party",
         "husseinWorkPercent": 0.5,
@@ -313,5 +313,5 @@
       }
     ]
   },
-  "updatedAt": "2026-09-30T18:35:51.227Z"
+  "updatedAt": "2026-10-01T12:15:00.763Z"
 }
