@@ -383,7 +383,7 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
   function addPayout() {
     updateData((current) => ({
       ...current,
-      payouts: [...current.payouts, emptyPayout()],
+      payouts: [...current.payouts, emptyPayout(current.projects[0]?.projectId ?? "")],
     }));
     setActiveTab("payouts");
   }
@@ -611,9 +611,19 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
             </div>
             <div className="mt-5 space-y-4">
               {PEOPLE.map((person) => (
-                <PayoutLine key={person} label={person} value={model.dashboard.partnerDue[person]} />
+                <PayoutLine
+                  key={person}
+                  label={person}
+                  value={model.dashboard.partnerDue[person]}
+                  detail={`Gross ${formatMoney(model.dashboard.partnerGrossDue[person])} · Paid ${formatMoney(model.dashboard.partnerPaidOut[person])}`}
+                />
               ))}
             </div>
+            {model.dashboard.unallocatedPayouts > 0 ? (
+              <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {formatMoney(model.dashboard.unallocatedPayouts)} in payouts is not linked to a project. Assign a project in Payouts before treating these balances as final.
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -626,7 +636,7 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
         />
         <div className="mt-4 overflow-x-auto rounded-3xl border border-border bg-surface/55">
           <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-            <TableHead headers={["Project", "Contracted", "Collected", "Still to collect", "Hussein due", "Saeed due", "Third party due"]} />
+            <TableHead headers={["Project", "Contracted", "Collected", "Still to collect", "Hussein remaining", "Saeed remaining", "Third party remaining"]} />
             <tbody>
               {model.dashboard.activeProjects.length ? model.dashboard.activeProjects.map((project) => {
                 const rollup = model.projects[project.projectId] ?? emptyProjectRollup(project);
@@ -641,9 +651,9 @@ function DashboardView({ data, model }: { data: StudioSpreadsheetData; model: St
                     <ReadOnlyMoney value={project.totalPrice} />
                     <ReadOnlyMoney value={rollup.clientPaid} />
                     <ReadOnlyMoney value={rollup.remainingFromClient} highlight={rollup.remainingFromClient > 0} />
-                    <ReadOnlyMoney value={rollup.totalDue.Hussein} highlight />
-                    <ReadOnlyMoney value={rollup.totalDue.Saeed} highlight />
-                    <ReadOnlyMoney value={rollup.totalDue["Third Party"]} />
+                    <ReadOnlyMoney value={rollup.totalDue.Hussein - (model.payoutsByProject[project.projectId]?.Hussein ?? 0)} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue.Saeed - (model.payoutsByProject[project.projectId]?.Saeed ?? 0)} highlight />
+                    <ReadOnlyMoney value={rollup.totalDue["Third Party"] - (model.payoutsByProject[project.projectId]?.["Third Party"] ?? 0)} />
                   </tr>
                 );
               }) : (
@@ -893,17 +903,18 @@ function PayoutsView({
   return (
     <SheetPanel
       title="Partner Payouts"
-      subtitle="Actual money paid out to each person. Payouts are not tied to a project."
+      subtitle="Actual money paid out to each person. Link each payout to a project so the dashboard can subtract it correctly."
       actionLabel="Add payout"
       onAdd={onAdd}
     >
       <LedgerTable
-        minWidth="820px"
-        headers={["Date", "Paid to", "Amount", "Payout type", "Notes", ""]}
+        minWidth="980px"
+        headers={["Date", "Project", "Paid to", "Amount", "Payout type", "Notes", ""]}
       >
         {data.payouts.map((row) => (
           <tr key={row.id} className="border-t border-border/70">
             <Td><DateInput value={row.date} onChange={(value) => updateRow(row.id, { date: value })} /></Td>
+            <Td><SelectInput value={row.projectId} options={["", ...projectIds(data)]} onChange={(value) => updateRow(row.id, { projectId: value })} /></Td>
             <Td><SelectInput value={row.paidTo} options={PEOPLE} onChange={(value) => updateRow(row.id, { paidTo: value as Person })} /></Td>
             <Td><MoneyInput value={row.amount} onChange={(value) => updateRow(row.id, { amount: value })} /></Td>
             <Td><SelectInput value={row.payoutType} options={PAYOUT_TYPES} onChange={(value) => updateRow(row.id, { payoutType: value as PayoutType })} /></Td>
@@ -1197,10 +1208,13 @@ function ActivityList({ title, rows }: { title: string; rows: { label: string; m
   );
 }
 
-function PayoutLine({ label, value }: { label: string; value: number }) {
+function PayoutLine({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border pb-3 last:border-0 last:pb-0">
-      <span className="text-sm text-foreground">{label}</span>
+      <div>
+        <div className="text-sm text-foreground">{label}</div>
+        {detail ? <div className="text-xs text-muted-foreground">{detail}</div> : null}
+      </div>
       <span className="font-mono text-sm">{formatMoney(value)}</span>
     </div>
   );
@@ -1376,6 +1390,7 @@ type PersonBalance = {
 
 type StudioModel = {
   projects: Record<string, ProjectRollup>;
+  payoutsByProject: Record<string, Record<Person, number>>;
   balances: Record<Person, PersonBalance>;
   dashboard: {
     activeProjectCount: number;
@@ -1388,6 +1403,9 @@ type StudioModel = {
     netProfitToSplit: number;
     cashCollectedBy: Record<Person, number>;
     partnerDue: Record<Person, number>;
+    partnerGrossDue: Record<Person, number>;
+    partnerPaidOut: Record<Person, number>;
+    unallocatedPayouts: number;
   };
 };
 
@@ -1461,6 +1479,26 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   const activeProjectIds = new Set(activeProjects.map((project) => project.projectId));
   const cashCollectedBy = emptyPersonRecord();
   const partnerDue = emptyPersonRecord();
+  const partnerGrossDue = emptyPersonRecord();
+  const partnerPaidOut = emptyPersonRecord();
+  const payoutsByProject: Record<string, Record<Person, number>> = {};
+  const unallocatedPayouts = data.payouts
+    .filter((payout) => !payout.projectId)
+    .reduce((sum, payout) => sum + nonNegativeNumber(payout.amount), 0);
+
+  for (const payout of data.payouts) {
+    if (!payout.projectId || !activeProjectIds.has(payout.projectId)) continue;
+    payoutsByProject[payout.projectId] ??= emptyPersonRecord();
+    payoutsByProject[payout.projectId][payout.paidTo] += nonNegativeNumber(payout.amount);
+  }
+
+  if (activeProjects.length === 1 && unallocatedPayouts > 0) {
+    const onlyActiveProjectId = activeProjects[0].projectId;
+    payoutsByProject[onlyActiveProjectId] ??= emptyPersonRecord();
+    for (const payout of data.payouts.filter((item) => !item.projectId)) {
+      payoutsByProject[onlyActiveProjectId][payout.paidTo] += nonNegativeNumber(payout.amount);
+    }
+  }
 
   for (const payment of data.clientPayments) {
     if (payment.collectedBy && activeProjectIds.has(payment.projectId)) {
@@ -1471,11 +1509,16 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   for (const project of activeProjects) {
     const rollup = projects[project.projectId];
     if (!rollup) continue;
-    for (const person of PEOPLE) partnerDue[person] += rollup.totalDue[person];
+    for (const person of PEOPLE) {
+      partnerGrossDue[person] += rollup.totalDue[person];
+      partnerPaidOut[person] += payoutsByProject[project.projectId]?.[person] ?? 0;
+      partnerDue[person] += Math.max(0, rollup.totalDue[person] - (payoutsByProject[project.projectId]?.[person] ?? 0));
+    }
   }
 
   return {
     projects,
+    payoutsByProject,
     balances,
     dashboard: {
       activeProjectCount: activeProjects.length,
@@ -1488,6 +1531,9 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
       netProfitToSplit: activeProjects.reduce((sum, project) => sum + (projects[project.projectId]?.netProfitToSplit ?? 0), 0),
       cashCollectedBy,
       partnerDue,
+      partnerGrossDue,
+      partnerPaidOut,
+      unallocatedPayouts,
     },
   };
 }
@@ -1662,6 +1708,7 @@ function normalizePayout(payout: Partial<PartnerPayout>): PartnerPayout {
   return {
     id: payout.id ?? makeId(),
     date: payout.date || todayInput(),
+    projectId: payout.projectId ?? "",
     paidTo: normalizePerson(payout.paidTo),
     amount: nonNegativeNumber(payout.amount),
     payoutType: normalizePayoutType(payout.payoutType),
@@ -1750,10 +1797,11 @@ function emptyExpense(projectId: string): ProjectExpense {
   };
 }
 
-function emptyPayout(): PartnerPayout {
+function emptyPayout(projectId: string): PartnerPayout {
   return {
     id: makeId(),
     date: todayInput(),
+    projectId,
     paidTo: "Hussein",
     amount: 0,
     payoutType: "Mixed",

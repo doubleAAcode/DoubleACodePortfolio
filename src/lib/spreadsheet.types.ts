@@ -49,6 +49,7 @@ export type ProjectExpense = {
 export type PartnerPayout = {
   id: string;
   date: string;
+  projectId: string;
   paidTo: Person;
   amount: number;
   payoutType: PayoutType;
