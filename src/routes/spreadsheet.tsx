@@ -18,6 +18,7 @@ import type {
   ClientPayment,
   ExpensePayer,
   Finder,
+  FinderFeeMode,
   PartnerPayout,
   PayoutType,
   Person,
@@ -103,6 +104,7 @@ const EMPTY_SHEET: StudioSpreadsheetData = {
 
 const PEOPLE: Person[] = ["Hussein", "Saeed", "Third Party"];
 const FINDERS: Finder[] = ["Nobody", "Hussein", "Saeed", "Third Party"];
+const FINDER_FEE_MODES: FinderFeeMode[] = ["default", "percent", "fixed"];
 const EXPENSE_PAYERS: ExpensePayer[] = ["Studio", "Hussein", "Saeed", "Third Party"];
 const PROJECT_STATUSES: ProjectStatus[] = ["Lead", "In Progress", "Completed", "Cancelled"];
 const PAYOUT_TYPES: PayoutType[] = ["Profit Share", "Expense Reimbursement", "Finder Fee", "Mixed"];
@@ -727,6 +729,8 @@ function ProjectsView({
               "Total price",
               "Status",
               "Finder",
+              "Finder fee",
+              "Fee value",
               "Hussein %",
               "Saeed %",
               "Client paid",
@@ -752,6 +756,23 @@ function ProjectsView({
                   <Td><MoneyInput value={row.totalPrice} onChange={(value) => updateRow(row.id, { totalPrice: value })} /></Td>
                   <Td><SelectInput value={row.status} options={PROJECT_STATUSES} onChange={(value) => updateRow(row.id, { status: value as ProjectStatus })} /></Td>
                   <Td><SelectInput value={row.finder} options={FINDERS} onChange={(value) => updateRow(row.id, { finder: value as Finder })} /></Td>
+                  <Td>
+                    <SelectInput
+                      value={row.finderFeeMode}
+                      options={FINDER_FEE_MODES}
+                      labels={{ default: "Global default", percent: "Percentage", fixed: "Fixed amount ($)" }}
+                      onChange={(value) => updateRow(row.id, { finderFeeMode: value as FinderFeeMode })}
+                    />
+                  </Td>
+                  <Td>
+                    {row.finderFeeMode === "percent" ? (
+                      <PercentInput value={row.finderFeeValue} onChange={(value) => updateRow(row.id, { finderFeeValue: value })} />
+                    ) : row.finderFeeMode === "fixed" ? (
+                      <MoneyInput value={row.finderFeeValue} onChange={(value) => updateRow(row.id, { finderFeeValue: value })} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Global default</span>
+                    )}
+                  </Td>
                   <Td><PercentInput value={row.husseinWorkPercent} onChange={(value) => updateRow(row.id, { husseinWorkPercent: value })} /></Td>
                   <Td><PercentInput value={row.saeedWorkPercent} onChange={(value) => updateRow(row.id, { saeedWorkPercent: value })} /></Td>
                   <ReadOnlyMoney value={rollup.clientPaid} />
@@ -1275,10 +1296,12 @@ function PercentInput({ value, onChange }: { value: number; onChange: (value: nu
 function SelectInput({
   value,
   options,
+  labels,
   onChange,
 }: {
   value: string;
   options: string[];
+  labels?: Record<string, string>;
   onChange: (value: string) => void;
 }) {
   return (
@@ -1289,7 +1312,7 @@ function SelectInput({
     >
       {options.map((option) => (
         <option key={option || "blank"} value={option}>
-          {option || "Unassigned"}
+          {labels?.[option] ?? (option || "Unassigned")}
         </option>
       ))}
     </select>
@@ -1375,8 +1398,17 @@ function calculateStudioModel(data: StudioSpreadsheetData): StudioModel {
   for (const project of data.projects) {
     const clientPaid = sumByProject(data.clientPayments, project.projectId, "amount");
     const expenses = sumByProject(data.expenses, project.projectId, "amount");
+    const feeBase = Math.max(0, clientPaid - expenses);
     const finderFeeRate = clampRatio(data.settings.finderFeeRate);
-    const finderFee = project.finder === "Nobody" ? 0 : Math.max(0, clientPaid - expenses) * finderFeeRate;
+    const finderFee =
+      project.finder === "Nobody"
+        ? 0
+        : project.finderFeeMode === "fixed"
+          ? Math.min(feeBase, nonNegativeNumber(project.finderFeeValue))
+          : feeBase *
+            (project.finderFeeMode === "percent"
+              ? clampRatio(project.finderFeeValue)
+              : finderFeeRate);
     const paidAfterFinderFee = clientPaid - finderFee;
     const netProfitToSplit = Math.max(0, paidAfterFinderFee - expenses);
     const profitShare = emptyPersonRecord();
@@ -1594,6 +1626,8 @@ function normalizeProject(project: Partial<StudioProject>): StudioProject {
     totalPrice: nonNegativeNumber(project.totalPrice),
     status: normalizeStatus(project.status),
     finder: normalizeFinder(project.finder),
+    finderFeeMode: normalizeFinderFeeMode(project.finderFeeMode),
+    finderFeeValue: nonNegativeNumber(project.finderFeeValue),
     husseinWorkPercent: normalizeRatio(project.husseinWorkPercent, DEFAULT_SETTINGS.husseinDefaultWorkPercent),
     saeedWorkPercent: normalizeRatio(project.saeedWorkPercent, DEFAULT_SETTINGS.saeedDefaultWorkPercent),
     notes: project.notes ?? "",
@@ -1651,6 +1685,11 @@ function normalizeFinder(value: unknown): Finder {
   return normalizePerson(value);
 }
 
+function normalizeFinderFeeMode(value: unknown): FinderFeeMode {
+  if (value === "percent" || value === "fixed") return value;
+  return "default";
+}
+
 function normalizeExpensePayer(value: unknown): ExpensePayer {
   if (value === "Studio") return "Studio";
   return normalizePerson(value);
@@ -1679,6 +1718,8 @@ function emptyProject(projectId: string, settings: StudioSettings): StudioProjec
     totalPrice: 0,
     status: "Lead",
     finder: "Nobody",
+    finderFeeMode: "default",
+    finderFeeValue: 0,
     husseinWorkPercent: settings.husseinDefaultWorkPercent,
     saeedWorkPercent: settings.saeedDefaultWorkPercent,
     notes: "",
