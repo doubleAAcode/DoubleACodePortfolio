@@ -307,7 +307,7 @@
       {
         "id": "a17d17f5-0537-4d4f-b74d-0f9dd7a4a211",
         "date": "2026-08-06",
-        "projectId": "",
+        "projectId": "P002",
         "paidTo": "Hussein",
         "amount": 75,
         "payoutType": "Mixed",
@@ -351,5 +351,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T13:45:46.796Z"
+  "updatedAt": "2026-10-01T13:45:48.392Z"
 }
