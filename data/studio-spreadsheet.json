@@ -72,9 +72,9 @@
         "projectId": "P006",
         "name": "Ali Fadel",
         "client": "Ali Fadel",
-        "totalPrice": 2000,
-        "status": "In Progress",
-        "finder": "Hussein",
+        "totalPrice": 0,
+        "status": "Lead",
+        "finder": "Nobody",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -325,5 +325,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T12:16:19.248Z"
+  "updatedAt": "2026-10-01T12:17:05.157Z"
 }
