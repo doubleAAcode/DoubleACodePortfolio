@@ -94,7 +94,7 @@
       {
         "id": "e056a089-d95c-4efe-b7de-94fb87326a5c",
         "projectId": "P007",
-        "name": "",
+        "name": "dddddd",
         "client": "",
         "totalPrice": 0,
         "status": "Lead",
@@ -365,5 +365,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T13:57:21.970Z"
+  "updatedAt": "2026-10-01T13:57:24.983Z"
 }
