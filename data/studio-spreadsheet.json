@@ -2,7 +2,7 @@
   "data": {
     "version": 2,
     "settings": {
-      "finderFeeRate": 0.12300000000000001,
+      "finderFeeRate": 0.15,
       "husseinDefaultWorkPercent": 0.5,
       "saeedDefaultWorkPercent": 0.5
     },
@@ -365,5 +365,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T14:00:19.911Z"
+  "updatedAt": "2026-10-01T14:00:24.081Z"
 }
