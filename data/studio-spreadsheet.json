@@ -74,7 +74,7 @@
         "client": "Ali Fadel",
         "totalPrice": 2000,
         "status": "In Progress",
-        "finder": "Nobody",
+        "finder": "Hussein",
         "husseinWorkPercent": 0.5,
         "saeedWorkPercent": 0.5,
         "notes": ""
@@ -325,5 +325,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-01T12:16:17.339Z"
+  "updatedAt": "2026-10-01T12:16:19.248Z"
 }
