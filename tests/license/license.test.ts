@@ -411,6 +411,12 @@ test("license migration is service-role-only and registers machines atomically",
   }
 
   assert.doesNotMatch(sql, /create policy/i);
+  for (const table of ["license_global", "licenses", "license_machines"]) {
+    assert.match(
+      sql,
+      new RegExp(`grant select, insert, update, delete on public\\.${table} to service_role`),
+    );
+  }
   assert.match(sql, /security definer/);
   assert.match(sql, /set search_path = pg_catalog, public/);
   assert.match(sql, /for update/);
