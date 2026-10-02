@@ -15,6 +15,7 @@ import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LogsWABotRouteImport } from './routes/logsWABot'
+import { Route as LicenseAdminRouteImport } from './routes/license-admin'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as Dashboard2RouteImport } from './routes/dashboard-2'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -136,6 +137,8 @@ import { Route as ApiWaAdminLogoutRouteImport } from './routes/api.wa-admin.logo
 import { Route as ApiWaAdminLoginRouteImport } from './routes/api.wa-admin.login'
 import { Route as ApiWaAdminFlowTemplatesRouteImport } from './routes/api.wa-admin.flow-templates'
 import { Route as ApiWaAdminBusinessesRouteImport } from './routes/api.wa-admin.businesses'
+import { Route as ApiLicenseCheckRouteImport } from './routes/api.license.check'
+import { Route as ApiLicenseAdminRouteImport } from './routes/api.license.admin'
 import { Route as ApiConnectReleaseRouteImport } from './routes/api.connect.release'
 import { Route as AdminFlowTemplatesNewRouteImport } from './routes/admin.flow-templates.new'
 import { Route as AdminFlowTemplatesTemplateIdRouteImport } from './routes/admin.flow-templates.$templateId'
@@ -278,6 +281,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const LogsWABotRoute = LogsWABotRouteImport.update({
   id: '/logsWABot',
   path: '/logsWABot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LicenseAdminRoute = LicenseAdminRouteImport.update({
+  id: '/license-admin',
+  path: '/license-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataDeletionRoute = DataDeletionRouteImport.update({
@@ -903,6 +911,16 @@ const ApiWaAdminFlowTemplatesRoute = ApiWaAdminFlowTemplatesRouteImport.update({
 const ApiWaAdminBusinessesRoute = ApiWaAdminBusinessesRouteImport.update({
   id: '/api/wa-admin/businesses',
   path: '/api/wa-admin/businesses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLicenseCheckRoute = ApiLicenseCheckRouteImport.update({
+  id: '/api/license/check',
+  path: '/api/license/check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLicenseAdminRoute = ApiLicenseAdminRouteImport.update({
+  id: '/api/license/admin',
+  path: '/api/license/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiConnectReleaseRoute = ApiConnectReleaseRouteImport.update({
@@ -1576,6 +1594,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1625,6 +1644,8 @@ export interface FileRoutesByFullPath {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -1814,6 +1835,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1857,6 +1879,8 @@ export interface FileRoutesByTo {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2045,6 +2069,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -2094,6 +2119,8 @@ export interface FileRoutesById {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2289,6 +2316,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2338,6 +2366,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2527,6 +2557,7 @@ export interface FileRouteTypes {
     | '/'
     | '/contact'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2570,6 +2601,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2757,6 +2790,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2806,6 +2840,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -3000,6 +3036,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   Dashboard2Route: typeof Dashboard2RouteWithChildren
   DataDeletionRoute: typeof DataDeletionRoute
+  LicenseAdminRoute: typeof LicenseAdminRoute
   LogsWABotRoute: typeof LogsWABotRoute
   PrivacyRoute: typeof PrivacyRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -3017,6 +3054,8 @@ export interface RootRouteChildren {
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
   ApiConnectReleaseRoute: typeof ApiConnectReleaseRoute
+  ApiLicenseAdminRoute: typeof ApiLicenseAdminRoute
+  ApiLicenseCheckRoute: typeof ApiLicenseCheckRoute
   ApiWaAdminBusinessesRoute: typeof ApiWaAdminBusinessesRouteWithChildren
   ApiWaAdminFlowTemplatesRoute: typeof ApiWaAdminFlowTemplatesRouteWithChildren
   ApiWaAdminLoginRoute: typeof ApiWaAdminLoginRoute
@@ -3131,6 +3170,13 @@ declare module '@tanstack/react-router' {
       path: '/logsWABot'
       fullPath: '/logsWABot'
       preLoaderRoute: typeof LogsWABotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/license-admin': {
+      id: '/license-admin'
+      path: '/license-admin'
+      fullPath: '/license-admin'
+      preLoaderRoute: typeof LicenseAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-deletion': {
@@ -3978,6 +4024,20 @@ declare module '@tanstack/react-router' {
       path: '/api/wa-admin/businesses'
       fullPath: '/api/wa-admin/businesses'
       preLoaderRoute: typeof ApiWaAdminBusinessesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/license/check': {
+      id: '/api/license/check'
+      path: '/api/license/check'
+      fullPath: '/api/license/check'
+      preLoaderRoute: typeof ApiLicenseCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/license/admin': {
+      id: '/api/license/admin'
+      path: '/api/license/admin'
+      fullPath: '/api/license/admin'
+      preLoaderRoute: typeof ApiLicenseAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/connect/release': {
@@ -5563,6 +5623,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   Dashboard2Route: Dashboard2RouteWithChildren,
   DataDeletionRoute: DataDeletionRoute,
+  LicenseAdminRoute: LicenseAdminRoute,
   LogsWABotRoute: LogsWABotRoute,
   PrivacyRoute: PrivacyRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
@@ -5580,6 +5641,8 @@ const rootRouteChildren: RootRouteChildren = {
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
   ApiConnectReleaseRoute: ApiConnectReleaseRoute,
+  ApiLicenseAdminRoute: ApiLicenseAdminRoute,
+  ApiLicenseCheckRoute: ApiLicenseCheckRoute,
   ApiWaAdminBusinessesRoute: ApiWaAdminBusinessesRouteWithChildren,
   ApiWaAdminFlowTemplatesRoute: ApiWaAdminFlowTemplatesRouteWithChildren,
   ApiWaAdminLoginRoute: ApiWaAdminLoginRoute,
