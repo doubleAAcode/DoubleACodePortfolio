@@ -9,300 +9,253 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
-import { Route as StoresRouteImport } from './routes/stores'
-import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LogsWABotRouteImport } from './routes/logsWABot'
-import { Route as DataDeletionRouteImport } from './routes/data-deletion'
-import { Route as Dashboard2RouteImport } from './routes/dashboard-2'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as ConnectRouteImport } from './routes/connect'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StoresIndexRouteImport } from './routes/stores.index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
-import { Route as Dashboard2IndexRouteImport } from './routes/dashboard-2.index'
-import { Route as ConnectIndexRouteImport } from './routes/connect.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ConnectRouteImport } from './routes/connect'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as Dashboard2RouteImport } from './routes/dashboard-2'
+import { Route as DataDeletionRouteImport } from './routes/data-deletion'
+import { Route as LicenseAdminRouteImport } from './routes/license-admin'
+import { Route as LogsWABotRouteImport } from './routes/logsWABot'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as SpreadsheetRouteImport } from './routes/spreadsheet'
+import { Route as StoresRouteImport } from './routes/stores'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as WorkUno400RouteImport } from './routes/work/uno400'
-import { Route as WorkTijaratiProRouteImport } from './routes/work/tijarati-pro'
-import { Route as WorkSnapgoRouteImport } from './routes/work/snapgo'
-import { Route as WorkKoubarGroupRouteImport } from './routes/work/koubar-group'
-import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-lab'
-import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
-import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
-import { Route as QuotationsKhadamatiRouteImport } from './routes/quotations.khadamati'
-import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
-import { Route as InvoicemakerSupportRouteImport } from './routes/invoicemaker.support'
-import { Route as InvoicemakerPrivacyRouteImport } from './routes/invoicemaker.privacy'
-import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
-import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
-import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
-import { Route as DashboardDeliveryRouteImport } from './routes/dashboard.delivery'
-import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
-import { Route as Dashboard2SimulatorRouteImport } from './routes/dashboard-2.simulator'
-import { Route as Dashboard2SettingsRouteImport } from './routes/dashboard-2.settings'
-import { Route as Dashboard2ProductsRouteImport } from './routes/dashboard-2.products'
-import { Route as Dashboard2OrdersRouteImport } from './routes/dashboard-2.orders'
-import { Route as Dashboard2DeliveryRouteImport } from './routes/dashboard-2.delivery'
-import { Route as Dashboard2CategoriesRouteImport } from './routes/dashboard-2.categories'
-import { Route as ConnectLogsRouteImport } from './routes/connect.logs'
-import { Route as ConnectDashboard2RouteImport } from './routes/connect.dashboard-2'
-import { Route as ConnectDashboardRouteImport } from './routes/connect.dashboard'
-import { Route as ConnectClientRouteImport } from './routes/connect/client'
-import { Route as ConnectAdminRouteImport } from './routes/connect.admin'
-import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
-import { Route as AdminLogsRouteImport } from './routes/admin.logs'
-import { Route as AdminFlowTemplatesRouteImport } from './routes/admin.flow-templates'
-import { Route as AdminBusinessesRouteImport } from './routes/admin.businesses'
 import { Route as AdminAppReviewDemoRouteImport } from './routes/admin.app-review-demo'
-import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
-import { Route as ConnectDashboardIndexRouteImport } from './routes/connect.dashboard.index'
-import { Route as ConnectDashboard2IndexRouteImport } from './routes/connect.dashboard-2.index'
-import { Route as ConnectClientIndexRouteImport } from './routes/connect/client/index'
-import { Route as ConnectAdminIndexRouteImport } from './routes/connect.admin.index'
-import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
-import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
-import { Route as StoresPavoneCheckoutRouteImport } from './routes/stores/pavone.checkout'
-import { Route as StoresPavoneCartRouteImport } from './routes/stores/pavone.cart'
-import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
-import { Route as DashboardOrdersOrderIdRouteImport } from './routes/dashboard.orders.$orderId'
-import { Route as Dashboard2OrdersOrderIdRouteImport } from './routes/dashboard-2.orders.$orderId'
-import { Route as ConnectDashboardSimulatorRouteImport } from './routes/connect.dashboard.simulator'
-import { Route as ConnectDashboardSettingsRouteImport } from './routes/connect.dashboard.settings'
-import { Route as ConnectDashboardProductsRouteImport } from './routes/connect.dashboard.products'
-import { Route as ConnectDashboardOrdersRouteImport } from './routes/connect.dashboard.orders'
-import { Route as ConnectDashboardDeliveryRouteImport } from './routes/connect.dashboard.delivery'
-import { Route as ConnectDashboardCategoriesRouteImport } from './routes/connect.dashboard.categories'
-import { Route as ConnectDashboard2SimulatorRouteImport } from './routes/connect.dashboard-2.simulator'
-import { Route as ConnectDashboard2SettingsRouteImport } from './routes/connect.dashboard-2.settings'
-import { Route as ConnectDashboard2ProductsRouteImport } from './routes/connect.dashboard-2.products'
-import { Route as ConnectDashboard2OrdersRouteImport } from './routes/connect.dashboard-2.orders'
-import { Route as ConnectDashboard2DeliveryRouteImport } from './routes/connect.dashboard-2.delivery'
-import { Route as ConnectDashboard2CategoriesRouteImport } from './routes/connect.dashboard-2.categories'
-import { Route as ConnectClientVoiceRouteImport } from './routes/connect/client/voice'
-import { Route as ConnectClientTemplatesRouteImport } from './routes/connect/client/templates'
-import { Route as ConnectClientSettingsRouteImport } from './routes/connect/client/settings'
-import { Route as ConnectClientPaymentsRouteImport } from './routes/connect/client/payments'
-import { Route as ConnectClientIntegrationsRouteImport } from './routes/connect/client/integrations'
-import { Route as ConnectClientInboxRouteImport } from './routes/connect/client/inbox'
-import { Route as ConnectClientEnterpriseRouteImport } from './routes/connect/client/enterprise'
-import { Route as ConnectClientDevelopersRouteImport } from './routes/connect/client/developers'
-import { Route as ConnectClientContactsRouteImport } from './routes/connect/client/contacts'
-import { Route as ConnectClientChannelsRouteImport } from './routes/connect/client/channels'
-import { Route as ConnectClientCatalogRouteImport } from './routes/connect/client/catalog'
-import { Route as ConnectClientBroadcastsRouteImport } from './routes/connect/client/broadcasts'
-import { Route as ConnectClientAutomationsRouteImport } from './routes/connect/client/automations'
-import { Route as ConnectClientAnalyticsRouteImport } from './routes/connect/client/analytics'
-import { Route as ConnectClientAiAgentRouteImport } from './routes/connect/client/ai-agent'
-import { Route as ConnectAdminWhatsappTemplatesRouteImport } from './routes/connect.admin.whatsapp-templates'
-import { Route as ConnectAdminSettingsRouteImport } from './routes/connect.admin.settings'
-import { Route as ConnectAdminLogsRouteImport } from './routes/connect.admin.logs'
-import { Route as ConnectAdminInboxRouteImport } from './routes/connect.admin.inbox'
-import { Route as ConnectAdminFlowTemplatesRouteImport } from './routes/connect.admin.flow-templates'
-import { Route as ConnectAdminDevelopersRouteImport } from './routes/connect.admin.developers'
-import { Route as ConnectAdminContactsRouteImport } from './routes/connect.admin.contacts'
-import { Route as ConnectAdminBroadcastsRouteImport } from './routes/connect.admin.broadcasts'
-import { Route as ConnectAdminAnalyticsRouteImport } from './routes/connect.admin.analytics'
-import { Route as ApiWhatsappWebhook2RouteImport } from './routes/api.whatsapp.webhook-2'
-import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
-import { Route as ApiWaDashboardUploadRouteImport } from './routes/api.wa-dashboard.upload'
-import { Route as ApiWaDashboardSessionRouteImport } from './routes/api.wa-dashboard.session'
-import { Route as ApiWaDashboardOrdersRouteImport } from './routes/api.wa-dashboard.orders'
-import { Route as ApiWaDashboardNotificationsRouteImport } from './routes/api.wa-dashboard.notifications'
-import { Route as ApiWaDashboardLogoutRouteImport } from './routes/api.wa-dashboard.logout'
-import { Route as ApiWaDashboardLoginRouteImport } from './routes/api.wa-dashboard.login'
-import { Route as ApiWaDashboardDiagnosticsRouteImport } from './routes/api.wa-dashboard.diagnostics'
-import { Route as ApiWaDashboardCatalogRouteImport } from './routes/api.wa-dashboard.catalog'
-import { Route as ApiWaDashboard2UploadRouteImport } from './routes/api.wa-dashboard-2.upload'
-import { Route as ApiWaDashboard2SessionRouteImport } from './routes/api.wa-dashboard-2.session'
-import { Route as ApiWaDashboard2OrdersRouteImport } from './routes/api.wa-dashboard-2.orders'
-import { Route as ApiWaDashboard2LogoutRouteImport } from './routes/api.wa-dashboard-2.logout'
-import { Route as ApiWaDashboard2LoginRouteImport } from './routes/api.wa-dashboard-2.login'
-import { Route as ApiWaDashboard2DiagnosticsRouteImport } from './routes/api.wa-dashboard-2.diagnostics'
-import { Route as ApiWaDashboard2CatalogRouteImport } from './routes/api.wa-dashboard-2.catalog'
-import { Route as ApiWaAdminWhatsappTemplatesRouteImport } from './routes/api.wa-admin.whatsapp-templates'
-import { Route as ApiWaAdminSessionRouteImport } from './routes/api.wa-admin.session'
-import { Route as ApiWaAdminSendReviewMessageRouteImport } from './routes/api.wa-admin.send-review-message'
-import { Route as ApiWaAdminReviewConnectionsRouteImport } from './routes/api.wa-admin.review-connections'
-import { Route as ApiWaAdminOverviewRouteImport } from './routes/api.wa-admin.overview'
-import { Route as ApiWaAdminMessageEventsRouteImport } from './routes/api.wa-admin.message-events'
-import { Route as ApiWaAdminLogsRouteImport } from './routes/api.wa-admin.logs'
-import { Route as ApiWaAdminLogoutRouteImport } from './routes/api.wa-admin.logout'
-import { Route as ApiWaAdminLoginRouteImport } from './routes/api.wa-admin.login'
-import { Route as ApiWaAdminFlowTemplatesRouteImport } from './routes/api.wa-admin.flow-templates'
-import { Route as ApiWaAdminBusinessesRouteImport } from './routes/api.wa-admin.businesses'
-import { Route as ApiConnectReleaseRouteImport } from './routes/api.connect.release'
-import { Route as AdminFlowTemplatesNewRouteImport } from './routes/admin.flow-templates.new'
-import { Route as AdminFlowTemplatesTemplateIdRouteImport } from './routes/admin.flow-templates.$templateId'
-import { Route as AdminBusinessesNewRouteImport } from './routes/admin.businesses.new'
+import { Route as AdminBusinessesRouteImport } from './routes/admin.businesses'
+import { Route as AdminFlowTemplatesRouteImport } from './routes/admin.flow-templates'
+import { Route as AdminLogsRouteImport } from './routes/admin.logs'
+import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
+import { Route as ConnectIndexRouteImport } from './routes/connect.index'
+import { Route as ConnectAdminRouteImport } from './routes/connect.admin'
+import { Route as ConnectClientRouteImport } from './routes/connect/client'
+import { Route as ConnectDashboardRouteImport } from './routes/connect.dashboard'
+import { Route as ConnectDashboard2RouteImport } from './routes/connect.dashboard-2'
+import { Route as ConnectLogsRouteImport } from './routes/connect.logs'
+import { Route as Dashboard2IndexRouteImport } from './routes/dashboard-2.index'
+import { Route as Dashboard2CategoriesRouteImport } from './routes/dashboard-2.categories'
+import { Route as Dashboard2DeliveryRouteImport } from './routes/dashboard-2.delivery'
+import { Route as Dashboard2OrdersRouteImport } from './routes/dashboard-2.orders'
+import { Route as Dashboard2ProductsRouteImport } from './routes/dashboard-2.products'
+import { Route as Dashboard2SettingsRouteImport } from './routes/dashboard-2.settings'
+import { Route as Dashboard2SimulatorRouteImport } from './routes/dashboard-2.simulator'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
+import { Route as DashboardDeliveryRouteImport } from './routes/dashboard.delivery'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simulator'
+import { Route as InvoicemakerPrivacyRouteImport } from './routes/invoicemaker.privacy'
+import { Route as InvoicemakerSupportRouteImport } from './routes/invoicemaker.support'
+import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
+import { Route as QuotationsKhadamatiRouteImport } from './routes/quotations.khadamati'
+import { Route as StoresIndexRouteImport } from './routes/stores.index'
+import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
+import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
+import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-lab'
+import { Route as WorkKoubarGroupRouteImport } from './routes/work/koubar-group'
+import { Route as WorkSnapgoRouteImport } from './routes/work/snapgo'
+import { Route as WorkTijaratiProRouteImport } from './routes/work/tijarati-pro'
+import { Route as WorkUno400RouteImport } from './routes/work/uno400'
 import { Route as AdminBusinessesBusinessIdRouteImport } from './routes/admin.businesses.$businessId'
-import { Route as StoresPavoneAdminIndexRouteImport } from './routes/stores/pavone.admin.index'
-import { Route as ConnectAdminSettingsIndexRouteImport } from './routes/connect.admin.settings.index'
-import { Route as ConnectAdminInboxIndexRouteImport } from './routes/connect.admin.inbox.index'
-import { Route as ConnectAdminContactsIndexRouteImport } from './routes/connect.admin.contacts.index'
-import { Route as ConnectAdminBusinessesIndexRouteImport } from './routes/connect.admin.businesses.index'
-import { Route as ConnectAdminBroadcastsIndexRouteImport } from './routes/connect.admin.broadcasts.index'
-import { Route as StoresPavoneProductSlugRouteImport } from './routes/stores/pavone.product.$slug'
-import { Route as StoresPavoneCategorySlugRouteImport } from './routes/stores/pavone.category.$slug'
-import { Route as StoresPavoneAdminSettingsRouteImport } from './routes/stores/pavone.admin.settings'
-import { Route as StoresPavoneAdminProductsRouteImport } from './routes/stores/pavone.admin.products'
-import { Route as StoresPavoneAdminOrdersRouteImport } from './routes/stores/pavone.admin.orders'
-import { Route as StoresPavoneAdminLoginRouteImport } from './routes/stores/pavone.admin.login'
-import { Route as StoresPavoneAdminInspirationsRouteImport } from './routes/stores/pavone.admin.inspirations'
-import { Route as StoresPavoneAdminCategoriesRouteImport } from './routes/stores/pavone.admin.categories'
-import { Route as StoresPavoneAdminBrandsRouteImport } from './routes/stores/pavone.admin.brands'
-import { Route as ConnectDashboardOrdersOrderIdRouteImport } from './routes/connect.dashboard.orders.$orderId'
-import { Route as ConnectDashboard2OrdersOrderIdRouteImport } from './routes/connect.dashboard-2.orders.$orderId'
-import { Route as ConnectAdminSettingsTeamRouteImport } from './routes/connect.admin.settings.team'
-import { Route as ConnectAdminSettingsAuditRouteImport } from './routes/connect.admin.settings.audit'
-import { Route as ConnectAdminInboxConversationIdRouteImport } from './routes/connect.admin.inbox.$conversationId'
-import { Route as ConnectAdminContactsContactIdRouteImport } from './routes/connect.admin.contacts.$contactId'
-import { Route as ConnectAdminBusinessesIdRouteImport } from './routes/connect.admin.businesses.$id'
-import { Route as ConnectAdminBroadcastsNewRouteImport } from './routes/connect.admin.broadcasts.new'
-import { Route as ConnectAdminBroadcastsIdRouteImport } from './routes/connect.admin.broadcasts.$id'
-import { Route as ApiWaDashboardOrdersOrderIdRouteImport } from './routes/api.wa-dashboard.orders.$orderId'
-import { Route as ApiWaDashboard2OrdersOrderIdRouteImport } from './routes/api.wa-dashboard-2.orders.$orderId'
-import { Route as ApiWaAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.wa-admin.flow-templates.$templateId'
-import { Route as ApiWaAdminBusinessesBusinessIdRouteImport } from './routes/api.wa-admin.businesses.$businessId'
-import { Route as ApiConnectWhatsappWebhookRouteImport } from './routes/api.connect.whatsapp.webhook'
-import { Route as ApiConnectDashboardUploadRouteImport } from './routes/api.connect.dashboard.upload'
-import { Route as ApiConnectDashboardSessionRouteImport } from './routes/api.connect.dashboard.session'
-import { Route as ApiConnectDashboardOrdersRouteImport } from './routes/api.connect.dashboard.orders'
-import { Route as ApiConnectDashboardNotificationsRouteImport } from './routes/api.connect.dashboard.notifications'
-import { Route as ApiConnectDashboardLogoutRouteImport } from './routes/api.connect.dashboard.logout'
-import { Route as ApiConnectDashboardLoginRouteImport } from './routes/api.connect.dashboard.login'
-import { Route as ApiConnectDashboardFlowImageRouteImport } from './routes/api.connect.dashboard.flow-image'
-import { Route as ApiConnectDashboardFlowRouteImport } from './routes/api.connect.dashboard.flow'
-import { Route as ApiConnectDashboardDiagnosticsRouteImport } from './routes/api.connect.dashboard.diagnostics'
-import { Route as ApiConnectDashboardCatalogRouteImport } from './routes/api.connect.dashboard.catalog'
-import { Route as ApiConnectDashboard2UploadRouteImport } from './routes/api.connect.dashboard-2.upload'
-import { Route as ApiConnectDashboard2SessionRouteImport } from './routes/api.connect.dashboard-2.session'
-import { Route as ApiConnectDashboard2OrdersRouteImport } from './routes/api.connect.dashboard-2.orders'
-import { Route as ApiConnectDashboard2LogoutRouteImport } from './routes/api.connect.dashboard-2.logout'
-import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.connect.dashboard-2.login'
-import { Route as ApiConnectDashboard2FlowImageRouteImport } from './routes/api.connect.dashboard-2.flow-image'
-import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.connect.dashboard-2.flow'
-import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
-import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
-import { Route as ApiConnectClientInboxOptionsRouteImport } from './routes/api/connect/client/inbox-options'
-import { Route as ApiConnectClientConversationsRouteImport } from './routes/api/connect/client/conversations'
-import { Route as ApiConnectClientContactsRouteImport } from './routes/api/connect/client/contacts'
-import { Route as ApiConnectClientCannedRepliesRouteImport } from './routes/api/connect/client/canned-replies'
-import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
-import { Route as ApiConnectAdminWhatsappHealthRouteImport } from './routes/api.connect.admin.whatsapp-health'
-import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
-import { Route as ApiConnectAdminSendReviewMessageRouteImport } from './routes/api.connect.admin.send-review-message'
-import { Route as ApiConnectAdminReviewConnectionsRouteImport } from './routes/api.connect.admin.review-connections'
-import { Route as ApiConnectAdminOverviewRouteImport } from './routes/api.connect.admin.overview'
-import { Route as ApiConnectAdminMessageEventsRouteImport } from './routes/api.connect.admin.message-events'
-import { Route as ApiConnectAdminLogsRouteImport } from './routes/api.connect.admin.logs'
-import { Route as ApiConnectAdminLogoutRouteImport } from './routes/api.connect.admin.logout'
-import { Route as ApiConnectAdminLoginRouteImport } from './routes/api.connect.admin.login'
-import { Route as ApiConnectAdminInboxOptionsRouteImport } from './routes/api.connect.admin.inbox-options'
-import { Route as ApiConnectAdminFlowTemplatesRouteImport } from './routes/api.connect.admin.flow-templates'
-import { Route as ApiConnectAdminConversationsRouteImport } from './routes/api.connect.admin.conversations'
-import { Route as ApiConnectAdminContactsRouteImport } from './routes/api.connect.admin.contacts'
-import { Route as ApiConnectAdminCannedRepliesRouteImport } from './routes/api.connect.admin.canned-replies'
-import { Route as ApiConnectAdminBusinessesRouteImport } from './routes/api.connect.admin.businesses'
-import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
-import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
-import { Route as AdminBusinessesBusinessIdCategoriesRouteImport } from './routes/admin.businesses.$businessId.categories'
-import { Route as AdminBusinessesBusinessIdCatalogRoutesRouteImport } from './routes/admin.businesses.$businessId.catalog-routes'
+import { Route as AdminBusinessesNewRouteImport } from './routes/admin.businesses.new'
+import { Route as AdminFlowTemplatesTemplateIdRouteImport } from './routes/admin.flow-templates.$templateId'
+import { Route as AdminFlowTemplatesNewRouteImport } from './routes/admin.flow-templates.new'
+import { Route as ApiConnectReleaseRouteImport } from './routes/api.connect.release'
+import { Route as ApiLicenseAdminRouteImport } from './routes/api.license.admin'
+import { Route as ApiLicenseCheckRouteImport } from './routes/api.license.check'
+import { Route as ApiWaAdminBusinessesRouteImport } from './routes/api.wa-admin.businesses'
+import { Route as ApiWaAdminFlowTemplatesRouteImport } from './routes/api.wa-admin.flow-templates'
+import { Route as ApiWaAdminLoginRouteImport } from './routes/api.wa-admin.login'
+import { Route as ApiWaAdminLogoutRouteImport } from './routes/api.wa-admin.logout'
+import { Route as ApiWaAdminLogsRouteImport } from './routes/api.wa-admin.logs'
+import { Route as ApiWaAdminMessageEventsRouteImport } from './routes/api.wa-admin.message-events'
+import { Route as ApiWaAdminOverviewRouteImport } from './routes/api.wa-admin.overview'
+import { Route as ApiWaAdminReviewConnectionsRouteImport } from './routes/api.wa-admin.review-connections'
+import { Route as ApiWaAdminSendReviewMessageRouteImport } from './routes/api.wa-admin.send-review-message'
+import { Route as ApiWaAdminSessionRouteImport } from './routes/api.wa-admin.session'
+import { Route as ApiWaAdminWhatsappTemplatesRouteImport } from './routes/api.wa-admin.whatsapp-templates'
+import { Route as ApiWaDashboard2CatalogRouteImport } from './routes/api.wa-dashboard-2.catalog'
+import { Route as ApiWaDashboard2DiagnosticsRouteImport } from './routes/api.wa-dashboard-2.diagnostics'
+import { Route as ApiWaDashboard2LoginRouteImport } from './routes/api.wa-dashboard-2.login'
+import { Route as ApiWaDashboard2LogoutRouteImport } from './routes/api.wa-dashboard-2.logout'
+import { Route as ApiWaDashboard2OrdersRouteImport } from './routes/api.wa-dashboard-2.orders'
+import { Route as ApiWaDashboard2SessionRouteImport } from './routes/api.wa-dashboard-2.session'
+import { Route as ApiWaDashboard2UploadRouteImport } from './routes/api.wa-dashboard-2.upload'
+import { Route as ApiWaDashboardCatalogRouteImport } from './routes/api.wa-dashboard.catalog'
+import { Route as ApiWaDashboardDiagnosticsRouteImport } from './routes/api.wa-dashboard.diagnostics'
+import { Route as ApiWaDashboardLoginRouteImport } from './routes/api.wa-dashboard.login'
+import { Route as ApiWaDashboardLogoutRouteImport } from './routes/api.wa-dashboard.logout'
+import { Route as ApiWaDashboardNotificationsRouteImport } from './routes/api.wa-dashboard.notifications'
+import { Route as ApiWaDashboardOrdersRouteImport } from './routes/api.wa-dashboard.orders'
+import { Route as ApiWaDashboardSessionRouteImport } from './routes/api.wa-dashboard.session'
+import { Route as ApiWaDashboardUploadRouteImport } from './routes/api.wa-dashboard.upload'
+import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
+import { Route as ApiWhatsappWebhook2RouteImport } from './routes/api.whatsapp.webhook-2'
+import { Route as ConnectAdminIndexRouteImport } from './routes/connect.admin.index'
+import { Route as ConnectAdminAnalyticsRouteImport } from './routes/connect.admin.analytics'
+import { Route as ConnectAdminBroadcastsRouteImport } from './routes/connect.admin.broadcasts'
+import { Route as ConnectAdminContactsRouteImport } from './routes/connect.admin.contacts'
+import { Route as ConnectAdminDevelopersRouteImport } from './routes/connect.admin.developers'
+import { Route as ConnectAdminFlowTemplatesRouteImport } from './routes/connect.admin.flow-templates'
+import { Route as ConnectAdminInboxRouteImport } from './routes/connect.admin.inbox'
+import { Route as ConnectAdminLogsRouteImport } from './routes/connect.admin.logs'
+import { Route as ConnectAdminSettingsRouteImport } from './routes/connect.admin.settings'
+import { Route as ConnectAdminWhatsappTemplatesRouteImport } from './routes/connect.admin.whatsapp-templates'
+import { Route as ConnectClientIndexRouteImport } from './routes/connect/client/index'
+import { Route as ConnectClientAiAgentRouteImport } from './routes/connect/client/ai-agent'
+import { Route as ConnectClientAnalyticsRouteImport } from './routes/connect/client/analytics'
+import { Route as ConnectClientAutomationsRouteImport } from './routes/connect/client/automations'
+import { Route as ConnectClientBroadcastsRouteImport } from './routes/connect/client/broadcasts'
+import { Route as ConnectClientCatalogRouteImport } from './routes/connect/client/catalog'
+import { Route as ConnectClientChannelsRouteImport } from './routes/connect/client/channels'
+import { Route as ConnectClientContactsRouteImport } from './routes/connect/client/contacts'
+import { Route as ConnectClientDevelopersRouteImport } from './routes/connect/client/developers'
+import { Route as ConnectClientEnterpriseRouteImport } from './routes/connect/client/enterprise'
+import { Route as ConnectClientInboxRouteImport } from './routes/connect/client/inbox'
+import { Route as ConnectClientIntegrationsRouteImport } from './routes/connect/client/integrations'
+import { Route as ConnectClientPaymentsRouteImport } from './routes/connect/client/payments'
+import { Route as ConnectClientSettingsRouteImport } from './routes/connect/client/settings'
+import { Route as ConnectClientTemplatesRouteImport } from './routes/connect/client/templates'
+import { Route as ConnectClientVoiceRouteImport } from './routes/connect/client/voice'
+import { Route as ConnectDashboard2IndexRouteImport } from './routes/connect.dashboard-2.index'
+import { Route as ConnectDashboard2CategoriesRouteImport } from './routes/connect.dashboard-2.categories'
+import { Route as ConnectDashboard2DeliveryRouteImport } from './routes/connect.dashboard-2.delivery'
+import { Route as ConnectDashboard2OrdersRouteImport } from './routes/connect.dashboard-2.orders'
+import { Route as ConnectDashboard2ProductsRouteImport } from './routes/connect.dashboard-2.products'
+import { Route as ConnectDashboard2SettingsRouteImport } from './routes/connect.dashboard-2.settings'
+import { Route as ConnectDashboard2SimulatorRouteImport } from './routes/connect.dashboard-2.simulator'
+import { Route as ConnectDashboardIndexRouteImport } from './routes/connect.dashboard.index'
+import { Route as ConnectDashboardCategoriesRouteImport } from './routes/connect.dashboard.categories'
+import { Route as ConnectDashboardDeliveryRouteImport } from './routes/connect.dashboard.delivery'
+import { Route as ConnectDashboardOrdersRouteImport } from './routes/connect.dashboard.orders'
+import { Route as ConnectDashboardProductsRouteImport } from './routes/connect.dashboard.products'
+import { Route as ConnectDashboardSettingsRouteImport } from './routes/connect.dashboard.settings'
+import { Route as ConnectDashboardSimulatorRouteImport } from './routes/connect.dashboard.simulator'
+import { Route as Dashboard2OrdersOrderIdRouteImport } from './routes/dashboard-2.orders.$orderId'
+import { Route as DashboardOrdersOrderIdRouteImport } from './routes/dashboard.orders.$orderId'
+import { Route as StoresPavoneIndexRouteImport } from './routes/stores/pavone.index'
+import { Route as StoresPavoneAdminRouteImport } from './routes/stores/pavone.admin'
+import { Route as StoresPavoneCartRouteImport } from './routes/stores/pavone.cart'
+import { Route as StoresPavoneCheckoutRouteImport } from './routes/stores/pavone.checkout'
+import { Route as StoresPavoneShopRouteImport } from './routes/stores/pavone.shop'
+import { Route as StoresPavoneWishlistRouteImport } from './routes/stores/pavone.wishlist'
 import { Route as AdminBusinessesBusinessIdCatalogRouteValuesRouteImport } from './routes/admin.businesses.$businessId.catalog-route-values'
-import { Route as ConnectAdminBusinessesIdIndexRouteImport } from './routes/connect.admin.businesses.$id.index'
-import { Route as ConnectAdminBusinessesIdWhatsappRouteImport } from './routes/connect.admin.businesses.$id.whatsapp'
-import { Route as ConnectAdminBusinessesIdRouteValuesRouteImport } from './routes/connect.admin.businesses.$id.route-values'
-import { Route as ConnectAdminBusinessesIdProductsRouteImport } from './routes/connect.admin.businesses.$id.products'
-import { Route as ConnectAdminBusinessesIdLiveTestRouteImport } from './routes/connect.admin.businesses.$id.live-test'
-import { Route as ConnectAdminBusinessesIdFlowBuilderRouteImport } from './routes/connect.admin.businesses.$id.flow-builder'
-import { Route as ConnectAdminBusinessesIdDiagnosticsRouteImport } from './routes/connect.admin.businesses.$id.diagnostics'
-import { Route as ConnectAdminBusinessesIdCheckoutRouteImport } from './routes/connect.admin.businesses.$id.checkout'
-import { Route as ConnectAdminBusinessesIdCatalogRoutesRouteImport } from './routes/connect.admin.businesses.$id.catalog-routes'
-import { Route as ApiWaAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.product-image'
-import { Route as ApiWaAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow-image'
-import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
-import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/api.connect.dashboard.orders.$orderId'
-import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
-import { Route as ApiConnectClientConversationsConversationIdRouteImport } from './routes/api/connect/client/conversations.$conversationId'
-import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/api/connect/client/contacts.$contactId'
-import { Route as ApiConnectClientCannedRepliesReplyIdRouteImport } from './routes/api/connect/client/canned-replies.$replyId'
-import { Route as ApiConnectAdminHumanOutboxReconciliationRouteImport } from './routes/api.connect.admin.human-outbox.reconciliation'
-import { Route as ApiConnectAdminHumanOutboxProcessRouteImport } from './routes/api.connect.admin.human-outbox.process'
-import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
-import { Route as ApiConnectAdminConversationsProcessLifecycleRouteImport } from './routes/api.connect.admin.conversations.process-lifecycle'
-import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
-import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
-import { Route as ApiConnectAdminCannedRepliesReplyIdRouteImport } from './routes/api.connect.admin.canned-replies.$replyId'
-import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
+import { Route as AdminBusinessesBusinessIdCatalogRoutesRouteImport } from './routes/admin.businesses.$businessId.catalog-routes'
+import { Route as AdminBusinessesBusinessIdCategoriesRouteImport } from './routes/admin.businesses.$businessId.categories'
+import { Route as AdminBusinessesBusinessIdFlowBuilderRouteImport } from './routes/admin.businesses.$businessId.flow-builder'
+import { Route as AdminBusinessesBusinessIdProductsRouteImport } from './routes/admin.businesses.$businessId.products'
+import { Route as ApiConnectAdminBusinessesRouteImport } from './routes/api.connect.admin.businesses'
+import { Route as ApiConnectAdminCannedRepliesRouteImport } from './routes/api.connect.admin.canned-replies'
+import { Route as ApiConnectAdminContactsRouteImport } from './routes/api.connect.admin.contacts'
+import { Route as ApiConnectAdminConversationsRouteImport } from './routes/api.connect.admin.conversations'
+import { Route as ApiConnectAdminFlowTemplatesRouteImport } from './routes/api.connect.admin.flow-templates'
+import { Route as ApiConnectAdminInboxOptionsRouteImport } from './routes/api.connect.admin.inbox-options'
+import { Route as ApiConnectAdminLoginRouteImport } from './routes/api.connect.admin.login'
+import { Route as ApiConnectAdminLogoutRouteImport } from './routes/api.connect.admin.logout'
+import { Route as ApiConnectAdminLogsRouteImport } from './routes/api.connect.admin.logs'
+import { Route as ApiConnectAdminMessageEventsRouteImport } from './routes/api.connect.admin.message-events'
+import { Route as ApiConnectAdminOverviewRouteImport } from './routes/api.connect.admin.overview'
+import { Route as ApiConnectAdminReviewConnectionsRouteImport } from './routes/api.connect.admin.review-connections'
+import { Route as ApiConnectAdminSendReviewMessageRouteImport } from './routes/api.connect.admin.send-review-message'
+import { Route as ApiConnectAdminSessionRouteImport } from './routes/api.connect.admin.session'
+import { Route as ApiConnectAdminWhatsappHealthRouteImport } from './routes/api.connect.admin.whatsapp-health'
+import { Route as ApiConnectAdminWhatsappTemplatesRouteImport } from './routes/api.connect.admin.whatsapp-templates'
+import { Route as ApiConnectClientCannedRepliesRouteImport } from './routes/api/connect/client/canned-replies'
+import { Route as ApiConnectClientContactsRouteImport } from './routes/api/connect/client/contacts'
+import { Route as ApiConnectClientConversationsRouteImport } from './routes/api/connect/client/conversations'
+import { Route as ApiConnectClientInboxOptionsRouteImport } from './routes/api/connect/client/inbox-options'
+import { Route as ApiConnectDashboard2CatalogRouteImport } from './routes/api.connect.dashboard-2.catalog'
+import { Route as ApiConnectDashboard2DiagnosticsRouteImport } from './routes/api.connect.dashboard-2.diagnostics'
+import { Route as ApiConnectDashboard2FlowRouteImport } from './routes/api.connect.dashboard-2.flow'
+import { Route as ApiConnectDashboard2FlowImageRouteImport } from './routes/api.connect.dashboard-2.flow-image'
+import { Route as ApiConnectDashboard2LoginRouteImport } from './routes/api.connect.dashboard-2.login'
+import { Route as ApiConnectDashboard2LogoutRouteImport } from './routes/api.connect.dashboard-2.logout'
+import { Route as ApiConnectDashboard2OrdersRouteImport } from './routes/api.connect.dashboard-2.orders'
+import { Route as ApiConnectDashboard2SessionRouteImport } from './routes/api.connect.dashboard-2.session'
+import { Route as ApiConnectDashboard2UploadRouteImport } from './routes/api.connect.dashboard-2.upload'
+import { Route as ApiConnectDashboardCatalogRouteImport } from './routes/api.connect.dashboard.catalog'
+import { Route as ApiConnectDashboardDiagnosticsRouteImport } from './routes/api.connect.dashboard.diagnostics'
+import { Route as ApiConnectDashboardFlowRouteImport } from './routes/api.connect.dashboard.flow'
+import { Route as ApiConnectDashboardFlowImageRouteImport } from './routes/api.connect.dashboard.flow-image'
+import { Route as ApiConnectDashboardLoginRouteImport } from './routes/api.connect.dashboard.login'
+import { Route as ApiConnectDashboardLogoutRouteImport } from './routes/api.connect.dashboard.logout'
+import { Route as ApiConnectDashboardNotificationsRouteImport } from './routes/api.connect.dashboard.notifications'
+import { Route as ApiConnectDashboardOrdersRouteImport } from './routes/api.connect.dashboard.orders'
+import { Route as ApiConnectDashboardSessionRouteImport } from './routes/api.connect.dashboard.session'
+import { Route as ApiConnectDashboardUploadRouteImport } from './routes/api.connect.dashboard.upload'
+import { Route as ApiConnectWhatsappWebhookRouteImport } from './routes/api.connect.whatsapp.webhook'
+import { Route as ApiWaAdminBusinessesBusinessIdRouteImport } from './routes/api.wa-admin.businesses.$businessId'
+import { Route as ApiWaAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.wa-admin.flow-templates.$templateId'
+import { Route as ApiWaDashboard2OrdersOrderIdRouteImport } from './routes/api.wa-dashboard-2.orders.$orderId'
+import { Route as ApiWaDashboardOrdersOrderIdRouteImport } from './routes/api.wa-dashboard.orders.$orderId'
+import { Route as ConnectAdminBroadcastsIndexRouteImport } from './routes/connect.admin.broadcasts.index'
+import { Route as ConnectAdminBroadcastsIdRouteImport } from './routes/connect.admin.broadcasts.$id'
+import { Route as ConnectAdminBroadcastsNewRouteImport } from './routes/connect.admin.broadcasts.new'
+import { Route as ConnectAdminBusinessesIndexRouteImport } from './routes/connect.admin.businesses.index'
+import { Route as ConnectAdminBusinessesIdRouteImport } from './routes/connect.admin.businesses.$id'
+import { Route as ConnectAdminContactsIndexRouteImport } from './routes/connect.admin.contacts.index'
+import { Route as ConnectAdminContactsContactIdRouteImport } from './routes/connect.admin.contacts.$contactId'
+import { Route as ConnectAdminInboxIndexRouteImport } from './routes/connect.admin.inbox.index'
+import { Route as ConnectAdminInboxConversationIdRouteImport } from './routes/connect.admin.inbox.$conversationId'
+import { Route as ConnectAdminSettingsIndexRouteImport } from './routes/connect.admin.settings.index'
+import { Route as ConnectAdminSettingsAuditRouteImport } from './routes/connect.admin.settings.audit'
+import { Route as ConnectAdminSettingsTeamRouteImport } from './routes/connect.admin.settings.team'
+import { Route as ConnectDashboard2OrdersOrderIdRouteImport } from './routes/connect.dashboard-2.orders.$orderId'
+import { Route as ConnectDashboardOrdersOrderIdRouteImport } from './routes/connect.dashboard.orders.$orderId'
+import { Route as StoresPavoneAdminIndexRouteImport } from './routes/stores/pavone.admin.index'
+import { Route as StoresPavoneAdminBrandsRouteImport } from './routes/stores/pavone.admin.brands'
+import { Route as StoresPavoneAdminCategoriesRouteImport } from './routes/stores/pavone.admin.categories'
+import { Route as StoresPavoneAdminInspirationsRouteImport } from './routes/stores/pavone.admin.inspirations'
+import { Route as StoresPavoneAdminLoginRouteImport } from './routes/stores/pavone.admin.login'
+import { Route as StoresPavoneAdminOrdersRouteImport } from './routes/stores/pavone.admin.orders'
+import { Route as StoresPavoneAdminProductsRouteImport } from './routes/stores/pavone.admin.products'
+import { Route as StoresPavoneAdminSettingsRouteImport } from './routes/stores/pavone.admin.settings'
+import { Route as StoresPavoneCategorySlugRouteImport } from './routes/stores/pavone.category.$slug'
+import { Route as StoresPavoneProductSlugRouteImport } from './routes/stores/pavone.product.$slug'
 import { Route as AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport } from './routes/admin.flow-templates.$templateId.versions.$versionId'
-import { Route as ApiConnectClientConversationsConversationIdNotesRouteImport } from './routes/api/connect/client/conversations.$conversationId.notes'
-import { Route as ApiConnectClientConversationsConversationIdMessagesRouteImport } from './routes/api/connect/client/conversations.$conversationId.messages'
-import { Route as ApiConnectAdminConversationsConversationIdNotesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.notes'
-import { Route as ApiConnectAdminConversationsConversationIdMessagesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.messages'
-import { Route as ApiConnectAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.product-image'
-import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
+import { Route as ApiConnectAdminBusinessesBusinessIdRouteImport } from './routes/api.connect.admin.businesses.$businessId'
+import { Route as ApiConnectAdminCannedRepliesReplyIdRouteImport } from './routes/api.connect.admin.canned-replies.$replyId'
+import { Route as ApiConnectAdminContactsContactIdRouteImport } from './routes/api.connect.admin.contacts.$contactId'
+import { Route as ApiConnectAdminConversationsConversationIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId'
+import { Route as ApiConnectAdminConversationsProcessLifecycleRouteImport } from './routes/api.connect.admin.conversations.process-lifecycle'
+import { Route as ApiConnectAdminFlowTemplatesTemplateIdRouteImport } from './routes/api.connect.admin.flow-templates.$templateId'
+import { Route as ApiConnectAdminHumanOutboxProcessRouteImport } from './routes/api.connect.admin.human-outbox.process'
+import { Route as ApiConnectAdminHumanOutboxReconciliationRouteImport } from './routes/api.connect.admin.human-outbox.reconciliation'
+import { Route as ApiConnectClientCannedRepliesReplyIdRouteImport } from './routes/api/connect/client/canned-replies.$replyId'
+import { Route as ApiConnectClientContactsContactIdRouteImport } from './routes/api/connect/client/contacts.$contactId'
+import { Route as ApiConnectClientConversationsConversationIdRouteImport } from './routes/api/connect/client/conversations.$conversationId'
+import { Route as ApiConnectDashboard2OrdersOrderIdRouteImport } from './routes/api.connect.dashboard-2.orders.$orderId'
+import { Route as ApiConnectDashboardOrdersOrderIdRouteImport } from './routes/api.connect.dashboard.orders.$orderId'
+import { Route as ApiWaAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow'
+import { Route as ApiWaAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.flow-image'
+import { Route as ApiWaAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.wa-admin.businesses.$businessId.product-image'
+import { Route as ConnectAdminBusinessesIdIndexRouteImport } from './routes/connect.admin.businesses.$id.index'
+import { Route as ConnectAdminBusinessesIdCatalogRoutesRouteImport } from './routes/connect.admin.businesses.$id.catalog-routes'
+import { Route as ConnectAdminBusinessesIdCheckoutRouteImport } from './routes/connect.admin.businesses.$id.checkout'
+import { Route as ConnectAdminBusinessesIdDiagnosticsRouteImport } from './routes/connect.admin.businesses.$id.diagnostics'
+import { Route as ConnectAdminBusinessesIdFlowBuilderRouteImport } from './routes/connect.admin.businesses.$id.flow-builder'
+import { Route as ConnectAdminBusinessesIdLiveTestRouteImport } from './routes/connect.admin.businesses.$id.live-test'
+import { Route as ConnectAdminBusinessesIdProductsRouteImport } from './routes/connect.admin.businesses.$id.products'
+import { Route as ConnectAdminBusinessesIdRouteValuesRouteImport } from './routes/connect.admin.businesses.$id.route-values'
+import { Route as ConnectAdminBusinessesIdWhatsappRouteImport } from './routes/connect.admin.businesses.$id.whatsapp'
 import { Route as ApiConnectAdminBusinessesBusinessIdFlowRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow'
-import { Route as ApiConnectClientConversationsConversationIdTagsTagIdRouteImport } from './routes/api/connect/client/conversations.$conversationId.tags.$tagId'
+import { Route as ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.flow-image'
+import { Route as ApiConnectAdminBusinessesBusinessIdProductImageRouteImport } from './routes/api.connect.admin.businesses.$businessId.product-image'
+import { Route as ApiConnectAdminConversationsConversationIdMessagesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.messages'
+import { Route as ApiConnectAdminConversationsConversationIdNotesRouteImport } from './routes/api.connect.admin.conversations.$conversationId.notes'
+import { Route as ApiConnectClientConversationsConversationIdMessagesRouteImport } from './routes/api/connect/client/conversations.$conversationId.messages'
+import { Route as ApiConnectClientConversationsConversationIdNotesRouteImport } from './routes/api/connect/client/conversations.$conversationId.notes'
 import { Route as ApiConnectAdminConversationsConversationIdTagsTagIdRouteImport } from './routes/api.connect.admin.conversations.$conversationId.tags.$tagId'
+import { Route as ApiConnectClientConversationsConversationIdTagsTagIdRouteImport } from './routes/api/connect/client/conversations.$conversationId.tags.$tagId'
 
-const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
-  id: '/terms-and-conditions',
-  path: '/terms-and-conditions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StoresRoute = StoresRouteImport.update({
-  id: '/stores',
-  path: '/stores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpreadsheetRoute = SpreadsheetRouteImport.update({
-  id: '/spreadsheet',
-  path: '/spreadsheet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
-  id: '/privacy-policy',
-  path: '/privacy-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogsWABotRoute = LogsWABotRouteImport.update({
-  id: '/logsWABot',
-  path: '/logsWABot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DataDeletionRoute = DataDeletionRouteImport.update({
-  id: '/data-deletion',
-  path: '/data-deletion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Dashboard2Route = Dashboard2RouteImport.update({
-  id: '/dashboard-2',
-  path: '/dashboard-2',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConnectRoute = ConnectRouteImport.update({
-  id: '/connect',
-  path: '/connect',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -310,194 +263,69 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ConnectRoute = ConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StoresIndexRoute = StoresIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StoresRoute,
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardRoute,
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const Dashboard2IndexRoute = Dashboard2IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => Dashboard2Route,
+const Dashboard2Route = Dashboard2RouteImport.update({
+  id: '/dashboard-2',
+  path: '/dashboard-2',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const ConnectIndexRoute = ConnectIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectRoute,
+const DataDeletionRoute = DataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LicenseAdminRoute = LicenseAdminRouteImport.update({
+  id: '/license-admin',
+  path: '/license-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsWABotRoute = LogsWABotRouteImport.update({
+  id: '/logsWABot',
+  path: '/logsWABot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpreadsheetRoute = SpreadsheetRouteImport.update({
+  id: '/spreadsheet',
+  path: '/spreadsheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const WorkUno400Route = WorkUno400RouteImport.update({
-  id: '/work/uno400',
-  path: '/work/uno400',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkTijaratiProRoute = WorkTijaratiProRouteImport.update({
-  id: '/work/tijarati-pro',
-  path: '/work/tijarati-pro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkSnapgoRoute = WorkSnapgoRouteImport.update({
-  id: '/work/snapgo',
-  path: '/work/snapgo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkKoubarGroupRoute = WorkKoubarGroupRouteImport.update({
-  id: '/work/koubar-group',
-  path: '/work/koubar-group',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkDetailingLabRoute = WorkDetailingLabRouteImport.update({
-  id: '/work/detailing-lab',
-  path: '/work/detailing-lab',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkDataInsightsRoute = WorkDataInsightsRouteImport.update({
-  id: '/work/data-insights',
-  path: '/work/data-insights',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StoresPavoneRoute = StoresPavoneRouteImport.update({
-  id: '/pavone',
-  path: '/pavone',
-  getParentRoute: () => StoresRoute,
-} as any)
-const QuotationsKhadamatiRoute = QuotationsKhadamatiRouteImport.update({
-  id: '/quotations/khadamati',
-  path: '/quotations/khadamati',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MenusMarleysRoute = MenusMarleysRouteImport.update({
-  id: '/menus/marleys',
-  path: '/menus/marleys',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvoicemakerSupportRoute = InvoicemakerSupportRouteImport.update({
-  id: '/invoicemaker/support',
-  path: '/invoicemaker/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvoicemakerPrivacyRoute = InvoicemakerPrivacyRouteImport.update({
-  id: '/invoicemaker/privacy',
-  path: '/invoicemaker/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardSimulatorRoute = DashboardSimulatorRouteImport.update({
-  id: '/simulator',
-  path: '/simulator',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardProductsRoute = DashboardProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardDeliveryRoute = DashboardDeliveryRouteImport.update({
-  id: '/delivery',
-  path: '/delivery',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const Dashboard2SimulatorRoute = Dashboard2SimulatorRouteImport.update({
-  id: '/simulator',
-  path: '/simulator',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const Dashboard2SettingsRoute = Dashboard2SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const Dashboard2ProductsRoute = Dashboard2ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const Dashboard2OrdersRoute = Dashboard2OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const Dashboard2DeliveryRoute = Dashboard2DeliveryRouteImport.update({
-  id: '/delivery',
-  path: '/delivery',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const Dashboard2CategoriesRoute = Dashboard2CategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
-  getParentRoute: () => Dashboard2Route,
-} as any)
-const ConnectLogsRoute = ConnectLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => ConnectRoute,
-} as any)
-const ConnectDashboard2Route = ConnectDashboard2RouteImport.update({
-  id: '/dashboard-2',
-  path: '/dashboard-2',
-  getParentRoute: () => ConnectRoute,
-} as any)
-const ConnectDashboardRoute = ConnectDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => ConnectRoute,
-} as any)
-const ConnectClientRoute = ConnectClientRouteImport.update({
-  id: '/client',
-  path: '/client',
-  getParentRoute: () => ConnectRoute,
-} as any)
-const ConnectAdminRoute = ConnectAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => ConnectRoute,
-} as any)
-const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
-  id: '/whatsapp-templates',
-  path: '/whatsapp-templates',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLogsRoute = AdminLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFlowTemplatesRoute = AdminFlowTemplatesRouteImport.update({
-  id: '/flow-templates',
-  path: '/flow-templates',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBusinessesRoute = AdminBusinessesRouteImport.update({
-  id: '/businesses',
-  path: '/businesses',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAppReviewDemoRoute = AdminAppReviewDemoRouteImport.update({
@@ -505,346 +333,273 @@ const AdminAppReviewDemoRoute = AdminAppReviewDemoRouteImport.update({
   path: '/app-review-demo',
   getParentRoute: () => AdminRoute,
 } as any)
-const StoresPavoneIndexRoute = StoresPavoneIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StoresPavoneRoute,
+const AdminBusinessesRoute = AdminBusinessesRouteImport.update({
+  id: '/businesses',
+  path: '/businesses',
+  getParentRoute: () => AdminRoute,
 } as any)
-const ConnectDashboardIndexRoute = ConnectDashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectDashboardRoute,
+const AdminFlowTemplatesRoute = AdminFlowTemplatesRouteImport.update({
+  id: '/flow-templates',
+  path: '/flow-templates',
+  getParentRoute: () => AdminRoute,
 } as any)
-const ConnectDashboard2IndexRoute = ConnectDashboard2IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectDashboard2Route,
-} as any)
-const ConnectClientIndexRoute = ConnectClientIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectAdminIndexRoute = ConnectAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectAdminRoute,
-} as any)
-const StoresPavoneWishlistRoute = StoresPavoneWishlistRouteImport.update({
-  id: '/wishlist',
-  path: '/wishlist',
-  getParentRoute: () => StoresPavoneRoute,
-} as any)
-const StoresPavoneShopRoute = StoresPavoneShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
-  getParentRoute: () => StoresPavoneRoute,
-} as any)
-const StoresPavoneCheckoutRoute = StoresPavoneCheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => StoresPavoneRoute,
-} as any)
-const StoresPavoneCartRoute = StoresPavoneCartRouteImport.update({
-  id: '/cart',
-  path: '/cart',
-  getParentRoute: () => StoresPavoneRoute,
-} as any)
-const StoresPavoneAdminRoute = StoresPavoneAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => StoresPavoneRoute,
-} as any)
-const DashboardOrdersOrderIdRoute = DashboardOrdersOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => DashboardOrdersRoute,
-} as any)
-const Dashboard2OrdersOrderIdRoute = Dashboard2OrdersOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => Dashboard2OrdersRoute,
-} as any)
-const ConnectDashboardSimulatorRoute =
-  ConnectDashboardSimulatorRouteImport.update({
-    id: '/simulator',
-    path: '/simulator',
-    getParentRoute: () => ConnectDashboardRoute,
-  } as any)
-const ConnectDashboardSettingsRoute =
-  ConnectDashboardSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => ConnectDashboardRoute,
-  } as any)
-const ConnectDashboardProductsRoute =
-  ConnectDashboardProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => ConnectDashboardRoute,
-  } as any)
-const ConnectDashboardOrdersRoute = ConnectDashboardOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => ConnectDashboardRoute,
-} as any)
-const ConnectDashboardDeliveryRoute =
-  ConnectDashboardDeliveryRouteImport.update({
-    id: '/delivery',
-    path: '/delivery',
-    getParentRoute: () => ConnectDashboardRoute,
-  } as any)
-const ConnectDashboardCategoriesRoute =
-  ConnectDashboardCategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => ConnectDashboardRoute,
-  } as any)
-const ConnectDashboard2SimulatorRoute =
-  ConnectDashboard2SimulatorRouteImport.update({
-    id: '/simulator',
-    path: '/simulator',
-    getParentRoute: () => ConnectDashboard2Route,
-  } as any)
-const ConnectDashboard2SettingsRoute =
-  ConnectDashboard2SettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => ConnectDashboard2Route,
-  } as any)
-const ConnectDashboard2ProductsRoute =
-  ConnectDashboard2ProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => ConnectDashboard2Route,
-  } as any)
-const ConnectDashboard2OrdersRoute = ConnectDashboard2OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => ConnectDashboard2Route,
-} as any)
-const ConnectDashboard2DeliveryRoute =
-  ConnectDashboard2DeliveryRouteImport.update({
-    id: '/delivery',
-    path: '/delivery',
-    getParentRoute: () => ConnectDashboard2Route,
-  } as any)
-const ConnectDashboard2CategoriesRoute =
-  ConnectDashboard2CategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => ConnectDashboard2Route,
-  } as any)
-const ConnectClientVoiceRoute = ConnectClientVoiceRouteImport.update({
-  id: '/voice',
-  path: '/voice',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientTemplatesRoute = ConnectClientTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientSettingsRoute = ConnectClientSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientPaymentsRoute = ConnectClientPaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientIntegrationsRoute =
-  ConnectClientIntegrationsRouteImport.update({
-    id: '/integrations',
-    path: '/integrations',
-    getParentRoute: () => ConnectClientRoute,
-  } as any)
-const ConnectClientInboxRoute = ConnectClientInboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientEnterpriseRoute = ConnectClientEnterpriseRouteImport.update({
-  id: '/enterprise',
-  path: '/enterprise',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientDevelopersRoute = ConnectClientDevelopersRouteImport.update({
-  id: '/developers',
-  path: '/developers',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientContactsRoute = ConnectClientContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientChannelsRoute = ConnectClientChannelsRouteImport.update({
-  id: '/channels',
-  path: '/channels',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientCatalogRoute = ConnectClientCatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientBroadcastsRoute = ConnectClientBroadcastsRouteImport.update({
-  id: '/broadcasts',
-  path: '/broadcasts',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientAutomationsRoute =
-  ConnectClientAutomationsRouteImport.update({
-    id: '/automations',
-    path: '/automations',
-    getParentRoute: () => ConnectClientRoute,
-  } as any)
-const ConnectClientAnalyticsRoute = ConnectClientAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectClientAiAgentRoute = ConnectClientAiAgentRouteImport.update({
-  id: '/ai-agent',
-  path: '/ai-agent',
-  getParentRoute: () => ConnectClientRoute,
-} as any)
-const ConnectAdminWhatsappTemplatesRoute =
-  ConnectAdminWhatsappTemplatesRouteImport.update({
-    id: '/whatsapp-templates',
-    path: '/whatsapp-templates',
-    getParentRoute: () => ConnectAdminRoute,
-  } as any)
-const ConnectAdminSettingsRoute = ConnectAdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => ConnectAdminRoute,
-} as any)
-const ConnectAdminLogsRoute = ConnectAdminLogsRouteImport.update({
+const AdminLogsRoute = AdminLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
-  getParentRoute: () => ConnectAdminRoute,
+  getParentRoute: () => AdminRoute,
 } as any)
-const ConnectAdminInboxRoute = ConnectAdminInboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => ConnectAdminRoute,
+const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
+  id: '/whatsapp-templates',
+  path: '/whatsapp-templates',
+  getParentRoute: () => AdminRoute,
 } as any)
-const ConnectAdminFlowTemplatesRoute =
-  ConnectAdminFlowTemplatesRouteImport.update({
-    id: '/flow-templates',
-    path: '/flow-templates',
-    getParentRoute: () => ConnectAdminRoute,
+const ConnectIndexRoute = ConnectIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectAdminRoute = ConnectAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectClientRoute = ConnectClientRouteImport.update({
+  id: '/client',
+  path: '/client',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectDashboardRoute = ConnectDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectDashboard2Route = ConnectDashboard2RouteImport.update({
+  id: '/dashboard-2',
+  path: '/dashboard-2',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const ConnectLogsRoute = ConnectLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => ConnectRoute,
+} as any)
+const Dashboard2IndexRoute = Dashboard2IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2CategoriesRoute = Dashboard2CategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2DeliveryRoute = Dashboard2DeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2OrdersRoute = Dashboard2OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2ProductsRoute = Dashboard2ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2SettingsRoute = Dashboard2SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const Dashboard2SimulatorRoute = Dashboard2SimulatorRouteImport.update({
+  id: '/simulator',
+  path: '/simulator',
+  getParentRoute: () => Dashboard2Route,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDeliveryRoute = DashboardDeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProductsRoute = DashboardProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSimulatorRoute = DashboardSimulatorRouteImport.update({
+  id: '/simulator',
+  path: '/simulator',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const InvoicemakerPrivacyRoute = InvoicemakerPrivacyRouteImport.update({
+  id: '/invoicemaker/privacy',
+  path: '/invoicemaker/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicemakerSupportRoute = InvoicemakerSupportRouteImport.update({
+  id: '/invoicemaker/support',
+  path: '/invoicemaker/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenusMarleysRoute = MenusMarleysRouteImport.update({
+  id: '/menus/marleys',
+  path: '/menus/marleys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuotationsKhadamatiRoute = QuotationsKhadamatiRouteImport.update({
+  id: '/quotations/khadamati',
+  path: '/quotations/khadamati',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresIndexRoute = StoresIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoresRoute,
+} as any)
+const StoresPavoneRoute = StoresPavoneRouteImport.update({
+  id: '/pavone',
+  path: '/pavone',
+  getParentRoute: () => StoresRoute,
+} as any)
+const WorkDataInsightsRoute = WorkDataInsightsRouteImport.update({
+  id: '/work/data-insights',
+  path: '/work/data-insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkDetailingLabRoute = WorkDetailingLabRouteImport.update({
+  id: '/work/detailing-lab',
+  path: '/work/detailing-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkKoubarGroupRoute = WorkKoubarGroupRouteImport.update({
+  id: '/work/koubar-group',
+  path: '/work/koubar-group',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkSnapgoRoute = WorkSnapgoRouteImport.update({
+  id: '/work/snapgo',
+  path: '/work/snapgo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkTijaratiProRoute = WorkTijaratiProRouteImport.update({
+  id: '/work/tijarati-pro',
+  path: '/work/tijarati-pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkUno400Route = WorkUno400RouteImport.update({
+  id: '/work/uno400',
+  path: '/work/uno400',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBusinessesBusinessIdRoute =
+  AdminBusinessesBusinessIdRouteImport.update({
+    id: '/$businessId',
+    path: '/$businessId',
+    getParentRoute: () => AdminBusinessesRoute,
   } as any)
-const ConnectAdminDevelopersRoute = ConnectAdminDevelopersRouteImport.update({
-  id: '/developers',
-  path: '/developers',
-  getParentRoute: () => ConnectAdminRoute,
+const AdminBusinessesNewRoute = AdminBusinessesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminBusinessesRoute,
 } as any)
-const ConnectAdminContactsRoute = ConnectAdminContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => ConnectAdminRoute,
+const AdminFlowTemplatesTemplateIdRoute =
+  AdminFlowTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => AdminFlowTemplatesRoute,
+  } as any)
+const AdminFlowTemplatesNewRoute = AdminFlowTemplatesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminFlowTemplatesRoute,
 } as any)
-const ConnectAdminBroadcastsRoute = ConnectAdminBroadcastsRouteImport.update({
-  id: '/broadcasts',
-  path: '/broadcasts',
-  getParentRoute: () => ConnectAdminRoute,
-} as any)
-const ConnectAdminAnalyticsRoute = ConnectAdminAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => ConnectAdminRoute,
-} as any)
-const ApiWhatsappWebhook2Route = ApiWhatsappWebhook2RouteImport.update({
-  id: '/api/whatsapp/webhook-2',
-  path: '/api/whatsapp/webhook-2',
+const ApiConnectReleaseRoute = ApiConnectReleaseRouteImport.update({
+  id: '/api/connect/release',
+  path: '/api/connect/release',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
-  id: '/api/whatsapp/webhook',
-  path: '/api/whatsapp/webhook',
+const ApiLicenseAdminRoute = ApiLicenseAdminRouteImport.update({
+  id: '/api/license/admin',
+  path: '/api/license/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaDashboardUploadRoute = ApiWaDashboardUploadRouteImport.update({
-  id: '/api/wa-dashboard/upload',
-  path: '/api/wa-dashboard/upload',
+const ApiLicenseCheckRoute = ApiLicenseCheckRouteImport.update({
+  id: '/api/license/check',
+  path: '/api/license/check',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaDashboardSessionRoute = ApiWaDashboardSessionRouteImport.update({
-  id: '/api/wa-dashboard/session',
-  path: '/api/wa-dashboard/session',
+const ApiWaAdminBusinessesRoute = ApiWaAdminBusinessesRouteImport.update({
+  id: '/api/wa-admin/businesses',
+  path: '/api/wa-admin/businesses',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaDashboardOrdersRoute = ApiWaDashboardOrdersRouteImport.update({
-  id: '/api/wa-dashboard/orders',
-  path: '/api/wa-dashboard/orders',
+const ApiWaAdminFlowTemplatesRoute = ApiWaAdminFlowTemplatesRouteImport.update({
+  id: '/api/wa-admin/flow-templates',
+  path: '/api/wa-admin/flow-templates',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaDashboardNotificationsRoute =
-  ApiWaDashboardNotificationsRouteImport.update({
-    id: '/api/wa-dashboard/notifications',
-    path: '/api/wa-dashboard/notifications',
+const ApiWaAdminLoginRoute = ApiWaAdminLoginRouteImport.update({
+  id: '/api/wa-admin/login',
+  path: '/api/wa-admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaAdminLogoutRoute = ApiWaAdminLogoutRouteImport.update({
+  id: '/api/wa-admin/logout',
+  path: '/api/wa-admin/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaAdminLogsRoute = ApiWaAdminLogsRouteImport.update({
+  id: '/api/wa-admin/logs',
+  path: '/api/wa-admin/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaAdminMessageEventsRoute = ApiWaAdminMessageEventsRouteImport.update({
+  id: '/api/wa-admin/message-events',
+  path: '/api/wa-admin/message-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaAdminOverviewRoute = ApiWaAdminOverviewRouteImport.update({
+  id: '/api/wa-admin/overview',
+  path: '/api/wa-admin/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaAdminReviewConnectionsRoute =
+  ApiWaAdminReviewConnectionsRouteImport.update({
+    id: '/api/wa-admin/review-connections',
+    path: '/api/wa-admin/review-connections',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaDashboardLogoutRoute = ApiWaDashboardLogoutRouteImport.update({
-  id: '/api/wa-dashboard/logout',
-  path: '/api/wa-dashboard/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboardLoginRoute = ApiWaDashboardLoginRouteImport.update({
-  id: '/api/wa-dashboard/login',
-  path: '/api/wa-dashboard/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboardDiagnosticsRoute =
-  ApiWaDashboardDiagnosticsRouteImport.update({
-    id: '/api/wa-dashboard/diagnostics',
-    path: '/api/wa-dashboard/diagnostics',
+const ApiWaAdminSendReviewMessageRoute =
+  ApiWaAdminSendReviewMessageRouteImport.update({
+    id: '/api/wa-admin/send-review-message',
+    path: '/api/wa-admin/send-review-message',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaDashboardCatalogRoute = ApiWaDashboardCatalogRouteImport.update({
-  id: '/api/wa-dashboard/catalog',
-  path: '/api/wa-dashboard/catalog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2UploadRoute = ApiWaDashboard2UploadRouteImport.update({
-  id: '/api/wa-dashboard-2/upload',
-  path: '/api/wa-dashboard-2/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2SessionRoute = ApiWaDashboard2SessionRouteImport.update({
-  id: '/api/wa-dashboard-2/session',
-  path: '/api/wa-dashboard-2/session',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2OrdersRoute = ApiWaDashboard2OrdersRouteImport.update({
-  id: '/api/wa-dashboard-2/orders',
-  path: '/api/wa-dashboard-2/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2LogoutRoute = ApiWaDashboard2LogoutRouteImport.update({
-  id: '/api/wa-dashboard-2/logout',
-  path: '/api/wa-dashboard-2/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2LoginRoute = ApiWaDashboard2LoginRouteImport.update({
-  id: '/api/wa-dashboard-2/login',
-  path: '/api/wa-dashboard-2/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaDashboard2DiagnosticsRoute =
-  ApiWaDashboard2DiagnosticsRouteImport.update({
-    id: '/api/wa-dashboard-2/diagnostics',
-    path: '/api/wa-dashboard-2/diagnostics',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiWaDashboard2CatalogRoute = ApiWaDashboard2CatalogRouteImport.update({
-  id: '/api/wa-dashboard-2/catalog',
-  path: '/api/wa-dashboard-2/catalog',
+const ApiWaAdminSessionRoute = ApiWaAdminSessionRouteImport.update({
+  id: '/api/wa-admin/session',
+  path: '/api/wa-admin/session',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWaAdminWhatsappTemplatesRoute =
@@ -853,496 +608,352 @@ const ApiWaAdminWhatsappTemplatesRoute =
     path: '/api/wa-admin/whatsapp-templates',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaAdminSessionRoute = ApiWaAdminSessionRouteImport.update({
-  id: '/api/wa-admin/session',
-  path: '/api/wa-admin/session',
+const ApiWaDashboard2CatalogRoute = ApiWaDashboard2CatalogRouteImport.update({
+  id: '/api/wa-dashboard-2/catalog',
+  path: '/api/wa-dashboard-2/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaAdminSendReviewMessageRoute =
-  ApiWaAdminSendReviewMessageRouteImport.update({
-    id: '/api/wa-admin/send-review-message',
-    path: '/api/wa-admin/send-review-message',
+const ApiWaDashboard2DiagnosticsRoute =
+  ApiWaDashboard2DiagnosticsRouteImport.update({
+    id: '/api/wa-dashboard-2/diagnostics',
+    path: '/api/wa-dashboard-2/diagnostics',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaAdminReviewConnectionsRoute =
-  ApiWaAdminReviewConnectionsRouteImport.update({
-    id: '/api/wa-admin/review-connections',
-    path: '/api/wa-admin/review-connections',
+const ApiWaDashboard2LoginRoute = ApiWaDashboard2LoginRouteImport.update({
+  id: '/api/wa-dashboard-2/login',
+  path: '/api/wa-dashboard-2/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboard2LogoutRoute = ApiWaDashboard2LogoutRouteImport.update({
+  id: '/api/wa-dashboard-2/logout',
+  path: '/api/wa-dashboard-2/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboard2OrdersRoute = ApiWaDashboard2OrdersRouteImport.update({
+  id: '/api/wa-dashboard-2/orders',
+  path: '/api/wa-dashboard-2/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboard2SessionRoute = ApiWaDashboard2SessionRouteImport.update({
+  id: '/api/wa-dashboard-2/session',
+  path: '/api/wa-dashboard-2/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboard2UploadRoute = ApiWaDashboard2UploadRouteImport.update({
+  id: '/api/wa-dashboard-2/upload',
+  path: '/api/wa-dashboard-2/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardCatalogRoute = ApiWaDashboardCatalogRouteImport.update({
+  id: '/api/wa-dashboard/catalog',
+  path: '/api/wa-dashboard/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardDiagnosticsRoute =
+  ApiWaDashboardDiagnosticsRouteImport.update({
+    id: '/api/wa-dashboard/diagnostics',
+    path: '/api/wa-dashboard/diagnostics',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaAdminOverviewRoute = ApiWaAdminOverviewRouteImport.update({
-  id: '/api/wa-admin/overview',
-  path: '/api/wa-admin/overview',
+const ApiWaDashboardLoginRoute = ApiWaDashboardLoginRouteImport.update({
+  id: '/api/wa-dashboard/login',
+  path: '/api/wa-dashboard/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaAdminMessageEventsRoute = ApiWaAdminMessageEventsRouteImport.update({
-  id: '/api/wa-admin/message-events',
-  path: '/api/wa-admin/message-events',
+const ApiWaDashboardLogoutRoute = ApiWaDashboardLogoutRouteImport.update({
+  id: '/api/wa-dashboard/logout',
+  path: '/api/wa-dashboard/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWaAdminLogsRoute = ApiWaAdminLogsRouteImport.update({
-  id: '/api/wa-admin/logs',
-  path: '/api/wa-admin/logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaAdminLogoutRoute = ApiWaAdminLogoutRouteImport.update({
-  id: '/api/wa-admin/logout',
-  path: '/api/wa-admin/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaAdminLoginRoute = ApiWaAdminLoginRouteImport.update({
-  id: '/api/wa-admin/login',
-  path: '/api/wa-admin/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaAdminFlowTemplatesRoute = ApiWaAdminFlowTemplatesRouteImport.update({
-  id: '/api/wa-admin/flow-templates',
-  path: '/api/wa-admin/flow-templates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWaAdminBusinessesRoute = ApiWaAdminBusinessesRouteImport.update({
-  id: '/api/wa-admin/businesses',
-  path: '/api/wa-admin/businesses',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectReleaseRoute = ApiConnectReleaseRouteImport.update({
-  id: '/api/connect/release',
-  path: '/api/connect/release',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminFlowTemplatesNewRoute = AdminFlowTemplatesNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminFlowTemplatesRoute,
-} as any)
-const AdminFlowTemplatesTemplateIdRoute =
-  AdminFlowTemplatesTemplateIdRouteImport.update({
-    id: '/$templateId',
-    path: '/$templateId',
-    getParentRoute: () => AdminFlowTemplatesRoute,
+const ApiWaDashboardNotificationsRoute =
+  ApiWaDashboardNotificationsRouteImport.update({
+    id: '/api/wa-dashboard/notifications',
+    path: '/api/wa-dashboard/notifications',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AdminBusinessesNewRoute = AdminBusinessesNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminBusinessesRoute,
+const ApiWaDashboardOrdersRoute = ApiWaDashboardOrdersRouteImport.update({
+  id: '/api/wa-dashboard/orders',
+  path: '/api/wa-dashboard/orders',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminBusinessesBusinessIdRoute =
-  AdminBusinessesBusinessIdRouteImport.update({
-    id: '/$businessId',
-    path: '/$businessId',
-    getParentRoute: () => AdminBusinessesRoute,
-  } as any)
-const StoresPavoneAdminIndexRoute = StoresPavoneAdminIndexRouteImport.update({
+const ApiWaDashboardSessionRoute = ApiWaDashboardSessionRouteImport.update({
+  id: '/api/wa-dashboard/session',
+  path: '/api/wa-dashboard/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWaDashboardUploadRoute = ApiWaDashboardUploadRouteImport.update({
+  id: '/api/wa-dashboard/upload',
+  path: '/api/wa-dashboard/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
+  id: '/api/whatsapp/webhook',
+  path: '/api/whatsapp/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhook2Route = ApiWhatsappWebhook2RouteImport.update({
+  id: '/api/whatsapp/webhook-2',
+  path: '/api/whatsapp/webhook-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectAdminIndexRoute = ConnectAdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => StoresPavoneAdminRoute,
+  getParentRoute: () => ConnectAdminRoute,
 } as any)
-const ConnectAdminSettingsIndexRoute =
-  ConnectAdminSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ConnectAdminSettingsRoute,
-  } as any)
-const ConnectAdminInboxIndexRoute = ConnectAdminInboxIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ConnectAdminInboxRoute,
+const ConnectAdminAnalyticsRoute = ConnectAdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => ConnectAdminRoute,
 } as any)
-const ConnectAdminContactsIndexRoute =
-  ConnectAdminContactsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ConnectAdminContactsRoute,
-  } as any)
-const ConnectAdminBusinessesIndexRoute =
-  ConnectAdminBusinessesIndexRouteImport.update({
-    id: '/businesses/',
-    path: '/businesses/',
+const ConnectAdminBroadcastsRoute = ConnectAdminBroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminContactsRoute = ConnectAdminContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminDevelopersRoute = ConnectAdminDevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminFlowTemplatesRoute =
+  ConnectAdminFlowTemplatesRouteImport.update({
+    id: '/flow-templates',
+    path: '/flow-templates',
     getParentRoute: () => ConnectAdminRoute,
   } as any)
-const ConnectAdminBroadcastsIndexRoute =
-  ConnectAdminBroadcastsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ConnectAdminBroadcastsRoute,
-  } as any)
-const StoresPavoneProductSlugRoute = StoresPavoneProductSlugRouteImport.update({
-  id: '/product/$slug',
-  path: '/product/$slug',
-  getParentRoute: () => StoresPavoneRoute,
+const ConnectAdminInboxRoute = ConnectAdminInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => ConnectAdminRoute,
 } as any)
-const StoresPavoneCategorySlugRoute =
-  StoresPavoneCategorySlugRouteImport.update({
-    id: '/category/$slug',
-    path: '/category/$slug',
-    getParentRoute: () => StoresPavoneRoute,
+const ConnectAdminLogsRoute = ConnectAdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminSettingsRoute = ConnectAdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ConnectAdminRoute,
+} as any)
+const ConnectAdminWhatsappTemplatesRoute =
+  ConnectAdminWhatsappTemplatesRouteImport.update({
+    id: '/whatsapp-templates',
+    path: '/whatsapp-templates',
+    getParentRoute: () => ConnectAdminRoute,
   } as any)
-const StoresPavoneAdminSettingsRoute =
-  StoresPavoneAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => StoresPavoneAdminRoute,
+const ConnectClientIndexRoute = ConnectClientIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientAiAgentRoute = ConnectClientAiAgentRouteImport.update({
+  id: '/ai-agent',
+  path: '/ai-agent',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientAnalyticsRoute = ConnectClientAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientAutomationsRoute =
+  ConnectClientAutomationsRouteImport.update({
+    id: '/automations',
+    path: '/automations',
+    getParentRoute: () => ConnectClientRoute,
   } as any)
-const StoresPavoneAdminProductsRoute =
-  StoresPavoneAdminProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => StoresPavoneAdminRoute,
+const ConnectClientBroadcastsRoute = ConnectClientBroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientCatalogRoute = ConnectClientCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientChannelsRoute = ConnectClientChannelsRouteImport.update({
+  id: '/channels',
+  path: '/channels',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientContactsRoute = ConnectClientContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientDevelopersRoute = ConnectClientDevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientEnterpriseRoute = ConnectClientEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientInboxRoute = ConnectClientInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientIntegrationsRoute =
+  ConnectClientIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => ConnectClientRoute,
   } as any)
-const StoresPavoneAdminOrdersRoute = StoresPavoneAdminOrdersRouteImport.update({
+const ConnectClientPaymentsRoute = ConnectClientPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientSettingsRoute = ConnectClientSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientTemplatesRoute = ConnectClientTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectClientVoiceRoute = ConnectClientVoiceRouteImport.update({
+  id: '/voice',
+  path: '/voice',
+  getParentRoute: () => ConnectClientRoute,
+} as any)
+const ConnectDashboard2IndexRoute = ConnectDashboard2IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectDashboard2Route,
+} as any)
+const ConnectDashboard2CategoriesRoute =
+  ConnectDashboard2CategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2DeliveryRoute =
+  ConnectDashboard2DeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboard2OrdersRoute = ConnectDashboard2OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => StoresPavoneAdminRoute,
+  getParentRoute: () => ConnectDashboard2Route,
 } as any)
-const StoresPavoneAdminLoginRoute = StoresPavoneAdminLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => StoresPavoneAdminRoute,
-} as any)
-const StoresPavoneAdminInspirationsRoute =
-  StoresPavoneAdminInspirationsRouteImport.update({
-    id: '/inspirations',
-    path: '/inspirations',
-    getParentRoute: () => StoresPavoneAdminRoute,
-  } as any)
-const StoresPavoneAdminCategoriesRoute =
-  StoresPavoneAdminCategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => StoresPavoneAdminRoute,
-  } as any)
-const StoresPavoneAdminBrandsRoute = StoresPavoneAdminBrandsRouteImport.update({
-  id: '/brands',
-  path: '/brands',
-  getParentRoute: () => StoresPavoneAdminRoute,
-} as any)
-const ConnectDashboardOrdersOrderIdRoute =
-  ConnectDashboardOrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ConnectDashboardOrdersRoute,
-  } as any)
-const ConnectDashboard2OrdersOrderIdRoute =
-  ConnectDashboard2OrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ConnectDashboard2OrdersRoute,
-  } as any)
-const ConnectAdminSettingsTeamRoute =
-  ConnectAdminSettingsTeamRouteImport.update({
-    id: '/team',
-    path: '/team',
-    getParentRoute: () => ConnectAdminSettingsRoute,
-  } as any)
-const ConnectAdminSettingsAuditRoute =
-  ConnectAdminSettingsAuditRouteImport.update({
-    id: '/audit',
-    path: '/audit',
-    getParentRoute: () => ConnectAdminSettingsRoute,
-  } as any)
-const ConnectAdminInboxConversationIdRoute =
-  ConnectAdminInboxConversationIdRouteImport.update({
-    id: '/$conversationId',
-    path: '/$conversationId',
-    getParentRoute: () => ConnectAdminInboxRoute,
-  } as any)
-const ConnectAdminContactsContactIdRoute =
-  ConnectAdminContactsContactIdRouteImport.update({
-    id: '/$contactId',
-    path: '/$contactId',
-    getParentRoute: () => ConnectAdminContactsRoute,
-  } as any)
-const ConnectAdminBusinessesIdRoute =
-  ConnectAdminBusinessesIdRouteImport.update({
-    id: '/businesses/$id',
-    path: '/businesses/$id',
-    getParentRoute: () => ConnectAdminRoute,
-  } as any)
-const ConnectAdminBroadcastsNewRoute =
-  ConnectAdminBroadcastsNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => ConnectAdminBroadcastsRoute,
-  } as any)
-const ConnectAdminBroadcastsIdRoute =
-  ConnectAdminBroadcastsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => ConnectAdminBroadcastsRoute,
-  } as any)
-const ApiWaDashboardOrdersOrderIdRoute =
-  ApiWaDashboardOrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ApiWaDashboardOrdersRoute,
-  } as any)
-const ApiWaDashboard2OrdersOrderIdRoute =
-  ApiWaDashboard2OrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ApiWaDashboard2OrdersRoute,
-  } as any)
-const ApiWaAdminFlowTemplatesTemplateIdRoute =
-  ApiWaAdminFlowTemplatesTemplateIdRouteImport.update({
-    id: '/$templateId',
-    path: '/$templateId',
-    getParentRoute: () => ApiWaAdminFlowTemplatesRoute,
-  } as any)
-const ApiWaAdminBusinessesBusinessIdRoute =
-  ApiWaAdminBusinessesBusinessIdRouteImport.update({
-    id: '/$businessId',
-    path: '/$businessId',
-    getParentRoute: () => ApiWaAdminBusinessesRoute,
-  } as any)
-const ApiConnectWhatsappWebhookRoute =
-  ApiConnectWhatsappWebhookRouteImport.update({
-    id: '/api/connect/whatsapp/webhook',
-    path: '/api/connect/whatsapp/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardUploadRoute =
-  ApiConnectDashboardUploadRouteImport.update({
-    id: '/api/connect/dashboard/upload',
-    path: '/api/connect/dashboard/upload',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardSessionRoute =
-  ApiConnectDashboardSessionRouteImport.update({
-    id: '/api/connect/dashboard/session',
-    path: '/api/connect/dashboard/session',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardOrdersRoute =
-  ApiConnectDashboardOrdersRouteImport.update({
-    id: '/api/connect/dashboard/orders',
-    path: '/api/connect/dashboard/orders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardNotificationsRoute =
-  ApiConnectDashboardNotificationsRouteImport.update({
-    id: '/api/connect/dashboard/notifications',
-    path: '/api/connect/dashboard/notifications',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardLogoutRoute =
-  ApiConnectDashboardLogoutRouteImport.update({
-    id: '/api/connect/dashboard/logout',
-    path: '/api/connect/dashboard/logout',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardLoginRoute =
-  ApiConnectDashboardLoginRouteImport.update({
-    id: '/api/connect/dashboard/login',
-    path: '/api/connect/dashboard/login',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardFlowImageRoute =
-  ApiConnectDashboardFlowImageRouteImport.update({
-    id: '/api/connect/dashboard/flow-image',
-    path: '/api/connect/dashboard/flow-image',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardFlowRoute = ApiConnectDashboardFlowRouteImport.update({
-  id: '/api/connect/dashboard/flow',
-  path: '/api/connect/dashboard/flow',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectDashboardDiagnosticsRoute =
-  ApiConnectDashboardDiagnosticsRouteImport.update({
-    id: '/api/connect/dashboard/diagnostics',
-    path: '/api/connect/dashboard/diagnostics',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboardCatalogRoute =
-  ApiConnectDashboardCatalogRouteImport.update({
-    id: '/api/connect/dashboard/catalog',
-    path: '/api/connect/dashboard/catalog',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2UploadRoute =
-  ApiConnectDashboard2UploadRouteImport.update({
-    id: '/api/connect/dashboard-2/upload',
-    path: '/api/connect/dashboard-2/upload',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2SessionRoute =
-  ApiConnectDashboard2SessionRouteImport.update({
-    id: '/api/connect/dashboard-2/session',
-    path: '/api/connect/dashboard-2/session',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2OrdersRoute =
-  ApiConnectDashboard2OrdersRouteImport.update({
-    id: '/api/connect/dashboard-2/orders',
-    path: '/api/connect/dashboard-2/orders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2LogoutRoute =
-  ApiConnectDashboard2LogoutRouteImport.update({
-    id: '/api/connect/dashboard-2/logout',
-    path: '/api/connect/dashboard-2/logout',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2LoginRoute =
-  ApiConnectDashboard2LoginRouteImport.update({
-    id: '/api/connect/dashboard-2/login',
-    path: '/api/connect/dashboard-2/login',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2FlowImageRoute =
-  ApiConnectDashboard2FlowImageRouteImport.update({
-    id: '/api/connect/dashboard-2/flow-image',
-    path: '/api/connect/dashboard-2/flow-image',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2FlowRoute =
-  ApiConnectDashboard2FlowRouteImport.update({
-    id: '/api/connect/dashboard-2/flow',
-    path: '/api/connect/dashboard-2/flow',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2DiagnosticsRoute =
-  ApiConnectDashboard2DiagnosticsRouteImport.update({
-    id: '/api/connect/dashboard-2/diagnostics',
-    path: '/api/connect/dashboard-2/diagnostics',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectDashboard2CatalogRoute =
-  ApiConnectDashboard2CatalogRouteImport.update({
-    id: '/api/connect/dashboard-2/catalog',
-    path: '/api/connect/dashboard-2/catalog',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectClientInboxOptionsRoute =
-  ApiConnectClientInboxOptionsRouteImport.update({
-    id: '/api/connect/client/inbox-options',
-    path: '/api/connect/client/inbox-options',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectClientConversationsRoute =
-  ApiConnectClientConversationsRouteImport.update({
-    id: '/api/connect/client/conversations',
-    path: '/api/connect/client/conversations',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectClientContactsRoute =
-  ApiConnectClientContactsRouteImport.update({
-    id: '/api/connect/client/contacts',
-    path: '/api/connect/client/contacts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectClientCannedRepliesRoute =
-  ApiConnectClientCannedRepliesRouteImport.update({
-    id: '/api/connect/client/canned-replies',
-    path: '/api/connect/client/canned-replies',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminWhatsappTemplatesRoute =
-  ApiConnectAdminWhatsappTemplatesRouteImport.update({
-    id: '/api/connect/admin/whatsapp-templates',
-    path: '/api/connect/admin/whatsapp-templates',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminWhatsappHealthRoute =
-  ApiConnectAdminWhatsappHealthRouteImport.update({
-    id: '/api/connect/admin/whatsapp-health',
-    path: '/api/connect/admin/whatsapp-health',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminSessionRoute = ApiConnectAdminSessionRouteImport.update({
-  id: '/api/connect/admin/session',
-  path: '/api/connect/admin/session',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminSendReviewMessageRoute =
-  ApiConnectAdminSendReviewMessageRouteImport.update({
-    id: '/api/connect/admin/send-review-message',
-    path: '/api/connect/admin/send-review-message',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminReviewConnectionsRoute =
-  ApiConnectAdminReviewConnectionsRouteImport.update({
-    id: '/api/connect/admin/review-connections',
-    path: '/api/connect/admin/review-connections',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminOverviewRoute = ApiConnectAdminOverviewRouteImport.update({
-  id: '/api/connect/admin/overview',
-  path: '/api/connect/admin/overview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminMessageEventsRoute =
-  ApiConnectAdminMessageEventsRouteImport.update({
-    id: '/api/connect/admin/message-events',
-    path: '/api/connect/admin/message-events',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminLogsRoute = ApiConnectAdminLogsRouteImport.update({
-  id: '/api/connect/admin/logs',
-  path: '/api/connect/admin/logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminLogoutRoute = ApiConnectAdminLogoutRouteImport.update({
-  id: '/api/connect/admin/logout',
-  path: '/api/connect/admin/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminLoginRoute = ApiConnectAdminLoginRouteImport.update({
-  id: '/api/connect/admin/login',
-  path: '/api/connect/admin/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminInboxOptionsRoute =
-  ApiConnectAdminInboxOptionsRouteImport.update({
-    id: '/api/connect/admin/inbox-options',
-    path: '/api/connect/admin/inbox-options',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminFlowTemplatesRoute =
-  ApiConnectAdminFlowTemplatesRouteImport.update({
-    id: '/api/connect/admin/flow-templates',
-    path: '/api/connect/admin/flow-templates',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminConversationsRoute =
-  ApiConnectAdminConversationsRouteImport.update({
-    id: '/api/connect/admin/conversations',
-    path: '/api/connect/admin/conversations',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminContactsRoute = ApiConnectAdminContactsRouteImport.update({
-  id: '/api/connect/admin/contacts',
-  path: '/api/connect/admin/contacts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiConnectAdminCannedRepliesRoute =
-  ApiConnectAdminCannedRepliesRouteImport.update({
-    id: '/api/connect/admin/canned-replies',
-    path: '/api/connect/admin/canned-replies',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminBusinessesRoute =
-  ApiConnectAdminBusinessesRouteImport.update({
-    id: '/api/connect/admin/businesses',
-    path: '/api/connect/admin/businesses',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminBusinessesBusinessIdProductsRoute =
-  AdminBusinessesBusinessIdProductsRouteImport.update({
+const ConnectDashboard2ProductsRoute =
+  ConnectDashboard2ProductsRouteImport.update({
     id: '/products',
     path: '/products',
-    getParentRoute: () => AdminBusinessesBusinessIdRoute,
+    getParentRoute: () => ConnectDashboard2Route,
   } as any)
-const AdminBusinessesBusinessIdFlowBuilderRoute =
-  AdminBusinessesBusinessIdFlowBuilderRouteImport.update({
-    id: '/flow-builder',
-    path: '/flow-builder',
-    getParentRoute: () => AdminBusinessesBusinessIdRoute,
+const ConnectDashboard2SettingsRoute =
+  ConnectDashboard2SettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConnectDashboard2Route,
   } as any)
-const AdminBusinessesBusinessIdCategoriesRoute =
-  AdminBusinessesBusinessIdCategoriesRouteImport.update({
+const ConnectDashboard2SimulatorRoute =
+  ConnectDashboard2SimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => ConnectDashboard2Route,
+  } as any)
+const ConnectDashboardIndexRoute = ConnectDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectDashboardRoute,
+} as any)
+const ConnectDashboardCategoriesRoute =
+  ConnectDashboardCategoriesRouteImport.update({
     id: '/categories',
     path: '/categories',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardDeliveryRoute =
+  ConnectDashboardDeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardOrdersRoute = ConnectDashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => ConnectDashboardRoute,
+} as any)
+const ConnectDashboardProductsRoute =
+  ConnectDashboardProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardSettingsRoute =
+  ConnectDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const ConnectDashboardSimulatorRoute =
+  ConnectDashboardSimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => ConnectDashboardRoute,
+  } as any)
+const Dashboard2OrdersOrderIdRoute = Dashboard2OrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => Dashboard2OrdersRoute,
+} as any)
+const DashboardOrdersOrderIdRoute = DashboardOrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => DashboardOrdersRoute,
+} as any)
+const StoresPavoneIndexRoute = StoresPavoneIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneAdminRoute = StoresPavoneAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneCartRoute = StoresPavoneCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneCheckoutRoute = StoresPavoneCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneShopRoute = StoresPavoneShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const StoresPavoneWishlistRoute = StoresPavoneWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const AdminBusinessesBusinessIdCatalogRouteValuesRoute =
+  AdminBusinessesBusinessIdCatalogRouteValuesRouteImport.update({
+    id: '/catalog-route-values',
+    path: '/catalog-route-values',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
 const AdminBusinessesBusinessIdCatalogRoutesRoute =
@@ -1351,70 +962,507 @@ const AdminBusinessesBusinessIdCatalogRoutesRoute =
     path: '/catalog-routes',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
-const AdminBusinessesBusinessIdCatalogRouteValuesRoute =
-  AdminBusinessesBusinessIdCatalogRouteValuesRouteImport.update({
-    id: '/catalog-route-values',
-    path: '/catalog-route-values',
+const AdminBusinessesBusinessIdCategoriesRoute =
+  AdminBusinessesBusinessIdCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
     getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
-const ConnectAdminBusinessesIdIndexRoute =
-  ConnectAdminBusinessesIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
-  } as any)
-const ConnectAdminBusinessesIdWhatsappRoute =
-  ConnectAdminBusinessesIdWhatsappRouteImport.update({
-    id: '/whatsapp',
-    path: '/whatsapp',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
-  } as any)
-const ConnectAdminBusinessesIdRouteValuesRoute =
-  ConnectAdminBusinessesIdRouteValuesRouteImport.update({
-    id: '/route-values',
-    path: '/route-values',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
-  } as any)
-const ConnectAdminBusinessesIdProductsRoute =
-  ConnectAdminBusinessesIdProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
-  } as any)
-const ConnectAdminBusinessesIdLiveTestRoute =
-  ConnectAdminBusinessesIdLiveTestRouteImport.update({
-    id: '/live-test',
-    path: '/live-test',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
-  } as any)
-const ConnectAdminBusinessesIdFlowBuilderRoute =
-  ConnectAdminBusinessesIdFlowBuilderRouteImport.update({
+const AdminBusinessesBusinessIdFlowBuilderRoute =
+  AdminBusinessesBusinessIdFlowBuilderRouteImport.update({
     id: '/flow-builder',
     path: '/flow-builder',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+    getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
-const ConnectAdminBusinessesIdDiagnosticsRoute =
-  ConnectAdminBusinessesIdDiagnosticsRouteImport.update({
-    id: '/diagnostics',
-    path: '/diagnostics',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+const AdminBusinessesBusinessIdProductsRoute =
+  AdminBusinessesBusinessIdProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => AdminBusinessesBusinessIdRoute,
   } as any)
-const ConnectAdminBusinessesIdCheckoutRoute =
-  ConnectAdminBusinessesIdCheckoutRouteImport.update({
-    id: '/checkout',
-    path: '/checkout',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+const ApiConnectAdminBusinessesRoute =
+  ApiConnectAdminBusinessesRouteImport.update({
+    id: '/api/connect/admin/businesses',
+    path: '/api/connect/admin/businesses',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const ConnectAdminBusinessesIdCatalogRoutesRoute =
-  ConnectAdminBusinessesIdCatalogRoutesRouteImport.update({
-    id: '/catalog-routes',
-    path: '/catalog-routes',
-    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+const ApiConnectAdminCannedRepliesRoute =
+  ApiConnectAdminCannedRepliesRouteImport.update({
+    id: '/api/connect/admin/canned-replies',
+    path: '/api/connect/admin/canned-replies',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const ApiWaAdminBusinessesBusinessIdProductImageRoute =
-  ApiWaAdminBusinessesBusinessIdProductImageRouteImport.update({
-    id: '/product-image',
-    path: '/product-image',
+const ApiConnectAdminContactsRoute = ApiConnectAdminContactsRouteImport.update({
+  id: '/api/connect/admin/contacts',
+  path: '/api/connect/admin/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminConversationsRoute =
+  ApiConnectAdminConversationsRouteImport.update({
+    id: '/api/connect/admin/conversations',
+    path: '/api/connect/admin/conversations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminFlowTemplatesRoute =
+  ApiConnectAdminFlowTemplatesRouteImport.update({
+    id: '/api/connect/admin/flow-templates',
+    path: '/api/connect/admin/flow-templates',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminInboxOptionsRoute =
+  ApiConnectAdminInboxOptionsRouteImport.update({
+    id: '/api/connect/admin/inbox-options',
+    path: '/api/connect/admin/inbox-options',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminLoginRoute = ApiConnectAdminLoginRouteImport.update({
+  id: '/api/connect/admin/login',
+  path: '/api/connect/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminLogoutRoute = ApiConnectAdminLogoutRouteImport.update({
+  id: '/api/connect/admin/logout',
+  path: '/api/connect/admin/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminLogsRoute = ApiConnectAdminLogsRouteImport.update({
+  id: '/api/connect/admin/logs',
+  path: '/api/connect/admin/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminMessageEventsRoute =
+  ApiConnectAdminMessageEventsRouteImport.update({
+    id: '/api/connect/admin/message-events',
+    path: '/api/connect/admin/message-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminOverviewRoute = ApiConnectAdminOverviewRouteImport.update({
+  id: '/api/connect/admin/overview',
+  path: '/api/connect/admin/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminReviewConnectionsRoute =
+  ApiConnectAdminReviewConnectionsRouteImport.update({
+    id: '/api/connect/admin/review-connections',
+    path: '/api/connect/admin/review-connections',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminSendReviewMessageRoute =
+  ApiConnectAdminSendReviewMessageRouteImport.update({
+    id: '/api/connect/admin/send-review-message',
+    path: '/api/connect/admin/send-review-message',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminSessionRoute = ApiConnectAdminSessionRouteImport.update({
+  id: '/api/connect/admin/session',
+  path: '/api/connect/admin/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectAdminWhatsappHealthRoute =
+  ApiConnectAdminWhatsappHealthRouteImport.update({
+    id: '/api/connect/admin/whatsapp-health',
+    path: '/api/connect/admin/whatsapp-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminWhatsappTemplatesRoute =
+  ApiConnectAdminWhatsappTemplatesRouteImport.update({
+    id: '/api/connect/admin/whatsapp-templates',
+    path: '/api/connect/admin/whatsapp-templates',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientCannedRepliesRoute =
+  ApiConnectClientCannedRepliesRouteImport.update({
+    id: '/api/connect/client/canned-replies',
+    path: '/api/connect/client/canned-replies',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientContactsRoute =
+  ApiConnectClientContactsRouteImport.update({
+    id: '/api/connect/client/contacts',
+    path: '/api/connect/client/contacts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientConversationsRoute =
+  ApiConnectClientConversationsRouteImport.update({
+    id: '/api/connect/client/conversations',
+    path: '/api/connect/client/conversations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientInboxOptionsRoute =
+  ApiConnectClientInboxOptionsRouteImport.update({
+    id: '/api/connect/client/inbox-options',
+    path: '/api/connect/client/inbox-options',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2CatalogRoute =
+  ApiConnectDashboard2CatalogRouteImport.update({
+    id: '/api/connect/dashboard-2/catalog',
+    path: '/api/connect/dashboard-2/catalog',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2DiagnosticsRoute =
+  ApiConnectDashboard2DiagnosticsRouteImport.update({
+    id: '/api/connect/dashboard-2/diagnostics',
+    path: '/api/connect/dashboard-2/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2FlowRoute =
+  ApiConnectDashboard2FlowRouteImport.update({
+    id: '/api/connect/dashboard-2/flow',
+    path: '/api/connect/dashboard-2/flow',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2FlowImageRoute =
+  ApiConnectDashboard2FlowImageRouteImport.update({
+    id: '/api/connect/dashboard-2/flow-image',
+    path: '/api/connect/dashboard-2/flow-image',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2LoginRoute =
+  ApiConnectDashboard2LoginRouteImport.update({
+    id: '/api/connect/dashboard-2/login',
+    path: '/api/connect/dashboard-2/login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2LogoutRoute =
+  ApiConnectDashboard2LogoutRouteImport.update({
+    id: '/api/connect/dashboard-2/logout',
+    path: '/api/connect/dashboard-2/logout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2OrdersRoute =
+  ApiConnectDashboard2OrdersRouteImport.update({
+    id: '/api/connect/dashboard-2/orders',
+    path: '/api/connect/dashboard-2/orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2SessionRoute =
+  ApiConnectDashboard2SessionRouteImport.update({
+    id: '/api/connect/dashboard-2/session',
+    path: '/api/connect/dashboard-2/session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboard2UploadRoute =
+  ApiConnectDashboard2UploadRouteImport.update({
+    id: '/api/connect/dashboard-2/upload',
+    path: '/api/connect/dashboard-2/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardCatalogRoute =
+  ApiConnectDashboardCatalogRouteImport.update({
+    id: '/api/connect/dashboard/catalog',
+    path: '/api/connect/dashboard/catalog',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardDiagnosticsRoute =
+  ApiConnectDashboardDiagnosticsRouteImport.update({
+    id: '/api/connect/dashboard/diagnostics',
+    path: '/api/connect/dashboard/diagnostics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardFlowRoute = ApiConnectDashboardFlowRouteImport.update({
+  id: '/api/connect/dashboard/flow',
+  path: '/api/connect/dashboard/flow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConnectDashboardFlowImageRoute =
+  ApiConnectDashboardFlowImageRouteImport.update({
+    id: '/api/connect/dashboard/flow-image',
+    path: '/api/connect/dashboard/flow-image',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardLoginRoute =
+  ApiConnectDashboardLoginRouteImport.update({
+    id: '/api/connect/dashboard/login',
+    path: '/api/connect/dashboard/login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardLogoutRoute =
+  ApiConnectDashboardLogoutRouteImport.update({
+    id: '/api/connect/dashboard/logout',
+    path: '/api/connect/dashboard/logout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardNotificationsRoute =
+  ApiConnectDashboardNotificationsRouteImport.update({
+    id: '/api/connect/dashboard/notifications',
+    path: '/api/connect/dashboard/notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardOrdersRoute =
+  ApiConnectDashboardOrdersRouteImport.update({
+    id: '/api/connect/dashboard/orders',
+    path: '/api/connect/dashboard/orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardSessionRoute =
+  ApiConnectDashboardSessionRouteImport.update({
+    id: '/api/connect/dashboard/session',
+    path: '/api/connect/dashboard/session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectDashboardUploadRoute =
+  ApiConnectDashboardUploadRouteImport.update({
+    id: '/api/connect/dashboard/upload',
+    path: '/api/connect/dashboard/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectWhatsappWebhookRoute =
+  ApiConnectWhatsappWebhookRouteImport.update({
+    id: '/api/connect/whatsapp/webhook',
+    path: '/api/connect/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiWaAdminBusinessesBusinessIdRoute =
+  ApiWaAdminBusinessesBusinessIdRouteImport.update({
+    id: '/$businessId',
+    path: '/$businessId',
+    getParentRoute: () => ApiWaAdminBusinessesRoute,
+  } as any)
+const ApiWaAdminFlowTemplatesTemplateIdRoute =
+  ApiWaAdminFlowTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => ApiWaAdminFlowTemplatesRoute,
+  } as any)
+const ApiWaDashboard2OrdersOrderIdRoute =
+  ApiWaDashboard2OrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiWaDashboard2OrdersRoute,
+  } as any)
+const ApiWaDashboardOrdersOrderIdRoute =
+  ApiWaDashboardOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiWaDashboardOrdersRoute,
+  } as any)
+const ConnectAdminBroadcastsIndexRoute =
+  ConnectAdminBroadcastsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAdminBroadcastsRoute,
+  } as any)
+const ConnectAdminBroadcastsIdRoute =
+  ConnectAdminBroadcastsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ConnectAdminBroadcastsRoute,
+  } as any)
+const ConnectAdminBroadcastsNewRoute =
+  ConnectAdminBroadcastsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => ConnectAdminBroadcastsRoute,
+  } as any)
+const ConnectAdminBusinessesIndexRoute =
+  ConnectAdminBusinessesIndexRouteImport.update({
+    id: '/businesses/',
+    path: '/businesses/',
+    getParentRoute: () => ConnectAdminRoute,
+  } as any)
+const ConnectAdminBusinessesIdRoute =
+  ConnectAdminBusinessesIdRouteImport.update({
+    id: '/businesses/$id',
+    path: '/businesses/$id',
+    getParentRoute: () => ConnectAdminRoute,
+  } as any)
+const ConnectAdminContactsIndexRoute =
+  ConnectAdminContactsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAdminContactsRoute,
+  } as any)
+const ConnectAdminContactsContactIdRoute =
+  ConnectAdminContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => ConnectAdminContactsRoute,
+  } as any)
+const ConnectAdminInboxIndexRoute = ConnectAdminInboxIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConnectAdminInboxRoute,
+} as any)
+const ConnectAdminInboxConversationIdRoute =
+  ConnectAdminInboxConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => ConnectAdminInboxRoute,
+  } as any)
+const ConnectAdminSettingsIndexRoute =
+  ConnectAdminSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAdminSettingsRoute,
+  } as any)
+const ConnectAdminSettingsAuditRoute =
+  ConnectAdminSettingsAuditRouteImport.update({
+    id: '/audit',
+    path: '/audit',
+    getParentRoute: () => ConnectAdminSettingsRoute,
+  } as any)
+const ConnectAdminSettingsTeamRoute =
+  ConnectAdminSettingsTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => ConnectAdminSettingsRoute,
+  } as any)
+const ConnectDashboard2OrdersOrderIdRoute =
+  ConnectDashboard2OrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ConnectDashboard2OrdersRoute,
+  } as any)
+const ConnectDashboardOrdersOrderIdRoute =
+  ConnectDashboardOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ConnectDashboardOrdersRoute,
+  } as any)
+const StoresPavoneAdminIndexRoute = StoresPavoneAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoresPavoneAdminRoute,
+} as any)
+const StoresPavoneAdminBrandsRoute = StoresPavoneAdminBrandsRouteImport.update({
+  id: '/brands',
+  path: '/brands',
+  getParentRoute: () => StoresPavoneAdminRoute,
+} as any)
+const StoresPavoneAdminCategoriesRoute =
+  StoresPavoneAdminCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => StoresPavoneAdminRoute,
+  } as any)
+const StoresPavoneAdminInspirationsRoute =
+  StoresPavoneAdminInspirationsRouteImport.update({
+    id: '/inspirations',
+    path: '/inspirations',
+    getParentRoute: () => StoresPavoneAdminRoute,
+  } as any)
+const StoresPavoneAdminLoginRoute = StoresPavoneAdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => StoresPavoneAdminRoute,
+} as any)
+const StoresPavoneAdminOrdersRoute = StoresPavoneAdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => StoresPavoneAdminRoute,
+} as any)
+const StoresPavoneAdminProductsRoute =
+  StoresPavoneAdminProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => StoresPavoneAdminRoute,
+  } as any)
+const StoresPavoneAdminSettingsRoute =
+  StoresPavoneAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => StoresPavoneAdminRoute,
+  } as any)
+const StoresPavoneCategorySlugRoute =
+  StoresPavoneCategorySlugRouteImport.update({
+    id: '/category/$slug',
+    path: '/category/$slug',
+    getParentRoute: () => StoresPavoneRoute,
+  } as any)
+const StoresPavoneProductSlugRoute = StoresPavoneProductSlugRouteImport.update({
+  id: '/product/$slug',
+  path: '/product/$slug',
+  getParentRoute: () => StoresPavoneRoute,
+} as any)
+const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
+  AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport.update({
+    id: '/versions/$versionId',
+    path: '/versions/$versionId',
+    getParentRoute: () => AdminFlowTemplatesTemplateIdRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdRoute =
+  ApiConnectAdminBusinessesBusinessIdRouteImport.update({
+    id: '/$businessId',
+    path: '/$businessId',
+    getParentRoute: () => ApiConnectAdminBusinessesRoute,
+  } as any)
+const ApiConnectAdminCannedRepliesReplyIdRoute =
+  ApiConnectAdminCannedRepliesReplyIdRouteImport.update({
+    id: '/$replyId',
+    path: '/$replyId',
+    getParentRoute: () => ApiConnectAdminCannedRepliesRoute,
+  } as any)
+const ApiConnectAdminContactsContactIdRoute =
+  ApiConnectAdminContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => ApiConnectAdminContactsRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdRoute =
+  ApiConnectAdminConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => ApiConnectAdminConversationsRoute,
+  } as any)
+const ApiConnectAdminConversationsProcessLifecycleRoute =
+  ApiConnectAdminConversationsProcessLifecycleRouteImport.update({
+    id: '/process-lifecycle',
+    path: '/process-lifecycle',
+    getParentRoute: () => ApiConnectAdminConversationsRoute,
+  } as any)
+const ApiConnectAdminFlowTemplatesTemplateIdRoute =
+  ApiConnectAdminFlowTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => ApiConnectAdminFlowTemplatesRoute,
+  } as any)
+const ApiConnectAdminHumanOutboxProcessRoute =
+  ApiConnectAdminHumanOutboxProcessRouteImport.update({
+    id: '/api/connect/admin/human-outbox/process',
+    path: '/api/connect/admin/human-outbox/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectAdminHumanOutboxReconciliationRoute =
+  ApiConnectAdminHumanOutboxReconciliationRouteImport.update({
+    id: '/api/connect/admin/human-outbox/reconciliation',
+    path: '/api/connect/admin/human-outbox/reconciliation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiConnectClientCannedRepliesReplyIdRoute =
+  ApiConnectClientCannedRepliesReplyIdRouteImport.update({
+    id: '/$replyId',
+    path: '/$replyId',
+    getParentRoute: () => ApiConnectClientCannedRepliesRoute,
+  } as any)
+const ApiConnectClientContactsContactIdRoute =
+  ApiConnectClientContactsContactIdRouteImport.update({
+    id: '/$contactId',
+    path: '/$contactId',
+    getParentRoute: () => ApiConnectClientContactsRoute,
+  } as any)
+const ApiConnectClientConversationsConversationIdRoute =
+  ApiConnectClientConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => ApiConnectClientConversationsRoute,
+  } as any)
+const ApiConnectDashboard2OrdersOrderIdRoute =
+  ApiConnectDashboard2OrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiConnectDashboard2OrdersRoute,
+  } as any)
+const ApiConnectDashboardOrdersOrderIdRoute =
+  ApiConnectDashboardOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => ApiConnectDashboardOrdersRoute,
+  } as any)
+const ApiWaAdminBusinessesBusinessIdFlowRoute =
+  ApiWaAdminBusinessesBusinessIdFlowRouteImport.update({
+    id: '/flow',
+    path: '/flow',
     getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
   } as any)
 const ApiWaAdminBusinessesBusinessIdFlowImageRoute =
@@ -1423,124 +1471,70 @@ const ApiWaAdminBusinessesBusinessIdFlowImageRoute =
     path: '/flow-image',
     getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
   } as any)
-const ApiWaAdminBusinessesBusinessIdFlowRoute =
-  ApiWaAdminBusinessesBusinessIdFlowRouteImport.update({
-    id: '/flow',
-    path: '/flow',
-    getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
-  } as any)
-const ApiConnectDashboardOrdersOrderIdRoute =
-  ApiConnectDashboardOrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ApiConnectDashboardOrdersRoute,
-  } as any)
-const ApiConnectDashboard2OrdersOrderIdRoute =
-  ApiConnectDashboard2OrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => ApiConnectDashboard2OrdersRoute,
-  } as any)
-const ApiConnectClientConversationsConversationIdRoute =
-  ApiConnectClientConversationsConversationIdRouteImport.update({
-    id: '/$conversationId',
-    path: '/$conversationId',
-    getParentRoute: () => ApiConnectClientConversationsRoute,
-  } as any)
-const ApiConnectClientContactsContactIdRoute =
-  ApiConnectClientContactsContactIdRouteImport.update({
-    id: '/$contactId',
-    path: '/$contactId',
-    getParentRoute: () => ApiConnectClientContactsRoute,
-  } as any)
-const ApiConnectClientCannedRepliesReplyIdRoute =
-  ApiConnectClientCannedRepliesReplyIdRouteImport.update({
-    id: '/$replyId',
-    path: '/$replyId',
-    getParentRoute: () => ApiConnectClientCannedRepliesRoute,
-  } as any)
-const ApiConnectAdminHumanOutboxReconciliationRoute =
-  ApiConnectAdminHumanOutboxReconciliationRouteImport.update({
-    id: '/api/connect/admin/human-outbox/reconciliation',
-    path: '/api/connect/admin/human-outbox/reconciliation',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminHumanOutboxProcessRoute =
-  ApiConnectAdminHumanOutboxProcessRouteImport.update({
-    id: '/api/connect/admin/human-outbox/process',
-    path: '/api/connect/admin/human-outbox/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConnectAdminFlowTemplatesTemplateIdRoute =
-  ApiConnectAdminFlowTemplatesTemplateIdRouteImport.update({
-    id: '/$templateId',
-    path: '/$templateId',
-    getParentRoute: () => ApiConnectAdminFlowTemplatesRoute,
-  } as any)
-const ApiConnectAdminConversationsProcessLifecycleRoute =
-  ApiConnectAdminConversationsProcessLifecycleRouteImport.update({
-    id: '/process-lifecycle',
-    path: '/process-lifecycle',
-    getParentRoute: () => ApiConnectAdminConversationsRoute,
-  } as any)
-const ApiConnectAdminConversationsConversationIdRoute =
-  ApiConnectAdminConversationsConversationIdRouteImport.update({
-    id: '/$conversationId',
-    path: '/$conversationId',
-    getParentRoute: () => ApiConnectAdminConversationsRoute,
-  } as any)
-const ApiConnectAdminContactsContactIdRoute =
-  ApiConnectAdminContactsContactIdRouteImport.update({
-    id: '/$contactId',
-    path: '/$contactId',
-    getParentRoute: () => ApiConnectAdminContactsRoute,
-  } as any)
-const ApiConnectAdminCannedRepliesReplyIdRoute =
-  ApiConnectAdminCannedRepliesReplyIdRouteImport.update({
-    id: '/$replyId',
-    path: '/$replyId',
-    getParentRoute: () => ApiConnectAdminCannedRepliesRoute,
-  } as any)
-const ApiConnectAdminBusinessesBusinessIdRoute =
-  ApiConnectAdminBusinessesBusinessIdRouteImport.update({
-    id: '/$businessId',
-    path: '/$businessId',
-    getParentRoute: () => ApiConnectAdminBusinessesRoute,
-  } as any)
-const AdminFlowTemplatesTemplateIdVersionsVersionIdRoute =
-  AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport.update({
-    id: '/versions/$versionId',
-    path: '/versions/$versionId',
-    getParentRoute: () => AdminFlowTemplatesTemplateIdRoute,
-  } as any)
-const ApiConnectClientConversationsConversationIdNotesRoute =
-  ApiConnectClientConversationsConversationIdNotesRouteImport.update({
-    id: '/notes',
-    path: '/notes',
-    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
-  } as any)
-const ApiConnectClientConversationsConversationIdMessagesRoute =
-  ApiConnectClientConversationsConversationIdMessagesRouteImport.update({
-    id: '/messages',
-    path: '/messages',
-    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
-  } as any)
-const ApiConnectAdminConversationsConversationIdNotesRoute =
-  ApiConnectAdminConversationsConversationIdNotesRouteImport.update({
-    id: '/notes',
-    path: '/notes',
-    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
-  } as any)
-const ApiConnectAdminConversationsConversationIdMessagesRoute =
-  ApiConnectAdminConversationsConversationIdMessagesRouteImport.update({
-    id: '/messages',
-    path: '/messages',
-    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
-  } as any)
-const ApiConnectAdminBusinessesBusinessIdProductImageRoute =
-  ApiConnectAdminBusinessesBusinessIdProductImageRouteImport.update({
+const ApiWaAdminBusinessesBusinessIdProductImageRoute =
+  ApiWaAdminBusinessesBusinessIdProductImageRouteImport.update({
     id: '/product-image',
     path: '/product-image',
+    getParentRoute: () => ApiWaAdminBusinessesBusinessIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdIndexRoute =
+  ConnectAdminBusinessesIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdCatalogRoutesRoute =
+  ConnectAdminBusinessesIdCatalogRoutesRouteImport.update({
+    id: '/catalog-routes',
+    path: '/catalog-routes',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdCheckoutRoute =
+  ConnectAdminBusinessesIdCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdDiagnosticsRoute =
+  ConnectAdminBusinessesIdDiagnosticsRouteImport.update({
+    id: '/diagnostics',
+    path: '/diagnostics',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdFlowBuilderRoute =
+  ConnectAdminBusinessesIdFlowBuilderRouteImport.update({
+    id: '/flow-builder',
+    path: '/flow-builder',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdLiveTestRoute =
+  ConnectAdminBusinessesIdLiveTestRouteImport.update({
+    id: '/live-test',
+    path: '/live-test',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdProductsRoute =
+  ConnectAdminBusinessesIdProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdRouteValuesRoute =
+  ConnectAdminBusinessesIdRouteValuesRouteImport.update({
+    id: '/route-values',
+    path: '/route-values',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ConnectAdminBusinessesIdWhatsappRoute =
+  ConnectAdminBusinessesIdWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
+    getParentRoute: () => ConnectAdminBusinessesIdRoute,
+  } as any)
+const ApiConnectAdminBusinessesBusinessIdFlowRoute =
+  ApiConnectAdminBusinessesBusinessIdFlowRouteImport.update({
+    id: '/flow',
+    path: '/flow',
     getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
   } as any)
 const ApiConnectAdminBusinessesBusinessIdFlowImageRoute =
@@ -1549,16 +1543,34 @@ const ApiConnectAdminBusinessesBusinessIdFlowImageRoute =
     path: '/flow-image',
     getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
   } as any)
-const ApiConnectAdminBusinessesBusinessIdFlowRoute =
-  ApiConnectAdminBusinessesBusinessIdFlowRouteImport.update({
-    id: '/flow',
-    path: '/flow',
+const ApiConnectAdminBusinessesBusinessIdProductImageRoute =
+  ApiConnectAdminBusinessesBusinessIdProductImageRouteImport.update({
+    id: '/product-image',
+    path: '/product-image',
     getParentRoute: () => ApiConnectAdminBusinessesBusinessIdRoute,
   } as any)
-const ApiConnectClientConversationsConversationIdTagsTagIdRoute =
-  ApiConnectClientConversationsConversationIdTagsTagIdRouteImport.update({
-    id: '/tags/$tagId',
-    path: '/tags/$tagId',
+const ApiConnectAdminConversationsConversationIdMessagesRoute =
+  ApiConnectAdminConversationsConversationIdMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
+  } as any)
+const ApiConnectAdminConversationsConversationIdNotesRoute =
+  ApiConnectAdminConversationsConversationIdNotesRouteImport.update({
+    id: '/notes',
+    path: '/notes',
+    getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
+  } as any)
+const ApiConnectClientConversationsConversationIdMessagesRoute =
+  ApiConnectClientConversationsConversationIdMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
+  } as any)
+const ApiConnectClientConversationsConversationIdNotesRoute =
+  ApiConnectClientConversationsConversationIdNotesRouteImport.update({
+    id: '/notes',
+    path: '/notes',
     getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
   } as any)
 const ApiConnectAdminConversationsConversationIdTagsTagIdRoute =
@@ -1566,6 +1578,12 @@ const ApiConnectAdminConversationsConversationIdTagsTagIdRoute =
     id: '/tags/$tagId',
     path: '/tags/$tagId',
     getParentRoute: () => ApiConnectAdminConversationsConversationIdRoute,
+  } as any)
+const ApiConnectClientConversationsConversationIdTagsTagIdRoute =
+  ApiConnectClientConversationsConversationIdTagsTagIdRouteImport.update({
+    id: '/tags/$tagId',
+    path: '/tags/$tagId',
+    getParentRoute: () => ApiConnectClientConversationsConversationIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1576,6 +1594,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1625,6 +1644,8 @@ export interface FileRoutesByFullPath {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -1814,6 +1835,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1857,6 +1879,8 @@ export interface FileRoutesByTo {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2045,6 +2069,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard-2': typeof Dashboard2RouteWithChildren
   '/data-deletion': typeof DataDeletionRoute
+  '/license-admin': typeof LicenseAdminRoute
   '/logsWABot': typeof LogsWABotRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -2094,6 +2119,8 @@ export interface FileRoutesById {
   '/admin/flow-templates/$templateId': typeof AdminFlowTemplatesTemplateIdRouteWithChildren
   '/admin/flow-templates/new': typeof AdminFlowTemplatesNewRoute
   '/api/connect/release': typeof ApiConnectReleaseRoute
+  '/api/license/admin': typeof ApiLicenseAdminRoute
+  '/api/license/check': typeof ApiLicenseCheckRoute
   '/api/wa-admin/businesses': typeof ApiWaAdminBusinessesRouteWithChildren
   '/api/wa-admin/flow-templates': typeof ApiWaAdminFlowTemplatesRouteWithChildren
   '/api/wa-admin/login': typeof ApiWaAdminLoginRoute
@@ -2289,6 +2316,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2338,6 +2366,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2527,6 +2557,7 @@ export interface FileRouteTypes {
     | '/'
     | '/contact'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2570,6 +2601,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -2757,6 +2790,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-2'
     | '/data-deletion'
+    | '/license-admin'
     | '/logsWABot'
     | '/privacy'
     | '/privacy-policy'
@@ -2806,6 +2840,8 @@ export interface FileRouteTypes {
     | '/admin/flow-templates/$templateId'
     | '/admin/flow-templates/new'
     | '/api/connect/release'
+    | '/api/license/admin'
+    | '/api/license/check'
     | '/api/wa-admin/businesses'
     | '/api/wa-admin/flow-templates'
     | '/api/wa-admin/login'
@@ -3000,6 +3036,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   Dashboard2Route: typeof Dashboard2RouteWithChildren
   DataDeletionRoute: typeof DataDeletionRoute
+  LicenseAdminRoute: typeof LicenseAdminRoute
   LogsWABotRoute: typeof LogsWABotRoute
   PrivacyRoute: typeof PrivacyRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -3017,6 +3054,8 @@ export interface RootRouteChildren {
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
   ApiConnectReleaseRoute: typeof ApiConnectReleaseRoute
+  ApiLicenseAdminRoute: typeof ApiLicenseAdminRoute
+  ApiLicenseCheckRoute: typeof ApiLicenseCheckRoute
   ApiWaAdminBusinessesRoute: typeof ApiWaAdminBusinessesRouteWithChildren
   ApiWaAdminFlowTemplatesRoute: typeof ApiWaAdminFlowTemplatesRouteWithChildren
   ApiWaAdminLoginRoute: typeof ApiWaAdminLoginRoute
@@ -3091,81 +3130,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms-and-conditions': {
-      id: '/terms-and-conditions'
-      path: '/terms-and-conditions'
-      fullPath: '/terms-and-conditions'
-      preLoaderRoute: typeof TermsAndConditionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stores': {
-      id: '/stores'
-      path: '/stores'
-      fullPath: '/stores'
-      preLoaderRoute: typeof StoresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/spreadsheet': {
-      id: '/spreadsheet'
-      path: '/spreadsheet'
-      fullPath: '/spreadsheet'
-      preLoaderRoute: typeof SpreadsheetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy-policy': {
-      id: '/privacy-policy'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/logsWABot': {
-      id: '/logsWABot'
-      path: '/logsWABot'
-      fullPath: '/logsWABot'
-      preLoaderRoute: typeof LogsWABotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/data-deletion': {
-      id: '/data-deletion'
-      path: '/data-deletion'
-      fullPath: '/data-deletion'
-      preLoaderRoute: typeof DataDeletionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard-2': {
-      id: '/dashboard-2'
-      path: '/dashboard-2'
-      fullPath: '/dashboard-2'
-      preLoaderRoute: typeof Dashboard2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/connect': {
-      id: '/connect'
-      path: '/connect'
-      fullPath: '/connect'
-      preLoaderRoute: typeof ConnectRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -3175,270 +3144,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/connect': {
+      id: '/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof ConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/stores/': {
-      id: '/stores/'
-      path: '/'
-      fullPath: '/stores/'
-      preLoaderRoute: typeof StoresIndexRouteImport
-      parentRoute: typeof StoresRoute
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof DashboardRoute
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/dashboard-2/': {
-      id: '/dashboard-2/'
-      path: '/'
-      fullPath: '/dashboard-2/'
-      preLoaderRoute: typeof Dashboard2IndexRouteImport
-      parentRoute: typeof Dashboard2Route
+    '/dashboard-2': {
+      id: '/dashboard-2'
+      path: '/dashboard-2'
+      fullPath: '/dashboard-2'
+      preLoaderRoute: typeof Dashboard2RouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/connect/': {
-      id: '/connect/'
-      path: '/'
-      fullPath: '/connect/'
-      preLoaderRoute: typeof ConnectIndexRouteImport
-      parentRoute: typeof ConnectRoute
+    '/data-deletion': {
+      id: '/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof DataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/license-admin': {
+      id: '/license-admin'
+      path: '/license-admin'
+      fullPath: '/license-admin'
+      preLoaderRoute: typeof LicenseAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logsWABot': {
+      id: '/logsWABot'
+      path: '/logsWABot'
+      fullPath: '/logsWABot'
+      preLoaderRoute: typeof LogsWABotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spreadsheet': {
+      id: '/spreadsheet'
+      path: '/spreadsheet'
+      fullPath: '/spreadsheet'
+      preLoaderRoute: typeof SpreadsheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/work/uno400': {
-      id: '/work/uno400'
-      path: '/work/uno400'
-      fullPath: '/work/uno400'
-      preLoaderRoute: typeof WorkUno400RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/tijarati-pro': {
-      id: '/work/tijarati-pro'
-      path: '/work/tijarati-pro'
-      fullPath: '/work/tijarati-pro'
-      preLoaderRoute: typeof WorkTijaratiProRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/snapgo': {
-      id: '/work/snapgo'
-      path: '/work/snapgo'
-      fullPath: '/work/snapgo'
-      preLoaderRoute: typeof WorkSnapgoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/koubar-group': {
-      id: '/work/koubar-group'
-      path: '/work/koubar-group'
-      fullPath: '/work/koubar-group'
-      preLoaderRoute: typeof WorkKoubarGroupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/detailing-lab': {
-      id: '/work/detailing-lab'
-      path: '/work/detailing-lab'
-      fullPath: '/work/detailing-lab'
-      preLoaderRoute: typeof WorkDetailingLabRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/data-insights': {
-      id: '/work/data-insights'
-      path: '/work/data-insights'
-      fullPath: '/work/data-insights'
-      preLoaderRoute: typeof WorkDataInsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stores/pavone': {
-      id: '/stores/pavone'
-      path: '/pavone'
-      fullPath: '/stores/pavone'
-      preLoaderRoute: typeof StoresPavoneRouteImport
-      parentRoute: typeof StoresRoute
-    }
-    '/quotations/khadamati': {
-      id: '/quotations/khadamati'
-      path: '/quotations/khadamati'
-      fullPath: '/quotations/khadamati'
-      preLoaderRoute: typeof QuotationsKhadamatiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/menus/marleys': {
-      id: '/menus/marleys'
-      path: '/menus/marleys'
-      fullPath: '/menus/marleys'
-      preLoaderRoute: typeof MenusMarleysRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invoicemaker/support': {
-      id: '/invoicemaker/support'
-      path: '/invoicemaker/support'
-      fullPath: '/invoicemaker/support'
-      preLoaderRoute: typeof InvoicemakerSupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invoicemaker/privacy': {
-      id: '/invoicemaker/privacy'
-      path: '/invoicemaker/privacy'
-      fullPath: '/invoicemaker/privacy'
-      preLoaderRoute: typeof InvoicemakerPrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard/simulator': {
-      id: '/dashboard/simulator'
-      path: '/simulator'
-      fullPath: '/dashboard/simulator'
-      preLoaderRoute: typeof DashboardSimulatorRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/products': {
-      id: '/dashboard/products'
-      path: '/products'
-      fullPath: '/dashboard/products'
-      preLoaderRoute: typeof DashboardProductsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/orders': {
-      id: '/dashboard/orders'
-      path: '/orders'
-      fullPath: '/dashboard/orders'
-      preLoaderRoute: typeof DashboardOrdersRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/delivery': {
-      id: '/dashboard/delivery'
-      path: '/delivery'
-      fullPath: '/dashboard/delivery'
-      preLoaderRoute: typeof DashboardDeliveryRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/categories': {
-      id: '/dashboard/categories'
-      path: '/categories'
-      fullPath: '/dashboard/categories'
-      preLoaderRoute: typeof DashboardCategoriesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard-2/simulator': {
-      id: '/dashboard-2/simulator'
-      path: '/simulator'
-      fullPath: '/dashboard-2/simulator'
-      preLoaderRoute: typeof Dashboard2SimulatorRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/dashboard-2/settings': {
-      id: '/dashboard-2/settings'
-      path: '/settings'
-      fullPath: '/dashboard-2/settings'
-      preLoaderRoute: typeof Dashboard2SettingsRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/dashboard-2/products': {
-      id: '/dashboard-2/products'
-      path: '/products'
-      fullPath: '/dashboard-2/products'
-      preLoaderRoute: typeof Dashboard2ProductsRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/dashboard-2/orders': {
-      id: '/dashboard-2/orders'
-      path: '/orders'
-      fullPath: '/dashboard-2/orders'
-      preLoaderRoute: typeof Dashboard2OrdersRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/dashboard-2/delivery': {
-      id: '/dashboard-2/delivery'
-      path: '/delivery'
-      fullPath: '/dashboard-2/delivery'
-      preLoaderRoute: typeof Dashboard2DeliveryRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/dashboard-2/categories': {
-      id: '/dashboard-2/categories'
-      path: '/categories'
-      fullPath: '/dashboard-2/categories'
-      preLoaderRoute: typeof Dashboard2CategoriesRouteImport
-      parentRoute: typeof Dashboard2Route
-    }
-    '/connect/logs': {
-      id: '/connect/logs'
-      path: '/logs'
-      fullPath: '/connect/logs'
-      preLoaderRoute: typeof ConnectLogsRouteImport
-      parentRoute: typeof ConnectRoute
-    }
-    '/connect/dashboard-2': {
-      id: '/connect/dashboard-2'
-      path: '/dashboard-2'
-      fullPath: '/connect/dashboard-2'
-      preLoaderRoute: typeof ConnectDashboard2RouteImport
-      parentRoute: typeof ConnectRoute
-    }
-    '/connect/dashboard': {
-      id: '/connect/dashboard'
-      path: '/dashboard'
-      fullPath: '/connect/dashboard'
-      preLoaderRoute: typeof ConnectDashboardRouteImport
-      parentRoute: typeof ConnectRoute
-    }
-    '/connect/client': {
-      id: '/connect/client'
-      path: '/client'
-      fullPath: '/connect/client'
-      preLoaderRoute: typeof ConnectClientRouteImport
-      parentRoute: typeof ConnectRoute
-    }
-    '/connect/admin': {
-      id: '/connect/admin'
-      path: '/admin'
-      fullPath: '/connect/admin'
-      preLoaderRoute: typeof ConnectAdminRouteImport
-      parentRoute: typeof ConnectRoute
-    }
-    '/admin/whatsapp-templates': {
-      id: '/admin/whatsapp-templates'
-      path: '/whatsapp-templates'
-      fullPath: '/admin/whatsapp-templates'
-      preLoaderRoute: typeof AdminWhatsappTemplatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/logs': {
-      id: '/admin/logs'
-      path: '/logs'
-      fullPath: '/admin/logs'
-      preLoaderRoute: typeof AdminLogsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/flow-templates': {
-      id: '/admin/flow-templates'
-      path: '/flow-templates'
-      fullPath: '/admin/flow-templates'
-      preLoaderRoute: typeof AdminFlowTemplatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/businesses': {
-      id: '/admin/businesses'
-      path: '/businesses'
-      fullPath: '/admin/businesses'
-      preLoaderRoute: typeof AdminBusinessesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/app-review-demo': {
@@ -3448,529 +3242,305 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppReviewDemoRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/stores/pavone/': {
-      id: '/stores/pavone/'
-      path: '/'
-      fullPath: '/stores/pavone/'
-      preLoaderRoute: typeof StoresPavoneIndexRouteImport
-      parentRoute: typeof StoresPavoneRoute
+    '/admin/businesses': {
+      id: '/admin/businesses'
+      path: '/businesses'
+      fullPath: '/admin/businesses'
+      preLoaderRoute: typeof AdminBusinessesRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/connect/dashboard/': {
-      id: '/connect/dashboard/'
-      path: '/'
-      fullPath: '/connect/dashboard/'
-      preLoaderRoute: typeof ConnectDashboardIndexRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard-2/': {
-      id: '/connect/dashboard-2/'
-      path: '/'
-      fullPath: '/connect/dashboard-2/'
-      preLoaderRoute: typeof ConnectDashboard2IndexRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/client/': {
-      id: '/connect/client/'
-      path: '/'
-      fullPath: '/connect/client/'
-      preLoaderRoute: typeof ConnectClientIndexRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/admin/': {
-      id: '/connect/admin/'
-      path: '/'
-      fullPath: '/connect/admin/'
-      preLoaderRoute: typeof ConnectAdminIndexRouteImport
-      parentRoute: typeof ConnectAdminRoute
-    }
-    '/stores/pavone/wishlist': {
-      id: '/stores/pavone/wishlist'
-      path: '/wishlist'
-      fullPath: '/stores/pavone/wishlist'
-      preLoaderRoute: typeof StoresPavoneWishlistRouteImport
-      parentRoute: typeof StoresPavoneRoute
-    }
-    '/stores/pavone/shop': {
-      id: '/stores/pavone/shop'
-      path: '/shop'
-      fullPath: '/stores/pavone/shop'
-      preLoaderRoute: typeof StoresPavoneShopRouteImport
-      parentRoute: typeof StoresPavoneRoute
-    }
-    '/stores/pavone/checkout': {
-      id: '/stores/pavone/checkout'
-      path: '/checkout'
-      fullPath: '/stores/pavone/checkout'
-      preLoaderRoute: typeof StoresPavoneCheckoutRouteImport
-      parentRoute: typeof StoresPavoneRoute
-    }
-    '/stores/pavone/cart': {
-      id: '/stores/pavone/cart'
-      path: '/cart'
-      fullPath: '/stores/pavone/cart'
-      preLoaderRoute: typeof StoresPavoneCartRouteImport
-      parentRoute: typeof StoresPavoneRoute
-    }
-    '/stores/pavone/admin': {
-      id: '/stores/pavone/admin'
-      path: '/admin'
-      fullPath: '/stores/pavone/admin'
-      preLoaderRoute: typeof StoresPavoneAdminRouteImport
-      parentRoute: typeof StoresPavoneRoute
-    }
-    '/dashboard/orders/$orderId': {
-      id: '/dashboard/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/dashboard/orders/$orderId'
-      preLoaderRoute: typeof DashboardOrdersOrderIdRouteImport
-      parentRoute: typeof DashboardOrdersRoute
-    }
-    '/dashboard-2/orders/$orderId': {
-      id: '/dashboard-2/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/dashboard-2/orders/$orderId'
-      preLoaderRoute: typeof Dashboard2OrdersOrderIdRouteImport
-      parentRoute: typeof Dashboard2OrdersRoute
-    }
-    '/connect/dashboard/simulator': {
-      id: '/connect/dashboard/simulator'
-      path: '/simulator'
-      fullPath: '/connect/dashboard/simulator'
-      preLoaderRoute: typeof ConnectDashboardSimulatorRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard/settings': {
-      id: '/connect/dashboard/settings'
-      path: '/settings'
-      fullPath: '/connect/dashboard/settings'
-      preLoaderRoute: typeof ConnectDashboardSettingsRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard/products': {
-      id: '/connect/dashboard/products'
-      path: '/products'
-      fullPath: '/connect/dashboard/products'
-      preLoaderRoute: typeof ConnectDashboardProductsRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard/orders': {
-      id: '/connect/dashboard/orders'
-      path: '/orders'
-      fullPath: '/connect/dashboard/orders'
-      preLoaderRoute: typeof ConnectDashboardOrdersRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard/delivery': {
-      id: '/connect/dashboard/delivery'
-      path: '/delivery'
-      fullPath: '/connect/dashboard/delivery'
-      preLoaderRoute: typeof ConnectDashboardDeliveryRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard/categories': {
-      id: '/connect/dashboard/categories'
-      path: '/categories'
-      fullPath: '/connect/dashboard/categories'
-      preLoaderRoute: typeof ConnectDashboardCategoriesRouteImport
-      parentRoute: typeof ConnectDashboardRoute
-    }
-    '/connect/dashboard-2/simulator': {
-      id: '/connect/dashboard-2/simulator'
-      path: '/simulator'
-      fullPath: '/connect/dashboard-2/simulator'
-      preLoaderRoute: typeof ConnectDashboard2SimulatorRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/dashboard-2/settings': {
-      id: '/connect/dashboard-2/settings'
-      path: '/settings'
-      fullPath: '/connect/dashboard-2/settings'
-      preLoaderRoute: typeof ConnectDashboard2SettingsRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/dashboard-2/products': {
-      id: '/connect/dashboard-2/products'
-      path: '/products'
-      fullPath: '/connect/dashboard-2/products'
-      preLoaderRoute: typeof ConnectDashboard2ProductsRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/dashboard-2/orders': {
-      id: '/connect/dashboard-2/orders'
-      path: '/orders'
-      fullPath: '/connect/dashboard-2/orders'
-      preLoaderRoute: typeof ConnectDashboard2OrdersRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/dashboard-2/delivery': {
-      id: '/connect/dashboard-2/delivery'
-      path: '/delivery'
-      fullPath: '/connect/dashboard-2/delivery'
-      preLoaderRoute: typeof ConnectDashboard2DeliveryRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/dashboard-2/categories': {
-      id: '/connect/dashboard-2/categories'
-      path: '/categories'
-      fullPath: '/connect/dashboard-2/categories'
-      preLoaderRoute: typeof ConnectDashboard2CategoriesRouteImport
-      parentRoute: typeof ConnectDashboard2Route
-    }
-    '/connect/client/voice': {
-      id: '/connect/client/voice'
-      path: '/voice'
-      fullPath: '/connect/client/voice'
-      preLoaderRoute: typeof ConnectClientVoiceRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/templates': {
-      id: '/connect/client/templates'
-      path: '/templates'
-      fullPath: '/connect/client/templates'
-      preLoaderRoute: typeof ConnectClientTemplatesRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/settings': {
-      id: '/connect/client/settings'
-      path: '/settings'
-      fullPath: '/connect/client/settings'
-      preLoaderRoute: typeof ConnectClientSettingsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/payments': {
-      id: '/connect/client/payments'
-      path: '/payments'
-      fullPath: '/connect/client/payments'
-      preLoaderRoute: typeof ConnectClientPaymentsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/integrations': {
-      id: '/connect/client/integrations'
-      path: '/integrations'
-      fullPath: '/connect/client/integrations'
-      preLoaderRoute: typeof ConnectClientIntegrationsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/inbox': {
-      id: '/connect/client/inbox'
-      path: '/inbox'
-      fullPath: '/connect/client/inbox'
-      preLoaderRoute: typeof ConnectClientInboxRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/enterprise': {
-      id: '/connect/client/enterprise'
-      path: '/enterprise'
-      fullPath: '/connect/client/enterprise'
-      preLoaderRoute: typeof ConnectClientEnterpriseRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/developers': {
-      id: '/connect/client/developers'
-      path: '/developers'
-      fullPath: '/connect/client/developers'
-      preLoaderRoute: typeof ConnectClientDevelopersRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/contacts': {
-      id: '/connect/client/contacts'
-      path: '/contacts'
-      fullPath: '/connect/client/contacts'
-      preLoaderRoute: typeof ConnectClientContactsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/channels': {
-      id: '/connect/client/channels'
-      path: '/channels'
-      fullPath: '/connect/client/channels'
-      preLoaderRoute: typeof ConnectClientChannelsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/catalog': {
-      id: '/connect/client/catalog'
-      path: '/catalog'
-      fullPath: '/connect/client/catalog'
-      preLoaderRoute: typeof ConnectClientCatalogRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/broadcasts': {
-      id: '/connect/client/broadcasts'
-      path: '/broadcasts'
-      fullPath: '/connect/client/broadcasts'
-      preLoaderRoute: typeof ConnectClientBroadcastsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/automations': {
-      id: '/connect/client/automations'
-      path: '/automations'
-      fullPath: '/connect/client/automations'
-      preLoaderRoute: typeof ConnectClientAutomationsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/analytics': {
-      id: '/connect/client/analytics'
-      path: '/analytics'
-      fullPath: '/connect/client/analytics'
-      preLoaderRoute: typeof ConnectClientAnalyticsRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/client/ai-agent': {
-      id: '/connect/client/ai-agent'
-      path: '/ai-agent'
-      fullPath: '/connect/client/ai-agent'
-      preLoaderRoute: typeof ConnectClientAiAgentRouteImport
-      parentRoute: typeof ConnectClientRoute
-    }
-    '/connect/admin/whatsapp-templates': {
-      id: '/connect/admin/whatsapp-templates'
-      path: '/whatsapp-templates'
-      fullPath: '/connect/admin/whatsapp-templates'
-      preLoaderRoute: typeof ConnectAdminWhatsappTemplatesRouteImport
-      parentRoute: typeof ConnectAdminRoute
-    }
-    '/connect/admin/settings': {
-      id: '/connect/admin/settings'
-      path: '/settings'
-      fullPath: '/connect/admin/settings'
-      preLoaderRoute: typeof ConnectAdminSettingsRouteImport
-      parentRoute: typeof ConnectAdminRoute
-    }
-    '/connect/admin/logs': {
-      id: '/connect/admin/logs'
-      path: '/logs'
-      fullPath: '/connect/admin/logs'
-      preLoaderRoute: typeof ConnectAdminLogsRouteImport
-      parentRoute: typeof ConnectAdminRoute
-    }
-    '/connect/admin/inbox': {
-      id: '/connect/admin/inbox'
-      path: '/inbox'
-      fullPath: '/connect/admin/inbox'
-      preLoaderRoute: typeof ConnectAdminInboxRouteImport
-      parentRoute: typeof ConnectAdminRoute
-    }
-    '/connect/admin/flow-templates': {
-      id: '/connect/admin/flow-templates'
+    '/admin/flow-templates': {
+      id: '/admin/flow-templates'
       path: '/flow-templates'
-      fullPath: '/connect/admin/flow-templates'
-      preLoaderRoute: typeof ConnectAdminFlowTemplatesRouteImport
-      parentRoute: typeof ConnectAdminRoute
+      fullPath: '/admin/flow-templates'
+      preLoaderRoute: typeof AdminFlowTemplatesRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/connect/admin/developers': {
-      id: '/connect/admin/developers'
-      path: '/developers'
-      fullPath: '/connect/admin/developers'
-      preLoaderRoute: typeof ConnectAdminDevelopersRouteImport
-      parentRoute: typeof ConnectAdminRoute
+    '/admin/logs': {
+      id: '/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/connect/admin/contacts': {
-      id: '/connect/admin/contacts'
-      path: '/contacts'
-      fullPath: '/connect/admin/contacts'
-      preLoaderRoute: typeof ConnectAdminContactsRouteImport
-      parentRoute: typeof ConnectAdminRoute
+    '/admin/whatsapp-templates': {
+      id: '/admin/whatsapp-templates'
+      path: '/whatsapp-templates'
+      fullPath: '/admin/whatsapp-templates'
+      preLoaderRoute: typeof AdminWhatsappTemplatesRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/connect/admin/broadcasts': {
-      id: '/connect/admin/broadcasts'
-      path: '/broadcasts'
-      fullPath: '/connect/admin/broadcasts'
-      preLoaderRoute: typeof ConnectAdminBroadcastsRouteImport
-      parentRoute: typeof ConnectAdminRoute
+    '/connect/': {
+      id: '/connect/'
+      path: '/'
+      fullPath: '/connect/'
+      preLoaderRoute: typeof ConnectIndexRouteImport
+      parentRoute: typeof ConnectRoute
     }
-    '/connect/admin/analytics': {
-      id: '/connect/admin/analytics'
-      path: '/analytics'
-      fullPath: '/connect/admin/analytics'
-      preLoaderRoute: typeof ConnectAdminAnalyticsRouteImport
-      parentRoute: typeof ConnectAdminRoute
+    '/connect/admin': {
+      id: '/connect/admin'
+      path: '/admin'
+      fullPath: '/connect/admin'
+      preLoaderRoute: typeof ConnectAdminRouteImport
+      parentRoute: typeof ConnectRoute
     }
-    '/api/whatsapp/webhook-2': {
-      id: '/api/whatsapp/webhook-2'
-      path: '/api/whatsapp/webhook-2'
-      fullPath: '/api/whatsapp/webhook-2'
-      preLoaderRoute: typeof ApiWhatsappWebhook2RouteImport
+    '/connect/client': {
+      id: '/connect/client'
+      path: '/client'
+      fullPath: '/connect/client'
+      preLoaderRoute: typeof ConnectClientRouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/dashboard': {
+      id: '/connect/dashboard'
+      path: '/dashboard'
+      fullPath: '/connect/dashboard'
+      preLoaderRoute: typeof ConnectDashboardRouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/dashboard-2': {
+      id: '/connect/dashboard-2'
+      path: '/dashboard-2'
+      fullPath: '/connect/dashboard-2'
+      preLoaderRoute: typeof ConnectDashboard2RouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/connect/logs': {
+      id: '/connect/logs'
+      path: '/logs'
+      fullPath: '/connect/logs'
+      preLoaderRoute: typeof ConnectLogsRouteImport
+      parentRoute: typeof ConnectRoute
+    }
+    '/dashboard-2/': {
+      id: '/dashboard-2/'
+      path: '/'
+      fullPath: '/dashboard-2/'
+      preLoaderRoute: typeof Dashboard2IndexRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/categories': {
+      id: '/dashboard-2/categories'
+      path: '/categories'
+      fullPath: '/dashboard-2/categories'
+      preLoaderRoute: typeof Dashboard2CategoriesRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/delivery': {
+      id: '/dashboard-2/delivery'
+      path: '/delivery'
+      fullPath: '/dashboard-2/delivery'
+      preLoaderRoute: typeof Dashboard2DeliveryRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/orders': {
+      id: '/dashboard-2/orders'
+      path: '/orders'
+      fullPath: '/dashboard-2/orders'
+      preLoaderRoute: typeof Dashboard2OrdersRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/products': {
+      id: '/dashboard-2/products'
+      path: '/products'
+      fullPath: '/dashboard-2/products'
+      preLoaderRoute: typeof Dashboard2ProductsRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/settings': {
+      id: '/dashboard-2/settings'
+      path: '/settings'
+      fullPath: '/dashboard-2/settings'
+      preLoaderRoute: typeof Dashboard2SettingsRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard-2/simulator': {
+      id: '/dashboard-2/simulator'
+      path: '/simulator'
+      fullPath: '/dashboard-2/simulator'
+      preLoaderRoute: typeof Dashboard2SimulatorRouteImport
+      parentRoute: typeof Dashboard2Route
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/categories': {
+      id: '/dashboard/categories'
+      path: '/categories'
+      fullPath: '/dashboard/categories'
+      preLoaderRoute: typeof DashboardCategoriesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/delivery': {
+      id: '/dashboard/delivery'
+      path: '/delivery'
+      fullPath: '/dashboard/delivery'
+      preLoaderRoute: typeof DashboardDeliveryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/products': {
+      id: '/dashboard/products'
+      path: '/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardProductsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/simulator': {
+      id: '/dashboard/simulator'
+      path: '/simulator'
+      fullPath: '/dashboard/simulator'
+      preLoaderRoute: typeof DashboardSimulatorRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/invoicemaker/privacy': {
+      id: '/invoicemaker/privacy'
+      path: '/invoicemaker/privacy'
+      fullPath: '/invoicemaker/privacy'
+      preLoaderRoute: typeof InvoicemakerPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/whatsapp/webhook': {
-      id: '/api/whatsapp/webhook'
-      path: '/api/whatsapp/webhook'
-      fullPath: '/api/whatsapp/webhook'
-      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+    '/invoicemaker/support': {
+      id: '/invoicemaker/support'
+      path: '/invoicemaker/support'
+      fullPath: '/invoicemaker/support'
+      preLoaderRoute: typeof InvoicemakerSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/upload': {
-      id: '/api/wa-dashboard/upload'
-      path: '/api/wa-dashboard/upload'
-      fullPath: '/api/wa-dashboard/upload'
-      preLoaderRoute: typeof ApiWaDashboardUploadRouteImport
+    '/menus/marleys': {
+      id: '/menus/marleys'
+      path: '/menus/marleys'
+      fullPath: '/menus/marleys'
+      preLoaderRoute: typeof MenusMarleysRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/session': {
-      id: '/api/wa-dashboard/session'
-      path: '/api/wa-dashboard/session'
-      fullPath: '/api/wa-dashboard/session'
-      preLoaderRoute: typeof ApiWaDashboardSessionRouteImport
+    '/quotations/khadamati': {
+      id: '/quotations/khadamati'
+      path: '/quotations/khadamati'
+      fullPath: '/quotations/khadamati'
+      preLoaderRoute: typeof QuotationsKhadamatiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/orders': {
-      id: '/api/wa-dashboard/orders'
-      path: '/api/wa-dashboard/orders'
-      fullPath: '/api/wa-dashboard/orders'
-      preLoaderRoute: typeof ApiWaDashboardOrdersRouteImport
+    '/stores/': {
+      id: '/stores/'
+      path: '/'
+      fullPath: '/stores/'
+      preLoaderRoute: typeof StoresIndexRouteImport
+      parentRoute: typeof StoresRoute
+    }
+    '/stores/pavone': {
+      id: '/stores/pavone'
+      path: '/pavone'
+      fullPath: '/stores/pavone'
+      preLoaderRoute: typeof StoresPavoneRouteImport
+      parentRoute: typeof StoresRoute
+    }
+    '/work/data-insights': {
+      id: '/work/data-insights'
+      path: '/work/data-insights'
+      fullPath: '/work/data-insights'
+      preLoaderRoute: typeof WorkDataInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/notifications': {
-      id: '/api/wa-dashboard/notifications'
-      path: '/api/wa-dashboard/notifications'
-      fullPath: '/api/wa-dashboard/notifications'
-      preLoaderRoute: typeof ApiWaDashboardNotificationsRouteImport
+    '/work/detailing-lab': {
+      id: '/work/detailing-lab'
+      path: '/work/detailing-lab'
+      fullPath: '/work/detailing-lab'
+      preLoaderRoute: typeof WorkDetailingLabRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/logout': {
-      id: '/api/wa-dashboard/logout'
-      path: '/api/wa-dashboard/logout'
-      fullPath: '/api/wa-dashboard/logout'
-      preLoaderRoute: typeof ApiWaDashboardLogoutRouteImport
+    '/work/koubar-group': {
+      id: '/work/koubar-group'
+      path: '/work/koubar-group'
+      fullPath: '/work/koubar-group'
+      preLoaderRoute: typeof WorkKoubarGroupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/login': {
-      id: '/api/wa-dashboard/login'
-      path: '/api/wa-dashboard/login'
-      fullPath: '/api/wa-dashboard/login'
-      preLoaderRoute: typeof ApiWaDashboardLoginRouteImport
+    '/work/snapgo': {
+      id: '/work/snapgo'
+      path: '/work/snapgo'
+      fullPath: '/work/snapgo'
+      preLoaderRoute: typeof WorkSnapgoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/diagnostics': {
-      id: '/api/wa-dashboard/diagnostics'
-      path: '/api/wa-dashboard/diagnostics'
-      fullPath: '/api/wa-dashboard/diagnostics'
-      preLoaderRoute: typeof ApiWaDashboardDiagnosticsRouteImport
+    '/work/tijarati-pro': {
+      id: '/work/tijarati-pro'
+      path: '/work/tijarati-pro'
+      fullPath: '/work/tijarati-pro'
+      preLoaderRoute: typeof WorkTijaratiProRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard/catalog': {
-      id: '/api/wa-dashboard/catalog'
-      path: '/api/wa-dashboard/catalog'
-      fullPath: '/api/wa-dashboard/catalog'
-      preLoaderRoute: typeof ApiWaDashboardCatalogRouteImport
+    '/work/uno400': {
+      id: '/work/uno400'
+      path: '/work/uno400'
+      fullPath: '/work/uno400'
+      preLoaderRoute: typeof WorkUno400RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard-2/upload': {
-      id: '/api/wa-dashboard-2/upload'
-      path: '/api/wa-dashboard-2/upload'
-      fullPath: '/api/wa-dashboard-2/upload'
-      preLoaderRoute: typeof ApiWaDashboard2UploadRouteImport
+    '/admin/businesses/$businessId': {
+      id: '/admin/businesses/$businessId'
+      path: '/$businessId'
+      fullPath: '/admin/businesses/$businessId'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdRouteImport
+      parentRoute: typeof AdminBusinessesRoute
+    }
+    '/admin/businesses/new': {
+      id: '/admin/businesses/new'
+      path: '/new'
+      fullPath: '/admin/businesses/new'
+      preLoaderRoute: typeof AdminBusinessesNewRouteImport
+      parentRoute: typeof AdminBusinessesRoute
+    }
+    '/admin/flow-templates/$templateId': {
+      id: '/admin/flow-templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/admin/flow-templates/$templateId'
+      preLoaderRoute: typeof AdminFlowTemplatesTemplateIdRouteImport
+      parentRoute: typeof AdminFlowTemplatesRoute
+    }
+    '/admin/flow-templates/new': {
+      id: '/admin/flow-templates/new'
+      path: '/new'
+      fullPath: '/admin/flow-templates/new'
+      preLoaderRoute: typeof AdminFlowTemplatesNewRouteImport
+      parentRoute: typeof AdminFlowTemplatesRoute
+    }
+    '/api/connect/release': {
+      id: '/api/connect/release'
+      path: '/api/connect/release'
+      fullPath: '/api/connect/release'
+      preLoaderRoute: typeof ApiConnectReleaseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard-2/session': {
-      id: '/api/wa-dashboard-2/session'
-      path: '/api/wa-dashboard-2/session'
-      fullPath: '/api/wa-dashboard-2/session'
-      preLoaderRoute: typeof ApiWaDashboard2SessionRouteImport
+    '/api/license/admin': {
+      id: '/api/license/admin'
+      path: '/api/license/admin'
+      fullPath: '/api/license/admin'
+      preLoaderRoute: typeof ApiLicenseAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/wa-dashboard-2/orders': {
-      id: '/api/wa-dashboard-2/orders'
-      path: '/api/wa-dashboard-2/orders'
-      fullPath: '/api/wa-dashboard-2/orders'
-      preLoaderRoute: typeof ApiWaDashboard2OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-dashboard-2/logout': {
-      id: '/api/wa-dashboard-2/logout'
-      path: '/api/wa-dashboard-2/logout'
-      fullPath: '/api/wa-dashboard-2/logout'
-      preLoaderRoute: typeof ApiWaDashboard2LogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-dashboard-2/login': {
-      id: '/api/wa-dashboard-2/login'
-      path: '/api/wa-dashboard-2/login'
-      fullPath: '/api/wa-dashboard-2/login'
-      preLoaderRoute: typeof ApiWaDashboard2LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-dashboard-2/diagnostics': {
-      id: '/api/wa-dashboard-2/diagnostics'
-      path: '/api/wa-dashboard-2/diagnostics'
-      fullPath: '/api/wa-dashboard-2/diagnostics'
-      preLoaderRoute: typeof ApiWaDashboard2DiagnosticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-dashboard-2/catalog': {
-      id: '/api/wa-dashboard-2/catalog'
-      path: '/api/wa-dashboard-2/catalog'
-      fullPath: '/api/wa-dashboard-2/catalog'
-      preLoaderRoute: typeof ApiWaDashboard2CatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/whatsapp-templates': {
-      id: '/api/wa-admin/whatsapp-templates'
-      path: '/api/wa-admin/whatsapp-templates'
-      fullPath: '/api/wa-admin/whatsapp-templates'
-      preLoaderRoute: typeof ApiWaAdminWhatsappTemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/session': {
-      id: '/api/wa-admin/session'
-      path: '/api/wa-admin/session'
-      fullPath: '/api/wa-admin/session'
-      preLoaderRoute: typeof ApiWaAdminSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/send-review-message': {
-      id: '/api/wa-admin/send-review-message'
-      path: '/api/wa-admin/send-review-message'
-      fullPath: '/api/wa-admin/send-review-message'
-      preLoaderRoute: typeof ApiWaAdminSendReviewMessageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/review-connections': {
-      id: '/api/wa-admin/review-connections'
-      path: '/api/wa-admin/review-connections'
-      fullPath: '/api/wa-admin/review-connections'
-      preLoaderRoute: typeof ApiWaAdminReviewConnectionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/overview': {
-      id: '/api/wa-admin/overview'
-      path: '/api/wa-admin/overview'
-      fullPath: '/api/wa-admin/overview'
-      preLoaderRoute: typeof ApiWaAdminOverviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/message-events': {
-      id: '/api/wa-admin/message-events'
-      path: '/api/wa-admin/message-events'
-      fullPath: '/api/wa-admin/message-events'
-      preLoaderRoute: typeof ApiWaAdminMessageEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/logs': {
-      id: '/api/wa-admin/logs'
-      path: '/api/wa-admin/logs'
-      fullPath: '/api/wa-admin/logs'
-      preLoaderRoute: typeof ApiWaAdminLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/logout': {
-      id: '/api/wa-admin/logout'
-      path: '/api/wa-admin/logout'
-      fullPath: '/api/wa-admin/logout'
-      preLoaderRoute: typeof ApiWaAdminLogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/login': {
-      id: '/api/wa-admin/login'
-      path: '/api/wa-admin/login'
-      fullPath: '/api/wa-admin/login'
-      preLoaderRoute: typeof ApiWaAdminLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wa-admin/flow-templates': {
-      id: '/api/wa-admin/flow-templates'
-      path: '/api/wa-admin/flow-templates'
-      fullPath: '/api/wa-admin/flow-templates'
-      preLoaderRoute: typeof ApiWaAdminFlowTemplatesRouteImport
+    '/api/license/check': {
+      id: '/api/license/check'
+      path: '/api/license/check'
+      fullPath: '/api/license/check'
+      preLoaderRoute: typeof ApiLicenseCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/wa-admin/businesses': {
@@ -3980,536 +3550,536 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaAdminBusinessesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/connect/release': {
-      id: '/api/connect/release'
-      path: '/api/connect/release'
-      fullPath: '/api/connect/release'
-      preLoaderRoute: typeof ApiConnectReleaseRouteImport
+    '/api/wa-admin/flow-templates': {
+      id: '/api/wa-admin/flow-templates'
+      path: '/api/wa-admin/flow-templates'
+      fullPath: '/api/wa-admin/flow-templates'
+      preLoaderRoute: typeof ApiWaAdminFlowTemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/flow-templates/new': {
-      id: '/admin/flow-templates/new'
-      path: '/new'
-      fullPath: '/admin/flow-templates/new'
-      preLoaderRoute: typeof AdminFlowTemplatesNewRouteImport
-      parentRoute: typeof AdminFlowTemplatesRoute
+    '/api/wa-admin/login': {
+      id: '/api/wa-admin/login'
+      path: '/api/wa-admin/login'
+      fullPath: '/api/wa-admin/login'
+      preLoaderRoute: typeof ApiWaAdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/flow-templates/$templateId': {
-      id: '/admin/flow-templates/$templateId'
-      path: '/$templateId'
-      fullPath: '/admin/flow-templates/$templateId'
-      preLoaderRoute: typeof AdminFlowTemplatesTemplateIdRouteImport
-      parentRoute: typeof AdminFlowTemplatesRoute
+    '/api/wa-admin/logout': {
+      id: '/api/wa-admin/logout'
+      path: '/api/wa-admin/logout'
+      fullPath: '/api/wa-admin/logout'
+      preLoaderRoute: typeof ApiWaAdminLogoutRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/businesses/new': {
-      id: '/admin/businesses/new'
-      path: '/new'
-      fullPath: '/admin/businesses/new'
-      preLoaderRoute: typeof AdminBusinessesNewRouteImport
-      parentRoute: typeof AdminBusinessesRoute
+    '/api/wa-admin/logs': {
+      id: '/api/wa-admin/logs'
+      path: '/api/wa-admin/logs'
+      fullPath: '/api/wa-admin/logs'
+      preLoaderRoute: typeof ApiWaAdminLogsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/businesses/$businessId': {
-      id: '/admin/businesses/$businessId'
-      path: '/$businessId'
-      fullPath: '/admin/businesses/$businessId'
-      preLoaderRoute: typeof AdminBusinessesBusinessIdRouteImport
-      parentRoute: typeof AdminBusinessesRoute
+    '/api/wa-admin/message-events': {
+      id: '/api/wa-admin/message-events'
+      path: '/api/wa-admin/message-events'
+      fullPath: '/api/wa-admin/message-events'
+      preLoaderRoute: typeof ApiWaAdminMessageEventsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/stores/pavone/admin/': {
-      id: '/stores/pavone/admin/'
+    '/api/wa-admin/overview': {
+      id: '/api/wa-admin/overview'
+      path: '/api/wa-admin/overview'
+      fullPath: '/api/wa-admin/overview'
+      preLoaderRoute: typeof ApiWaAdminOverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-admin/review-connections': {
+      id: '/api/wa-admin/review-connections'
+      path: '/api/wa-admin/review-connections'
+      fullPath: '/api/wa-admin/review-connections'
+      preLoaderRoute: typeof ApiWaAdminReviewConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-admin/send-review-message': {
+      id: '/api/wa-admin/send-review-message'
+      path: '/api/wa-admin/send-review-message'
+      fullPath: '/api/wa-admin/send-review-message'
+      preLoaderRoute: typeof ApiWaAdminSendReviewMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-admin/session': {
+      id: '/api/wa-admin/session'
+      path: '/api/wa-admin/session'
+      fullPath: '/api/wa-admin/session'
+      preLoaderRoute: typeof ApiWaAdminSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-admin/whatsapp-templates': {
+      id: '/api/wa-admin/whatsapp-templates'
+      path: '/api/wa-admin/whatsapp-templates'
+      fullPath: '/api/wa-admin/whatsapp-templates'
+      preLoaderRoute: typeof ApiWaAdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/catalog': {
+      id: '/api/wa-dashboard-2/catalog'
+      path: '/api/wa-dashboard-2/catalog'
+      fullPath: '/api/wa-dashboard-2/catalog'
+      preLoaderRoute: typeof ApiWaDashboard2CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/diagnostics': {
+      id: '/api/wa-dashboard-2/diagnostics'
+      path: '/api/wa-dashboard-2/diagnostics'
+      fullPath: '/api/wa-dashboard-2/diagnostics'
+      preLoaderRoute: typeof ApiWaDashboard2DiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/login': {
+      id: '/api/wa-dashboard-2/login'
+      path: '/api/wa-dashboard-2/login'
+      fullPath: '/api/wa-dashboard-2/login'
+      preLoaderRoute: typeof ApiWaDashboard2LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/logout': {
+      id: '/api/wa-dashboard-2/logout'
+      path: '/api/wa-dashboard-2/logout'
+      fullPath: '/api/wa-dashboard-2/logout'
+      preLoaderRoute: typeof ApiWaDashboard2LogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/orders': {
+      id: '/api/wa-dashboard-2/orders'
+      path: '/api/wa-dashboard-2/orders'
+      fullPath: '/api/wa-dashboard-2/orders'
+      preLoaderRoute: typeof ApiWaDashboard2OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/session': {
+      id: '/api/wa-dashboard-2/session'
+      path: '/api/wa-dashboard-2/session'
+      fullPath: '/api/wa-dashboard-2/session'
+      preLoaderRoute: typeof ApiWaDashboard2SessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard-2/upload': {
+      id: '/api/wa-dashboard-2/upload'
+      path: '/api/wa-dashboard-2/upload'
+      fullPath: '/api/wa-dashboard-2/upload'
+      preLoaderRoute: typeof ApiWaDashboard2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/catalog': {
+      id: '/api/wa-dashboard/catalog'
+      path: '/api/wa-dashboard/catalog'
+      fullPath: '/api/wa-dashboard/catalog'
+      preLoaderRoute: typeof ApiWaDashboardCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/diagnostics': {
+      id: '/api/wa-dashboard/diagnostics'
+      path: '/api/wa-dashboard/diagnostics'
+      fullPath: '/api/wa-dashboard/diagnostics'
+      preLoaderRoute: typeof ApiWaDashboardDiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/login': {
+      id: '/api/wa-dashboard/login'
+      path: '/api/wa-dashboard/login'
+      fullPath: '/api/wa-dashboard/login'
+      preLoaderRoute: typeof ApiWaDashboardLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/logout': {
+      id: '/api/wa-dashboard/logout'
+      path: '/api/wa-dashboard/logout'
+      fullPath: '/api/wa-dashboard/logout'
+      preLoaderRoute: typeof ApiWaDashboardLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/notifications': {
+      id: '/api/wa-dashboard/notifications'
+      path: '/api/wa-dashboard/notifications'
+      fullPath: '/api/wa-dashboard/notifications'
+      preLoaderRoute: typeof ApiWaDashboardNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/orders': {
+      id: '/api/wa-dashboard/orders'
+      path: '/api/wa-dashboard/orders'
+      fullPath: '/api/wa-dashboard/orders'
+      preLoaderRoute: typeof ApiWaDashboardOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/session': {
+      id: '/api/wa-dashboard/session'
+      path: '/api/wa-dashboard/session'
+      fullPath: '/api/wa-dashboard/session'
+      preLoaderRoute: typeof ApiWaDashboardSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-dashboard/upload': {
+      id: '/api/wa-dashboard/upload'
+      path: '/api/wa-dashboard/upload'
+      fullPath: '/api/wa-dashboard/upload'
+      preLoaderRoute: typeof ApiWaDashboardUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/webhook': {
+      id: '/api/whatsapp/webhook'
+      path: '/api/whatsapp/webhook'
+      fullPath: '/api/whatsapp/webhook'
+      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/webhook-2': {
+      id: '/api/whatsapp/webhook-2'
+      path: '/api/whatsapp/webhook-2'
+      fullPath: '/api/whatsapp/webhook-2'
+      preLoaderRoute: typeof ApiWhatsappWebhook2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect/admin/': {
+      id: '/connect/admin/'
       path: '/'
-      fullPath: '/stores/pavone/admin/'
-      preLoaderRoute: typeof StoresPavoneAdminIndexRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/connect/admin/settings/': {
-      id: '/connect/admin/settings/'
-      path: '/'
-      fullPath: '/connect/admin/settings/'
-      preLoaderRoute: typeof ConnectAdminSettingsIndexRouteImport
-      parentRoute: typeof ConnectAdminSettingsRoute
-    }
-    '/connect/admin/inbox/': {
-      id: '/connect/admin/inbox/'
-      path: '/'
-      fullPath: '/connect/admin/inbox/'
-      preLoaderRoute: typeof ConnectAdminInboxIndexRouteImport
-      parentRoute: typeof ConnectAdminInboxRoute
-    }
-    '/connect/admin/contacts/': {
-      id: '/connect/admin/contacts/'
-      path: '/'
-      fullPath: '/connect/admin/contacts/'
-      preLoaderRoute: typeof ConnectAdminContactsIndexRouteImport
-      parentRoute: typeof ConnectAdminContactsRoute
-    }
-    '/connect/admin/businesses/': {
-      id: '/connect/admin/businesses/'
-      path: '/businesses'
-      fullPath: '/connect/admin/businesses/'
-      preLoaderRoute: typeof ConnectAdminBusinessesIndexRouteImport
+      fullPath: '/connect/admin/'
+      preLoaderRoute: typeof ConnectAdminIndexRouteImport
       parentRoute: typeof ConnectAdminRoute
     }
-    '/connect/admin/broadcasts/': {
-      id: '/connect/admin/broadcasts/'
-      path: '/'
-      fullPath: '/connect/admin/broadcasts/'
-      preLoaderRoute: typeof ConnectAdminBroadcastsIndexRouteImport
-      parentRoute: typeof ConnectAdminBroadcastsRoute
+    '/connect/admin/analytics': {
+      id: '/connect/admin/analytics'
+      path: '/analytics'
+      fullPath: '/connect/admin/analytics'
+      preLoaderRoute: typeof ConnectAdminAnalyticsRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
-    '/stores/pavone/product/$slug': {
-      id: '/stores/pavone/product/$slug'
-      path: '/product/$slug'
-      fullPath: '/stores/pavone/product/$slug'
-      preLoaderRoute: typeof StoresPavoneProductSlugRouteImport
-      parentRoute: typeof StoresPavoneRoute
+    '/connect/admin/broadcasts': {
+      id: '/connect/admin/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/connect/admin/broadcasts'
+      preLoaderRoute: typeof ConnectAdminBroadcastsRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
-    '/stores/pavone/category/$slug': {
-      id: '/stores/pavone/category/$slug'
-      path: '/category/$slug'
-      fullPath: '/stores/pavone/category/$slug'
-      preLoaderRoute: typeof StoresPavoneCategorySlugRouteImport
-      parentRoute: typeof StoresPavoneRoute
+    '/connect/admin/contacts': {
+      id: '/connect/admin/contacts'
+      path: '/contacts'
+      fullPath: '/connect/admin/contacts'
+      preLoaderRoute: typeof ConnectAdminContactsRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
-    '/stores/pavone/admin/settings': {
-      id: '/stores/pavone/admin/settings'
+    '/connect/admin/developers': {
+      id: '/connect/admin/developers'
+      path: '/developers'
+      fullPath: '/connect/admin/developers'
+      preLoaderRoute: typeof ConnectAdminDevelopersRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/flow-templates': {
+      id: '/connect/admin/flow-templates'
+      path: '/flow-templates'
+      fullPath: '/connect/admin/flow-templates'
+      preLoaderRoute: typeof ConnectAdminFlowTemplatesRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/inbox': {
+      id: '/connect/admin/inbox'
+      path: '/inbox'
+      fullPath: '/connect/admin/inbox'
+      preLoaderRoute: typeof ConnectAdminInboxRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/logs': {
+      id: '/connect/admin/logs'
+      path: '/logs'
+      fullPath: '/connect/admin/logs'
+      preLoaderRoute: typeof ConnectAdminLogsRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/settings': {
+      id: '/connect/admin/settings'
       path: '/settings'
-      fullPath: '/stores/pavone/admin/settings'
-      preLoaderRoute: typeof StoresPavoneAdminSettingsRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/products': {
-      id: '/stores/pavone/admin/products'
-      path: '/products'
-      fullPath: '/stores/pavone/admin/products'
-      preLoaderRoute: typeof StoresPavoneAdminProductsRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/orders': {
-      id: '/stores/pavone/admin/orders'
-      path: '/orders'
-      fullPath: '/stores/pavone/admin/orders'
-      preLoaderRoute: typeof StoresPavoneAdminOrdersRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/login': {
-      id: '/stores/pavone/admin/login'
-      path: '/login'
-      fullPath: '/stores/pavone/admin/login'
-      preLoaderRoute: typeof StoresPavoneAdminLoginRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/inspirations': {
-      id: '/stores/pavone/admin/inspirations'
-      path: '/inspirations'
-      fullPath: '/stores/pavone/admin/inspirations'
-      preLoaderRoute: typeof StoresPavoneAdminInspirationsRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/categories': {
-      id: '/stores/pavone/admin/categories'
-      path: '/categories'
-      fullPath: '/stores/pavone/admin/categories'
-      preLoaderRoute: typeof StoresPavoneAdminCategoriesRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/stores/pavone/admin/brands': {
-      id: '/stores/pavone/admin/brands'
-      path: '/brands'
-      fullPath: '/stores/pavone/admin/brands'
-      preLoaderRoute: typeof StoresPavoneAdminBrandsRouteImport
-      parentRoute: typeof StoresPavoneAdminRoute
-    }
-    '/connect/dashboard/orders/$orderId': {
-      id: '/connect/dashboard/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/connect/dashboard/orders/$orderId'
-      preLoaderRoute: typeof ConnectDashboardOrdersOrderIdRouteImport
-      parentRoute: typeof ConnectDashboardOrdersRoute
-    }
-    '/connect/dashboard-2/orders/$orderId': {
-      id: '/connect/dashboard-2/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/connect/dashboard-2/orders/$orderId'
-      preLoaderRoute: typeof ConnectDashboard2OrdersOrderIdRouteImport
-      parentRoute: typeof ConnectDashboard2OrdersRoute
-    }
-    '/connect/admin/settings/team': {
-      id: '/connect/admin/settings/team'
-      path: '/team'
-      fullPath: '/connect/admin/settings/team'
-      preLoaderRoute: typeof ConnectAdminSettingsTeamRouteImport
-      parentRoute: typeof ConnectAdminSettingsRoute
-    }
-    '/connect/admin/settings/audit': {
-      id: '/connect/admin/settings/audit'
-      path: '/audit'
-      fullPath: '/connect/admin/settings/audit'
-      preLoaderRoute: typeof ConnectAdminSettingsAuditRouteImport
-      parentRoute: typeof ConnectAdminSettingsRoute
-    }
-    '/connect/admin/inbox/$conversationId': {
-      id: '/connect/admin/inbox/$conversationId'
-      path: '/$conversationId'
-      fullPath: '/connect/admin/inbox/$conversationId'
-      preLoaderRoute: typeof ConnectAdminInboxConversationIdRouteImport
-      parentRoute: typeof ConnectAdminInboxRoute
-    }
-    '/connect/admin/contacts/$contactId': {
-      id: '/connect/admin/contacts/$contactId'
-      path: '/$contactId'
-      fullPath: '/connect/admin/contacts/$contactId'
-      preLoaderRoute: typeof ConnectAdminContactsContactIdRouteImport
-      parentRoute: typeof ConnectAdminContactsRoute
-    }
-    '/connect/admin/businesses/$id': {
-      id: '/connect/admin/businesses/$id'
-      path: '/businesses/$id'
-      fullPath: '/connect/admin/businesses/$id'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdRouteImport
+      fullPath: '/connect/admin/settings'
+      preLoaderRoute: typeof ConnectAdminSettingsRouteImport
       parentRoute: typeof ConnectAdminRoute
     }
-    '/connect/admin/broadcasts/new': {
-      id: '/connect/admin/broadcasts/new'
-      path: '/new'
-      fullPath: '/connect/admin/broadcasts/new'
-      preLoaderRoute: typeof ConnectAdminBroadcastsNewRouteImport
-      parentRoute: typeof ConnectAdminBroadcastsRoute
+    '/connect/admin/whatsapp-templates': {
+      id: '/connect/admin/whatsapp-templates'
+      path: '/whatsapp-templates'
+      fullPath: '/connect/admin/whatsapp-templates'
+      preLoaderRoute: typeof ConnectAdminWhatsappTemplatesRouteImport
+      parentRoute: typeof ConnectAdminRoute
     }
-    '/connect/admin/broadcasts/$id': {
-      id: '/connect/admin/broadcasts/$id'
-      path: '/$id'
-      fullPath: '/connect/admin/broadcasts/$id'
-      preLoaderRoute: typeof ConnectAdminBroadcastsIdRouteImport
-      parentRoute: typeof ConnectAdminBroadcastsRoute
+    '/connect/client/': {
+      id: '/connect/client/'
+      path: '/'
+      fullPath: '/connect/client/'
+      preLoaderRoute: typeof ConnectClientIndexRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/wa-dashboard/orders/$orderId': {
-      id: '/api/wa-dashboard/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/api/wa-dashboard/orders/$orderId'
-      preLoaderRoute: typeof ApiWaDashboardOrdersOrderIdRouteImport
-      parentRoute: typeof ApiWaDashboardOrdersRoute
+    '/connect/client/ai-agent': {
+      id: '/connect/client/ai-agent'
+      path: '/ai-agent'
+      fullPath: '/connect/client/ai-agent'
+      preLoaderRoute: typeof ConnectClientAiAgentRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/wa-dashboard-2/orders/$orderId': {
-      id: '/api/wa-dashboard-2/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/api/wa-dashboard-2/orders/$orderId'
-      preLoaderRoute: typeof ApiWaDashboard2OrdersOrderIdRouteImport
-      parentRoute: typeof ApiWaDashboard2OrdersRoute
+    '/connect/client/analytics': {
+      id: '/connect/client/analytics'
+      path: '/analytics'
+      fullPath: '/connect/client/analytics'
+      preLoaderRoute: typeof ConnectClientAnalyticsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/wa-admin/flow-templates/$templateId': {
-      id: '/api/wa-admin/flow-templates/$templateId'
-      path: '/$templateId'
-      fullPath: '/api/wa-admin/flow-templates/$templateId'
-      preLoaderRoute: typeof ApiWaAdminFlowTemplatesTemplateIdRouteImport
-      parentRoute: typeof ApiWaAdminFlowTemplatesRoute
+    '/connect/client/automations': {
+      id: '/connect/client/automations'
+      path: '/automations'
+      fullPath: '/connect/client/automations'
+      preLoaderRoute: typeof ConnectClientAutomationsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/wa-admin/businesses/$businessId': {
-      id: '/api/wa-admin/businesses/$businessId'
-      path: '/$businessId'
-      fullPath: '/api/wa-admin/businesses/$businessId'
-      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdRouteImport
-      parentRoute: typeof ApiWaAdminBusinessesRoute
+    '/connect/client/broadcasts': {
+      id: '/connect/client/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/connect/client/broadcasts'
+      preLoaderRoute: typeof ConnectClientBroadcastsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/whatsapp/webhook': {
-      id: '/api/connect/whatsapp/webhook'
-      path: '/api/connect/whatsapp/webhook'
-      fullPath: '/api/connect/whatsapp/webhook'
-      preLoaderRoute: typeof ApiConnectWhatsappWebhookRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/catalog': {
+      id: '/connect/client/catalog'
+      path: '/catalog'
+      fullPath: '/connect/client/catalog'
+      preLoaderRoute: typeof ConnectClientCatalogRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/upload': {
-      id: '/api/connect/dashboard/upload'
-      path: '/api/connect/dashboard/upload'
-      fullPath: '/api/connect/dashboard/upload'
-      preLoaderRoute: typeof ApiConnectDashboardUploadRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/channels': {
+      id: '/connect/client/channels'
+      path: '/channels'
+      fullPath: '/connect/client/channels'
+      preLoaderRoute: typeof ConnectClientChannelsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/session': {
-      id: '/api/connect/dashboard/session'
-      path: '/api/connect/dashboard/session'
-      fullPath: '/api/connect/dashboard/session'
-      preLoaderRoute: typeof ApiConnectDashboardSessionRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/contacts': {
+      id: '/connect/client/contacts'
+      path: '/contacts'
+      fullPath: '/connect/client/contacts'
+      preLoaderRoute: typeof ConnectClientContactsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/orders': {
-      id: '/api/connect/dashboard/orders'
-      path: '/api/connect/dashboard/orders'
-      fullPath: '/api/connect/dashboard/orders'
-      preLoaderRoute: typeof ApiConnectDashboardOrdersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/developers': {
+      id: '/connect/client/developers'
+      path: '/developers'
+      fullPath: '/connect/client/developers'
+      preLoaderRoute: typeof ConnectClientDevelopersRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/notifications': {
-      id: '/api/connect/dashboard/notifications'
-      path: '/api/connect/dashboard/notifications'
-      fullPath: '/api/connect/dashboard/notifications'
-      preLoaderRoute: typeof ApiConnectDashboardNotificationsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/enterprise': {
+      id: '/connect/client/enterprise'
+      path: '/enterprise'
+      fullPath: '/connect/client/enterprise'
+      preLoaderRoute: typeof ConnectClientEnterpriseRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/logout': {
-      id: '/api/connect/dashboard/logout'
-      path: '/api/connect/dashboard/logout'
-      fullPath: '/api/connect/dashboard/logout'
-      preLoaderRoute: typeof ApiConnectDashboardLogoutRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/inbox': {
+      id: '/connect/client/inbox'
+      path: '/inbox'
+      fullPath: '/connect/client/inbox'
+      preLoaderRoute: typeof ConnectClientInboxRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/login': {
-      id: '/api/connect/dashboard/login'
-      path: '/api/connect/dashboard/login'
-      fullPath: '/api/connect/dashboard/login'
-      preLoaderRoute: typeof ApiConnectDashboardLoginRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/integrations': {
+      id: '/connect/client/integrations'
+      path: '/integrations'
+      fullPath: '/connect/client/integrations'
+      preLoaderRoute: typeof ConnectClientIntegrationsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/flow-image': {
-      id: '/api/connect/dashboard/flow-image'
-      path: '/api/connect/dashboard/flow-image'
-      fullPath: '/api/connect/dashboard/flow-image'
-      preLoaderRoute: typeof ApiConnectDashboardFlowImageRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/payments': {
+      id: '/connect/client/payments'
+      path: '/payments'
+      fullPath: '/connect/client/payments'
+      preLoaderRoute: typeof ConnectClientPaymentsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/flow': {
-      id: '/api/connect/dashboard/flow'
-      path: '/api/connect/dashboard/flow'
-      fullPath: '/api/connect/dashboard/flow'
-      preLoaderRoute: typeof ApiConnectDashboardFlowRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/settings': {
+      id: '/connect/client/settings'
+      path: '/settings'
+      fullPath: '/connect/client/settings'
+      preLoaderRoute: typeof ConnectClientSettingsRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/diagnostics': {
-      id: '/api/connect/dashboard/diagnostics'
-      path: '/api/connect/dashboard/diagnostics'
-      fullPath: '/api/connect/dashboard/diagnostics'
-      preLoaderRoute: typeof ApiConnectDashboardDiagnosticsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/templates': {
+      id: '/connect/client/templates'
+      path: '/templates'
+      fullPath: '/connect/client/templates'
+      preLoaderRoute: typeof ConnectClientTemplatesRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard/catalog': {
-      id: '/api/connect/dashboard/catalog'
-      path: '/api/connect/dashboard/catalog'
-      fullPath: '/api/connect/dashboard/catalog'
-      preLoaderRoute: typeof ApiConnectDashboardCatalogRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/client/voice': {
+      id: '/connect/client/voice'
+      path: '/voice'
+      fullPath: '/connect/client/voice'
+      preLoaderRoute: typeof ConnectClientVoiceRouteImport
+      parentRoute: typeof ConnectClientRoute
     }
-    '/api/connect/dashboard-2/upload': {
-      id: '/api/connect/dashboard-2/upload'
-      path: '/api/connect/dashboard-2/upload'
-      fullPath: '/api/connect/dashboard-2/upload'
-      preLoaderRoute: typeof ApiConnectDashboard2UploadRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/dashboard-2/': {
+      id: '/connect/dashboard-2/'
+      path: '/'
+      fullPath: '/connect/dashboard-2/'
+      preLoaderRoute: typeof ConnectDashboard2IndexRouteImport
+      parentRoute: typeof ConnectDashboard2Route
     }
-    '/api/connect/dashboard-2/session': {
-      id: '/api/connect/dashboard-2/session'
-      path: '/api/connect/dashboard-2/session'
-      fullPath: '/api/connect/dashboard-2/session'
-      preLoaderRoute: typeof ApiConnectDashboard2SessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/orders': {
-      id: '/api/connect/dashboard-2/orders'
-      path: '/api/connect/dashboard-2/orders'
-      fullPath: '/api/connect/dashboard-2/orders'
-      preLoaderRoute: typeof ApiConnectDashboard2OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/logout': {
-      id: '/api/connect/dashboard-2/logout'
-      path: '/api/connect/dashboard-2/logout'
-      fullPath: '/api/connect/dashboard-2/logout'
-      preLoaderRoute: typeof ApiConnectDashboard2LogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/login': {
-      id: '/api/connect/dashboard-2/login'
-      path: '/api/connect/dashboard-2/login'
-      fullPath: '/api/connect/dashboard-2/login'
-      preLoaderRoute: typeof ApiConnectDashboard2LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/flow-image': {
-      id: '/api/connect/dashboard-2/flow-image'
-      path: '/api/connect/dashboard-2/flow-image'
-      fullPath: '/api/connect/dashboard-2/flow-image'
-      preLoaderRoute: typeof ApiConnectDashboard2FlowImageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/flow': {
-      id: '/api/connect/dashboard-2/flow'
-      path: '/api/connect/dashboard-2/flow'
-      fullPath: '/api/connect/dashboard-2/flow'
-      preLoaderRoute: typeof ApiConnectDashboard2FlowRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/diagnostics': {
-      id: '/api/connect/dashboard-2/diagnostics'
-      path: '/api/connect/dashboard-2/diagnostics'
-      fullPath: '/api/connect/dashboard-2/diagnostics'
-      preLoaderRoute: typeof ApiConnectDashboard2DiagnosticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/dashboard-2/catalog': {
-      id: '/api/connect/dashboard-2/catalog'
-      path: '/api/connect/dashboard-2/catalog'
-      fullPath: '/api/connect/dashboard-2/catalog'
-      preLoaderRoute: typeof ApiConnectDashboard2CatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/client/inbox-options': {
-      id: '/api/connect/client/inbox-options'
-      path: '/api/connect/client/inbox-options'
-      fullPath: '/api/connect/client/inbox-options'
-      preLoaderRoute: typeof ApiConnectClientInboxOptionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/client/conversations': {
-      id: '/api/connect/client/conversations'
-      path: '/api/connect/client/conversations'
-      fullPath: '/api/connect/client/conversations'
-      preLoaderRoute: typeof ApiConnectClientConversationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/client/contacts': {
-      id: '/api/connect/client/contacts'
-      path: '/api/connect/client/contacts'
-      fullPath: '/api/connect/client/contacts'
-      preLoaderRoute: typeof ApiConnectClientContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/client/canned-replies': {
-      id: '/api/connect/client/canned-replies'
-      path: '/api/connect/client/canned-replies'
-      fullPath: '/api/connect/client/canned-replies'
-      preLoaderRoute: typeof ApiConnectClientCannedRepliesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/whatsapp-templates': {
-      id: '/api/connect/admin/whatsapp-templates'
-      path: '/api/connect/admin/whatsapp-templates'
-      fullPath: '/api/connect/admin/whatsapp-templates'
-      preLoaderRoute: typeof ApiConnectAdminWhatsappTemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/whatsapp-health': {
-      id: '/api/connect/admin/whatsapp-health'
-      path: '/api/connect/admin/whatsapp-health'
-      fullPath: '/api/connect/admin/whatsapp-health'
-      preLoaderRoute: typeof ApiConnectAdminWhatsappHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/session': {
-      id: '/api/connect/admin/session'
-      path: '/api/connect/admin/session'
-      fullPath: '/api/connect/admin/session'
-      preLoaderRoute: typeof ApiConnectAdminSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/send-review-message': {
-      id: '/api/connect/admin/send-review-message'
-      path: '/api/connect/admin/send-review-message'
-      fullPath: '/api/connect/admin/send-review-message'
-      preLoaderRoute: typeof ApiConnectAdminSendReviewMessageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/review-connections': {
-      id: '/api/connect/admin/review-connections'
-      path: '/api/connect/admin/review-connections'
-      fullPath: '/api/connect/admin/review-connections'
-      preLoaderRoute: typeof ApiConnectAdminReviewConnectionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/overview': {
-      id: '/api/connect/admin/overview'
-      path: '/api/connect/admin/overview'
-      fullPath: '/api/connect/admin/overview'
-      preLoaderRoute: typeof ApiConnectAdminOverviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/message-events': {
-      id: '/api/connect/admin/message-events'
-      path: '/api/connect/admin/message-events'
-      fullPath: '/api/connect/admin/message-events'
-      preLoaderRoute: typeof ApiConnectAdminMessageEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/logs': {
-      id: '/api/connect/admin/logs'
-      path: '/api/connect/admin/logs'
-      fullPath: '/api/connect/admin/logs'
-      preLoaderRoute: typeof ApiConnectAdminLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/logout': {
-      id: '/api/connect/admin/logout'
-      path: '/api/connect/admin/logout'
-      fullPath: '/api/connect/admin/logout'
-      preLoaderRoute: typeof ApiConnectAdminLogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/login': {
-      id: '/api/connect/admin/login'
-      path: '/api/connect/admin/login'
-      fullPath: '/api/connect/admin/login'
-      preLoaderRoute: typeof ApiConnectAdminLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/inbox-options': {
-      id: '/api/connect/admin/inbox-options'
-      path: '/api/connect/admin/inbox-options'
-      fullPath: '/api/connect/admin/inbox-options'
-      preLoaderRoute: typeof ApiConnectAdminInboxOptionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/flow-templates': {
-      id: '/api/connect/admin/flow-templates'
-      path: '/api/connect/admin/flow-templates'
-      fullPath: '/api/connect/admin/flow-templates'
-      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/conversations': {
-      id: '/api/connect/admin/conversations'
-      path: '/api/connect/admin/conversations'
-      fullPath: '/api/connect/admin/conversations'
-      preLoaderRoute: typeof ApiConnectAdminConversationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/contacts': {
-      id: '/api/connect/admin/contacts'
-      path: '/api/connect/admin/contacts'
-      fullPath: '/api/connect/admin/contacts'
-      preLoaderRoute: typeof ApiConnectAdminContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/canned-replies': {
-      id: '/api/connect/admin/canned-replies'
-      path: '/api/connect/admin/canned-replies'
-      fullPath: '/api/connect/admin/canned-replies'
-      preLoaderRoute: typeof ApiConnectAdminCannedRepliesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/connect/admin/businesses': {
-      id: '/api/connect/admin/businesses'
-      path: '/api/connect/admin/businesses'
-      fullPath: '/api/connect/admin/businesses'
-      preLoaderRoute: typeof ApiConnectAdminBusinessesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/businesses/$businessId/products': {
-      id: '/admin/businesses/$businessId/products'
-      path: '/products'
-      fullPath: '/admin/businesses/$businessId/products'
-      preLoaderRoute: typeof AdminBusinessesBusinessIdProductsRouteImport
-      parentRoute: typeof AdminBusinessesBusinessIdRoute
-    }
-    '/admin/businesses/$businessId/flow-builder': {
-      id: '/admin/businesses/$businessId/flow-builder'
-      path: '/flow-builder'
-      fullPath: '/admin/businesses/$businessId/flow-builder'
-      preLoaderRoute: typeof AdminBusinessesBusinessIdFlowBuilderRouteImport
-      parentRoute: typeof AdminBusinessesBusinessIdRoute
-    }
-    '/admin/businesses/$businessId/categories': {
-      id: '/admin/businesses/$businessId/categories'
+    '/connect/dashboard-2/categories': {
+      id: '/connect/dashboard-2/categories'
       path: '/categories'
-      fullPath: '/admin/businesses/$businessId/categories'
-      preLoaderRoute: typeof AdminBusinessesBusinessIdCategoriesRouteImport
+      fullPath: '/connect/dashboard-2/categories'
+      preLoaderRoute: typeof ConnectDashboard2CategoriesRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/delivery': {
+      id: '/connect/dashboard-2/delivery'
+      path: '/delivery'
+      fullPath: '/connect/dashboard-2/delivery'
+      preLoaderRoute: typeof ConnectDashboard2DeliveryRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/orders': {
+      id: '/connect/dashboard-2/orders'
+      path: '/orders'
+      fullPath: '/connect/dashboard-2/orders'
+      preLoaderRoute: typeof ConnectDashboard2OrdersRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/products': {
+      id: '/connect/dashboard-2/products'
+      path: '/products'
+      fullPath: '/connect/dashboard-2/products'
+      preLoaderRoute: typeof ConnectDashboard2ProductsRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/settings': {
+      id: '/connect/dashboard-2/settings'
+      path: '/settings'
+      fullPath: '/connect/dashboard-2/settings'
+      preLoaderRoute: typeof ConnectDashboard2SettingsRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard-2/simulator': {
+      id: '/connect/dashboard-2/simulator'
+      path: '/simulator'
+      fullPath: '/connect/dashboard-2/simulator'
+      preLoaderRoute: typeof ConnectDashboard2SimulatorRouteImport
+      parentRoute: typeof ConnectDashboard2Route
+    }
+    '/connect/dashboard/': {
+      id: '/connect/dashboard/'
+      path: '/'
+      fullPath: '/connect/dashboard/'
+      preLoaderRoute: typeof ConnectDashboardIndexRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/categories': {
+      id: '/connect/dashboard/categories'
+      path: '/categories'
+      fullPath: '/connect/dashboard/categories'
+      preLoaderRoute: typeof ConnectDashboardCategoriesRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/delivery': {
+      id: '/connect/dashboard/delivery'
+      path: '/delivery'
+      fullPath: '/connect/dashboard/delivery'
+      preLoaderRoute: typeof ConnectDashboardDeliveryRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/orders': {
+      id: '/connect/dashboard/orders'
+      path: '/orders'
+      fullPath: '/connect/dashboard/orders'
+      preLoaderRoute: typeof ConnectDashboardOrdersRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/products': {
+      id: '/connect/dashboard/products'
+      path: '/products'
+      fullPath: '/connect/dashboard/products'
+      preLoaderRoute: typeof ConnectDashboardProductsRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/settings': {
+      id: '/connect/dashboard/settings'
+      path: '/settings'
+      fullPath: '/connect/dashboard/settings'
+      preLoaderRoute: typeof ConnectDashboardSettingsRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/connect/dashboard/simulator': {
+      id: '/connect/dashboard/simulator'
+      path: '/simulator'
+      fullPath: '/connect/dashboard/simulator'
+      preLoaderRoute: typeof ConnectDashboardSimulatorRouteImport
+      parentRoute: typeof ConnectDashboardRoute
+    }
+    '/dashboard-2/orders/$orderId': {
+      id: '/dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof Dashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof Dashboard2OrdersRoute
+    }
+    '/dashboard/orders/$orderId': {
+      id: '/dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/dashboard/orders/$orderId'
+      preLoaderRoute: typeof DashboardOrdersOrderIdRouteImport
+      parentRoute: typeof DashboardOrdersRoute
+    }
+    '/stores/pavone/': {
+      id: '/stores/pavone/'
+      path: '/'
+      fullPath: '/stores/pavone/'
+      preLoaderRoute: typeof StoresPavoneIndexRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/admin': {
+      id: '/stores/pavone/admin'
+      path: '/admin'
+      fullPath: '/stores/pavone/admin'
+      preLoaderRoute: typeof StoresPavoneAdminRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/cart': {
+      id: '/stores/pavone/cart'
+      path: '/cart'
+      fullPath: '/stores/pavone/cart'
+      preLoaderRoute: typeof StoresPavoneCartRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/checkout': {
+      id: '/stores/pavone/checkout'
+      path: '/checkout'
+      fullPath: '/stores/pavone/checkout'
+      preLoaderRoute: typeof StoresPavoneCheckoutRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/shop': {
+      id: '/stores/pavone/shop'
+      path: '/shop'
+      fullPath: '/stores/pavone/shop'
+      preLoaderRoute: typeof StoresPavoneShopRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/wishlist': {
+      id: '/stores/pavone/wishlist'
+      path: '/wishlist'
+      fullPath: '/stores/pavone/wishlist'
+      preLoaderRoute: typeof StoresPavoneWishlistRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/admin/businesses/$businessId/catalog-route-values': {
+      id: '/admin/businesses/$businessId/catalog-route-values'
+      path: '/catalog-route-values'
+      fullPath: '/admin/businesses/$businessId/catalog-route-values'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRouteValuesRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
     '/admin/businesses/$businessId/catalog-routes': {
@@ -4519,81 +4089,606 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRoutesRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
-    '/admin/businesses/$businessId/catalog-route-values': {
-      id: '/admin/businesses/$businessId/catalog-route-values'
-      path: '/catalog-route-values'
-      fullPath: '/admin/businesses/$businessId/catalog-route-values'
-      preLoaderRoute: typeof AdminBusinessesBusinessIdCatalogRouteValuesRouteImport
+    '/admin/businesses/$businessId/categories': {
+      id: '/admin/businesses/$businessId/categories'
+      path: '/categories'
+      fullPath: '/admin/businesses/$businessId/categories'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdCategoriesRouteImport
       parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
-    '/connect/admin/businesses/$id/': {
-      id: '/connect/admin/businesses/$id/'
-      path: '/'
-      fullPath: '/connect/admin/businesses/$id/'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdIndexRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
-    }
-    '/connect/admin/businesses/$id/whatsapp': {
-      id: '/connect/admin/businesses/$id/whatsapp'
-      path: '/whatsapp'
-      fullPath: '/connect/admin/businesses/$id/whatsapp'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdWhatsappRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
-    }
-    '/connect/admin/businesses/$id/route-values': {
-      id: '/connect/admin/businesses/$id/route-values'
-      path: '/route-values'
-      fullPath: '/connect/admin/businesses/$id/route-values'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdRouteValuesRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
-    }
-    '/connect/admin/businesses/$id/products': {
-      id: '/connect/admin/businesses/$id/products'
-      path: '/products'
-      fullPath: '/connect/admin/businesses/$id/products'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdProductsRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
-    }
-    '/connect/admin/businesses/$id/live-test': {
-      id: '/connect/admin/businesses/$id/live-test'
-      path: '/live-test'
-      fullPath: '/connect/admin/businesses/$id/live-test'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdLiveTestRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
-    }
-    '/connect/admin/businesses/$id/flow-builder': {
-      id: '/connect/admin/businesses/$id/flow-builder'
+    '/admin/businesses/$businessId/flow-builder': {
+      id: '/admin/businesses/$businessId/flow-builder'
       path: '/flow-builder'
-      fullPath: '/connect/admin/businesses/$id/flow-builder'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdFlowBuilderRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
+      fullPath: '/admin/businesses/$businessId/flow-builder'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdFlowBuilderRouteImport
+      parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
-    '/connect/admin/businesses/$id/diagnostics': {
-      id: '/connect/admin/businesses/$id/diagnostics'
-      path: '/diagnostics'
-      fullPath: '/connect/admin/businesses/$id/diagnostics'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdDiagnosticsRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
+    '/admin/businesses/$businessId/products': {
+      id: '/admin/businesses/$businessId/products'
+      path: '/products'
+      fullPath: '/admin/businesses/$businessId/products'
+      preLoaderRoute: typeof AdminBusinessesBusinessIdProductsRouteImport
+      parentRoute: typeof AdminBusinessesBusinessIdRoute
     }
-    '/connect/admin/businesses/$id/checkout': {
-      id: '/connect/admin/businesses/$id/checkout'
-      path: '/checkout'
-      fullPath: '/connect/admin/businesses/$id/checkout'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdCheckoutRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
+    '/api/connect/admin/businesses': {
+      id: '/api/connect/admin/businesses'
+      path: '/api/connect/admin/businesses'
+      fullPath: '/api/connect/admin/businesses'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/connect/admin/businesses/$id/catalog-routes': {
-      id: '/connect/admin/businesses/$id/catalog-routes'
-      path: '/catalog-routes'
-      fullPath: '/connect/admin/businesses/$id/catalog-routes'
-      preLoaderRoute: typeof ConnectAdminBusinessesIdCatalogRoutesRouteImport
-      parentRoute: typeof ConnectAdminBusinessesIdRoute
+    '/api/connect/admin/canned-replies': {
+      id: '/api/connect/admin/canned-replies'
+      path: '/api/connect/admin/canned-replies'
+      fullPath: '/api/connect/admin/canned-replies'
+      preLoaderRoute: typeof ApiConnectAdminCannedRepliesRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/api/wa-admin/businesses/$businessId/product-image': {
-      id: '/api/wa-admin/businesses/$businessId/product-image'
-      path: '/product-image'
-      fullPath: '/api/wa-admin/businesses/$businessId/product-image'
-      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdProductImageRouteImport
+    '/api/connect/admin/contacts': {
+      id: '/api/connect/admin/contacts'
+      path: '/api/connect/admin/contacts'
+      fullPath: '/api/connect/admin/contacts'
+      preLoaderRoute: typeof ApiConnectAdminContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/conversations': {
+      id: '/api/connect/admin/conversations'
+      path: '/api/connect/admin/conversations'
+      fullPath: '/api/connect/admin/conversations'
+      preLoaderRoute: typeof ApiConnectAdminConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/flow-templates': {
+      id: '/api/connect/admin/flow-templates'
+      path: '/api/connect/admin/flow-templates'
+      fullPath: '/api/connect/admin/flow-templates'
+      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/inbox-options': {
+      id: '/api/connect/admin/inbox-options'
+      path: '/api/connect/admin/inbox-options'
+      fullPath: '/api/connect/admin/inbox-options'
+      preLoaderRoute: typeof ApiConnectAdminInboxOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/login': {
+      id: '/api/connect/admin/login'
+      path: '/api/connect/admin/login'
+      fullPath: '/api/connect/admin/login'
+      preLoaderRoute: typeof ApiConnectAdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/logout': {
+      id: '/api/connect/admin/logout'
+      path: '/api/connect/admin/logout'
+      fullPath: '/api/connect/admin/logout'
+      preLoaderRoute: typeof ApiConnectAdminLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/logs': {
+      id: '/api/connect/admin/logs'
+      path: '/api/connect/admin/logs'
+      fullPath: '/api/connect/admin/logs'
+      preLoaderRoute: typeof ApiConnectAdminLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/message-events': {
+      id: '/api/connect/admin/message-events'
+      path: '/api/connect/admin/message-events'
+      fullPath: '/api/connect/admin/message-events'
+      preLoaderRoute: typeof ApiConnectAdminMessageEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/overview': {
+      id: '/api/connect/admin/overview'
+      path: '/api/connect/admin/overview'
+      fullPath: '/api/connect/admin/overview'
+      preLoaderRoute: typeof ApiConnectAdminOverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/review-connections': {
+      id: '/api/connect/admin/review-connections'
+      path: '/api/connect/admin/review-connections'
+      fullPath: '/api/connect/admin/review-connections'
+      preLoaderRoute: typeof ApiConnectAdminReviewConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/send-review-message': {
+      id: '/api/connect/admin/send-review-message'
+      path: '/api/connect/admin/send-review-message'
+      fullPath: '/api/connect/admin/send-review-message'
+      preLoaderRoute: typeof ApiConnectAdminSendReviewMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/session': {
+      id: '/api/connect/admin/session'
+      path: '/api/connect/admin/session'
+      fullPath: '/api/connect/admin/session'
+      preLoaderRoute: typeof ApiConnectAdminSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/whatsapp-health': {
+      id: '/api/connect/admin/whatsapp-health'
+      path: '/api/connect/admin/whatsapp-health'
+      fullPath: '/api/connect/admin/whatsapp-health'
+      preLoaderRoute: typeof ApiConnectAdminWhatsappHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/whatsapp-templates': {
+      id: '/api/connect/admin/whatsapp-templates'
+      path: '/api/connect/admin/whatsapp-templates'
+      fullPath: '/api/connect/admin/whatsapp-templates'
+      preLoaderRoute: typeof ApiConnectAdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/canned-replies': {
+      id: '/api/connect/client/canned-replies'
+      path: '/api/connect/client/canned-replies'
+      fullPath: '/api/connect/client/canned-replies'
+      preLoaderRoute: typeof ApiConnectClientCannedRepliesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/contacts': {
+      id: '/api/connect/client/contacts'
+      path: '/api/connect/client/contacts'
+      fullPath: '/api/connect/client/contacts'
+      preLoaderRoute: typeof ApiConnectClientContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/conversations': {
+      id: '/api/connect/client/conversations'
+      path: '/api/connect/client/conversations'
+      fullPath: '/api/connect/client/conversations'
+      preLoaderRoute: typeof ApiConnectClientConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/inbox-options': {
+      id: '/api/connect/client/inbox-options'
+      path: '/api/connect/client/inbox-options'
+      fullPath: '/api/connect/client/inbox-options'
+      preLoaderRoute: typeof ApiConnectClientInboxOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/catalog': {
+      id: '/api/connect/dashboard-2/catalog'
+      path: '/api/connect/dashboard-2/catalog'
+      fullPath: '/api/connect/dashboard-2/catalog'
+      preLoaderRoute: typeof ApiConnectDashboard2CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/diagnostics': {
+      id: '/api/connect/dashboard-2/diagnostics'
+      path: '/api/connect/dashboard-2/diagnostics'
+      fullPath: '/api/connect/dashboard-2/diagnostics'
+      preLoaderRoute: typeof ApiConnectDashboard2DiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/flow': {
+      id: '/api/connect/dashboard-2/flow'
+      path: '/api/connect/dashboard-2/flow'
+      fullPath: '/api/connect/dashboard-2/flow'
+      preLoaderRoute: typeof ApiConnectDashboard2FlowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/flow-image': {
+      id: '/api/connect/dashboard-2/flow-image'
+      path: '/api/connect/dashboard-2/flow-image'
+      fullPath: '/api/connect/dashboard-2/flow-image'
+      preLoaderRoute: typeof ApiConnectDashboard2FlowImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/login': {
+      id: '/api/connect/dashboard-2/login'
+      path: '/api/connect/dashboard-2/login'
+      fullPath: '/api/connect/dashboard-2/login'
+      preLoaderRoute: typeof ApiConnectDashboard2LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/logout': {
+      id: '/api/connect/dashboard-2/logout'
+      path: '/api/connect/dashboard-2/logout'
+      fullPath: '/api/connect/dashboard-2/logout'
+      preLoaderRoute: typeof ApiConnectDashboard2LogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/orders': {
+      id: '/api/connect/dashboard-2/orders'
+      path: '/api/connect/dashboard-2/orders'
+      fullPath: '/api/connect/dashboard-2/orders'
+      preLoaderRoute: typeof ApiConnectDashboard2OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/session': {
+      id: '/api/connect/dashboard-2/session'
+      path: '/api/connect/dashboard-2/session'
+      fullPath: '/api/connect/dashboard-2/session'
+      preLoaderRoute: typeof ApiConnectDashboard2SessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard-2/upload': {
+      id: '/api/connect/dashboard-2/upload'
+      path: '/api/connect/dashboard-2/upload'
+      fullPath: '/api/connect/dashboard-2/upload'
+      preLoaderRoute: typeof ApiConnectDashboard2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/catalog': {
+      id: '/api/connect/dashboard/catalog'
+      path: '/api/connect/dashboard/catalog'
+      fullPath: '/api/connect/dashboard/catalog'
+      preLoaderRoute: typeof ApiConnectDashboardCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/diagnostics': {
+      id: '/api/connect/dashboard/diagnostics'
+      path: '/api/connect/dashboard/diagnostics'
+      fullPath: '/api/connect/dashboard/diagnostics'
+      preLoaderRoute: typeof ApiConnectDashboardDiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/flow': {
+      id: '/api/connect/dashboard/flow'
+      path: '/api/connect/dashboard/flow'
+      fullPath: '/api/connect/dashboard/flow'
+      preLoaderRoute: typeof ApiConnectDashboardFlowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/flow-image': {
+      id: '/api/connect/dashboard/flow-image'
+      path: '/api/connect/dashboard/flow-image'
+      fullPath: '/api/connect/dashboard/flow-image'
+      preLoaderRoute: typeof ApiConnectDashboardFlowImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/login': {
+      id: '/api/connect/dashboard/login'
+      path: '/api/connect/dashboard/login'
+      fullPath: '/api/connect/dashboard/login'
+      preLoaderRoute: typeof ApiConnectDashboardLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/logout': {
+      id: '/api/connect/dashboard/logout'
+      path: '/api/connect/dashboard/logout'
+      fullPath: '/api/connect/dashboard/logout'
+      preLoaderRoute: typeof ApiConnectDashboardLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/notifications': {
+      id: '/api/connect/dashboard/notifications'
+      path: '/api/connect/dashboard/notifications'
+      fullPath: '/api/connect/dashboard/notifications'
+      preLoaderRoute: typeof ApiConnectDashboardNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/orders': {
+      id: '/api/connect/dashboard/orders'
+      path: '/api/connect/dashboard/orders'
+      fullPath: '/api/connect/dashboard/orders'
+      preLoaderRoute: typeof ApiConnectDashboardOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/session': {
+      id: '/api/connect/dashboard/session'
+      path: '/api/connect/dashboard/session'
+      fullPath: '/api/connect/dashboard/session'
+      preLoaderRoute: typeof ApiConnectDashboardSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/dashboard/upload': {
+      id: '/api/connect/dashboard/upload'
+      path: '/api/connect/dashboard/upload'
+      fullPath: '/api/connect/dashboard/upload'
+      preLoaderRoute: typeof ApiConnectDashboardUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/whatsapp/webhook': {
+      id: '/api/connect/whatsapp/webhook'
+      path: '/api/connect/whatsapp/webhook'
+      fullPath: '/api/connect/whatsapp/webhook'
+      preLoaderRoute: typeof ApiConnectWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wa-admin/businesses/$businessId': {
+      id: '/api/wa-admin/businesses/$businessId'
+      path: '/$businessId'
+      fullPath: '/api/wa-admin/businesses/$businessId'
+      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdRouteImport
+      parentRoute: typeof ApiWaAdminBusinessesRoute
+    }
+    '/api/wa-admin/flow-templates/$templateId': {
+      id: '/api/wa-admin/flow-templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/api/wa-admin/flow-templates/$templateId'
+      preLoaderRoute: typeof ApiWaAdminFlowTemplatesTemplateIdRouteImport
+      parentRoute: typeof ApiWaAdminFlowTemplatesRoute
+    }
+    '/api/wa-dashboard-2/orders/$orderId': {
+      id: '/api/wa-dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/wa-dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof ApiWaDashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof ApiWaDashboard2OrdersRoute
+    }
+    '/api/wa-dashboard/orders/$orderId': {
+      id: '/api/wa-dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/wa-dashboard/orders/$orderId'
+      preLoaderRoute: typeof ApiWaDashboardOrdersOrderIdRouteImport
+      parentRoute: typeof ApiWaDashboardOrdersRoute
+    }
+    '/connect/admin/broadcasts/': {
+      id: '/connect/admin/broadcasts/'
+      path: '/'
+      fullPath: '/connect/admin/broadcasts/'
+      preLoaderRoute: typeof ConnectAdminBroadcastsIndexRouteImport
+      parentRoute: typeof ConnectAdminBroadcastsRoute
+    }
+    '/connect/admin/broadcasts/$id': {
+      id: '/connect/admin/broadcasts/$id'
+      path: '/$id'
+      fullPath: '/connect/admin/broadcasts/$id'
+      preLoaderRoute: typeof ConnectAdminBroadcastsIdRouteImport
+      parentRoute: typeof ConnectAdminBroadcastsRoute
+    }
+    '/connect/admin/broadcasts/new': {
+      id: '/connect/admin/broadcasts/new'
+      path: '/new'
+      fullPath: '/connect/admin/broadcasts/new'
+      preLoaderRoute: typeof ConnectAdminBroadcastsNewRouteImport
+      parentRoute: typeof ConnectAdminBroadcastsRoute
+    }
+    '/connect/admin/businesses/': {
+      id: '/connect/admin/businesses/'
+      path: '/businesses'
+      fullPath: '/connect/admin/businesses/'
+      preLoaderRoute: typeof ConnectAdminBusinessesIndexRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/businesses/$id': {
+      id: '/connect/admin/businesses/$id'
+      path: '/businesses/$id'
+      fullPath: '/connect/admin/businesses/$id'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdRouteImport
+      parentRoute: typeof ConnectAdminRoute
+    }
+    '/connect/admin/contacts/': {
+      id: '/connect/admin/contacts/'
+      path: '/'
+      fullPath: '/connect/admin/contacts/'
+      preLoaderRoute: typeof ConnectAdminContactsIndexRouteImport
+      parentRoute: typeof ConnectAdminContactsRoute
+    }
+    '/connect/admin/contacts/$contactId': {
+      id: '/connect/admin/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/connect/admin/contacts/$contactId'
+      preLoaderRoute: typeof ConnectAdminContactsContactIdRouteImport
+      parentRoute: typeof ConnectAdminContactsRoute
+    }
+    '/connect/admin/inbox/': {
+      id: '/connect/admin/inbox/'
+      path: '/'
+      fullPath: '/connect/admin/inbox/'
+      preLoaderRoute: typeof ConnectAdminInboxIndexRouteImport
+      parentRoute: typeof ConnectAdminInboxRoute
+    }
+    '/connect/admin/inbox/$conversationId': {
+      id: '/connect/admin/inbox/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/connect/admin/inbox/$conversationId'
+      preLoaderRoute: typeof ConnectAdminInboxConversationIdRouteImport
+      parentRoute: typeof ConnectAdminInboxRoute
+    }
+    '/connect/admin/settings/': {
+      id: '/connect/admin/settings/'
+      path: '/'
+      fullPath: '/connect/admin/settings/'
+      preLoaderRoute: typeof ConnectAdminSettingsIndexRouteImport
+      parentRoute: typeof ConnectAdminSettingsRoute
+    }
+    '/connect/admin/settings/audit': {
+      id: '/connect/admin/settings/audit'
+      path: '/audit'
+      fullPath: '/connect/admin/settings/audit'
+      preLoaderRoute: typeof ConnectAdminSettingsAuditRouteImport
+      parentRoute: typeof ConnectAdminSettingsRoute
+    }
+    '/connect/admin/settings/team': {
+      id: '/connect/admin/settings/team'
+      path: '/team'
+      fullPath: '/connect/admin/settings/team'
+      preLoaderRoute: typeof ConnectAdminSettingsTeamRouteImport
+      parentRoute: typeof ConnectAdminSettingsRoute
+    }
+    '/connect/dashboard-2/orders/$orderId': {
+      id: '/connect/dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/connect/dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof ConnectDashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof ConnectDashboard2OrdersRoute
+    }
+    '/connect/dashboard/orders/$orderId': {
+      id: '/connect/dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/connect/dashboard/orders/$orderId'
+      preLoaderRoute: typeof ConnectDashboardOrdersOrderIdRouteImport
+      parentRoute: typeof ConnectDashboardOrdersRoute
+    }
+    '/stores/pavone/admin/': {
+      id: '/stores/pavone/admin/'
+      path: '/'
+      fullPath: '/stores/pavone/admin/'
+      preLoaderRoute: typeof StoresPavoneAdminIndexRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/brands': {
+      id: '/stores/pavone/admin/brands'
+      path: '/brands'
+      fullPath: '/stores/pavone/admin/brands'
+      preLoaderRoute: typeof StoresPavoneAdminBrandsRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/categories': {
+      id: '/stores/pavone/admin/categories'
+      path: '/categories'
+      fullPath: '/stores/pavone/admin/categories'
+      preLoaderRoute: typeof StoresPavoneAdminCategoriesRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/inspirations': {
+      id: '/stores/pavone/admin/inspirations'
+      path: '/inspirations'
+      fullPath: '/stores/pavone/admin/inspirations'
+      preLoaderRoute: typeof StoresPavoneAdminInspirationsRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/login': {
+      id: '/stores/pavone/admin/login'
+      path: '/login'
+      fullPath: '/stores/pavone/admin/login'
+      preLoaderRoute: typeof StoresPavoneAdminLoginRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/orders': {
+      id: '/stores/pavone/admin/orders'
+      path: '/orders'
+      fullPath: '/stores/pavone/admin/orders'
+      preLoaderRoute: typeof StoresPavoneAdminOrdersRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/products': {
+      id: '/stores/pavone/admin/products'
+      path: '/products'
+      fullPath: '/stores/pavone/admin/products'
+      preLoaderRoute: typeof StoresPavoneAdminProductsRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/admin/settings': {
+      id: '/stores/pavone/admin/settings'
+      path: '/settings'
+      fullPath: '/stores/pavone/admin/settings'
+      preLoaderRoute: typeof StoresPavoneAdminSettingsRouteImport
+      parentRoute: typeof StoresPavoneAdminRoute
+    }
+    '/stores/pavone/category/$slug': {
+      id: '/stores/pavone/category/$slug'
+      path: '/category/$slug'
+      fullPath: '/stores/pavone/category/$slug'
+      preLoaderRoute: typeof StoresPavoneCategorySlugRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/stores/pavone/product/$slug': {
+      id: '/stores/pavone/product/$slug'
+      path: '/product/$slug'
+      fullPath: '/stores/pavone/product/$slug'
+      preLoaderRoute: typeof StoresPavoneProductSlugRouteImport
+      parentRoute: typeof StoresPavoneRoute
+    }
+    '/admin/flow-templates/$templateId/versions/$versionId': {
+      id: '/admin/flow-templates/$templateId/versions/$versionId'
+      path: '/versions/$versionId'
+      fullPath: '/admin/flow-templates/$templateId/versions/$versionId'
+      preLoaderRoute: typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
+      parentRoute: typeof AdminFlowTemplatesTemplateIdRoute
+    }
+    '/api/connect/admin/businesses/$businessId': {
+      id: '/api/connect/admin/businesses/$businessId'
+      path: '/$businessId'
+      fullPath: '/api/connect/admin/businesses/$businessId'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdRouteImport
+      parentRoute: typeof ApiConnectAdminBusinessesRoute
+    }
+    '/api/connect/admin/canned-replies/$replyId': {
+      id: '/api/connect/admin/canned-replies/$replyId'
+      path: '/$replyId'
+      fullPath: '/api/connect/admin/canned-replies/$replyId'
+      preLoaderRoute: typeof ApiConnectAdminCannedRepliesReplyIdRouteImport
+      parentRoute: typeof ApiConnectAdminCannedRepliesRoute
+    }
+    '/api/connect/admin/contacts/$contactId': {
+      id: '/api/connect/admin/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/api/connect/admin/contacts/$contactId'
+      preLoaderRoute: typeof ApiConnectAdminContactsContactIdRouteImport
+      parentRoute: typeof ApiConnectAdminContactsRoute
+    }
+    '/api/connect/admin/conversations/$conversationId': {
+      id: '/api/connect/admin/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/api/connect/admin/conversations/$conversationId'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsRoute
+    }
+    '/api/connect/admin/conversations/process-lifecycle': {
+      id: '/api/connect/admin/conversations/process-lifecycle'
+      path: '/process-lifecycle'
+      fullPath: '/api/connect/admin/conversations/process-lifecycle'
+      preLoaderRoute: typeof ApiConnectAdminConversationsProcessLifecycleRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsRoute
+    }
+    '/api/connect/admin/flow-templates/$templateId': {
+      id: '/api/connect/admin/flow-templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/api/connect/admin/flow-templates/$templateId'
+      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRouteImport
+      parentRoute: typeof ApiConnectAdminFlowTemplatesRoute
+    }
+    '/api/connect/admin/human-outbox/process': {
+      id: '/api/connect/admin/human-outbox/process'
+      path: '/api/connect/admin/human-outbox/process'
+      fullPath: '/api/connect/admin/human-outbox/process'
+      preLoaderRoute: typeof ApiConnectAdminHumanOutboxProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/admin/human-outbox/reconciliation': {
+      id: '/api/connect/admin/human-outbox/reconciliation'
+      path: '/api/connect/admin/human-outbox/reconciliation'
+      fullPath: '/api/connect/admin/human-outbox/reconciliation'
+      preLoaderRoute: typeof ApiConnectAdminHumanOutboxReconciliationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/connect/client/canned-replies/$replyId': {
+      id: '/api/connect/client/canned-replies/$replyId'
+      path: '/$replyId'
+      fullPath: '/api/connect/client/canned-replies/$replyId'
+      preLoaderRoute: typeof ApiConnectClientCannedRepliesReplyIdRouteImport
+      parentRoute: typeof ApiConnectClientCannedRepliesRoute
+    }
+    '/api/connect/client/contacts/$contactId': {
+      id: '/api/connect/client/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/api/connect/client/contacts/$contactId'
+      preLoaderRoute: typeof ApiConnectClientContactsContactIdRouteImport
+      parentRoute: typeof ApiConnectClientContactsRoute
+    }
+    '/api/connect/client/conversations/$conversationId': {
+      id: '/api/connect/client/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/api/connect/client/conversations/$conversationId'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdRouteImport
+      parentRoute: typeof ApiConnectClientConversationsRoute
+    }
+    '/api/connect/dashboard-2/orders/$orderId': {
+      id: '/api/connect/dashboard-2/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/connect/dashboard-2/orders/$orderId'
+      preLoaderRoute: typeof ApiConnectDashboard2OrdersOrderIdRouteImport
+      parentRoute: typeof ApiConnectDashboard2OrdersRoute
+    }
+    '/api/connect/dashboard/orders/$orderId': {
+      id: '/api/connect/dashboard/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/connect/dashboard/orders/$orderId'
+      preLoaderRoute: typeof ApiConnectDashboardOrdersOrderIdRouteImport
+      parentRoute: typeof ApiConnectDashboardOrdersRoute
+    }
+    '/api/wa-admin/businesses/$businessId/flow': {
+      id: '/api/wa-admin/businesses/$businessId/flow'
+      path: '/flow'
+      fullPath: '/api/wa-admin/businesses/$businessId/flow'
+      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdFlowRouteImport
       parentRoute: typeof ApiWaAdminBusinessesBusinessIdRoute
     }
     '/api/wa-admin/businesses/$businessId/flow-image': {
@@ -4603,144 +4698,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdFlowImageRouteImport
       parentRoute: typeof ApiWaAdminBusinessesBusinessIdRoute
     }
-    '/api/wa-admin/businesses/$businessId/flow': {
-      id: '/api/wa-admin/businesses/$businessId/flow'
-      path: '/flow'
-      fullPath: '/api/wa-admin/businesses/$businessId/flow'
-      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdFlowRouteImport
+    '/api/wa-admin/businesses/$businessId/product-image': {
+      id: '/api/wa-admin/businesses/$businessId/product-image'
+      path: '/product-image'
+      fullPath: '/api/wa-admin/businesses/$businessId/product-image'
+      preLoaderRoute: typeof ApiWaAdminBusinessesBusinessIdProductImageRouteImport
       parentRoute: typeof ApiWaAdminBusinessesBusinessIdRoute
     }
-    '/api/connect/dashboard/orders/$orderId': {
-      id: '/api/connect/dashboard/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/api/connect/dashboard/orders/$orderId'
-      preLoaderRoute: typeof ApiConnectDashboardOrdersOrderIdRouteImport
-      parentRoute: typeof ApiConnectDashboardOrdersRoute
+    '/connect/admin/businesses/$id/': {
+      id: '/connect/admin/businesses/$id/'
+      path: '/'
+      fullPath: '/connect/admin/businesses/$id/'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdIndexRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/dashboard-2/orders/$orderId': {
-      id: '/api/connect/dashboard-2/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/api/connect/dashboard-2/orders/$orderId'
-      preLoaderRoute: typeof ApiConnectDashboard2OrdersOrderIdRouteImport
-      parentRoute: typeof ApiConnectDashboard2OrdersRoute
+    '/connect/admin/businesses/$id/catalog-routes': {
+      id: '/connect/admin/businesses/$id/catalog-routes'
+      path: '/catalog-routes'
+      fullPath: '/connect/admin/businesses/$id/catalog-routes'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdCatalogRoutesRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/client/conversations/$conversationId': {
-      id: '/api/connect/client/conversations/$conversationId'
-      path: '/$conversationId'
-      fullPath: '/api/connect/client/conversations/$conversationId'
-      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdRouteImport
-      parentRoute: typeof ApiConnectClientConversationsRoute
+    '/connect/admin/businesses/$id/checkout': {
+      id: '/connect/admin/businesses/$id/checkout'
+      path: '/checkout'
+      fullPath: '/connect/admin/businesses/$id/checkout'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdCheckoutRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/client/contacts/$contactId': {
-      id: '/api/connect/client/contacts/$contactId'
-      path: '/$contactId'
-      fullPath: '/api/connect/client/contacts/$contactId'
-      preLoaderRoute: typeof ApiConnectClientContactsContactIdRouteImport
-      parentRoute: typeof ApiConnectClientContactsRoute
+    '/connect/admin/businesses/$id/diagnostics': {
+      id: '/connect/admin/businesses/$id/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/connect/admin/businesses/$id/diagnostics'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdDiagnosticsRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/client/canned-replies/$replyId': {
-      id: '/api/connect/client/canned-replies/$replyId'
-      path: '/$replyId'
-      fullPath: '/api/connect/client/canned-replies/$replyId'
-      preLoaderRoute: typeof ApiConnectClientCannedRepliesReplyIdRouteImport
-      parentRoute: typeof ApiConnectClientCannedRepliesRoute
+    '/connect/admin/businesses/$id/flow-builder': {
+      id: '/connect/admin/businesses/$id/flow-builder'
+      path: '/flow-builder'
+      fullPath: '/connect/admin/businesses/$id/flow-builder'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdFlowBuilderRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/admin/human-outbox/reconciliation': {
-      id: '/api/connect/admin/human-outbox/reconciliation'
-      path: '/api/connect/admin/human-outbox/reconciliation'
-      fullPath: '/api/connect/admin/human-outbox/reconciliation'
-      preLoaderRoute: typeof ApiConnectAdminHumanOutboxReconciliationRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/admin/businesses/$id/live-test': {
+      id: '/connect/admin/businesses/$id/live-test'
+      path: '/live-test'
+      fullPath: '/connect/admin/businesses/$id/live-test'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdLiveTestRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/admin/human-outbox/process': {
-      id: '/api/connect/admin/human-outbox/process'
-      path: '/api/connect/admin/human-outbox/process'
-      fullPath: '/api/connect/admin/human-outbox/process'
-      preLoaderRoute: typeof ApiConnectAdminHumanOutboxProcessRouteImport
-      parentRoute: typeof rootRouteImport
+    '/connect/admin/businesses/$id/products': {
+      id: '/connect/admin/businesses/$id/products'
+      path: '/products'
+      fullPath: '/connect/admin/businesses/$id/products'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdProductsRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/admin/flow-templates/$templateId': {
-      id: '/api/connect/admin/flow-templates/$templateId'
-      path: '/$templateId'
-      fullPath: '/api/connect/admin/flow-templates/$templateId'
-      preLoaderRoute: typeof ApiConnectAdminFlowTemplatesTemplateIdRouteImport
-      parentRoute: typeof ApiConnectAdminFlowTemplatesRoute
+    '/connect/admin/businesses/$id/route-values': {
+      id: '/connect/admin/businesses/$id/route-values'
+      path: '/route-values'
+      fullPath: '/connect/admin/businesses/$id/route-values'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdRouteValuesRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/admin/conversations/process-lifecycle': {
-      id: '/api/connect/admin/conversations/process-lifecycle'
-      path: '/process-lifecycle'
-      fullPath: '/api/connect/admin/conversations/process-lifecycle'
-      preLoaderRoute: typeof ApiConnectAdminConversationsProcessLifecycleRouteImport
-      parentRoute: typeof ApiConnectAdminConversationsRoute
+    '/connect/admin/businesses/$id/whatsapp': {
+      id: '/connect/admin/businesses/$id/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/connect/admin/businesses/$id/whatsapp'
+      preLoaderRoute: typeof ConnectAdminBusinessesIdWhatsappRouteImport
+      parentRoute: typeof ConnectAdminBusinessesIdRoute
     }
-    '/api/connect/admin/conversations/$conversationId': {
-      id: '/api/connect/admin/conversations/$conversationId'
-      path: '/$conversationId'
-      fullPath: '/api/connect/admin/conversations/$conversationId'
-      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdRouteImport
-      parentRoute: typeof ApiConnectAdminConversationsRoute
-    }
-    '/api/connect/admin/contacts/$contactId': {
-      id: '/api/connect/admin/contacts/$contactId'
-      path: '/$contactId'
-      fullPath: '/api/connect/admin/contacts/$contactId'
-      preLoaderRoute: typeof ApiConnectAdminContactsContactIdRouteImport
-      parentRoute: typeof ApiConnectAdminContactsRoute
-    }
-    '/api/connect/admin/canned-replies/$replyId': {
-      id: '/api/connect/admin/canned-replies/$replyId'
-      path: '/$replyId'
-      fullPath: '/api/connect/admin/canned-replies/$replyId'
-      preLoaderRoute: typeof ApiConnectAdminCannedRepliesReplyIdRouteImport
-      parentRoute: typeof ApiConnectAdminCannedRepliesRoute
-    }
-    '/api/connect/admin/businesses/$businessId': {
-      id: '/api/connect/admin/businesses/$businessId'
-      path: '/$businessId'
-      fullPath: '/api/connect/admin/businesses/$businessId'
-      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdRouteImport
-      parentRoute: typeof ApiConnectAdminBusinessesRoute
-    }
-    '/admin/flow-templates/$templateId/versions/$versionId': {
-      id: '/admin/flow-templates/$templateId/versions/$versionId'
-      path: '/versions/$versionId'
-      fullPath: '/admin/flow-templates/$templateId/versions/$versionId'
-      preLoaderRoute: typeof AdminFlowTemplatesTemplateIdVersionsVersionIdRouteImport
-      parentRoute: typeof AdminFlowTemplatesTemplateIdRoute
-    }
-    '/api/connect/client/conversations/$conversationId/notes': {
-      id: '/api/connect/client/conversations/$conversationId/notes'
-      path: '/notes'
-      fullPath: '/api/connect/client/conversations/$conversationId/notes'
-      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdNotesRouteImport
-      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
-    }
-    '/api/connect/client/conversations/$conversationId/messages': {
-      id: '/api/connect/client/conversations/$conversationId/messages'
-      path: '/messages'
-      fullPath: '/api/connect/client/conversations/$conversationId/messages'
-      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdMessagesRouteImport
-      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
-    }
-    '/api/connect/admin/conversations/$conversationId/notes': {
-      id: '/api/connect/admin/conversations/$conversationId/notes'
-      path: '/notes'
-      fullPath: '/api/connect/admin/conversations/$conversationId/notes'
-      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdNotesRouteImport
-      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
-    }
-    '/api/connect/admin/conversations/$conversationId/messages': {
-      id: '/api/connect/admin/conversations/$conversationId/messages'
-      path: '/messages'
-      fullPath: '/api/connect/admin/conversations/$conversationId/messages'
-      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRouteImport
-      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
-    }
-    '/api/connect/admin/businesses/$businessId/product-image': {
-      id: '/api/connect/admin/businesses/$businessId/product-image'
-      path: '/product-image'
-      fullPath: '/api/connect/admin/businesses/$businessId/product-image'
-      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdProductImageRouteImport
+    '/api/connect/admin/businesses/$businessId/flow': {
+      id: '/api/connect/admin/businesses/$businessId/flow'
+      path: '/flow'
+      fullPath: '/api/connect/admin/businesses/$businessId/flow'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRouteImport
       parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
     }
     '/api/connect/admin/businesses/$businessId/flow-image': {
@@ -4750,18 +4782,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowImageRouteImport
       parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
     }
-    '/api/connect/admin/businesses/$businessId/flow': {
-      id: '/api/connect/admin/businesses/$businessId/flow'
-      path: '/flow'
-      fullPath: '/api/connect/admin/businesses/$businessId/flow'
-      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdFlowRouteImport
+    '/api/connect/admin/businesses/$businessId/product-image': {
+      id: '/api/connect/admin/businesses/$businessId/product-image'
+      path: '/product-image'
+      fullPath: '/api/connect/admin/businesses/$businessId/product-image'
+      preLoaderRoute: typeof ApiConnectAdminBusinessesBusinessIdProductImageRouteImport
       parentRoute: typeof ApiConnectAdminBusinessesBusinessIdRoute
     }
-    '/api/connect/client/conversations/$conversationId/tags/$tagId': {
-      id: '/api/connect/client/conversations/$conversationId/tags/$tagId'
-      path: '/tags/$tagId'
-      fullPath: '/api/connect/client/conversations/$conversationId/tags/$tagId'
-      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdTagsTagIdRouteImport
+    '/api/connect/admin/conversations/$conversationId/messages': {
+      id: '/api/connect/admin/conversations/$conversationId/messages'
+      path: '/messages'
+      fullPath: '/api/connect/admin/conversations/$conversationId/messages'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdMessagesRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+    }
+    '/api/connect/admin/conversations/$conversationId/notes': {
+      id: '/api/connect/admin/conversations/$conversationId/notes'
+      path: '/notes'
+      fullPath: '/api/connect/admin/conversations/$conversationId/notes'
+      preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdNotesRouteImport
+      parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+    }
+    '/api/connect/client/conversations/$conversationId/messages': {
+      id: '/api/connect/client/conversations/$conversationId/messages'
+      path: '/messages'
+      fullPath: '/api/connect/client/conversations/$conversationId/messages'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdMessagesRouteImport
+      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
+    }
+    '/api/connect/client/conversations/$conversationId/notes': {
+      id: '/api/connect/client/conversations/$conversationId/notes'
+      path: '/notes'
+      fullPath: '/api/connect/client/conversations/$conversationId/notes'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdNotesRouteImport
       parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
     }
     '/api/connect/admin/conversations/$conversationId/tags/$tagId': {
@@ -4770,6 +4823,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/connect/admin/conversations/$conversationId/tags/$tagId'
       preLoaderRoute: typeof ApiConnectAdminConversationsConversationIdTagsTagIdRouteImport
       parentRoute: typeof ApiConnectAdminConversationsConversationIdRoute
+    }
+    '/api/connect/client/conversations/$conversationId/tags/$tagId': {
+      id: '/api/connect/client/conversations/$conversationId/tags/$tagId'
+      path: '/tags/$tagId'
+      fullPath: '/api/connect/client/conversations/$conversationId/tags/$tagId'
+      preLoaderRoute: typeof ApiConnectClientConversationsConversationIdTagsTagIdRouteImport
+      parentRoute: typeof ApiConnectClientConversationsConversationIdRoute
     }
   }
 }
@@ -5563,6 +5623,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   Dashboard2Route: Dashboard2RouteWithChildren,
   DataDeletionRoute: DataDeletionRoute,
+  LicenseAdminRoute: LicenseAdminRoute,
   LogsWABotRoute: LogsWABotRoute,
   PrivacyRoute: PrivacyRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
@@ -5580,6 +5641,8 @@ const rootRouteChildren: RootRouteChildren = {
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
   ApiConnectReleaseRoute: ApiConnectReleaseRoute,
+  ApiLicenseAdminRoute: ApiLicenseAdminRoute,
+  ApiLicenseCheckRoute: ApiLicenseCheckRoute,
   ApiWaAdminBusinessesRoute: ApiWaAdminBusinessesRouteWithChildren,
   ApiWaAdminFlowTemplatesRoute: ApiWaAdminFlowTemplatesRouteWithChildren,
   ApiWaAdminLoginRoute: ApiWaAdminLoginRoute,
