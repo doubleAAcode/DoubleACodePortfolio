@@ -55,8 +55,7 @@ export const NONCE_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 export const MAX_CHECK_BODY_BYTES = 2048;
 
 export type ParsedCheckRequest =
-  | { ok: true; request: LicenseCheckRequest }
-  | { ok: false; error: string };
+  { ok: true; request: LicenseCheckRequest } | { ok: false; error: string };
 
 export function parseCheckRequest(body: unknown): ParsedCheckRequest {
   if (!body || typeof body !== "object" || Array.isArray(body)) {

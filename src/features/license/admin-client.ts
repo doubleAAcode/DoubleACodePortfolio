@@ -17,8 +17,7 @@ const ENDPOINT = "/api/license/admin";
 
 async function readSnapshot(response: Response): Promise<LicenseAdminSnapshot> {
   const body = (await response.json().catch(() => null)) as
-    | (LicenseAdminSnapshot & { error?: string })
-    | null;
+    (LicenseAdminSnapshot & { error?: string }) | null;
 
   if (!response.ok || !body) {
     throw new Error(body?.error ?? `Request failed (${response.status}).`);
