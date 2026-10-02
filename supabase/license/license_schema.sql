@@ -48,6 +48,12 @@ revoke all on table public.license_global from anon, authenticated;
 revoke all on table public.licenses from anon, authenticated;
 revoke all on table public.license_machines from anon, authenticated;
 
+-- Newer Supabase projects do not auto-grant new tables to the API roles, so the server (service
+-- role) needs explicit table privileges, the same way the Connect migrations grant them.
+grant select, insert, update, delete on public.license_global to service_role;
+grant select, insert, update, delete on public.licenses to service_role;
+grant select, insert, update, delete on public.license_machines to service_role;
+
 -- Atomic machine registration: the license row is locked so two computers checking in at the same
 -- moment cannot both take the last free seat.
 create or replace function public.license_register_machine(
