@@ -368,7 +368,13 @@ function KhabzetSajMenuPage() {
           >
             {PHONE_DISPLAY}
           </a>
-          <div className="mx-auto mt-6 flex max-w-sm items-start justify-center gap-2 border-t border-dashed border-white/30 pt-5 text-sm font-bold text-white/85">
+          <div className="mx-auto mt-6 max-w-sm border-t border-dashed border-white/30 pt-5 text-center">
+            <p dir="rtl" lang="ar" className="text-2xl font-light leading-snug text-white sm:text-3xl">
+              واذا بدنا نكسب شوفتك:
+            </p>
+            <p className="mt-1 text-sm font-medium text-white/60">And if we want to earn your visit:</p>
+          </div>
+          <div className="mx-auto mt-3 flex max-w-sm items-start justify-center gap-2 text-sm font-bold text-white/85">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#97c11f]" aria-hidden="true" />
             <div>
               <p dir="rtl" lang="ar">
