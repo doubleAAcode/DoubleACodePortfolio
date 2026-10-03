@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Minus, Phone, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 
 const WHATSAPP_NUMBER = "96176984099";
 const PHONE_DISPLAY = "76 98 40 99";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/menus/khabzetsaj")({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&family=Poppins:wght@900&display=swap",
       },
     ],
   }),
@@ -286,32 +287,7 @@ function KhabzetSajMenuPage() {
       className="min-h-screen bg-[#fbfbf6] pb-28 text-[#3d3d3d]"
       style={{ fontFamily: "'Cairo', 'Inter', system-ui, sans-serif" }}
     >
-      <header className="relative px-4 pb-10 pt-8 sm:pt-12">
-        <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[7.5rem] bg-[#97c11f] opacity-100 [background-image:repeating-linear-gradient(135deg,transparent_0_26px,rgba(255,255,255,0.9)_26px_46px)]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-[4.5rem] h-12 bg-[#97c11f]">
-          <div className="absolute inset-x-0 bottom-3 border-t-2 border-dashed border-white" />
-        </div>
-
-        <div className="relative mx-auto w-full max-w-xs rounded-3xl border-2 border-dashed border-[#97c11f] bg-white p-4 text-center shadow-[0_14px_40px_rgba(0,0,0,0.18)] outline outline-[6px] outline-white sm:max-w-sm">
-          <p className="text-sm font-black uppercase tracking-[0.5em] text-[#97c11f] sm:text-base">
-            Menu
-          </p>
-          <img
-            src={LOGO_SRC}
-            alt="Khabzet Saj - خبزة صاج"
-            className="mx-auto mt-1 h-auto w-full max-w-[16rem]"
-            width={1200}
-            height={690}
-          />
-          <a
-            href={`tel:+${WHATSAPP_NUMBER}`}
-            className="mt-1 block text-3xl font-black tracking-wide text-[#97c11f] sm:text-4xl"
-            dir="ltr"
-          >
-            {PHONE_DISPLAY}
-          </a>
-        </div>
-      </header>
+      <Hero />
 
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2 px-4 pb-4">
         <a
@@ -783,5 +759,156 @@ function WhatsAppIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
     </svg>
+  );
+}
+
+const GREEN_PATTERN = "#98c23d";
+const GREEN_BAR = "#98c101";
+const IMG_BASE = "/images/menus/khabzet-saj";
+
+// 1 design unit = 1pt of the 1080pt-wide PDF menu; scales with the hero width, capped at 1080px.
+const u = (n: number) => `calc(var(--u) * ${n})`;
+// x of the PDF page's left edge: the 1080-unit page is centred in the hero.
+const PAGE_LEFT = `calc(50cqw - ${u(540)})`;
+
+function svgUrl(svg: string) {
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+const LATTICE_W = 68.946;
+const LATTICE_H = 69.066;
+const LATTICE_RECT = "M2.1 -15.15L-15.15 2.1L-2.1 15.15L15.15 -2.1Z";
+const LATTICE_TILE = svgUrl(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${LATTICE_W} ${LATTICE_H}'><g fill='${GREEN_PATTERN}'>${[
+    [-15.646, 18.904],
+    [53.3, 87.85],
+    [122.246, 156.796],
+  ]
+    .map(
+      ([x0, x1]) =>
+        `<path d='M${x0} 0L${x1} 0L${x1 - LATTICE_W} ${LATTICE_H}L${x0 - LATTICE_W} ${LATTICE_H}Z'/>`,
+    )
+    .join("")}${[-LATTICE_W, 0, LATTICE_W]
+    .flatMap((dx) =>
+      [-LATTICE_H, 0, LATTICE_H].flatMap((dy) => [
+        `<path transform='translate(${13.117 + dx} ${23.015 + dy})' d='${LATTICE_RECT}'/>`,
+        `<path transform='translate(${13.117 + LATTICE_W / 2 + dx} ${23.015 + LATTICE_H / 2 + dy})' d='${LATTICE_RECT}'/>`,
+      ]),
+    )
+    .join("")}</g></svg>`,
+);
+
+const PHONE_TOP = 454;
+const CARD_W = 531.33;
+const CARD_H = 571.73;
+const CARD_OUTER = "M508.59 50.11L499.12 50.11L499.12 48.59C499.12 36.01 493.69 25.81 486.99 25.81C480.29 25.81 474.86 20.04 474.86 12.91C474.86 5.78 464.68 -0 452.13 -0L79.2 -0C66.65 -0 56.46 5.78 56.46 12.91C56.46 20.04 51.04 25.81 44.34 25.81C37.64 25.81 32.21 36.01 32.21 48.59L32.21 50.11L22.74 50.11C10.18 50.11 0 60.31 0 72.89L0 175.66L0 391.52L0 494.29C0 506.87 10.18 517.07 22.74 517.07L32.21 517.07L32.21 523.14C32.21 535.72 37.64 545.92 44.34 545.92C51.04 545.92 56.46 551.7 56.46 558.82C56.46 565.95 66.65 571.73 79.2 571.73L452.13 571.73C464.68 571.73 474.86 565.95 474.86 558.82C474.86 551.7 480.29 545.92 486.99 545.92C493.69 545.92 499.12 535.72 499.12 523.14L499.12 517.07L508.59 517.07C521.15 517.07 531.33 506.87 531.33 494.29L531.33 391.52L531.33 175.66L531.33 72.89C531.33 60.31 521.15 50.11 508.59 50.11Z";
+const CARD_DASHED = "M499.16 60.72L490.31 60.72L490.31 59.3C490.31 47.56 485.24 38.03 478.98 38.03C472.73 38.03 467.66 32.63 467.66 25.98C467.66 19.32 458.15 13.92 446.42 13.92L84.91 13.92C73.18 13.92 63.67 19.32 63.67 25.98C63.67 32.63 58.6 38.03 52.35 38.03C46.09 38.03 41.02 47.56 41.02 59.3L41.02 60.72L32.17 60.72C20.44 60.72 10.94 70.25 10.94 82L10.94 177.98L10.94 389.5L10.94 485.49C10.94 497.23 20.44 506.76 32.17 506.76L41.02 506.76L41.02 512.43C41.02 524.18 46.09 533.7 52.35 533.7C58.6 533.7 63.67 539.1 63.67 545.75C63.67 552.41 73.18 557.81 84.91 557.81L446.42 557.81C458.15 557.81 467.66 552.41 467.66 545.75C467.66 539.1 472.73 533.7 478.98 533.7C485.24 533.7 490.31 524.18 490.31 512.43L490.31 506.76L499.16 506.76C510.88 506.76 520.39 497.23 520.39 485.49L520.39 389.5L520.39 177.98L520.39 82C520.39 70.25 510.88 60.72 499.16 60.72Z";
+
+function Hero() {
+  return (
+    <header className="relative w-full overflow-hidden bg-white" style={{ containerType: "inline-size" }}>
+      <div
+        className="relative w-full"
+        style={
+          {
+            "--u": "calc(min(100cqw, 1080px) / 1080)",
+            height: u(650),
+          } as CSSProperties
+        }
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${IMG_BASE}/floral.png)`,
+            backgroundSize: `${u(75.16)} ${u(75.16)}`,
+            backgroundPosition: `${PAGE_LEFT} ${u(64.2)}`,
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{
+            height: u(362.41),
+            backgroundImage: LATTICE_TILE,
+            backgroundSize: `${u(LATTICE_W)} ${u(LATTICE_H)}`,
+            backgroundPosition: `${PAGE_LEFT} 0`,
+          }}
+        />
+        <svg
+          viewBox="0 0 1080 650"
+          className="absolute overflow-visible"
+          style={{ left: PAGE_LEFT, top: 0, width: u(1080), height: u(650) }}
+          aria-hidden="true"
+        >
+          <defs>
+            <pattern id="khabzet-dash" x="13.99" y="410.66" width="20.39" height="5.413" patternUnits="userSpaceOnUse">
+              <rect width="12.2" height="5.413" rx="2.7" fill="#fff" />
+            </pattern>
+          </defs>
+          <rect x="-4000" y="362.41" width="9080" height="70.84" fill={GREEN_BAR} />
+          <rect x="-4000" y="386.31" width="9080" height="5.41" fill="#fff" />
+          <rect x="-4000" y="410.66" width="9080" height="5.413" fill="url(#khabzet-dash)" />
+        </svg>
+
+        <div
+          className="absolute"
+          style={{
+            left: `calc(${PAGE_LEFT} + ${u(274.34)})`,
+            top: u(40.81),
+            width: u(CARD_W),
+            height: u(CARD_H),
+          }}
+        >
+          <img
+            src={`${IMG_BASE}/card-shadow.webp`}
+            alt=""
+            aria-hidden="true"
+            className="absolute max-w-none"
+            style={{
+              left: u(-10.92),
+              top: u(-10.81),
+              width: u(572.16),
+              height: u(612.48),
+              opacity: 0.55,
+              mixBlendMode: "multiply",
+            }}
+          />
+          <svg
+            viewBox={`0 0 ${CARD_W} ${CARD_H}`}
+            className="absolute inset-0 h-full w-full overflow-visible"
+            aria-hidden="true"
+          >
+            <path d={CARD_OUTER} fill="#fff" />
+            <path
+              d={CARD_DASHED}
+              fill="none"
+              stroke={GREEN_PATTERN}
+              strokeWidth="2.702"
+              strokeLinecap="round"
+              strokeDasharray="6.754 8.105"
+            />
+          </svg>
+
+          <img
+            src={`${IMG_BASE}/card-art.svg`}
+            alt="Khabzet Saj - خبزة صاج - Menu"
+            className="absolute inset-0 h-full w-full max-w-none"
+          />
+          <a
+            href={`tel:+${WHATSAPP_NUMBER}`}
+            dir="ltr"
+            className="absolute inset-x-0 whitespace-nowrap text-center leading-none"
+            style={{
+              top: u(PHONE_TOP),
+              fontFamily: "'Poppins', 'Cairo', sans-serif",
+              fontWeight: 900,
+              fontSize: u(66.3),
+              color: GREEN_BAR,
+            }}
+          >
+            {PHONE_DISPLAY}
+          </a>
+        </div>
+      </div>
+    </header>
   );
 }
