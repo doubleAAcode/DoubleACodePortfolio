@@ -52,6 +52,7 @@ import { Route as DashboardSimulatorRouteImport } from './routes/dashboard.simul
 import { Route as InvoicemakerPrivacyRouteImport } from './routes/invoicemaker.privacy'
 import { Route as InvoicemakerSupportRouteImport } from './routes/invoicemaker.support'
 import { Route as MenusMarleysRouteImport } from './routes/menus/marleys'
+import { Route as MenusKhabzetsajRouteImport } from './routes/menus/khabzetsaj'
 import { Route as QuotationsKhadamatiRouteImport } from './routes/quotations.khadamati'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
 import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
@@ -461,6 +462,11 @@ const InvoicemakerPrivacyRoute = InvoicemakerPrivacyRouteImport.update({
 const InvoicemakerSupportRoute = InvoicemakerSupportRouteImport.update({
   id: '/invoicemaker/support',
   path: '/invoicemaker/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenusKhabzetsajRoute = MenusKhabzetsajRouteImport.update({
+  id: '/menus/khabzetsaj',
+  path: '/menus/khabzetsaj',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenusMarleysRoute = MenusMarleysRouteImport.update({
@@ -1625,6 +1631,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
   '/invoicemaker/support': typeof InvoicemakerSupportRoute
+  '/menus/khabzetsaj': typeof MenusKhabzetsajRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -1861,6 +1868,7 @@ export interface FileRoutesByTo {
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
   '/invoicemaker/support': typeof InvoicemakerSupportRoute
+  '/menus/khabzetsaj': typeof MenusKhabzetsajRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/work/data-insights': typeof WorkDataInsightsRoute
@@ -2100,6 +2108,7 @@ export interface FileRoutesById {
   '/dashboard/simulator': typeof DashboardSimulatorRoute
   '/invoicemaker/privacy': typeof InvoicemakerPrivacyRoute
   '/invoicemaker/support': typeof InvoicemakerSupportRoute
+  '/menus/khabzetsaj': typeof MenusKhabzetsajRoute
   '/menus/marleys': typeof MenusMarleysRoute
   '/quotations/khadamati': typeof QuotationsKhadamatiRoute
   '/stores/pavone': typeof StoresPavoneRouteWithChildren
@@ -2347,6 +2356,7 @@ export interface FileRouteTypes {
     | '/dashboard/simulator'
     | '/invoicemaker/privacy'
     | '/invoicemaker/support'
+    | '/menus/khabzetsaj'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/stores/pavone'
@@ -2583,6 +2593,7 @@ export interface FileRouteTypes {
     | '/dashboard/simulator'
     | '/invoicemaker/privacy'
     | '/invoicemaker/support'
+    | '/menus/khabzetsaj'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/work/data-insights'
@@ -2821,6 +2832,7 @@ export interface FileRouteTypes {
     | '/dashboard/simulator'
     | '/invoicemaker/privacy'
     | '/invoicemaker/support'
+    | '/menus/khabzetsaj'
     | '/menus/marleys'
     | '/quotations/khadamati'
     | '/stores/pavone'
@@ -3045,6 +3057,7 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   InvoicemakerPrivacyRoute: typeof InvoicemakerPrivacyRoute
   InvoicemakerSupportRoute: typeof InvoicemakerSupportRoute
+  MenusKhabzetsajRoute: typeof MenusKhabzetsajRoute
   MenusMarleysRoute: typeof MenusMarleysRoute
   QuotationsKhadamatiRoute: typeof QuotationsKhadamatiRoute
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
@@ -3422,6 +3435,13 @@ declare module '@tanstack/react-router' {
       path: '/invoicemaker/support'
       fullPath: '/invoicemaker/support'
       preLoaderRoute: typeof InvoicemakerSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menus/khabzetsaj': {
+      id: '/menus/khabzetsaj'
+      path: '/menus/khabzetsaj'
+      fullPath: '/menus/khabzetsaj'
+      preLoaderRoute: typeof MenusKhabzetsajRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/menus/marleys': {
@@ -5632,6 +5652,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   InvoicemakerPrivacyRoute: InvoicemakerPrivacyRoute,
   InvoicemakerSupportRoute: InvoicemakerSupportRoute,
+  MenusKhabzetsajRoute: MenusKhabzetsajRoute,
   MenusMarleysRoute: MenusMarleysRoute,
   QuotationsKhadamatiRoute: QuotationsKhadamatiRoute,
   WorkDataInsightsRoute: WorkDataInsightsRoute,
