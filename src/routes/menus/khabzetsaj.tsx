@@ -49,6 +49,7 @@ type Product = {
   descriptionAr?: string;
   price: number;
   image?: string;
+  imageBg?: string;
   options?: ProductOption[];
 };
 
@@ -96,10 +97,16 @@ const categories: Category[] = [
       { name: "Keshek Baladi", ar: "كشك بلدي", price: 200000 },
       { name: "Keshek & Cheese", ar: "كشك وجبنة", price: 200000 },
       { name: "Akkawi Cheese", ar: "جبنة عكاوي", price: 200000 },
-      { name: "Akkawi (Al-Nakka)", ar: "جبنة عكاوي الناقة", price: 300000 },
+      { name: "Akkawi Cheese (Al-Nakka)", ar: "جبنة عكاوي الناقة", price: 300000 },
       { name: "Zaatar & Cheese", ar: "زعتر وجبنة", price: 200000 },
       { name: "Kashkaval Cheese", ar: "قشقوان", price: 300000 },
-      { name: "3 Cheese", ar: "٣ أجبان", price: 300000 },
+      {
+        name: "3 Cheese",
+        ar: "٣ أجبان",
+        description: "Akkawi - Mozzarella - Kashkaval",
+        descriptionAr: "عكاوي - موزاريلا - قشقوان",
+        price: 300000,
+      },
     ],
   },
   {
@@ -110,16 +117,17 @@ const categories: Category[] = [
       {
         name: "Bulghari Mix",
         ar: "خلطة بلغاري",
-        description: "mohamara paste - mozzarella - mint - cucumber",
-        descriptionAr: "صوص محمرة – موزاريلا – خيار – نعنع",
+        description: "Bulghari cheese - mohamara paste - mozzarella - mint - cucumber",
+        descriptionAr: "جبنة البلغاري – صوص محمرة – موزاريلا – خيار – نعنع",
         price: 300000,
         image: "/images/menus/khabzet-saj/bulghari.webp",
+        imageBg: "#f4f9ec",
       },
       {
         name: "Mortadella & Cheese",
         ar: "مرتديلا وجبنة",
-        description: "mayo mustard sauce - pickles - tomato - lettuce - corn",
-        descriptionAr: "مايو ماستيرد صوص – كبيس – بندورة – خس – ذرة",
+        description: "mayo mustard sauce - pickles - lettuce - corn",
+        descriptionAr: "مايو ماستيرد صوص – كبيس – خس – ذرة",
         price: 300000,
       },
       {
@@ -671,7 +679,10 @@ function ProductCard({
     <article className="overflow-hidden rounded-2xl border border-[#3d3d3d]/10 bg-white shadow-sm">
       <div className="flex items-stretch">
         {product.image ? (
-          <div className="flex w-28 shrink-0 items-center justify-center bg-[#97c11f]/10 sm:w-36">
+          <div
+            className="flex w-28 shrink-0 items-center justify-center bg-[#97c11f]/10 sm:w-36"
+            style={product.imageBg ? { backgroundColor: product.imageBg } : undefined}
+          >
             <img
               src={product.image}
               alt={product.name}
