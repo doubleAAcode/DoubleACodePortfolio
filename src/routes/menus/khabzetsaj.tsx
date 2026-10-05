@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Minus, Phone, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 const WHATSAPP_NUMBER = "96176984099";
@@ -659,6 +659,21 @@ function ProductCard({
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [justAdded, setJustAdded] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setZoomed(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [zoomed]);
 
   const selected = (product.options ?? []).filter((option) => selectedIds.includes(option.id));
   const unitPrice = product.price + selected.reduce((sum, option) => sum + option.price, 0);
@@ -683,11 +698,44 @@ function ProductCard({
             className="flex w-28 shrink-0 items-center justify-center bg-[#97c11f]/10 sm:w-36"
             style={product.imageBg ? { backgroundColor: product.imageBg } : undefined}
           >
+            <button
+              type="button"
+              onClick={() => setZoomed(true)}
+              aria-label={`Enlarge photo of ${product.name}`}
+              className="flex h-full w-full cursor-zoom-in items-center justify-center"
+            >
+              <img
+                src={product.image}
+                alt={product.name}
+                loading="lazy"
+                className="h-full max-h-36 w-full object-contain p-1"
+              />
+            </button>
+          </div>
+        ) : null}
+
+        {zoomed && product.image ? (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={product.name}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setZoomed(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setZoomed(false)}
+              aria-label="Close photo"
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/25"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
             <img
               src={product.image}
               alt={product.name}
-              loading="lazy"
-              className="h-full max-h-36 w-full object-contain p-1"
+              className="max-h-[85vh] w-full max-w-lg rounded-2xl object-contain shadow-2xl"
+              style={product.imageBg ? { backgroundColor: product.imageBg } : undefined}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ) : null}
