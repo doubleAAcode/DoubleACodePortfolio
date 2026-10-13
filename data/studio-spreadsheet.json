@@ -184,8 +184,8 @@
         "date": "2026-10-13",
         "projectId": "P005",
         "amount": 200,
-        "collectedBy": "",
-        "paymentMethod": "",
+        "collectedBy": "Hussein",
+        "paymentMethod": "whish",
         "notes": ""
       }
     ],
@@ -374,5 +374,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-13T11:30:45.652Z"
+  "updatedAt": "2026-10-13T11:30:50.722Z"
 }
