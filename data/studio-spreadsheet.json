@@ -377,11 +377,11 @@
         "date": "2026-10-13",
         "projectId": "P001",
         "paidTo": "Hussein",
-        "amount": 0,
+        "amount": 100,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-10-13T11:31:04.622Z"
+  "updatedAt": "2026-10-13T11:31:10.036Z"
 }
