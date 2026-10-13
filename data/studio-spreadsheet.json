@@ -384,13 +384,13 @@
       {
         "id": "ab34e14b-5091-4210-b874-a82885b0976f",
         "date": "2026-10-13",
-        "projectId": "P001",
-        "paidTo": "Hussein",
-        "amount": 0,
+        "projectId": "P005",
+        "paidTo": "Saeed",
+        "amount": 100,
         "payoutType": "Mixed",
         "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-10-13T11:31:18.048Z"
+  "updatedAt": "2026-10-13T11:31:22.341Z"
 }
