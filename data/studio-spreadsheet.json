@@ -182,7 +182,7 @@
       {
         "id": "58aeebae-8260-485e-be80-e828c298a268",
         "date": "2026-10-13",
-        "projectId": "P001",
+        "projectId": "P006",
         "amount": 0,
         "collectedBy": "",
         "paymentMethod": "",
@@ -374,5 +374,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-13T11:30:35.306Z"
+  "updatedAt": "2026-10-13T11:30:39.684Z"
 }
