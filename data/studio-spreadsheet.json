@@ -398,8 +398,26 @@
         "amount": 100,
         "payoutType": "Mixed",
         "notes": ""
+      },
+      {
+        "id": "ad58c5f2-72c0-4fff-ad18-2261532b53c9",
+        "date": "2026-10-15",
+        "projectId": "P001",
+        "paidTo": "Hussein",
+        "amount": 0,
+        "payoutType": "Mixed",
+        "notes": ""
+      },
+      {
+        "id": "5cc2d90c-4bc2-4a06-841a-bb6b7588fdd5",
+        "date": "2026-10-15",
+        "projectId": "P001",
+        "paidTo": "Hussein",
+        "amount": 0,
+        "payoutType": "Mixed",
+        "notes": ""
       }
     ]
   },
-  "updatedAt": "2026-10-15T13:15:25.721Z"
+  "updatedAt": "2026-10-15T13:15:34.615Z"
 }
