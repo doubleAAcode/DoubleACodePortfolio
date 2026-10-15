@@ -69,7 +69,7 @@
         "name": "Arim Italy",
         "client": "Arim",
         "totalPrice": 550,
-        "status": "In Progress",
+        "status": "Completed",
         "finder": "Third Party",
         "finderFeeMode": "fixed",
         "finderFeeValue": 100,
@@ -419,5 +419,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-15T13:15:45.339Z"
+  "updatedAt": "2026-10-15T13:15:57.013Z"
 }
