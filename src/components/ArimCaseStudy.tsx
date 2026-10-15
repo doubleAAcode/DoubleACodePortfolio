@@ -40,7 +40,6 @@ const stack = [
   "TanStack Query",
   "Tailwind CSS v4",
   "Neon Postgres",
-  "Vercel",
 ];
 
 const features = [
@@ -127,7 +126,7 @@ const adminAreas = [
 
 const engineering = [
   "Prices come from the database at checkout, so a customer cannot change what they pay from the browser.",
-  "Photos and videos upload straight from the browser to Vercel Blob, so large phone files avoid serverless request limits.",
+  "Photos and videos upload straight from the browser to cloud storage, so large phone files avoid serverless request limits.",
   "The admin password is hashed with scrypt, and sessions use a signed, httpOnly cookie.",
   "Video still frames are generated in the browser at upload time, keeping product pages light.",
 ];
@@ -447,7 +446,7 @@ export function ArimCaseStudy() {
                 "Catalogue with filters, photos, and product video",
                 "Order request checkout with WhatsApp confirmation",
                 "Owner admin for products, orders, and homepage",
-                "Neon Postgres and Vercel Blob backend, deployed on Vercel",
+                "Neon Postgres database and cloud image storage backend",
               ].map((item) => (
                 <div
                   key={item}

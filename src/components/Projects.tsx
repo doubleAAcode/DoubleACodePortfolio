@@ -124,7 +124,7 @@ const projects: Project[] = [
       { label: "Service browsing", value: "Packages" },
       { label: "Live site", value: "SEO" },
     ],
-    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Web3Forms", "Vercel"],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Web3Forms"],
     href: "/work/detailing-lab",
     hue: {
       from: "oklch(0.76 0.2 135 / 0.42)",
@@ -145,7 +145,7 @@ const projects: Project[] = [
       { label: "Project browsing", value: "Gallery" },
       { label: "Content control", value: "Admin" },
     ],
-    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Admin Panel", "Vercel"],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Admin Panel"],
     href: "/work/koubar-group",
     hue: {
       from: "oklch(0.72 0.16 72 / 0.42)",
@@ -160,13 +160,13 @@ const projects: Project[] = [
     category: "Luxury Ecommerce Boutique",
     tagline: "Italian silk, in English and Arabic.",
     description:
-      "A bilingual storefront for an Italian silk scarf label, with photo and video product pages, right-to-left Arabic, order requests ready to confirm on WhatsApp, and an owner admin panel backed by Neon Postgres and Vercel Blob.",
+      "A bilingual storefront for an Italian silk scarf label, with photo and video product pages, right-to-left Arabic, order requests ready to confirm on WhatsApp, and an owner admin panel backed by Neon Postgres and cloud image storage.",
     metrics: [
       { label: "English + Arabic", value: "Bilingual" },
       { label: "Owner-managed shop", value: "Admin" },
       { label: "Order requests", value: "WhatsApp" },
     ],
-    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Neon Postgres", "Vercel Blob"],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Neon Postgres"],
     href: "/work/arim",
     hue: {
       from: "oklch(0.78 0.1 10 / 0.42)",

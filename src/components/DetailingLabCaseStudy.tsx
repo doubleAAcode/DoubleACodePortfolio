@@ -19,7 +19,7 @@ const images = {
   siteContact: "/images/case-studies/detailing-lab/site-contact.png",
 };
 
-const stack = ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Web3Forms", "Vercel"];
+const stack = ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Web3Forms"];
 
 const features = [
   {

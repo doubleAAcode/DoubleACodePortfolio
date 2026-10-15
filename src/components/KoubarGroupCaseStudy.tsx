@@ -23,7 +23,7 @@ const images = {
   admin: "/images/case-studies/koubar-group/admin.png",
 };
 
-const stack = ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Admin Panel", "Vercel"];
+const stack = ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Admin Panel"];
 
 const features = [
   {
