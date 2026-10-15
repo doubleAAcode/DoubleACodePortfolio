@@ -193,7 +193,7 @@
         "date": "2026-10-15",
         "projectId": "P005",
         "amount": 150,
-        "collectedBy": "",
+        "collectedBy": "Saeed",
         "paymentMethod": "",
         "notes": ""
       }
@@ -401,5 +401,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-15T13:15:20.365Z"
+  "updatedAt": "2026-10-15T13:15:22.512Z"
 }
