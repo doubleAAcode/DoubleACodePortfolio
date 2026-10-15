@@ -14,8 +14,10 @@ import {
   WalletCards,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ClientsVault } from "@/components/studio/ClientsVault";
 import type {
   ClientPayment,
+  EncryptedVault,
   ExpensePayer,
   Finder,
   FinderFeeMode,
@@ -44,7 +46,15 @@ export const Route = createFileRoute("/spreadsheet")({
 });
 
 type SaveState = "idle" | "loading" | "saving" | "saved" | "error";
-type ActiveTab = "dashboard" | "projects" | "payments" | "expenses" | "payouts" | "balances" | "settings";
+type ActiveTab =
+  | "dashboard"
+  | "projects"
+  | "payments"
+  | "expenses"
+  | "payouts"
+  | "balances"
+  | "clients"
+  | "settings";
 type GitHubSheetConfig = {
   owner: string;
   repo: string;
@@ -524,6 +534,7 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
             ["expenses", "Expenses"],
             ["payouts", "Payouts"],
             ["balances", "Balances"],
+            ["clients", "Clients"],
             ["settings", "Settings"],
           ].map(([tab, label]) => (
             <button
@@ -572,6 +583,13 @@ function SpreadsheetApp({ onLock }: { onLock: () => void }) {
           />
         ) : null}
         {activeTab === "balances" ? <BalancesView model={model} /> : null}
+        <div hidden={activeTab !== "clients"}>
+          <ClientsVault
+            vault={data.clientVault}
+            knownClients={knownClientNames(data)}
+            onVaultChange={(clientVault) => updateData((current) => ({ ...current, clientVault }))}
+          />
+        </div>
         {activeTab === "settings" ? (
           <SettingsView
             settings={data.settings}
@@ -1586,6 +1604,7 @@ function normalizeSheet(document: SpreadsheetDocument): StudioSpreadsheetData {
       clientPayments: (document.data.clientPayments ?? []).map(normalizePayment),
       expenses: (document.data.expenses ?? []).map(normalizeExpense),
       payouts: (document.data.payouts ?? []).map(normalizePayout),
+      ...(isEncryptedVault(document.data.clientVault) ? { clientVault: document.data.clientVault } : {}),
     };
   }
 
@@ -1594,6 +1613,22 @@ function normalizeSheet(document: SpreadsheetDocument): StudioSpreadsheetData {
   }
 
   return EMPTY_SHEET;
+}
+
+function isEncryptedVault(value: unknown): value is EncryptedVault {
+  const vault = value as Partial<EncryptedVault> | undefined;
+  return Boolean(
+    vault &&
+      vault.v === 1 &&
+      typeof vault.salt === "string" &&
+      typeof vault.iv === "string" &&
+      typeof vault.data === "string" &&
+      typeof vault.iterations === "number",
+  );
+}
+
+function knownClientNames(data: StudioSpreadsheetData) {
+  return Array.from(new Set(data.projects.map((project) => project.client.trim()).filter(Boolean)));
 }
 
 function migrateLegacyRows(rows: LegacyRow[]): StudioSpreadsheetData {

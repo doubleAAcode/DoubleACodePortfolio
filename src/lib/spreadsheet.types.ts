@@ -56,6 +56,54 @@ export type PartnerPayout = {
   notes: string;
 };
 
+export type ClientLogin = {
+  id: string;
+  label: string;
+  url: string;
+  username: string;
+  password: string;
+  notes: string;
+};
+
+export type ClientRecord = {
+  id: string;
+  name: string;
+  website: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  hostingProvider: string;
+  hostingDetails: string;
+  hostingStarted: string;
+  hostingRenewal: string;
+  hostingCost: string;
+  domainName: string;
+  domainRegistrar: string;
+  domainStarted: string;
+  domainRenewal: string;
+  domainCost: string;
+  mailProvider: string;
+  mailStarted: string;
+  mailRenewal: string;
+  mailCost: string;
+  logins: ClientLogin[];
+  notes: string;
+};
+
+export type ClientsVaultContent = {
+  version: 1;
+  clients: ClientRecord[];
+};
+
+// Client logins are saved only as ciphertext (see src/lib/client-vault.ts).
+export type EncryptedVault = {
+  v: 1;
+  salt: string;
+  iterations: number;
+  iv: string;
+  data: string;
+};
+
 export type StudioSpreadsheetData = {
   version: 2;
   settings: StudioSettings;
@@ -63,6 +111,7 @@ export type StudioSpreadsheetData = {
   clientPayments: ClientPayment[];
   expenses: ProjectExpense[];
   payouts: PartnerPayout[];
+  clientVault?: EncryptedVault;
 };
 
 export type SpreadsheetDocument = {
