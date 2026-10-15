@@ -403,8 +403,8 @@
         "id": "ad58c5f2-72c0-4fff-ad18-2261532b53c9",
         "date": "2026-10-15",
         "projectId": "P001",
-        "paidTo": "Hussein",
-        "amount": 0,
+        "paidTo": "Saeed",
+        "amount": 75,
         "payoutType": "Mixed",
         "notes": ""
       },
@@ -419,5 +419,5 @@
       }
     ]
   },
-  "updatedAt": "2026-10-15T13:15:34.615Z"
+  "updatedAt": "2026-10-15T13:15:38.582Z"
 }
