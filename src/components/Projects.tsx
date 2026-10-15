@@ -154,6 +154,27 @@ const projects: Project[] = [
     },
     Mockup: KoubarGroupMockup,
   },
+  {
+    id: "07",
+    name: "ARIM",
+    category: "Luxury Ecommerce Boutique",
+    tagline: "Italian silk, in English and Arabic.",
+    description:
+      "A bilingual storefront for an Italian silk scarf label, with photo and video product pages, right-to-left Arabic, order requests ready to confirm on WhatsApp, and an owner admin panel backed by Neon Postgres and Vercel Blob.",
+    metrics: [
+      { label: "English + Arabic", value: "Bilingual" },
+      { label: "Owner-managed shop", value: "Admin" },
+      { label: "Order requests", value: "WhatsApp" },
+    ],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Neon Postgres", "Vercel Blob"],
+    href: "/work/arim",
+    hue: {
+      from: "oklch(0.78 0.1 10 / 0.42)",
+      via: "oklch(0.55 0.06 40 / 0.28)",
+      to: "oklch(0.88 0.06 20 / 0.16)",
+    },
+    Mockup: ArimMockup,
+  },
 ];
 
 function clampProjectIndex(index: number, total: number) {
@@ -1251,6 +1272,57 @@ function KoubarGroupMockup() {
       <FloatPill className="left-2 bottom-8">
         <div className="text-muted-foreground">Showroom</div>
         <div className="font-display text-sm font-semibold">Interiors + admin</div>
+      </FloatPill>
+    </div>
+  );
+}
+
+function ArimMockup() {
+  return (
+    <div className="relative h-full w-full p-5 md:p-8">
+      <div className="absolute left-3 top-7 w-[78%] overflow-hidden rounded-2xl border border-rose-100/15 bg-[#110b0a] shadow-2xl md:left-4">
+        <div className="flex items-center gap-1.5 border-b border-rose-100/10 bg-[#171010] px-3 py-2">
+          <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+          <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+          <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+          <span className="ml-auto rounded bg-black/40 px-2 py-0.5 text-[7px] text-rose-100/45 ring-1 ring-rose-100/10">
+            arimitaly.com
+          </span>
+        </div>
+        <img
+          src="/images/case-studies/arim/hero.webp"
+          alt="ARIM website homepage"
+          className="block aspect-[16/9] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div className="absolute bottom-5 right-4 w-[26%] rotate-[6deg] rounded-[1.5rem] border border-rose-100/20 bg-[#110b0a] p-1.5 shadow-2xl">
+        <div className="relative overflow-hidden rounded-[1.15rem] bg-white">
+          <img
+            src="/images/case-studies/arim/m-ar-hero.webp"
+            alt="ARIM Arabic homepage on a phone"
+            className="block aspect-[390/844] w-full object-cover object-top"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-14 w-[38%] overflow-hidden rounded-xl border border-rose-100/15 bg-[#110b0a] shadow-2xl">
+        <img
+          src="/images/case-studies/arim/product.webp"
+          alt="ARIM product page"
+          className="block aspect-[16/10] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <FloatPill className="left-2 bottom-8">
+        <div className="text-muted-foreground">Storefront</div>
+        <div className="font-display text-sm font-semibold">English + Arabic</div>
       </FloatPill>
     </div>
   );

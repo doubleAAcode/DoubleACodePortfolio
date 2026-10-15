@@ -18,7 +18,7 @@ export function Nav() {
     >
       <nav className="glass pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-full px-3 py-2">
         <a href="/" className="flex items-center gap-2.5 pl-1.5">
-          <LogoMark className="h-8 w-8" />
+          <LogoMark className="h-8 w-8 translate-y-[3.5px]" />
           <span className="font-display text-sm font-semibold tracking-[0.25em] text-gradient-brand">
             AA CODE
           </span>

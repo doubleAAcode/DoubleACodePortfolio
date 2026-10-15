@@ -59,6 +59,7 @@ import { Route as StoresPavoneRouteImport } from './routes/stores/pavone'
 import { Route as WorkDataInsightsRouteImport } from './routes/work/data-insights'
 import { Route as WorkDetailingLabRouteImport } from './routes/work/detailing-lab'
 import { Route as WorkKoubarGroupRouteImport } from './routes/work/koubar-group'
+import { Route as WorkArimRouteImport } from './routes/work/arim'
 import { Route as WorkSnapgoRouteImport } from './routes/work/snapgo'
 import { Route as WorkTijaratiProRouteImport } from './routes/work/tijarati-pro'
 import { Route as WorkUno400RouteImport } from './routes/work/uno400'
@@ -502,6 +503,11 @@ const WorkDetailingLabRoute = WorkDetailingLabRouteImport.update({
 const WorkKoubarGroupRoute = WorkKoubarGroupRouteImport.update({
   id: '/work/koubar-group',
   path: '/work/koubar-group',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkArimRoute = WorkArimRouteImport.update({
+  id: '/work/arim',
+  path: '/work/arim',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkSnapgoRoute = WorkSnapgoRouteImport.update({
@@ -1638,6 +1644,7 @@ export interface FileRoutesByFullPath {
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
   '/work/koubar-group': typeof WorkKoubarGroupRoute
+  '/work/arim': typeof WorkArimRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -1874,6 +1881,7 @@ export interface FileRoutesByTo {
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
   '/work/koubar-group': typeof WorkKoubarGroupRoute
+  '/work/arim': typeof WorkArimRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -2115,6 +2123,7 @@ export interface FileRoutesById {
   '/work/data-insights': typeof WorkDataInsightsRoute
   '/work/detailing-lab': typeof WorkDetailingLabRoute
   '/work/koubar-group': typeof WorkKoubarGroupRoute
+  '/work/arim': typeof WorkArimRoute
   '/work/snapgo': typeof WorkSnapgoRoute
   '/work/tijarati-pro': typeof WorkTijaratiProRoute
   '/work/uno400': typeof WorkUno400Route
@@ -2363,6 +2372,7 @@ export interface FileRouteTypes {
     | '/work/data-insights'
     | '/work/detailing-lab'
     | '/work/koubar-group'
+    | '/work/arim'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -2599,6 +2609,7 @@ export interface FileRouteTypes {
     | '/work/data-insights'
     | '/work/detailing-lab'
     | '/work/koubar-group'
+    | '/work/arim'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -2839,6 +2850,7 @@ export interface FileRouteTypes {
     | '/work/data-insights'
     | '/work/detailing-lab'
     | '/work/koubar-group'
+    | '/work/arim'
     | '/work/snapgo'
     | '/work/tijarati-pro'
     | '/work/uno400'
@@ -3063,6 +3075,7 @@ export interface RootRouteChildren {
   WorkDataInsightsRoute: typeof WorkDataInsightsRoute
   WorkDetailingLabRoute: typeof WorkDetailingLabRoute
   WorkKoubarGroupRoute: typeof WorkKoubarGroupRoute
+  WorkArimRoute: typeof WorkArimRoute
   WorkSnapgoRoute: typeof WorkSnapgoRoute
   WorkTijaratiProRoute: typeof WorkTijaratiProRoute
   WorkUno400Route: typeof WorkUno400Route
@@ -3491,6 +3504,13 @@ declare module '@tanstack/react-router' {
       path: '/work/koubar-group'
       fullPath: '/work/koubar-group'
       preLoaderRoute: typeof WorkKoubarGroupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/arim': {
+      id: '/work/arim'
+      path: '/work/arim'
+      fullPath: '/work/arim'
+      preLoaderRoute: typeof WorkArimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/work/snapgo': {
@@ -5658,6 +5678,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkDataInsightsRoute: WorkDataInsightsRoute,
   WorkDetailingLabRoute: WorkDetailingLabRoute,
   WorkKoubarGroupRoute: WorkKoubarGroupRoute,
+  WorkArimRoute: WorkArimRoute,
   WorkSnapgoRoute: WorkSnapgoRoute,
   WorkTijaratiProRoute: WorkTijaratiProRoute,
   WorkUno400Route: WorkUno400Route,
