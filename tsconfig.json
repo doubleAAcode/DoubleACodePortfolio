@@ -1,5 +1,19 @@
 {
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
+  "exclude": [
+    "src/features/connect/**",
+    "src/routes/connect.*",
+    "src/routes/connect/**",
+    "src/routes/api/connect/**",
+    "src/routes/api.connect.*",
+    "src/routes/api.wa-admin.*",
+    "src/routes/api.wa-dashboard*",
+    "src/routes/api.whatsapp.*",
+    "src/routes/admin.*",
+    "src/routes/dashboard.*",
+    "src/routes/dashboard-2.*",
+    "src/routes/logsWABot.tsx"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
