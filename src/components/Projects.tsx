@@ -1,18 +1,15 @@
 import {
-  AnimatePresence,
   motion,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
   MotionValue,
 } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { HexFrame } from "./Logo";
 import { SectionLabel } from "./Journey";
-
 
 type Project = {
   id: string;
@@ -30,48 +27,6 @@ type Project = {
 const projects: Project[] = [
   {
     id: "01",
-    name: "snapGo tech",
-    category: "Ecommerce Catalog",
-    tagline: "Catalog browsing with WhatsApp checkout.",
-    description:
-      "An electronics catalog with product browsing, cart management, WhatsApp ordering, and a Supabase admin panel for products, categories, banners, stock, and pricing.",
-    metrics: [
-      { label: "Responsive catalog", value: "Storefront" },
-      { label: "WhatsApp orders", value: "Checkout" },
-      { label: "Inventory control", value: "Admin" },
-    ],
-    stack: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Redux Toolkit", "Supabase"],
-    href: "/work/snapgo",
-    hue: {
-      from: "oklch(0.58 0.22 265 / 0.55)",
-      via: "oklch(0.68 0.18 230 / 0.35)",
-      to: "oklch(0.78 0.16 200 / 0.2)",
-    },
-    Mockup: SnapGoMockup,
-  },
-  {
-    id: "02",
-    name: "Data Insights Workspace",
-    category: "AI Analytics Interface",
-    tagline: "A clear UI for advanced AI analysis.",
-    description:
-      "A web and desktop interface for a client-provided Python analytics backend, covering dataset upload, context review, guided analysis routes, API-connected workflows, and readable result presentation.",
-    metrics: [
-      { label: "Dataset onboarding", value: "Upload" },
-      { label: "Guided workspaces", value: "Analysis" },
-      { label: "Backend bridge", value: "APIs" },
-    ],
-    stack: ["React", "TypeScript", "Vite", "Tailwind CSS", "REST APIs", "Electron"],
-    href: "/work/data-insights",
-    hue: {
-      from: "oklch(0.58 0.16 185 / 0.5)",
-      via: "oklch(0.62 0.15 215 / 0.32)",
-      to: "oklch(0.78 0.13 165 / 0.2)",
-    },
-    Mockup: DataInsightsMockup,
-  },
-  {
-    id: "03",
     name: "Tijarati Pro",
     category: "Mobile Business Platform",
     tagline: "Inventory, invoicing, and operations in one app.",
@@ -92,28 +47,7 @@ const projects: Project[] = [
     Mockup: TijaratiMockup,
   },
   {
-    id: "04",
-    name: "Uno400",
-    category: "Multiplayer Card Game",
-    tagline: "Real-time card play without a custom server.",
-    description:
-      "A SwiftUI multiplayer card game using Firebase Realtime Database, host-device arbitration, optimistic UI, event-sourced repair, and transparent AI bot players.",
-    metrics: [
-      { label: "Realtime sync", value: "Firebase" },
-      { label: "Architecture", value: "MVVM" },
-      { label: "Game arbiter", value: "Host" },
-    ],
-    stack: ["Swift", "SwiftUI", "Firebase", "MVVM", "Combine", "XCTest"],
-    href: "/work/uno400",
-    hue: {
-      from: "oklch(0.66 0.18 150 / 0.5)",
-      via: "oklch(0.64 0.14 205 / 0.32)",
-      to: "oklch(0.82 0.16 92 / 0.18)",
-    },
-    Mockup: Uno400Mockup,
-  },
-  {
-    id: "05",
+    id: "02",
     name: "The Detailing Lab",
     category: "Automotive Services",
     tagline: "Premium mobile detailing, packaged for conversion.",
@@ -134,7 +68,28 @@ const projects: Project[] = [
     Mockup: DetailingLabMockup,
   },
   {
-    id: "06",
+    id: "03",
+    name: "ARIM",
+    category: "Luxury Ecommerce Boutique",
+    tagline: "Italian silk, in English and Arabic.",
+    description:
+      "A bilingual storefront for an Italian silk scarf label, with photo and video product pages, right-to-left Arabic, order requests ready to confirm on WhatsApp, and an owner admin panel backed by Neon Postgres and cloud image storage.",
+    metrics: [
+      { label: "English + Arabic", value: "Bilingual" },
+      { label: "Owner-managed shop", value: "Admin" },
+      { label: "Order requests", value: "WhatsApp" },
+    ],
+    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Neon Postgres"],
+    href: "/work/arim",
+    hue: {
+      from: "oklch(0.78 0.1 10 / 0.42)",
+      via: "oklch(0.55 0.06 40 / 0.28)",
+      to: "oklch(0.88 0.06 20 / 0.16)",
+    },
+    Mockup: ArimMockup,
+  },
+  {
+    id: "04",
     name: "Koubar Group",
     category: "Interior Portfolio Website",
     tagline: "A luxury digital showroom for home interiors.",
@@ -155,763 +110,296 @@ const projects: Project[] = [
     Mockup: KoubarGroupMockup,
   },
   {
-    id: "07",
-    name: "ARIM",
-    category: "Luxury Ecommerce Boutique",
-    tagline: "Italian silk, in English and Arabic.",
+    id: "05",
+    name: "snapGo tech",
+    category: "Ecommerce Catalog",
+    tagline: "Catalog browsing with WhatsApp checkout.",
     description:
-      "A bilingual storefront for an Italian silk scarf label, with photo and video product pages, right-to-left Arabic, order requests ready to confirm on WhatsApp, and an owner admin panel backed by Neon Postgres and cloud image storage.",
+      "An electronics catalog with product browsing, cart management, WhatsApp ordering, and a Supabase admin panel for products, categories, banners, stock, and pricing.",
     metrics: [
-      { label: "English + Arabic", value: "Bilingual" },
-      { label: "Owner-managed shop", value: "Admin" },
-      { label: "Order requests", value: "WhatsApp" },
+      { label: "Responsive catalog", value: "Storefront" },
+      { label: "WhatsApp orders", value: "Checkout" },
+      { label: "Inventory control", value: "Admin" },
     ],
-    stack: ["React", "TypeScript", "TanStack Start", "Tailwind CSS", "Neon Postgres"],
-    href: "/work/arim",
+    stack: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Redux Toolkit", "Supabase"],
+    href: "/work/snapgo",
     hue: {
-      from: "oklch(0.78 0.1 10 / 0.42)",
-      via: "oklch(0.55 0.06 40 / 0.28)",
-      to: "oklch(0.88 0.06 20 / 0.16)",
+      from: "oklch(0.58 0.22 265 / 0.55)",
+      via: "oklch(0.68 0.18 230 / 0.35)",
+      to: "oklch(0.78 0.16 200 / 0.2)",
     },
-    Mockup: ArimMockup,
+    Mockup: SnapGoMockup,
+  },
+  {
+    id: "06",
+    name: "Data Insights Workspace",
+    category: "AI Analytics Interface",
+    tagline: "A clear UI for advanced AI analysis.",
+    description:
+      "A web and desktop interface for a client-provided Python analytics backend, covering dataset upload, context review, guided analysis routes, API-connected workflows, and readable result presentation.",
+    metrics: [
+      { label: "Dataset onboarding", value: "Upload" },
+      { label: "Guided workspaces", value: "Analysis" },
+      { label: "Backend bridge", value: "APIs" },
+    ],
+    stack: ["React", "TypeScript", "Vite", "Tailwind CSS", "REST APIs", "Electron"],
+    href: "/work/data-insights",
+    hue: {
+      from: "oklch(0.58 0.16 185 / 0.5)",
+      via: "oklch(0.62 0.15 215 / 0.32)",
+      to: "oklch(0.78 0.13 165 / 0.2)",
+    },
+    Mockup: DataInsightsMockup,
+  },
+  {
+    id: "07",
+    name: "Uno400",
+    category: "Multiplayer Card Game",
+    tagline: "Real-time card play without a custom server.",
+    description:
+      "A SwiftUI multiplayer card game using Firebase Realtime Database, host-device arbitration, optimistic UI, event-sourced repair, and transparent AI bot players.",
+    metrics: [
+      { label: "Realtime sync", value: "Firebase" },
+      { label: "Architecture", value: "MVVM" },
+      { label: "Game arbiter", value: "Host" },
+    ],
+    stack: ["Swift", "SwiftUI", "Firebase", "MVVM", "Combine", "XCTest"],
+    href: "/work/uno400",
+    hue: {
+      from: "oklch(0.66 0.18 150 / 0.5)",
+      via: "oklch(0.64 0.14 205 / 0.32)",
+      to: "oklch(0.82 0.16 92 / 0.18)",
+    },
+    Mockup: Uno400Mockup,
   },
 ];
 
-function clampProjectIndex(index: number, total: number) {
-  if (total <= 0) return 0;
-  return Math.min(total - 1, Math.max(0, index));
+function useMinWidth(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setMatches(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [query]);
+  return matches;
 }
 
-function getProjectIndexFromProgress(progress: number, total: number) {
-  if (total <= 1) return 0;
-  const scaled = Math.min(total - 0.001, Math.max(0, progress * total));
-  return clampProjectIndex(Math.floor(scaled), total);
-}
-
-function getProgressForProjectIndex(index: number, total: number) {
-  if (total <= 1) return 0;
-  return Math.min(1, (clampProjectIndex(index, total) + 0.5) / total);
-}
-
+/**
+ * Work section: one card per project. On desktop each card sticks to the top
+ * while the next one slides up over it (the covered card scales back and dims).
+ * On small screens or with reduced motion it is a plain vertical list.
+ */
 export function Projects() {
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const activeRef = useRef(0);
-  const shouldAnchorAfterViewChange = useRef(false);
-  const isAnchoringAfterViewChange = useRef(false);
-  const pendingAnimatedIndexRef = useRef(0);
+  const isDesktop = useMinWidth("(min-width: 1024px)");
+  const stacked = isDesktop && !prefersReducedMotion;
+  const total = projects.length;
+  const [active, setActive] = useState(0);
+
   const { scrollYProgress } = useScroll({
-    target: ref,
+    target: containerRef,
     offset: ["start start", "end end"],
   });
-  const visualProgress = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 32,
-    mass: 0.45,
-    restDelta: 0.001,
+
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    const next = Math.min(total - 1, Math.max(0, Math.round(v * (total - 1))));
+    setActive((current) => (current === next ? current : next));
   });
 
-  const total = projects.length;
-  const animatedHeightVh = Math.max(360, 100 + total * 56);
-  const [mode, setMode] = useState<"animated" | "list">(() => {
-    if (typeof window === "undefined") return "list";
-    if (window.matchMedia("(max-width: 767px)").matches) return "list";
-    const saved = window.sessionStorage.getItem("aa-work-view") as "animated" | "list" | null;
-    if (saved) return saved;
-    return "animated";
-  });
-  const modeRef = useRef(mode);
-
-  const activeMV = useTransform(visualProgress, (v) => getProjectIndexFromProgress(v, total));
-  const [active, setActive] = useState(0);
-  const setActiveProject = useCallback(
-    (index: number) => {
-      const clamped = clampProjectIndex(index, total);
-      activeRef.current = clamped;
-      setActive((current) => (current === clamped ? current : clamped));
-    },
-    [total],
-  );
-
-  useEffect(() => {
-    if (prefersReducedMotion && modeRef.current === "animated") {
-      modeRef.current = "list";
-      setMode("list");
-    }
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
-
-  useMotionValueEvent(activeMV, "change", (v) => {
-    if (modeRef.current !== "animated" || isAnchoringAfterViewChange.current) return;
-
-    setActiveProject(v as number);
-  });
-  const setView = (m: "animated" | "list") => {
-    if (m === mode) return;
-    const pendingIndex = clampProjectIndex(activeRef.current, total);
-    pendingAnimatedIndexRef.current = pendingIndex;
-    shouldAnchorAfterViewChange.current = true;
-    modeRef.current = m;
-    if (m === "animated") {
-      isAnchoringAfterViewChange.current = true;
-      setActiveProject(pendingIndex);
-    }
-    setMode(m);
-    try {
-      window.sessionStorage.setItem("aa-work-view", m);
-    } catch {
-      // Session storage can be unavailable in private or restricted browsing modes.
-    }
+  const jumpTo = (index: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: top + index * window.innerHeight, behavior: "smooth" });
   };
 
-  useEffect(() => {
-    if (!shouldAnchorAfterViewChange.current) return;
-
-    shouldAnchorAfterViewChange.current = false;
-    const frame = window.requestAnimationFrame(() => {
-      const section = document.getElementById("work");
-      if (!section) return;
-
-      const top = section.getBoundingClientRect().top + window.scrollY;
-      if (mode === "animated") {
-        const maxScroll = Math.max(0, section.offsetHeight - window.innerHeight);
-        const progress = getProgressForProjectIndex(pendingAnimatedIndexRef.current, total);
-        window.scrollTo({ top: top + maxScroll * progress, behavior: "auto" });
-        window.requestAnimationFrame(() => {
-          setActiveProject(pendingAnimatedIndexRef.current);
-          isAnchoringAfterViewChange.current = false;
-        });
-        return;
-      }
-
-      window.scrollTo({ top, behavior: "auto" });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [mode, setActiveProject, total]);
-
-  if (mode === "list") {
-    return (
-      <ProjectsCardCarousel
-        mode={mode}
-        setView={setView}
-        initialIndex={active}
-        onIndexChange={(index) => {
-          setActiveProject(index);
-        }}
-      />
-    );
-  }
-
   return (
-    <section id="work" ref={ref} className="relative" style={{ height: `${animatedHeightVh}vh` }}>
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Section frame */}
-        <div className="pointer-events-none absolute left-6 top-8 z-40 md:left-10">
+    <section id="work" className="relative">
+      <div className="px-6 pb-12 pt-32 md:px-10">
+        <div className="mx-auto max-w-7xl">
           <SectionLabel>03 / Selected Work</SectionLabel>
+          <h2 className="mt-4 font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+            Selected <span className="text-gradient-brand">work</span>
+          </h2>
+          <p className="mt-4 max-w-xl text-muted-foreground">
+            Real products in production. Scroll to move through each one.
+          </p>
         </div>
-        <div className="pointer-events-auto absolute right-6 top-8 z-[120] flex items-center gap-3 font-mono text-xs text-muted-foreground md:right-10">
-          <ViewToggle mode={mode} onChange={setView} />
-          <ProgressIndicator activeIndex={active} total={total} />
-        </div>
+      </div>
 
+      <div ref={containerRef} className="relative">
         {projects.map((project, index) => (
-          <ProjectSlide
+          <ProjectCard
             key={project.id}
             project={project}
             index={index}
             total={total}
-            progress={visualProgress}
-            activeIndex={active}
+            progress={scrollYProgress}
+            stacked={stacked}
           />
         ))}
-      </div>
-    </section>
-  );
-}
 
-function ViewToggle({
-  mode,
-  onChange,
-}: {
-  mode: "animated" | "list";
-  onChange: (m: "animated" | "list") => void;
-}) {
-  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
-  const modes = isMobile ? (["list"] as const) : (["animated", "list"] as const);
-
-  return (
-    <div
-      className="pointer-events-auto relative z-[130] inline-flex items-center rounded-full border border-border bg-surface/80 p-1 text-[11px] font-mono uppercase tracking-widest shadow-elevated backdrop-blur"
-      onClick={(event) => event.stopPropagation()}
-      onPointerDown={(event) => event.stopPropagation()}
-      onWheel={(event) => event.stopPropagation()}
-    >
-      {modes.map((m) => (
-        <button
-          type="button"
-          key={m}
-          aria-pressed={mode === m}
-          onClick={() => onChange(m)}
-          className={`pointer-events-auto rounded-full px-3 py-1 transition-colors ${
-            mode === m
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {m === "animated" ? "Animated" : "List"}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ProjectsCardCarousel({
-  mode,
-  setView,
-  initialIndex,
-  onIndexChange,
-}: {
-  mode: "animated" | "list";
-  setView: (m: "animated" | "list") => void;
-  initialIndex: number;
-  onIndexChange: (index: number) => void;
-}) {
-  const [index, setIndex] = useState(initialIndex);
-  const [dir, setDir] = useState<1 | -1>(1);
-  const total = projects.length;
-  const project = projects[index];
-  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
-
-  if (isMobile) {
-    return <ProjectsMobileList />;
-  }
-
-  const go = (next: number) => {
-    const wrapped = (next + total) % total;
-    setDir(next > index ? 1 : -1);
-    setIndex(wrapped);
-    onIndexChange(wrapped);
-  };
-
-  return (
-    <section id="work" className="relative px-4 py-24 md:px-10 md:py-32">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-hex opacity-30" />
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-5 md:mb-10 md:gap-6">
-          <div>
-            <SectionLabel>03 / Selected Work</SectionLabel>
-            <h2 className="mt-4 font-display text-3xl font-bold md:text-5xl">
-              Selected <span className="text-gradient-brand">work</span>
-            </h2>
-            <p className="mt-3 max-w-xl text-sm text-muted-foreground md:text-base">
-              Browse our case studies one by one. Use the controls below to navigate.
-            </p>
-          </div>
-          <ViewToggle mode={mode} onChange={setView} />
-        </div>
-
-        {/* Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-surface/70 shadow-elevated backdrop-blur-xl md:h-[720px] md:min-h-0 md:rounded-3xl lg:h-[580px]">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-70"
-            style={{
-              background: `radial-gradient(ellipse at 20% 0%, ${project.hue.from}, transparent 55%), radial-gradient(ellipse at 90% 100%, ${project.hue.to}, transparent 60%)`,
-            }}
-          />
-          <AnimatePresence mode="wait" initial={false} custom={dir}>
-            <motion.article
-              key={project.id}
-              custom={dir}
-              initial={{ opacity: 0, x: dir * 32 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: dir * -32 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="relative grid grid-cols-1 gap-0 md:h-[720px] md:min-h-0 lg:h-[580px] lg:grid-cols-12"
-            >
-              {/* Visual */}
-              <div className="relative lg:col-span-7">
-                <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-border md:aspect-[5/4] lg:aspect-auto lg:h-full lg:border-b-0 lg:border-r">
-                  <div className="absolute inset-0">
-                    <project.Mockup />
-                  </div>
-                </div>
-              </div>
-
-              {/* Copy */}
-              <div className="relative flex min-h-0 flex-col justify-between gap-6 p-5 md:gap-8 md:p-10 lg:col-span-5">
-                <div className="min-h-0">
-                  <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground md:gap-3 md:text-[11px]">
-                    <span className="text-gradient-brand">{project.id}</span>
-                    <span className="h-px w-6 bg-border md:w-8" />
-                    <span>{project.category}</span>
-                  </div>
-                  <h3 className="mt-3 font-display text-2xl font-bold leading-tight md:mt-4 md:text-4xl">
-                    {project.name}
-                  </h3>
-                  <p className="mt-2 font-display text-base text-gradient-brand md:text-lg">
-                    {project.tagline}
-                  </p>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground lg:min-h-[5.25rem]">
-                    {project.description}
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border/60 sm:grid-cols-3 md:mt-6">
-                    {project.metrics.map((m) => (
-                      <div key={m.label} className="bg-background/85 p-3 backdrop-blur">
-                        <div className="font-display text-base font-bold text-gradient-brand md:text-lg">
-                          {m.value}
-                        </div>
-                        <div className="mt-1 text-[9px] uppercase tracking-widest text-muted-foreground">
-                          {m.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap gap-1.5 md:max-h-[4.75rem] md:overflow-hidden">
-                    {project.stack.map((s) => (
-                      <span
-                        key={s}
-                        className="rounded-full border border-border bg-background/60 px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <a
-                  href={project.href || "#contact"}
-                  target={project.href ? "_blank" : undefined}
-                  rel={project.href ? "noreferrer" : undefined}
-                  className="group inline-flex items-center justify-between gap-3 rounded-full px-5 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02]"
-                  style={{ background: "var(--gradient-brand)" }}
+        {stacked && (
+          <div className="pointer-events-none absolute inset-y-0 right-2 z-40 xl:right-4">
+            <div className="pointer-events-auto sticky top-[calc(50vh-6rem)] flex flex-col items-end gap-3">
+              {projects.map((project, index) => (
+                <button
+                  type="button"
+                  key={project.id}
+                  onClick={() => jumpTo(index)}
+                  aria-label={`Go to ${project.name}`}
+                  title={project.name}
+                  className="group flex h-4 items-center"
                 >
-                  <span>View project</span>
-                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </a>
-              </div>
-            </motion.article>
-          </AnimatePresence>
-        </div>
-
-        {/* Controls */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
-            <span className="text-gradient-brand text-sm font-semibold">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <span className="h-px w-10 bg-border" />
-            <span>{String(total).padStart(2, "0")}</span>
+                  <span
+                    className={`block h-px transition-all duration-300 ${
+                      index === active
+                        ? "w-6 bg-foreground"
+                        : "w-3 bg-border group-hover:w-5 group-hover:bg-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
-
-          {/* Dots */}
-          <div className="order-3 flex w-full items-center justify-center gap-2 sm:order-2 sm:w-auto">
-            {projects.map((p, i) => (
-              <button
-                key={p.id}
-                onClick={() => {
-                  setDir(i > index ? 1 : -1);
-                  setIndex(i);
-                  onIndexChange(i);
-                }}
-                aria-label={`Go to ${p.name}`}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-8 bg-foreground" : "w-3 bg-border hover:bg-muted-foreground"
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="order-2 flex items-center gap-2 sm:order-3">
-            <button
-              onClick={() => go(index - 1)}
-              aria-label="Previous project"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface/60 text-foreground transition-colors hover:bg-surface"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => go(index + 1)}
-              aria-label="Next project"
-              className="flex h-11 w-11 items-center justify-center rounded-full text-background transition-transform hover:scale-105"
-              style={{ background: "var(--gradient-brand)" }}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );
 }
 
-function ProjectsMobileList() {
-  return (
-    <section id="work" className="relative px-4 pb-20 pt-28">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-hex opacity-25" />
-      <div className="mx-auto max-w-xl">
-        <div className="mb-7">
-          <SectionLabel>03 / Selected Work</SectionLabel>
-          <h2 className="mt-4 font-display text-3xl font-bold leading-tight">
-            Selected <span className="text-gradient-brand">work</span>
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            A quick look at the products, stores, apps, and systems we build.
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {projects.map((project, index) => (
-            <article
-              key={project.id}
-              className="relative overflow-hidden rounded-2xl border border-border bg-surface/80 shadow-elevated"
-            >
-              <div
-                className="pointer-events-none absolute inset-0 opacity-70"
-                style={{
-                  background: `radial-gradient(ellipse at 0% 0%, ${project.hue.from}, transparent 48%), radial-gradient(ellipse at 100% 100%, ${project.hue.to}, transparent 58%)`,
-                }}
-              />
-
-              <div className="relative">
-                <div className="relative h-[22rem] overflow-hidden border-b border-border sm:h-[26rem]">
-                  <MobileProjectMockup project={project} priority={index < 2} />
-                </div>
-
-                <div className="p-4">
-                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    <span className="text-gradient-brand">{project.id}</span>
-                    <span className="h-px w-6 bg-border" />
-                    <span>{project.category}</span>
-                  </div>
-
-                  <h3 className="mt-3 font-display text-xl font-bold leading-tight">
-                    {project.name}
-                  </h3>
-                  <p className="mt-1.5 font-display text-sm leading-snug text-gradient-brand">
-                    {project.tagline}
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/60">
-                    {project.metrics.map((metric) => (
-                      <div key={metric.label} className="bg-background/70 px-2.5 py-2">
-                        <div className="font-display text-[13px] font-bold leading-tight text-gradient-brand">
-                          {metric.value}
-                        </div>
-                        <div className="mt-1 text-[7px] uppercase tracking-widest text-muted-foreground">
-                          {metric.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {project.stack.slice(0, 5).map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-full border border-border bg-background/70 px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  <a
-                    href={project.href || "#contact"}
-                    className="mt-5 inline-flex w-full items-center justify-between rounded-full px-5 py-3 text-sm font-medium text-background"
-                    style={{ background: "var(--gradient-brand)" }}
-                  >
-                    <span>View project</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MobileProjectMockup({ project, priority }: { project: Project; priority?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [shouldRender, setShouldRender] = useState(Boolean(priority));
-
-  useEffect(() => {
-    if (shouldRender) return;
-
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldRender(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "640px 0px" },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [shouldRender]);
-
-  return (
-    <div ref={ref} className="absolute inset-0">
-      {shouldRender ? <project.Mockup /> : <div className="absolute inset-0 bg-hex opacity-20" />}
-    </div>
-  );
-}
-
-function ProgressIndicator({ activeIndex, total }: { activeIndex: number; total: number }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-gradient-brand text-sm font-semibold">
-        {String(activeIndex + 1).padStart(2, "0")}
-      </span>
-      <span className="h-px w-10 bg-border" />
-      <span>{String(total).padStart(2, "0")}</span>
-    </div>
-  );
-}
-
-function ProjectSlide({
+function ProjectCard({
   project,
   index,
   total,
   progress,
-  activeIndex,
+  stacked,
 }: {
   project: Project;
   index: number;
   total: number;
   progress: MotionValue<number>;
-  activeIndex: number;
+  stacked: boolean;
 }) {
-  const active = index === activeIndex;
-  const nearby = Math.abs(index - activeIndex) <= 1;
-  const step = total <= 1 ? 1 : 1 / total;
-  const start = step * index;
-  const end = index === total - 1 ? 1 : step * (index + 1);
-  const transitionDistance = step * 0.105;
-  const backgroundLead = step * 0.055;
-  const mockupDelay = step * 0.018;
-  const headlineDelay = step * 0.04;
-  const descriptionDelay = step * 0.058;
-  const detailDelay = step * 0.074;
-  const ctaDelay = step * 0.09;
-  const enterStart = Math.max(0, start - transitionDistance);
-  const enterEnd = Math.min(1, start + transitionDistance);
-  const exitStart = Math.max(0, end - transitionDistance);
-  const exitEnd = Math.min(1, end + transitionDistance);
-  const clampProgress = (value: number) => Math.min(1, Math.max(0, value));
-  const ordered = (values: number[]) =>
-    values.map(clampProgress).reduce<number[]>((acc, value) => {
-      const previous = acc[acc.length - 1];
-      if (previous === undefined) return [value];
-      return [...acc, Math.min(1, Math.max(value, previous + 0.0001))];
-    }, []);
-  const createInput = (enterOffset = 0, exitOffset = 0) => {
-    if (index === 0) {
-      return ordered([0, exitStart + exitOffset, exitEnd + exitOffset]);
-    }
+  const last = total - 1;
+  const step = last > 0 ? 1 / last : 1;
+  const isLast = index === last;
 
-    if (index === total - 1) {
-      return ordered([enterStart + enterOffset, enterEnd + enterOffset, 1]);
-    }
+  // The next card covers this one while overall progress moves from index*step to (index+1)*step.
+  const coverRange = isLast ? [0, 1] : [index * step, (index + 1) * step];
+  const scale = useTransform(progress, coverRange, isLast ? [1, 1] : [1, 0.92]);
+  const dim = useTransform(progress, coverRange, isLast ? [0, 0] : [0, 0.6]);
 
-    return ordered([
-      enterStart + enterOffset,
-      enterEnd + enterOffset,
-      exitStart + exitOffset,
-      exitEnd + exitOffset,
-    ]);
-  };
-  const phaseOutput = <T,>(before: T, visible: T, after: T) =>
-    index === 0
-      ? [visible, visible, after]
-      : index === total - 1
-        ? [before, visible, visible]
-        : [before, visible, visible, after];
-
-  const presenceInput = createInput(-backgroundLead, backgroundLead);
-  const backgroundInput = createInput(-backgroundLead, backgroundLead);
-  const mockupInput = createInput(mockupDelay, -mockupDelay);
-  const headlineInput = createInput(headlineDelay, -headlineDelay);
-  const descriptionInput = createInput(descriptionDelay, -descriptionDelay);
-  const detailInput = createInput(detailDelay, -detailDelay);
-  const ctaInput = createInput(ctaDelay, -ctaDelay);
-
-  const presenceOpacity = useTransform(progress, presenceInput, phaseOutput(0, 1, 0));
-  const slideFilter = useTransform(
-    progress,
-    presenceInput,
-    phaseOutput(
-      "blur(8px) brightness(0.74)",
-      "blur(0px) brightness(1)",
-      "blur(6px) brightness(0.78)",
-    ),
-  );
-  const backgroundOpacity = useTransform(progress, backgroundInput, phaseOutput(0, 1, 0));
-  const mockupOpacity = useTransform(progress, mockupInput, phaseOutput(0, 1, 0));
-  const mockupY = useTransform(progress, mockupInput, phaseOutput(16, 0, -12));
-  const mockupScale = useTransform(progress, mockupInput, phaseOutput(0.982, 1, 0.988));
-  const mockupFilter = useTransform(
-    progress,
-    mockupInput,
-    phaseOutput(
-      "blur(8px) brightness(0.78)",
-      "blur(0px) brightness(1)",
-      "blur(5px) brightness(0.82)",
-    ),
-  );
-  const headlineOpacity = useTransform(progress, headlineInput, phaseOutput(0, 1, 0));
-  const headlineY = useTransform(progress, headlineInput, phaseOutput(10, 0, -8));
-  const descriptionOpacity = useTransform(progress, descriptionInput, phaseOutput(0, 1, 0));
-  const descriptionY = useTransform(progress, descriptionInput, phaseOutput(12, 0, -7));
-  const detailOpacity = useTransform(progress, detailInput, phaseOutput(0, 1, 0));
-  const detailY = useTransform(progress, detailInput, phaseOutput(14, 0, -6));
-  const ctaOpacity = useTransform(progress, ctaInput, phaseOutput(0, 1, 0));
-  const ctaY = useTransform(progress, ctaInput, phaseOutput(12, 0, -4));
-  const ctaScale = useTransform(progress, ctaInput, phaseOutput(0.985, 1, 0.99));
+  // This card slides up over the previous one; its mockup lags behind for depth.
+  const enterRange = index === 0 ? [0, 1] : [(index - 1) * step, index * step];
+  const mockupY = useTransform(progress, enterRange, index === 0 ? [0, 0] : [110, 0]);
+  const copyY = useTransform(progress, enterRange, index === 0 ? [0, 0] : [40, 0]);
 
   return (
-    <motion.div
-      aria-hidden={!active}
-      style={{
-        opacity: presenceOpacity,
-        filter: slideFilter,
-        zIndex: active ? 3 : nearby ? 2 : 0,
-      }}
-      className={`absolute inset-0 isolate flex transform-gpu will-change-[opacity,transform,filter] items-center justify-center px-6 md:px-12 ${
-        active ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+    <div
+      className={
+        stacked ? "sticky top-0 flex h-screen items-center px-10 pb-8 pt-24" : "px-4 pb-6 md:px-10"
+      }
+      style={stacked ? { zIndex: index + 1 } : undefined}
     >
-      {/* Per-project background wash */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          opacity: backgroundOpacity,
-          background: `radial-gradient(ellipse at 30% 40%, ${project.hue.from}, transparent 55%), radial-gradient(ellipse at 80% 70%, ${project.hue.via}, transparent 60%), radial-gradient(ellipse at 50% 100%, ${project.hue.to}, transparent 70%)`,
-        }}
-      />
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-0 bg-hex"
-        style={{ opacity: backgroundOpacity }}
-      />
-
-      {/* Decorative hex */}
-      <div
-        className="pointer-events-none absolute -right-40 top-1/2 z-0 hidden h-[680px] w-[680px] -translate-y-1/2 md:block"
+      <motion.article
+        initial={stacked ? false : { opacity: 0, y: 32 }}
+        animate={stacked ? { opacity: 1, y: 0 } : undefined}
+        whileInView={stacked ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        style={stacked ? { scale, transformOrigin: "50% 0%" } : undefined}
+        className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-3xl border border-border bg-background shadow-elevated lg:h-full"
       >
-        <HexFrame strokeWidth={0.4} />
-      </div>
-
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
-        {/* Left: copy */}
-        <div className="lg:col-span-5">
-          <motion.div
-            className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground"
-            style={{ opacity: headlineOpacity, y: headlineY }}
-          >
-            <span className="text-gradient-brand">{project.id}</span>
-            <span className="h-px w-8 bg-border" />
-            <span>{project.category}</span>
-          </motion.div>
-          <motion.h3
-            className="mt-5 font-display text-5xl font-bold leading-[1.02] md:text-7xl"
-            style={{ opacity: headlineOpacity, y: headlineY }}
-          >
-            {project.name}
-          </motion.h3>
-          <motion.p
-            className="mt-4 font-display text-xl text-gradient-brand"
-            style={{ opacity: descriptionOpacity, y: descriptionY }}
-          >
-            {project.tagline}
-          </motion.p>
-          <motion.p
-            className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base"
-            style={{ opacity: descriptionOpacity, y: descriptionY }}
-          >
-            {project.description}
-          </motion.p>
-
-          <motion.div
-            className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/80"
-            style={{ opacity: detailOpacity, y: detailY }}
-          >
-            {project.metrics.map((m) => (
-              <div key={m.label} className="bg-background/80 p-4 backdrop-blur">
-                <div className="font-display text-2xl font-bold text-gradient-brand">{m.value}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {m.label}
-                </div>
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.div
-            className="mt-6 flex flex-wrap gap-2"
-            style={{ opacity: detailOpacity, y: detailY }}
-          >
-            {project.stack.map((s) => (
-              <span
-                key={s}
-                className="rounded-full border border-border bg-surface/60 px-3 py-1 text-[11px] font-mono text-muted-foreground backdrop-blur"
-              >
-                {s}
-              </span>
-            ))}
-          </motion.div>
-
-          {project.href && (
-            <motion.a
-              href={project.href}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-8 inline-flex items-center gap-3 rounded-full px-5 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02]"
-              style={{
-                opacity: ctaOpacity,
-                y: ctaY,
-                scale: ctaScale,
-                background: "var(--gradient-brand)",
-              }}
-            >
-              <span>View project</span>
-              <ArrowUpRight className="h-4 w-4" />
-            </motion.a>
-          )}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 25% 30%, ${project.hue.from}, transparent 60%), radial-gradient(ellipse at 85% 75%, ${project.hue.via}, transparent 62%), radial-gradient(ellipse at 50% 110%, ${project.hue.to}, transparent 70%)`,
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-hex opacity-60" />
+        <div className="pointer-events-none absolute -right-40 top-1/2 hidden h-[600px] w-[600px] -translate-y-1/2 lg:block">
+          <HexFrame strokeWidth={0.4} />
         </div>
 
-        {/* Right: mockup */}
-        <motion.div
-          className="relative transform-gpu will-change-[opacity,transform,filter] lg:col-span-7"
-          style={{ opacity: mockupOpacity, y: mockupY, scale: mockupScale, filter: mockupFilter }}
-        >
-          <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
-            <div className="absolute inset-0">
-              <project.Mockup />
+        <div className="relative grid grid-cols-1 items-center gap-8 p-6 md:p-10 lg:h-full lg:grid-cols-12 lg:gap-12 lg:p-14">
+          <motion.div className="lg:col-span-5" style={stacked ? { y: copyY } : undefined}>
+            <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              <span className="text-gradient-brand">{project.id}</span>
+              <span className="h-px w-8 bg-border" />
+              <span>{project.category}</span>
             </div>
-          </div>
-        </motion.div>
-      </div>
+            <h3 className="mt-4 font-display text-4xl font-bold leading-[1.05] md:text-5xl lg:text-6xl">
+              {project.name}
+            </h3>
+            <p className="mt-4 font-display text-lg text-gradient-brand md:text-xl">
+              {project.tagline}
+            </p>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
+              {project.description}
+            </p>
 
-      {/* Slide footer */}
-      <motion.div
-        className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-muted-foreground"
-        style={{ opacity: detailOpacity }}
-      >
-        {index < total - 1 ? "Scroll · Next case" : "End of selected work"}
-      </motion.div>
-    </motion.div>
+            <div className="mt-6 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border/80 [@media(max-height:820px)]:hidden">
+              {project.metrics.map((m) => (
+                <div key={m.label} className="bg-background/80 p-4 backdrop-blur">
+                  <div className="font-display text-xl font-bold text-gradient-brand md:text-2xl">
+                    {m.value}
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {m.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {project.stack.map((s) => (
+                <span
+                  key={s}
+                  className="rounded-full border border-border bg-surface/60 px-3 py-1 font-mono text-[11px] text-muted-foreground backdrop-blur"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+
+            {project.href && (
+              <a
+                href={project.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-7 inline-flex items-center gap-3 rounded-full px-5 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02]"
+                style={{ background: "var(--gradient-brand)" }}
+              >
+                <span>View project</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            )}
+          </motion.div>
+
+          <motion.div
+            className="relative lg:col-span-7"
+            style={stacked ? { y: mockupY } : undefined}
+          >
+            <div className="relative mx-auto aspect-[5/4] w-full max-w-2xl">
+              <div className="absolute inset-0">
+                <project.Mockup />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {stacked && (
+          <motion.div
+            className="pointer-events-none absolute inset-0 bg-black"
+            style={{ opacity: dim }}
+          />
+        )}
+      </motion.article>
+    </div>
   );
 }
 
@@ -1061,7 +549,7 @@ function TijaratiMockup() {
             src="/images/case-studies/tijarati/reports.jpg"
             alt="Tijarati Pro reports"
             className="block h-auto w-full"
-            loading="lazy"
+            loading="eager"
             decoding="async"
           />
         </div>
@@ -1075,7 +563,7 @@ function TijaratiMockup() {
             src="/images/case-studies/tijarati/home.jpg"
             alt="Tijarati Pro home dashboard"
             className="block h-auto w-full"
-            loading="lazy"
+            loading="eager"
             decoding="async"
           />
         </div>
@@ -1089,7 +577,7 @@ function TijaratiMockup() {
             src="/images/case-studies/tijarati/invoices.jpg"
             alt="Tijarati Pro invoices"
             className="block h-auto w-full"
-            loading="lazy"
+            loading="eager"
             decoding="async"
           />
         </div>

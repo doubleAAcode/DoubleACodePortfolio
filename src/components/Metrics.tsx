@@ -14,7 +14,7 @@ export function Metrics() {
       <div className="mx-auto max-w-6xl">
         <SectionLabel>04 / Why Double A</SectionLabel>
         <h2 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-          Small studio. <span className="text-gradient-accent">Compounding output.</span>
+          Shipped work. <span className="text-gradient-accent">Compounding output.</span>
         </h2>
 
         <div className="mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
@@ -41,8 +41,11 @@ function Counter({ value, suffix, label }: (typeof metrics)[number]) {
   }, [inView, count, value]);
 
   return (
-    <div ref={ref} className="bg-background p-8 md:p-10">
-      <div className="flex items-baseline gap-1 font-display text-5xl font-bold md:text-6xl">
+    <div
+      ref={ref}
+      className="group bg-background p-8 last:col-span-2 last:text-center md:p-10 md:last:col-span-1 md:last:text-left"
+    >
+      <div className="flex items-baseline gap-1 font-display text-5xl font-bold group-last:justify-center md:text-6xl md:group-last:justify-start">
         <motion.span className="text-gradient">{rounded}</motion.span>
         <span className="text-accent">{suffix}</span>
       </div>

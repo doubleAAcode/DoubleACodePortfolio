@@ -9,7 +9,6 @@ import { Journey } from "@/components/Journey";
 import { Capabilities } from "@/components/Capabilities";
 import { Projects } from "@/components/Projects";
 import { Metrics } from "@/components/Metrics";
-import { Founders } from "@/components/Founders";
 import { Contact } from "@/components/Contact";
 
 export const Route = createFileRoute("/")({
@@ -49,7 +48,6 @@ function Index() {
       <Capabilities />
       <Projects />
       <Metrics />
-      <Founders />
       <Contact />
       {showLoader && <Loader onDone={handleLoaderDone} />}
     </main>
